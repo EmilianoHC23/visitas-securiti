@@ -27,8 +27,22 @@ const visitSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'approved', 'checked-in', 'completed'],
+    enum: ['pending', 'approved', 'checked-in', 'completed', 'rejected', 'cancelled'],
     default: 'pending'
+  },
+  visitType: {
+    type: String,
+    enum: ['spontaneous', 'pre-registered', 'access-code'],
+    default: 'spontaneous'
+  },
+  accessCode: {
+    type: String,
+    default: null
+  },
+  accessId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Access',
+    default: null
   },
   scheduledDate: {
     type: Date,

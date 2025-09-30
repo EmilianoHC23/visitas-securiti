@@ -10,6 +10,11 @@ const userRoutes = require('./routes/users');
 const visitRoutes = require('./routes/visits');
 const dashboardRoutes = require('./routes/dashboard');
 const debugRoutes = require('./routes/debug');
+const companyRoutes = require('./routes/company');
+const blacklistRoutes = require('./routes/blacklist');
+const accessRoutes = require('./routes/access');
+const publicRoutes = require('./routes/public');
+const reportsRoutes = require('./routes/reports');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -43,6 +48,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/visits', visitRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/company', companyRoutes);
+app.use('/api/blacklist', blacklistRoutes);
+app.use('/api/access', accessRoutes);
+app.use('/api/public', publicRoutes);
+app.use('/api/reports', reportsRoutes);
 app.use('/api', debugRoutes); // Temporal debug route
 
 // Health check endpoint

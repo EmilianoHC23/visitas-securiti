@@ -34,7 +34,10 @@ const authorize = (...roles) => {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
-    if (!roles.includes(req.user.role)) {
+    // Flatten array if roles is passed as array
+    const allowedRoles = Array.isArray(roles[0]) ? roles[0] : roles;
+
+    if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({ message: 'No tienes permisos para esta acción' });
     }
 

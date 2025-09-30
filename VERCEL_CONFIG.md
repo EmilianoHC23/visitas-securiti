@@ -6,7 +6,7 @@
 DATABASE_URL=mongodb+srv://emilianohercha23_db_user:visitasdb@visitassecuriti.aupqtqb.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=VisitasSecuriTI
 
 ### Seguridad
-JWT_SECRET=tu-clave-jwt-super-secreta-para-produccion-cambiar-por-algo-mas-seguro
+JWT_SECRET=Prod_VisitasSecuriTI_2025_Ultra_Secure_JWT_Secret_Key_For_Production_Only!@#$%
 
 ### Entorno
 NODE_ENV=production

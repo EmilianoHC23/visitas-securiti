@@ -7,9 +7,10 @@ import { User, Visit, VisitStatus } from '../types';
 const isDevelopment = import.meta.env.VITE_ENVIRONMENT === 'development';
 const BASE_URL = isDevelopment 
   ? import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
-  : import.meta.env.VITE_PROD_API_URL || '/api';
+  : '/api'; // Usar ruta relativa en producción
 
 console.log('🌐 API Base URL:', BASE_URL);
+console.log('🌍 Environment:', import.meta.env.VITE_ENVIRONMENT || 'not set');
 
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const token = localStorage.getItem('securitiToken');

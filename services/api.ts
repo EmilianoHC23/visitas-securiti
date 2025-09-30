@@ -1,4 +1,4 @@
-import { User, Visit, VisitStatus } from '../types';
+import { User, Visit, VisitStatus, Company, Blacklist, Access } from '../types';
 
 // =================================================================
 // CONFIGURACIÓN DE LA API
@@ -187,4 +187,141 @@ export const getRecentVisits = async (limit?: number): Promise<Visit[]> => {
 
 export const getAnalytics = async (period: 'week' | 'month' = 'week') => {
   return apiRequest(`/dashboard/analytics?period=${period}`);
+};
+
+// --- COMPANY MANAGEMENT ---
+export const getCompanyConfig = async (): Promise<Company> => {
+  return apiRequest('/company/config');
+};
+
+export const updateCompanyConfig = async (config: Partial<Company>): Promise<Company> => {
+  return apiRequest('/company/config', {
+    method: 'PUT',
+    body: JSON.stringify(config),
+  });
+};
+
+export const getCompanyQR = async (): Promise<{ qrCode: string; qrUrl: string; publicUrl: string }> => {
+  return apiRequest('/company/qr-code');
+};
+
+// --- BLACKLIST MANAGEMENT ---
+export const getBlacklist = async (): Promise<Blacklist[]> => {
+  return apiRequest('/blacklist');
+};
+
+export const addToBlacklist = async (data: {
+  email: string;
+  name: string;
+  reason: string;
+}): Promise<Blacklist> => {
+  return apiRequest('/blacklist', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};
+
+export const removeFromBlacklist = async (id: string): Promise<void> => {
+  return apiRequest(`/blacklist/${id}`, {
+    method: 'DELETE',
+  });
+};
+
+// --- ACCESS CODES / EVENTS ---
+export const getAccesses = async (): Promise<Access[]> => {
+  return apiRequest('/access');
+};
+
+export const createAccess = async (accessData: {
+  type: 'single-use' | 'time-limited' | 'scheduled';
+  maxUses?: number;
+  expiresAt?: Date;
+  scheduledDate?: Date;
+  scheduledStartTime?: string;
+  scheduledEndTime?: string;
+  eventName?: string;
+  eventDescription?: string;
+}): Promise<Access> => {
+  return apiRequest('/access', {
+    method: 'POST',
+    body: JSON.stringify(accessData),
+  });
+};
+
+export const updateAccess = async (id: string, updates: Partial<Access>): Promise<Access> => {
+  return apiRequest(`/access/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  });
+};
+
+export const deleteAccess = async (id: string): Promise<void> => {
+  return apiRequest(`/access/${id}`, {
+    method: 'DELETE',
+  });
+};
+
+export const updateAccessStatus = async (id: string, status: string): Promise<Access> => {
+  return apiRequest(`/access/${id}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status }),
+  });
+};
+
+export const getPublicAccessInfo = async (accessCode: string) => {
+  return apiRequest(`/access/public/${accessCode}`);
+};
+
+export const redeemAccessCode = async (accessCode: string, visitorData: {
+  name: string;
+  company: string;
+  email: string;
+  phone?: string;
+}) => {
+  return apiRequest('/access/redeem', {
+    method: 'POST',
+    body: JSON.stringify({ accessCode, visitorData }),
+  });
+};
+
+// --- PUBLIC REGISTRATION ---
+export const getPublicCompanyInfo = async (qrCode: string) => {
+  return apiRequest(`/public/company/${qrCode}`);
+};
+
+export const getPublicHosts = async (companyId: string): Promise<User[]> => {
+  return apiRequest(`/public/hosts/${companyId}`);
+};
+
+export const submitPublicVisit = async (visitData: {
+  companyId: string;
+  visitorName: string;
+  visitorCompany: string;
+  visitorEmail: string;
+  visitorPhone?: string;
+  hostId: string;
+  reason: string;
+  visitorPhoto?: string;
+}) => {
+  return apiRequest('/public/visit', {
+    method: 'POST',
+    body: JSON.stringify(visitData),
+  });
+};
+
+// --- REPORTS & ANALYTICS ---
+export const getAdvancedAnalytics = async (params: {
+  period?: string;
+  startDate?: string;
+  endDate?: string;
+} = {}) => {
+  const queryParams = new URLSearchParams(params);
+  return apiRequest(`/reports/analytics?${queryParams}`);
+};
+
+export const exportReports = async (format: 'json' | 'csv', filters: any = {}) => {
+  return apiRequest('/reports/export', {
+    method: 'POST',
+    body: JSON.stringify({ format, filters }),
+  });
 };

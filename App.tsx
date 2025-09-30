@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { LoginPage } from './pages/Login';
@@ -9,8 +9,17 @@ import { VisitsPage } from './pages/visits/VisitsPage';
 import { UserManagementPage } from './pages/users/UserManagementPage';
 import { ReportsPage } from './pages/reports/ReportsPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
+import { CompanyConfigPage } from './pages/settings/CompanyConfigPage';
+import { AccessCodesPage } from './pages/access/AccessCodesPage';
+import { BlacklistPage } from './pages/blacklist/BlacklistPage';
+import { PublicRegistrationPage } from './pages/public/PublicRegistrationPage';
 import { UserRole } from './types';
 import { VisitorRegistrationPage } from './pages/register/VisitorRegistrationPage';
+
+const PublicRegistrationWrapper: React.FC = () => {
+    const { qrCode } = useParams<{ qrCode: string }>();
+    return <PublicRegistrationPage qrCode={qrCode} />;
+};
 
 
 const AppRoutes: React.FC = () => {
@@ -25,6 +34,7 @@ const AppRoutes: React.FC = () => {
             <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<VisitorRegistrationPage />} />
+                <Route path="/public/:qrCode" element={<PublicRegistrationWrapper />} />
                 <Route path="*" element={<Navigate to="/login" />} />
             </Routes>
         );
@@ -36,15 +46,25 @@ const AppRoutes: React.FC = () => {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/visits" element={<VisitsPage />} />
                 
+                {(user?.role === UserRole.ADMIN || user?.role === UserRole.RECEPTION) && (
+                    <>
+                        <Route path="/access-codes" element={<AccessCodesPage />} />
+                        <Route path="/blacklist" element={<BlacklistPage />} />
+                    </>
+                )}
+                
                 {user?.role === UserRole.ADMIN && (
                     <>
                         <Route path="/users" element={<UserManagementPage />} />
                         <Route path="/reports" element={<ReportsPage />} />
                         <Route path="/settings" element={<SettingsPage />} />
+                        <Route path="/settings/company" element={<CompanyConfigPage />} />
                     </>
                 )}
-                {/*  The register route is also available for logged in users, maybe for testing */}
+                
+                {/* Public routes available to authenticated users */}
                 <Route path="/register" element={<VisitorRegistrationPage />} />
+                <Route path="/public/:qrCode" element={<PublicRegistrationWrapper />} />
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>
         </DashboardLayout>

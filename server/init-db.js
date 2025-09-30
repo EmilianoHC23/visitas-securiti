@@ -60,9 +60,16 @@ const initializeDatabase = async () => {
       }
     ];
 
-    // Create users
-    const createdUsers = await User.insertMany(defaultUsers);
-    console.log('👥 Created default users');
+    // Create users one by one to trigger pre('save') middleware
+    const createdUsers = [];
+    for (const userData of defaultUsers) {
+      const user = new User(userData);
+      await user.save(); // This will trigger the password hashing
+      createdUsers.push(user);
+      console.log(`✅ Created user: ${user.email}`);
+    }
+    
+    console.log('👥 Created default users with hashed passwords');
 
     // Create sample visits
     const hosts = createdUsers.filter(user => user.role === 'host');

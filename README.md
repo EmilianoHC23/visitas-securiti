@@ -4,20 +4,66 @@
 [![GitHub repo](https://img.shields.io/badge/GitHub-EmilianoHC23%2Fvisitas--securiti-blue?logo=github)](https://github.com/EmilianoHC23/visitas-securiti)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Sistema de gestión de visitas empresariales desarrollado con React, Node.js, Express y MongoDB.
+**Sistema completo de gestión de visitas empresariales con 6 fases de funcionalidad implementadas**
 
-## 🌟 Características
+Desarrollado con React 19, Node.js, Express, MongoDB Atlas y desplegado en Vercel.
 
-- ✅ Autenticación y autorización por roles (Admin, Recepción, Host)
-- 📋 Gestión completa de visitas (crear, aprobar, check-in/out)
-- 👥 Administración de usuarios
-- 📊 Dashboard con estadísticas en tiempo real
-- 📱 Registro de visitantes autoservicio
-- 🔒 API RESTful segura con JWT
-- 🎨 Interfaz moderna con Tailwind CSS
-- ☁️ Listo para despliegue en Vercel
+## 🌟 Características Principales
 
-## 🚀 Instalación y Configuración
+### 📋 **FASE 1: Sistema Base**
+- ✅ Autenticación JWT con roles (Admin, Recepción, Host)
+- ✅ Gestión completa de visitas (CRUD, aprobación, check-in/out)
+- ✅ Dashboard con estadísticas en tiempo real
+- ✅ Administración de usuarios
+
+### 🏢 **FASE 2: Configuración Empresarial**
+- ✅ Configuración de empresa con settings personalizables
+- ✅ Generación automática de códigos QR
+- ✅ Auto-aprobación y configuraciones de seguridad
+
+### 🚫 **FASE 3: Lista Negra**
+- ✅ Gestión completa de blacklist
+- ✅ Validación por documento, teléfono o email
+- ✅ Sistema de búsqueda y filtros avanzados
+
+### 🎫 **FASE 4: Códigos de Acceso**
+- ✅ Códigos de uso único, por tiempo limitado y programados
+- ✅ Gestión de eventos con códigos específicos
+- ✅ Control de usos y estados de códigos
+
+### 📱 **FASE 5: Registro Público**
+- ✅ Interfaz pública para visitantes con QR
+- ✅ Auto-registro sin necesidad de usuario
+- ✅ Validación automática de blacklist
+
+### � **FASE 6: Analytics Avanzados**
+- ✅ Dashboard con métricas avanzadas
+- ✅ Reportes por hosts, empresas, horarios
+- ✅ Exportación de datos en JSON/CSV
+- ✅ Análisis de tendencias y patrones
+
+## 🚀 Despliegue en Vercel
+
+### ⚡ Despliegue Automático
+
+1. **Fork o clona este repositorio**
+2. **Conecta con Vercel:**
+   - Ve a [vercel.com](https://vercel.com)
+   - Conecta tu cuenta de GitHub
+   - Importa el repositorio `visitas-securiti`
+
+3. **Configura las variables de entorno en Vercel:**
+   ```env
+   DATABASE_URL=mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti
+   JWT_SECRET=Prod_VisitasSecuriTI_2025_Ultra_Secure_JWT_Secret_Key_For_Production_Only!@#$%
+   NODE_ENV=production
+   ```
+
+4. **Despliega:**
+   - Vercel detectará automáticamente la configuración
+   - El despliegue será automático con cada push a main
+
+### 🔧 Configuración Manual
 
 ### Prerrequisitos
 

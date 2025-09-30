@@ -1,7 +1,7 @@
 # 🛡️ Visitas SecuriTI
 
-[![Build Status](https://github.com/TU_USUARIO/visitas-securiti/workflows/🚀%20Build%20and%20Test/badge.svg)](https://github.com/TU_USUARIO/visitas-securiti/actions)
-[![Vercel](https://vercelbadges.vercel.app/api/TU_USUARIO/visitas-securiti)](https://visitas-securiti.vercel.app)
+[![Build Status](https://github.com/EmilianoHC23/visitas-securiti/workflows/🚀%20Build%20and%20Test/badge.svg)](https://github.com/EmilianoHC23/visitas-securiti/actions)
+[![GitHub repo](https://img.shields.io/badge/GitHub-EmilianoHC23%2Fvisitas--securiti-blue?logo=github)](https://github.com/EmilianoHC23/visitas-securiti)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Sistema de gestión de visitas empresariales desarrollado con React, Node.js, Express y MongoDB.

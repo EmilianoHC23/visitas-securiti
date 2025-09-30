@@ -3,7 +3,6 @@ const Visit = require('../models/Visit');
 const User = require('../models/User');
 const Company = require('../models/Company');
 const { auth, authorize } = require('../middleware/auth');
-const emailService = require('../services/emailService');
 
 const router = express.Router();
 
@@ -96,39 +95,6 @@ router.post('/', auth, async (req, res) => {
     await visit.save();
     await visit.populate('host', 'firstName lastName email profileImage');
 
-    // Send email notifications
-    if (visitorEmail) {
-      // Send confirmation to visitor
-      const visitData = {
-        visitorName,
-        visitorEmail,
-        visitorCompany,
-        reason,
-        scheduledDate,
-        hostName: `${host.firstName} ${host.lastName}`,
-        status: visit.status,
-        companyName: company?.name || 'Visitas SecuriTI'
-      };
-
-      await emailService.sendVisitorConfirmation(visitData);
-    }
-
-    // Send notification to host
-    if (host.email) {
-      const visitData = {
-        visitorName,
-        visitorCompany,
-        visitorEmail: visitorEmail || 'No proporcionado',
-        visitorPhone: visitorPhone || 'No proporcionado',
-        reason,
-        scheduledDate,
-        hostName: `${host.firstName} ${host.lastName}`,
-        status: visit.status
-      };
-
-      await emailService.sendNewVisitNotification(visitData, host.email, company?.settings);
-    }
-
     res.status(201).json(visit);
   } catch (error) {
     console.error('Create visit error:', error);
@@ -211,22 +177,6 @@ router.put('/:id/status', auth, async (req, res) => {
       updateData,
       { new: true }
     ).populate('host', 'firstName lastName email profileImage');
-
-    // Send email notification if visit was approved and has visitor email
-    if (previousStatus === 'pending' && status === 'approved' && visit.visitorEmail) {
-      const company = await Company.findOne({ _id: visit.companyId });
-      
-      const visitData = {
-        visitorName: visit.visitorName,
-        visitorEmail: visit.visitorEmail,
-        scheduledDate: visit.scheduledDate,
-        hostName: `${visit.host.firstName} ${visit.host.lastName}`,
-        reason: visit.reason,
-        companyName: company?.name || 'Visitas SecuriTI'
-      };
-
-      await emailService.sendVisitApprovalNotification(visitData);
-    }
 
     res.json(updatedVisit);
   } catch (error) {

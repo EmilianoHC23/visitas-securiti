@@ -3,7 +3,6 @@ const Company = require('../models/Company');
 const Blacklist = require('../models/Blacklist');
 const User = require('../models/User');
 const Visit = require('../models/Visit');
-const emailService = require('../services/emailService');
 
 const router = express.Router();
 
@@ -123,39 +122,6 @@ router.post('/visit', async (req, res) => {
 
     await visit.save();
     await visit.populate('host', 'firstName lastName email');
-
-    // Send email notifications
-    if (visitorEmail) {
-      // Send confirmation to visitor
-      const visitData = {
-        visitorName,
-        visitorEmail,
-        visitorCompany,
-        reason,
-        scheduledDate: visit.scheduledDate,
-        hostName: `${host.firstName} ${host.lastName}`,
-        status: visit.status,
-        companyName: company.name || 'Visitas SecuriTI'
-      };
-
-      await emailService.sendVisitorConfirmation(visitData);
-    }
-
-    // Send notification to host
-    if (host.email) {
-      const visitData = {
-        visitorName,
-        visitorCompany,
-        visitorEmail,
-        visitorPhone: visitorPhone || 'No proporcionado',
-        reason,
-        scheduledDate: visit.scheduledDate,
-        hostName: `${host.firstName} ${host.lastName}`,
-        status: visit.status
-      };
-
-      await emailService.sendNewVisitNotification(visitData, host.email, company.settings);
-    }
 
     res.status(201).json({
       message: 'Visita registrada exitosamente',

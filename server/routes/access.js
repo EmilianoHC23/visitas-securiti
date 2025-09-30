@@ -2,7 +2,6 @@ const express = require('express');
 const Access = require('../models/Access');
 const Visit = require('../models/Visit');
 const { auth, authorize } = require('../middleware/auth');
-const emailService = require('../services/emailService');
 
 const router = express.Router();
 
@@ -68,11 +67,6 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
 
     await access.save();
     await access.populate('createdBy', 'firstName lastName email');
-
-    // Send email notifications to invited emails
-    if (invitedEmails && invitedEmails.length > 0) {
-      await emailService.sendAccessCodeNotification(access, invitedEmails);
-    }
 
     res.status(201).json(access);
   } catch (error) {

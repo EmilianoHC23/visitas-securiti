@@ -1,7 +1,6 @@
 const express = require('express');
 const Blacklist = require('../models/Blacklist');
 const { auth, authorize } = require('../middleware/auth');
-const emailService = require('../services/emailService');
 
 const router = express.Router();
 
@@ -52,15 +51,6 @@ router.post('/', auth, authorize(['admin', 'reception']), async (req, res) => {
 
     await blacklistEntry.save();
     await blacklistEntry.populate('addedBy', 'firstName lastName email');
-
-    // Send notification to admin about new blacklist entry
-    await emailService.sendAdminNotification('blacklist_added', {
-      identifier: email,
-      name: name,
-      reason: reason,
-      addedBy: `${req.user.firstName} ${req.user.lastName}`,
-      addedAt: new Date().toISOString()
-    });
 
     res.status(201).json(blacklistEntry);
   } catch (error) {

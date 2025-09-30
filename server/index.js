@@ -88,10 +88,15 @@ app.use('*', (req, res) => {
 });
 
 // Start server only if not in serverless environment
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-  app.listen(PORT, () => {
+if (!process.env.VERCEL) {
+  app.listen(PORT, '0.0.0.0', (err) => {
+    if (err) {
+      console.error('❌ Error starting server:', err);
+      process.exit(1);
+    }
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 Server listening on http://localhost:${PORT}`);
   });
 }
 

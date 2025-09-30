@@ -1,0 +1,7 @@
+{
+  "name": "Visitas SecuriTI",
+  "description": "A comprehensive visitor management system for SecuriTI, designed to streamline the check-in process, enhance security, and provide real-time monitoring of visitor activity.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

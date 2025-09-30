@@ -1,0 +1,7 @@
+# Archivos y directorios a ignorar en el deployment de Vercel
+server/init-db.js
+*.md
+.env.local
+.git/
+node_modules/
+.DS_Store

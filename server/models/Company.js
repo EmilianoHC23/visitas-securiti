@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 
 const companySchema = new mongoose.Schema({
+  companyId: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
   name: {
     type: String,
     required: true,
@@ -32,7 +38,7 @@ const companySchema = new mongoose.Schema({
     type: String,
     unique: true,
     default: function() {
-      return `QR_${this._id}_${Date.now()}`;
+      return `QR_${this.companyId}_${Date.now()}`;
     }
   },
   isActive: {

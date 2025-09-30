@@ -10,13 +10,13 @@ router.get('/config', auth, async (req, res) => {
     console.log('User data:', req.user);
     console.log('Looking for company ID:', req.user.companyId);
 
-    let company = await Company.findOne({ _id: req.user.companyId });
+    let company = await Company.findOne({ companyId: req.user.companyId });
     
     if (!company) {
       console.log('Company not found, creating default company');
       // Create default company if not exists
       company = new Company({
-        _id: req.user.companyId,
+        companyId: req.user.companyId,
         name: 'Mi Empresa',
         settings: {
           autoApproval: false,
@@ -42,7 +42,7 @@ router.put('/config', auth, authorize('admin'), async (req, res) => {
     const { name, logo, settings } = req.body;
     
     const company = await Company.findOneAndUpdate(
-      { _id: req.user.companyId },
+      { companyId: req.user.companyId },
       { 
         name,
         logo,
@@ -59,7 +59,7 @@ router.put('/config', auth, authorize('admin'), async (req, res) => {
     res.json(company);
   } catch (error) {
     console.error('Update company config error:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
+    res.status(500).json({ message: 'Error interno del servidor', error: error.message });
   }
 });
 
@@ -68,13 +68,13 @@ router.get('/qr-code', auth, async (req, res) => {
   try {
     console.log('Getting QR code for company:', req.user.companyId);
     
-    let company = await Company.findOne({ _id: req.user.companyId });
+    let company = await Company.findOne({ companyId: req.user.companyId });
     
     if (!company) {
       console.log('Company not found for QR, creating default company');
       // Create default company if not exists
       company = new Company({
-        _id: req.user.companyId,
+        companyId: req.user.companyId,
         name: 'Mi Empresa',
         settings: {
           autoApproval: false,

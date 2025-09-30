@@ -16,7 +16,9 @@
       "src": "api/index.js",
       "use": "@vercel/node",
       "config": {
-        "maxLambdaSize": "50mb"
+        "maxLambdaSize": "50mb",
+        "maxDuration": 30,
+        "memory": 512
       }
     }
   ],
@@ -44,12 +46,6 @@
       "dest": "/dist/index.html"
     }
   ],
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 30,
-      "memory": 512
-    }
-  },
   "env": {
     "NODE_ENV": "production"
   }

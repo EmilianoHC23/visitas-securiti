@@ -6,7 +6,7 @@ require('dotenv').config();
 const resetAdminPassword = async () => {
   try {
     // Connect to MongoDB
-    const mongoURI = process.env.DATABASE_URL || 'mongodb+srv://emilianohercha23_db_user:visitasdb@visitassecuriti.aupqtqb.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=VisitasSecuriTI';
+    const mongoURI = process.env.DATABASE_URL || 'mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti';
     await mongoose.connect(mongoURI);
     console.log('✅ Connected to MongoDB Atlas');
 

@@ -10,6 +10,12 @@ interface NewUserData {
     password: string;
 }
 
+interface EditUserData {
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+}
+
 const RoleBadge: React.FC<{ role: UserRole }> = ({ role }) => {
     const roleStyles: Record<UserRole, string> = {
         [UserRole.ADMIN]: 'bg-red-100 text-red-800',
@@ -156,11 +162,123 @@ const InviteUserModal: React.FC<{
     );
 };
 
+const EditUserModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onUpdate: (userData: EditUserData) => void;
+    loading: boolean;
+    user: User | null;
+}> = ({ isOpen, onClose, onUpdate, loading, user }) => {
+    const [formData, setFormData] = useState<EditUserData>({
+        firstName: '',
+        lastName: '',
+        role: UserRole.HOST,
+    });
+
+    useEffect(() => {
+        if (user) {
+            setFormData({
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role,
+            });
+        }
+    }, [user]);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onUpdate(formData);
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setFormData(prev => ({
+            ...prev,
+            [e.target.name]: e.target.value
+        }));
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <h3 className="text-lg font-semibold mb-4">Editar Usuario</h3>
+                
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Nombre
+                        </label>
+                        <input
+                            type="text"
+                            name="firstName"
+                            value={formData.firstName}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Apellido
+                        </label>
+                        <input
+                            type="text"
+                            name="lastName"
+                            value={formData.lastName}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Rol
+                        </label>
+                        <select
+                            name="role"
+                            value={formData.role}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value={UserRole.HOST}>Host</option>
+                            <option value={UserRole.RECEPTION}>Recepcionista</option>
+                            <option value={UserRole.ADMIN}>Administrador</option>
+                        </select>
+                    </div>
+
+                    <div className="flex gap-3 pt-4">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="flex-1 px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                        >
+                            {loading ? 'Actualizando...' : 'Actualizar'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 export const UserManagementPage: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [inviteLoading, setInviteLoading] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editLoading, setEditLoading] = useState(false);
+    const [editingUser, setEditingUser] = useState<User | null>(null);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -200,8 +318,28 @@ export const UserManagementPage: React.FC = () => {
     };
 
     const handleEditUser = (user: User) => {
-        // Por ahora solo mostrar alerta, se puede implementar modal de edición
-        alert(`Función de editar usuario: ${user.firstName} ${user.lastName}`);
+        setEditingUser(user);
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdateUser = async (userData: EditUserData) => {
+        if (!editingUser) return;
+
+        try {
+            setEditLoading(true);
+            const updatedUser = await api.updateUser(editingUser._id, userData);
+            setUsers(prev => prev.map(user => 
+                user._id === editingUser._id ? updatedUser : user
+            ));
+            setIsEditModalOpen(false);
+            setEditingUser(null);
+            alert('Usuario actualizado exitosamente');
+        } catch (error) {
+            console.error('Error updating user:', error);
+            alert('Error al actualizar usuario');
+        } finally {
+            setEditLoading(false);
+        }
     };
 
     const handleDeleteUser = async (userId: string) => {
@@ -283,6 +421,17 @@ export const UserManagementPage: React.FC = () => {
                 onClose={() => setIsModalOpen(false)}
                 onInvite={handleInviteUser}
                 loading={inviteLoading}
+            />
+
+            <EditUserModal
+                isOpen={isEditModalOpen}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    setEditingUser(null);
+                }}
+                onUpdate={handleUpdateUser}
+                loading={editLoading}
+                user={editingUser}
             />
         </div>
     );

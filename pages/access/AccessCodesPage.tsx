@@ -273,17 +273,68 @@ export const AccessCodesPage: React.FC = () => {
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tipo de Código
+                  Título del Evento *
                 </label>
-                <select
-                  value={newAccess.type}
-                  onChange={(e) => setNewAccess({ ...newAccess, type: e.target.value as any })}
+                <input
+                  type="text"
+                  value={newAccess.title}
+                  onChange={(e) => setNewAccess({ ...newAccess, title: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="single-use">Uso único</option>
-                  <option value="time-limited">Por tiempo limitado</option>
-                  <option value="scheduled">Programado para evento</option>
-                </select>
+                  placeholder="Ej: Reunión de trabajo, Conferencia, etc."
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Descripción (opcional)
+                </label>
+                <textarea
+                  value={newAccess.description}
+                  onChange={(e) => setNewAccess({ ...newAccess, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                  placeholder="Descripción del evento o propósito de la visita"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Fecha del Evento *
+                </label>
+                <input
+                  type="date"
+                  value={newAccess.scheduleDate}
+                  onChange={(e) => setNewAccess({ ...newAccess, scheduleDate: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Hora de inicio
+                  </label>
+                  <input
+                    type="time"
+                    value={newAccess.scheduleStartTime}
+                    onChange={(e) => setNewAccess({ ...newAccess, scheduleStartTime: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Hora de fin
+                  </label>
+                  <input
+                    type="time"
+                    value={newAccess.scheduleEndTime}
+                    onChange={(e) => setNewAccess({ ...newAccess, scheduleEndTime: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
 
               <div>
@@ -296,92 +347,30 @@ export const AccessCodesPage: React.FC = () => {
                   value={newAccess.maxUses}
                   onChange={(e) => setNewAccess({ ...newAccess, maxUses: parseInt(e.target.value) })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
                 />
               </div>
 
-              {newAccess.type === 'time-limited' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Fecha y hora de expiración
-                  </label>
+              <div className="space-y-3">
+                <label className="flex items-center">
                   <input
-                    type="datetime-local"
-                    value={newAccess.expiresAt}
-                    onChange={(e) => setNewAccess({ ...newAccess, expiresAt: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
+                    type="checkbox"
+                    checked={newAccess.autoApproval}
+                    onChange={(e) => setNewAccess({ ...newAccess, autoApproval: e.target.checked })}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                </div>
-              )}
+                  <span className="ml-2 text-sm text-gray-700">Aprobación automática</span>
+                </label>
 
-              {newAccess.type === 'scheduled' && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nombre del Evento
-                    </label>
-                    <input
-                      type="text"
-                      value={newAccess.eventName}
-                      onChange={(e) => setNewAccess({ ...newAccess, eventName: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Reunión, Conferencia, etc."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Descripción del Evento
-                    </label>
-                    <textarea
-                      value={newAccess.eventDescription}
-                      onChange={(e) => setNewAccess({ ...newAccess, eventDescription: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      rows={3}
-                      placeholder="Descripción opcional del evento"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Fecha del Evento
-                    </label>
-                    <input
-                      type="date"
-                      value={newAccess.scheduledDate}
-                      onChange={(e) => setNewAccess({ ...newAccess, scheduledDate: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Hora de Inicio
-                      </label>
-                      <input
-                        type="time"
-                        value={newAccess.scheduledStartTime}
-                        onChange={(e) => setNewAccess({ ...newAccess, scheduledStartTime: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Hora de Fin
-                      </label>
-                      <input
-                        type="time"
-                        value={newAccess.scheduledEndTime}
-                        onChange={(e) => setNewAccess({ ...newAccess, scheduledEndTime: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={newAccess.allowGuests}
+                    onChange={(e) => setNewAccess({ ...newAccess, allowGuests: e.target.checked })}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Permitir invitados</span>
+                </label>
+              </div>
 
               <div className="flex space-x-3 pt-4">
                 <button

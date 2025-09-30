@@ -199,6 +199,26 @@ export const UserManagementPage: React.FC = () => {
         }
     };
 
+    const handleEditUser = (user: User) => {
+        // Por ahora solo mostrar alerta, se puede implementar modal de edición
+        alert(`Función de editar usuario: ${user.firstName} ${user.lastName}`);
+    };
+
+    const handleDeleteUser = async (userId: string) => {
+        if (!confirm('¿Estás seguro de que quieres desactivar este usuario?')) {
+            return;
+        }
+
+        try {
+            await api.deactivateUser(userId);
+            setUsers(prev => prev.filter(user => user._id !== userId));
+            alert('Usuario desactivado exitosamente');
+        } catch (error) {
+            console.error('Error deactivating user:', error);
+            alert('Error al desactivar usuario');
+        }
+    };
+
     return (
         <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="flex justify-between items-center mb-6">
@@ -238,8 +258,18 @@ export const UserManagementPage: React.FC = () => {
                                         <RoleBadge role={user.role} />
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <a href="#" className="font-medium text-securiti-blue-600 hover:underline mr-4">Editar</a>
-                                        <a href="#" className="font-medium text-red-600 hover:underline">Eliminar</a>
+                                        <button 
+                                            onClick={() => handleEditUser(user)}
+                                            className="font-medium text-securiti-blue-600 hover:underline mr-4"
+                                        >
+                                            Editar
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDeleteUser(user._id)}
+                                            className="font-medium text-red-600 hover:underline"
+                                        >
+                                            Eliminar
+                                        </button>
                                     </td>
                                 </tr>
                             ))}

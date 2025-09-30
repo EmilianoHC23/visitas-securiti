@@ -8,14 +8,16 @@ export const AccessCodesPage: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingAccess, setEditingAccess] = useState<Access | null>(null);
   const [newAccess, setNewAccess] = useState({
-    type: 'single-use' as 'single-use' | 'time-limited' | 'scheduled',
+    title: '',
+    description: '',
+    scheduleDate: '',
+    scheduleStartTime: '09:00',
+    scheduleEndTime: '17:00',
     maxUses: 1,
-    expiresAt: '',
-    scheduledDate: '',
-    scheduledStartTime: '',
-    scheduledEndTime: '',
-    eventName: '',
-    eventDescription: ''
+    autoApproval: true,
+    requireApproval: false,
+    allowGuests: false,
+    invitedEmails: [] as string[]
   });
 
   useEffect(() => {
@@ -36,50 +38,53 @@ export const AccessCodesPage: React.FC = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!newAccess.title || !newAccess.scheduleDate) {
+      alert('Título y fecha son requeridos');
+      return;
+    }
+
     try {
-      const accessData: any = {
-        type: newAccess.type,
-        maxUses: newAccess.maxUses
+      const accessData = {
+        title: newAccess.title,
+        description: newAccess.description,
+        schedule: {
+          date: newAccess.scheduleDate,
+          startTime: newAccess.scheduleStartTime,
+          endTime: newAccess.scheduleEndTime,
+          recurrence: 'none'
+        },
+        settings: {
+          maxUses: newAccess.maxUses,
+          autoApproval: newAccess.autoApproval,
+          requireApproval: newAccess.requireApproval,
+          allowGuests: newAccess.allowGuests
+        },
+        invitedEmails: newAccess.invitedEmails
       };
-
-      if (newAccess.type === 'time-limited' && newAccess.expiresAt) {
-        accessData.expiresAt = new Date(newAccess.expiresAt);
-      }
-
-      if (newAccess.type === 'scheduled') {
-        if (newAccess.scheduledDate) {
-          accessData.scheduledDate = new Date(newAccess.scheduledDate);
-        }
-        if (newAccess.scheduledStartTime) {
-          accessData.scheduledStartTime = newAccess.scheduledStartTime;
-        }
-        if (newAccess.scheduledEndTime) {
-          accessData.scheduledEndTime = newAccess.scheduledEndTime;
-        }
-        if (newAccess.eventName) {
-          accessData.eventName = newAccess.eventName;
-        }
-        if (newAccess.eventDescription) {
-          accessData.eventDescription = newAccess.eventDescription;
-        }
-      }
 
       const createdAccess = await api.createAccess(accessData);
       setAccessCodes([createdAccess, ...accessCodes]);
+      
+      // Reset form
       setNewAccess({
-        type: 'single-use',
+        title: '',
+        description: '',
+        scheduleDate: '',
+        scheduleStartTime: '09:00',
+        scheduleEndTime: '17:00',
         maxUses: 1,
-        expiresAt: '',
-        scheduledDate: '',
-        scheduledStartTime: '',
-        scheduledEndTime: '',
-        eventName: '',
-        eventDescription: ''
+        autoApproval: true,
+        requireApproval: false,
+        allowGuests: false,
+        invitedEmails: []
       });
+      
       setShowCreateForm(false);
+      alert('Código de acceso creado exitosamente');
     } catch (error) {
       console.error('Error creating access code:', error);
-      alert('Error al crear código de acceso');
+      alert('Error al crear el código de acceso');
     }
   };
 

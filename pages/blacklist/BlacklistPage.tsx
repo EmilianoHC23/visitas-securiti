@@ -8,10 +8,9 @@ export const BlacklistPage: React.FC = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [newEntry, setNewEntry] = useState({
-    identifier: '',
-    identifierType: 'document' as 'document' | 'phone' | 'email',
-    reason: '',
-    notes: ''
+    email: '',
+    name: '',
+    reason: ''
   });
 
   useEffect(() => {
@@ -35,7 +34,7 @@ export const BlacklistPage: React.FC = () => {
     try {
       const entry = await api.addToBlacklist(newEntry);
       setBlacklistEntries([...blacklistEntries, entry]);
-      setNewEntry({ identifier: '', identifierType: 'document', reason: '', notes: '' });
+      setNewEntry({ email: '', name: '', reason: '' });
       setShowAddForm(false);
     } catch (error) {
       console.error('Error adding to blacklist:', error);

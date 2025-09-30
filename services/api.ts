@@ -233,14 +233,21 @@ export const getAccesses = async (): Promise<Access[]> => {
 };
 
 export const createAccess = async (accessData: {
-  type: 'single-use' | 'time-limited' | 'scheduled';
-  maxUses?: number;
-  expiresAt?: Date;
-  scheduledDate?: Date;
-  scheduledStartTime?: string;
-  scheduledEndTime?: string;
-  eventName?: string;
-  eventDescription?: string;
+  title: string;
+  description?: string;
+  schedule: {
+    date: string;
+    startTime: string;
+    endTime: string;
+    recurrence?: string;
+  };
+  settings: {
+    maxUses?: number;
+    autoApproval?: boolean;
+    requireApproval?: boolean;
+    allowGuests?: boolean;
+  };
+  invitedEmails?: string[];
 }): Promise<Access> => {
   return apiRequest('/access', {
     method: 'POST',

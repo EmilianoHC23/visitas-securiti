@@ -19,6 +19,7 @@ export const CompanyConfigPage: React.FC = () => {
       setConfig(companyConfig);
     } catch (error) {
       console.error('Error loading company config:', error);
+      alert('Error al cargar la configuración de empresa');
     } finally {
       setLoading(false);
     }
@@ -30,6 +31,7 @@ export const CompanyConfigPage: React.FC = () => {
       setQrInfo(qr);
     } catch (error) {
       console.error('Error loading QR info:', error);
+      // QR info is optional, don't show error to user
     }
   };
 

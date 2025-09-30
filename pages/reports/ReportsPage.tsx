@@ -43,15 +43,33 @@ export const ReportsPage: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [visitsData, analyticsData] = await Promise.all([
-        api.getVisits(),
-        api.getAdvancedAnalytics({ period, startDate, endDate })
-      ]);
       
+      // Load visits first
+      const visitsData = await api.getVisits();
       setVisits(visitsData);
-      setAnalytics(analyticsData);
+      
+      // Try to load analytics, but don't fail if it doesn't work
+      try {
+        const analyticsData = await api.getAdvancedAnalytics({ period, startDate, endDate });
+        setAnalytics(analyticsData);
+      } catch (analyticsError) {
+        console.error('Error loading analytics:', analyticsError);
+        // Set default analytics data if API fails
+        setAnalytics({
+          totalVisits: visitsData.length,
+          uniqueVisitors: 0,
+          averageStayTime: 0,
+          topHosts: [],
+          visitsByDay: [],
+          visitsByHour: [],
+          topCompanies: [],
+          visitsByStatus: [],
+          monthlyTrend: []
+        });
+      }
     } catch (error) {
       console.error('Error loading reports data:', error);
+      alert('Error al cargar los reportes');
     } finally {
       setLoading(false);
     }

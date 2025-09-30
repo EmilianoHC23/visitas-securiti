@@ -37,13 +37,36 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
     const { 
       title, 
       description, 
-      settings, 
       schedule, 
-      invitedEmails 
+      maxUses,
+      autoApproval,
+      allowGuests
     } = req.body;
 
-    if (!title || !schedule) {
-      return res.status(400).json({ message: 'Título y horario son requeridos' });
+    if (!title || !schedule?.date) {
+      return res.status(400).json({ message: 'Título y fecha son requeridos' });
+    }
+
+    // Convert date and time to proper Date objects
+    const startDate = new Date(schedule.date);
+    if (schedule.startTime) {
+      const [hours, minutes] = schedule.startTime.split(':');
+      startDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    } else {
+      startDate.setHours(9, 0, 0, 0); // Default 9:00 AM
+    }
+
+    const endDate = new Date(schedule.date);
+    if (schedule.endTime) {
+      const [hours, minutes] = schedule.endTime.split(':');
+      endDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    } else {
+      endDate.setHours(17, 0, 0, 0); // Default 5:00 PM
+    }
+
+    // If end time is before start time, assume it's next day
+    if (endDate <= startDate) {
+      endDate.setDate(endDate.getDate() + 1);
     }
 
     const access = new Access({
@@ -52,17 +75,18 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
       createdBy: req.user._id,
       companyId: req.user.companyId,
       settings: {
-        autoApproval: settings?.autoApproval || true,
-        maxUses: settings?.maxUses || 1,
-        allowGuests: settings?.allowGuests || false,
-        requireApproval: settings?.requireApproval || false
+        autoApproval: autoApproval || true,
+        maxUses: maxUses || 1,
+        allowGuests: allowGuests || false,
+        requireApproval: !autoApproval || false
       },
-      schedule,
-      invitedEmails: invitedEmails?.map(email => ({
-        email,
-        sentAt: new Date(),
-        status: 'sent'
-      })) || []
+      schedule: {
+        startDate,
+        endDate,
+        startTime: schedule.startTime || '09:00',
+        endTime: schedule.endTime || '17:00',
+        recurrence: 'none'
+      }
     });
 
     await access.save();
@@ -71,7 +95,7 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
     res.status(201).json(access);
   } catch (error) {
     console.error('Create access error:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
+    res.status(500).json({ message: 'Error interno del servidor', error: error.message });
   }
 });
 

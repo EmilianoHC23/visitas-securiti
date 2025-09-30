@@ -15,6 +15,14 @@ VITE_ENVIRONMENT=production
 ### URL de la API (actualizar con tu dominio de Vercel)
 VITE_PROD_API_URL=https://tu-app-name.vercel.app/api
 
+### Configuración de Email (Nuevas Variables)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=notificaciones@tuempresa.com
+SMTP_PASS=tu-password-de-aplicacion
+FRONTEND_URL=https://tu-app-name.vercel.app
+ADMIN_EMAILS=admin@tuempresa.com,supervisor@tuempresa.com
+
 ---
 
 ## Pasos para configurar en Vercel:

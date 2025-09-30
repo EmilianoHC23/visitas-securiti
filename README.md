@@ -42,6 +42,16 @@ Desarrollado con React 19, Node.js, Express, MongoDB Atlas y desplegado en Verce
 - ✅ Exportación de datos en JSON/CSV
 - ✅ Análisis de tendencias y patrones
 
+### 📧 **NUEVA: Sistema de Notificaciones**
+- ✅ **Notificaciones automáticas por email**
+- ✅ **Confirmación a visitantes** al registrar visitas
+- ✅ **Alertas a anfitriones** sobre nuevas visitas
+- ✅ **Notificación de aprobación** de visitas
+- ✅ **Códigos QR por email** para acceso fácil
+- ✅ **Alertas administrativas** del sistema
+- ✅ **Templates HTML profesionales** para emails
+- ✅ **Configuración SMTP flexible** (Gmail, SendGrid, etc.)
+
 ## 🚀 Despliegue en Vercel
 
 ### ⚡ Despliegue Automático
@@ -57,6 +67,14 @@ Desarrollado con React 19, Node.js, Express, MongoDB Atlas y desplegado en Verce
    DATABASE_URL=mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti
    JWT_SECRET=Prod_VisitasSecuriTI_2025_Ultra_Secure_JWT_Secret_Key_For_Production_Only!@#$%
    NODE_ENV=production
+   
+   # Configuración de Email (Opcional - para notificaciones)
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=notificaciones@tuempresa.com
+   SMTP_PASS=tu-password-de-aplicacion
+   FRONTEND_URL=https://tu-app.vercel.app
+   ADMIN_EMAILS=admin@tuempresa.com
    ```
 
 4. **Despliega:**
@@ -97,8 +115,13 @@ VITE_ENVIRONMENT=development
 DATABASE_URL=mongodb://localhost:27017/visitas-securiti
 JWT_SECRET=tu-clave-secreta-super-segura
 
-# Gemini API (opcional)
-GEMINI_API_KEY=tu-api-key-aqui
+# Email Configuration (Opcional - para notificaciones)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=tu-email@gmail.com
+SMTP_PASS=tu-password-de-aplicacion
+FRONTEND_URL=http://localhost:3000
+ADMIN_EMAILS=admin@empresa.com
 
 # Production API URL (para Vercel)
 VITE_PROD_API_URL=https://tu-app.vercel.app/api
@@ -107,7 +130,11 @@ VITE_PROD_API_URL=https://tu-app.vercel.app/api
 ### 4. Inicializar la base de datos
 
 ```bash
+# Para desarrollo (datos de prueba)
 npm run init-db
+
+# Para producción (datos realistas)
+npm run init-production
 ```
 
 ### 5. Ejecutar en desarrollo
@@ -126,10 +153,22 @@ La aplicación estará disponible en `http://localhost:3000`
 
 Después de inicializar la base de datos:
 
+### 🔑 Credenciales de desarrollo:
 - **Admin**: admin@securiti.com / password
 - **Recepción**: reception@securiti.com / password  
-- **Host 1**: host1@securiti.com / password
-- **Host 2**: host2@securiti.com / password
+- **Hosts**:
+  - Juan Pérez: juan.perez@securiti.com / password
+  - Ana García: ana.garcia@securiti.com / password
+  - Carlos Rodríguez: carlos.rodriguez@securiti.com / password
+  - Sofía López: sofia.lopez@securiti.com / password
+
+### 📧 Configuración de Email
+
+Para habilitar las notificaciones por email, consulta: [EMAIL_SETUP.md](./EMAIL_SETUP.md)
+
+- Configuración para Gmail, SendGrid, Mailgun, etc.
+- Variables de entorno necesarias
+- Troubleshooting y verificación
 
 ## 🏗️ Arquitectura
 
@@ -146,11 +185,21 @@ Después de inicializar la base de datos:
 - **Authentication**: JWT
 - **Security**: bcryptjs para hash de contraseñas
 - **CORS**: Configurado para development y production
+- **Email**: Nodemailer para notificaciones automáticas
 
 ### Base de Datos (MongoDB)
 - **Users**: Gestión de usuarios con roles
 - **Visits**: Registro completo de visitas
+- **Companies**: Configuración empresarial
+- **Blacklist**: Lista negra de visitantes
+- **Access**: Códigos de acceso QR
 - **Indexes**: Optimizados para consultas frecuentes
+
+### 📧 Sistema de Notificaciones
+- **Service**: EmailService con nodemailer
+- **Templates**: HTML profesionales para cada tipo
+- **Proveedores**: Gmail, SendGrid, Mailgun, Outlook
+- **Tipos**: Confirmaciones, alertas, aprobaciones, códigos QR
 
 ## 📊 API Endpoints
 

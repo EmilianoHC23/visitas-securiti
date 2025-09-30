@@ -1,6 +1,7 @@
 const express = require('express');
 const User = require('../models/User');
 const { auth, authorize } = require('../middleware/auth');
+const emailService = require('../services/emailService');
 
 const router = express.Router();
 
@@ -63,6 +64,15 @@ router.post('/', auth, authorize('admin'), async (req, res) => {
     });
 
     await user.save();
+    
+    // Send notification to admin about new user
+    await emailService.sendAdminNotification('new_user', {
+      userEmail: email,
+      userName: `${firstName} ${lastName}`,
+      role: role,
+      createdBy: `${req.user.firstName} ${req.user.lastName}`,
+      createdAt: new Date().toISOString()
+    });
     
     res.status(201).json(user);
   } catch (error) {

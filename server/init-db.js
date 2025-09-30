@@ -16,26 +16,26 @@ const initializeDatabase = async () => {
       console.log('🗑️ Cleared existing data');
     }
 
-    // Create default users
+    // Create default users with realistic data
     const defaultUsers = [
       {
         email: 'admin@securiti.com',
         password: 'password',
-        firstName: 'Admin',
-        lastName: 'Usuario',
+        firstName: 'Carlos',
+        lastName: 'Administrador',
         role: 'admin',
         companyId: 'comp-1'
       },
       {
         email: 'reception@securiti.com',
         password: 'password',
-        firstName: 'Recepcionista',
-        lastName: 'Principal',
+        firstName: 'María',
+        lastName: 'Recepcionista',
         role: 'reception',
         companyId: 'comp-1'
       },
       {
-        email: 'host1@securiti.com',
+        email: 'juan.perez@securiti.com',
         password: 'password',
         firstName: 'Juan',
         lastName: 'Pérez',
@@ -43,7 +43,7 @@ const initializeDatabase = async () => {
         companyId: 'comp-1'
       },
       {
-        email: 'host2@securiti.com',
+        email: 'ana.garcia@securiti.com',
         password: 'password',
         firstName: 'Ana',
         lastName: 'García',
@@ -51,10 +51,18 @@ const initializeDatabase = async () => {
         companyId: 'comp-1'
       },
       {
-        email: 'host3@securiti.com',
+        email: 'carlos.rodriguez@securiti.com',
         password: 'password',
         firstName: 'Carlos',
         lastName: 'Rodríguez',
+        role: 'host',
+        companyId: 'comp-1'
+      },
+      {
+        email: 'sofia.lopez@securiti.com',
+        password: 'password',
+        firstName: 'Sofía',
+        lastName: 'López',
         role: 'host',
         companyId: 'comp-1'
       }
@@ -71,55 +79,55 @@ const initializeDatabase = async () => {
     
     console.log('👥 Created default users with hashed passwords');
 
-    // Create sample visits
+    // Create sample visits with realistic data
     const hosts = createdUsers.filter(user => user.role === 'host');
     const sampleVisits = [
       {
-        visitorName: 'María González',
-        visitorCompany: 'Tech Solutions SA',
-        reason: 'Reunión de negocios',
-        host: hosts[0]._id,
-        status: 'pending',
-        scheduledDate: new Date(),
-        companyId: 'comp-1',
-        visitorEmail: 'maria@techsolutions.com',
-        visitorPhone: '+1234567890'
-      },
-      {
         visitorName: 'Roberto Silva',
-        visitorCompany: 'Digital Corp',
-        reason: 'Presentación de proyecto',
-        host: hosts[1]._id,
-        status: 'approved',
-        scheduledDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-        companyId: 'comp-1',
-        visitorEmail: 'roberto@digitalcorp.com',
-        visitorPhone: '+1234567891'
-      },
-      {
-        visitorName: 'Laura Martínez',
-        visitorCompany: 'Innovate Inc',
-        reason: 'Consultoría técnica',
+        visitorCompany: 'TechCorp Solutions',
+        reason: 'Reunión estratégica de negocios',
         host: hosts[0]._id,
-        status: 'checked-in',
-        scheduledDate: new Date(),
-        checkInTime: new Date(),
+        status: 'approved',
+        scheduledDate: new Date(Date.now() + 2 * 60 * 60 * 1000), // En 2 horas
         companyId: 'comp-1',
-        visitorEmail: 'laura@innovate.com',
-        visitorPhone: '+1234567892'
+        visitorEmail: 'roberto.silva@techcorp.com',
+        visitorPhone: '+521234567890'
       },
       {
-        visitorName: 'Diego Fernández',
-        visitorCompany: 'StartupXYZ',
-        reason: 'Demo de producto',
-        host: hosts[2] ? hosts[2]._id : hosts[0]._id,
+        visitorName: 'Isabel Méndez',
+        visitorCompany: 'Innovación Digital SA',
+        reason: 'Presentación de proyecto IoT',
+        host: hosts[1]._id,
+        status: 'pending',
+        scheduledDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Mañana
+        companyId: 'comp-1',
+        visitorEmail: 'isabel.mendez@innovacion.com',
+        visitorPhone: '+521234567891'
+      },
+      {
+        visitorName: 'Fernando Gutiérrez',
+        visitorCompany: 'Consultoría TI Avanzada',
+        reason: 'Auditoría de seguridad informática',
+        host: hosts[2]._id,
+        status: 'checked-in',
+        scheduledDate: new Date(Date.now() - 30 * 60 * 1000), // Hace 30 minutos
+        checkInTime: new Date(Date.now() - 15 * 60 * 1000), // Hace 15 minutos
+        companyId: 'comp-1',
+        visitorEmail: 'fernando.gutierrez@consultoria.com',
+        visitorPhone: '+521234567892'
+      },
+      {
+        visitorName: 'Patricia Vega',
+        visitorCompany: 'Sistemas Empresariales México',
+        reason: 'Capacitación en ciberseguridad',
+        host: hosts[3] ? hosts[3]._id : hosts[0]._id,
         status: 'completed',
         scheduledDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday
         checkInTime: new Date(Date.now() - 24 * 60 * 60 * 1000),
         checkOutTime: new Date(Date.now() - 22 * 60 * 60 * 1000),
         companyId: 'comp-1',
-        visitorEmail: 'diego@startupxyz.com',
-        visitorPhone: '+1234567893'
+        visitorEmail: 'patricia.vega@sistemasem.com',
+        visitorPhone: '+521234567893'
       }
     ];
 
@@ -127,12 +135,14 @@ const initializeDatabase = async () => {
     console.log('📋 Created sample visits');
 
     console.log('\n✅ Database initialized successfully!');
-    console.log('\n📊 Default login credentials:');
-    console.log('Admin: admin@securiti.com / password');
-    console.log('Reception: reception@securiti.com / password');
-    console.log('Host 1: host1@securiti.com / password');
-    console.log('Host 2: host2@securiti.com / password');
-    console.log('Host 3: host3@securiti.com / password');
+    console.log('\n📊 Credenciales de acceso actualizadas:');
+    console.log('👑 Admin: admin@securiti.com / password');
+    console.log('📥 Recepción: reception@securiti.com / password');
+    console.log('🏢 Hosts:');
+    console.log('   - Juan Pérez: juan.perez@securiti.com / password');
+    console.log('   - Ana García: ana.garcia@securiti.com / password');
+    console.log('   - Carlos Rodríguez: carlos.rodriguez@securiti.com / password');
+    console.log('   - Sofía López: sofia.lopez@securiti.com / password');
 
   } catch (error) {
     console.error('❌ Error initializing database:', error);

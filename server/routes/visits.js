@@ -1,7 +1,9 @@
 const express = require('express');
 const Visit = require('../models/Visit');
 const User = require('../models/User');
+const Company = require('../models/Company');
 const { auth, authorize } = require('../middleware/auth');
+const emailService = require('../services/emailService');
 
 const router = express.Router();
 
@@ -75,6 +77,10 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ message: 'Host no válido' });
     }
 
+    // Get company settings for auto-approval
+    const company = await Company.findOne({ _id: host.companyId });
+    const autoApproval = company?.settings?.autoApproval || false;
+
     const visit = new Visit({
       visitorName,
       visitorCompany,
@@ -83,11 +89,45 @@ router.post('/', auth, async (req, res) => {
       scheduledDate: new Date(scheduledDate),
       companyId: req.user.companyId,
       visitorEmail,
-      visitorPhone
+      visitorPhone,
+      status: autoApproval ? 'approved' : 'pending'
     });
 
     await visit.save();
     await visit.populate('host', 'firstName lastName email profileImage');
+
+    // Send email notifications
+    if (visitorEmail) {
+      // Send confirmation to visitor
+      const visitData = {
+        visitorName,
+        visitorEmail,
+        visitorCompany,
+        reason,
+        scheduledDate,
+        hostName: `${host.firstName} ${host.lastName}`,
+        status: visit.status,
+        companyName: company?.name || 'Visitas SecuriTI'
+      };
+
+      await emailService.sendVisitorConfirmation(visitData);
+    }
+
+    // Send notification to host
+    if (host.email) {
+      const visitData = {
+        visitorName,
+        visitorCompany,
+        visitorEmail: visitorEmail || 'No proporcionado',
+        visitorPhone: visitorPhone || 'No proporcionado',
+        reason,
+        scheduledDate,
+        hostName: `${host.firstName} ${host.lastName}`,
+        status: visit.status
+      };
+
+      await emailService.sendNewVisitNotification(visitData, host.email, company?.settings);
+    }
 
     res.status(201).json(visit);
   } catch (error) {
@@ -145,15 +185,17 @@ router.put('/:id/status', auth, async (req, res) => {
       return res.status(400).json({ message: 'Estado no válido' });
     }
 
-    const visit = await Visit.findById(id);
+    const visit = await Visit.findById(id).populate('host', 'firstName lastName email');
     if (!visit) {
       return res.status(404).json({ message: 'Visita no encontrada' });
     }
 
     // Check permissions
-    if (req.user.role === 'host' && visit.host.toString() !== req.user._id.toString()) {
+    if (req.user.role === 'host' && visit.host._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'No tienes permisos para modificar esta visita' });
     }
+
+    const previousStatus = visit.status;
 
     // Update timestamps based on status
     const updateData = { status };
@@ -169,6 +211,22 @@ router.put('/:id/status', auth, async (req, res) => {
       updateData,
       { new: true }
     ).populate('host', 'firstName lastName email profileImage');
+
+    // Send email notification if visit was approved and has visitor email
+    if (previousStatus === 'pending' && status === 'approved' && visit.visitorEmail) {
+      const company = await Company.findOne({ _id: visit.companyId });
+      
+      const visitData = {
+        visitorName: visit.visitorName,
+        visitorEmail: visit.visitorEmail,
+        scheduledDate: visit.scheduledDate,
+        hostName: `${visit.host.firstName} ${visit.host.lastName}`,
+        reason: visit.reason,
+        companyName: company?.name || 'Visitas SecuriTI'
+      };
+
+      await emailService.sendVisitApprovalNotification(visitData);
+    }
 
     res.json(updatedVisit);
   } catch (error) {

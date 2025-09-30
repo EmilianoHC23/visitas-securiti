@@ -1,7 +1,30 @@
 # Archivos y directorios a ignorar en el deployment de Vercel
-server/init-db.js
-*.md
-.env.local
-.git/
+
+# Development and build files
 node_modules/
+.env.local
+.env.development
+*.log
 .DS_Store
+Thumbs.db
+
+# Development tools
+.vscode/
+.idea/
+
+# Git files
+.git/
+.gitignore
+
+# Documentation (keep README.md for GitHub)
+# *.md
+
+# Server initialization (not needed in production)
+server/init-db.js
+
+# Keep these for deployment:
+# - dist/ (frontend)
+# - api/ (serverless functions)
+# - server/ (backend code)
+# - package.json
+# - vercel.json

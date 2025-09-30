@@ -42,6 +42,37 @@
 
 ## 🔍 Troubleshooting
 
+### ⚠️ Configuration Settings Differ Error:
+
+If you see "Configuration Settings differ from Production deployment":
+
+1. **Go to Vercel Dashboard:**
+   - Open your project settings
+   - Go to "Build & Output Settings"
+
+2. **Verify these settings:**
+   ```
+   Framework Preset: Other
+   Build Command: npm run build
+   Output Directory: dist
+   Install Command: npm install
+   ```
+
+3. **Environment Variables must include:**
+   ```env
+   DATABASE_URL=mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti
+   JWT_SECRET=Prod_VisitasSecuriTI_2025_Ultra_Secure_JWT_Secret_Key_For_Production_Only!@#$%
+   NODE_ENV=production
+   ```
+
+4. **Force a fresh deployment:**
+   - Go to Deployments tab
+   - Click "Redeploy" on latest deployment
+   - Uncheck "Use existing Build Cache"
+   - Click "Redeploy"
+
+## 🔍 Troubleshooting
+
 ### Common Issues:
 
 1. **Build Fails:**

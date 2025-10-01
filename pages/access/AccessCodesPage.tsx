@@ -115,25 +115,12 @@ export const AccessCodesPage: React.FC = () => {
     }
   };
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'single-use': return 'Uso único';
-      case 'time-limited': return 'Por tiempo';
-      case 'scheduled': return 'Programado';
-      default: return type;
-    }
-  };
-
   const getStatusLabel = (access: Access) => {
-    if (!access.isActive) return 'Inactivo';
+    if (access.status === 'cancelled') return 'Inactivo';
+    if (access.status === 'expired') return 'Expirado';
     
-    if (access.type === 'time-limited' && access.expiresAt) {
-      if (new Date(access.expiresAt) < new Date()) {
-        return 'Expirado';
-      }
-    }
-
-    if (access.type === 'single-use' && access.maxUses && access.currentUses >= access.maxUses) {
+    // Check if max uses reached
+    if (access.settings?.maxUses && access.usageCount >= access.settings.maxUses) {
       return 'Agotado';
     }
 
@@ -198,19 +185,19 @@ export const AccessCodesPage: React.FC = () => {
                   <tr key={access._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-mono font-medium text-gray-900">
-                        {access.code}
+                        {access.accessCode}
                       </div>
-                      {access.eventName && (
-                        <div className="text-sm text-gray-500">{access.eventName}</div>
+                      {access.title && (
+                        <div className="text-sm text-gray-500">{access.title}</div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {getTypeLabel(access.type)}
+                        Evento
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {access.currentUses} / {access.maxUses || '∞'}
+                      {access.usageCount} / {access.settings?.maxUses || '∞'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(access)}`}>
@@ -218,19 +205,13 @@ export const AccessCodesPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {access.type === 'time-limited' && access.expiresAt && (
-                        <div>Expira: {new Date(access.expiresAt).toLocaleString()}</div>
-                      )}
-                      {access.type === 'scheduled' && access.scheduledDate && (
+                      {access.schedule?.from && access.schedule?.to && (
                         <div>
-                          <div>Fecha: {new Date(access.scheduledDate).toLocaleDateString()}</div>
-                          {access.scheduledStartTime && access.scheduledEndTime && (
-                            <div>Hora: {access.scheduledStartTime} - {access.scheduledEndTime}</div>
-                          )}
+                          <div>Fecha: {access.schedule.from} - {access.schedule.to}</div>
                         </div>
                       )}
-                      {access.eventDescription && (
-                        <div className="text-xs text-gray-400 mt-1">{access.eventDescription}</div>
+                      {access.description && (
+                        <div className="text-xs text-gray-400 mt-1">{access.description}</div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">

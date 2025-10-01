@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const Visit = require('../models/Visit');
 const User = require('../models/User');
 const Company = require('../models/Company');
@@ -81,8 +82,24 @@ router.post('/', auth, async (req, res) => {
     }
 
     // Get company settings for auto-approval
-    const company = await Company.findOne({ _id: host.companyId });
-    const autoApproval = company?.settings?.autoApproval || false;
+    let company = null;
+    let autoApproval = false;
+    
+    try {
+      // Validate that host.companyId is a valid ObjectId
+      if (host.companyId && mongoose.Types.ObjectId.isValid(host.companyId)) {
+        company = await Company.findOne({ _id: host.companyId });
+        autoApproval = company?.settings?.autoApproval || false;
+      } else {
+        console.log('⚠️ Invalid companyId for host:', { hostId, companyId: host.companyId });
+        // Use default company settings if companyId is invalid
+        autoApproval = false;
+      }
+    } catch (error) {
+      console.log('⚠️ Error fetching company settings:', error.message);
+      autoApproval = false;
+    }
+    
     console.log('🏢 Company settings:', { autoApproval, companyId: host.companyId });
 
     const visit = new Visit({

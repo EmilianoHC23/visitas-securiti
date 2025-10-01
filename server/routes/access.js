@@ -34,20 +34,33 @@ router.get('/', auth, authorize(['admin', 'host']), async (req, res) => {
 // Create new access code
 router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
   try {
+    console.log('=== CREATE ACCESS CODE DEBUG ===');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('User:', JSON.stringify(req.user, null, 2));
+
     const { 
       title, 
       description, 
       schedule, 
-      maxUses,
-      autoApproval,
-      allowGuests
+      settings,
+      invitedEmails
     } = req.body;
 
+    console.log('Extracted values:', {
+      title,
+      description,
+      schedule,
+      settings,
+      invitedEmails
+    });
+
     if (!title || !schedule?.date) {
+      console.log('Validation failed: missing title or schedule.date');
       return res.status(400).json({ message: 'Título y fecha son requeridos' });
     }
 
     // Convert date and time to proper Date objects
+    console.log('Creating start date from:', schedule.date);
     const startDate = new Date(schedule.date);
     if (schedule.startTime) {
       const [hours, minutes] = schedule.startTime.split(':');
@@ -56,6 +69,7 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
       startDate.setHours(9, 0, 0, 0); // Default 9:00 AM
     }
 
+    console.log('Creating end date from:', schedule.date);
     const endDate = new Date(schedule.date);
     if (schedule.endTime) {
       const [hours, minutes] = schedule.endTime.split(':');
@@ -69,32 +83,51 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
       endDate.setDate(endDate.getDate() + 1);
     }
 
-    const access = new Access({
+    console.log('Computed dates:', {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString()
+    });
+
+    const accessData = {
       title,
       description,
       createdBy: req.user._id,
       companyId: req.user.companyId,
       settings: {
-        autoApproval: autoApproval || true,
-        maxUses: maxUses || 1,
-        allowGuests: allowGuests || false,
-        requireApproval: !autoApproval || false
+        autoApproval: settings?.autoApproval || true,
+        maxUses: settings?.maxUses || 1,
+        allowGuests: settings?.allowGuests || false,
+        requireApproval: settings?.requireApproval || false
       },
       schedule: {
         startDate,
         endDate,
         startTime: schedule.startTime || '09:00',
         endTime: schedule.endTime || '17:00',
-        recurrence: 'none'
-      }
-    });
+        recurrence: schedule.recurrence || 'none'
+      },
+      invitedEmails: invitedEmails?.map(email => ({
+        email,
+        sentAt: new Date(),
+        status: 'sent'
+      })) || []
+    };
 
+    console.log('Access data to save:', JSON.stringify(accessData, null, 2));
+
+    const access = new Access(accessData);
+    console.log('Access model created, attempting to save...');
+    
     await access.save();
+    console.log('Access saved successfully');
+    
     await access.populate('createdBy', 'firstName lastName email');
+    console.log('Access populated successfully');
 
     res.status(201).json(access);
   } catch (error) {
     console.error('Create access error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ message: 'Error interno del servidor', error: error.message });
   }
 });

@@ -7,6 +7,7 @@ export const AccessCodesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingAccess, setEditingAccess] = useState<Access | null>(null);
+  const [selectedQR, setSelectedQR] = useState<Access | null>(null);
   const [newAccess, setNewAccess] = useState({
     title: '',
     description: '',
@@ -216,6 +217,13 @@ export const AccessCodesPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <button
+                        onClick={() => setSelectedQR(access)}
+                        className="text-blue-600 hover:text-blue-900"
+                        title="Ver código QR"
+                      >
+                        QR
+                      </button>
+                      <button
                         onClick={() => handleToggleStatus(access._id, access.status)}
                         className={`${
                           access.status === 'active' ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'
@@ -370,6 +378,66 @@ export const AccessCodesPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para mostrar código QR */}
+      {selectedQR && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 text-center">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Código QR de Acceso
+            </h3>
+            
+            <div className="mb-4">
+              <div className="text-sm text-gray-600 mb-2">
+                <strong>Evento:</strong> {selectedQR.title}
+              </div>
+              <div className="text-sm text-gray-600 mb-4">
+                <strong>Código:</strong> {selectedQR.accessCode}
+              </div>
+            </div>
+
+            {/* Contenedor para el código QR */}
+            <div className="flex justify-center mb-4">
+              <div className="bg-white p-4 border border-gray-200 rounded-lg">
+                <div id="qrcode" className="flex justify-center">
+                  {/* QR Code será generado aquí */}
+                  <div className="w-48 h-48 bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-gray-500 text-sm mb-2">Código QR</div>
+                      <div className="text-xs text-gray-400 font-mono break-all">
+                        {selectedQR.accessCode}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-xs text-gray-500 mb-4">
+              Los visitantes pueden escanear este código QR o usar el código de texto para registrarse
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  // Copiar código al portapapeles
+                  navigator.clipboard.writeText(selectedQR.accessCode);
+                  alert('Código copiado al portapapeles');
+                }}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Copiar Código
+              </button>
+              <button
+                onClick={() => setSelectedQR(null)}
+                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}

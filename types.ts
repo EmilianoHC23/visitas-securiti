@@ -93,19 +93,37 @@ export interface BlacklistEntry {
 
 export interface Access {
   _id: string;
-  code: string;
-  type: 'single-use' | 'time-limited' | 'scheduled';
-  expiresAt?: Date;
-  scheduledDate?: Date;
-  scheduledStartTime?: string;
-  scheduledEndTime?: string;
-  maxUses?: number;
-  currentUses: number;
-  eventName?: string;
-  eventDescription?: string;
-  isActive: boolean;
-  createdBy: string;
+  title: string;
+  description?: string;
+  accessCode: string;
+  qrCode: string;
+  createdBy: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
   companyId: string;
+  settings: {
+    autoApproval: boolean;
+    maxUses: number;
+    allowGuests: boolean;
+    requireApproval: boolean;
+  };
+  schedule: {
+    startDate: Date;
+    endDate: Date;
+    startTime: string;
+    endTime: string;
+    recurrence: 'none' | 'daily' | 'weekly' | 'monthly';
+  };
+  status: 'active' | 'expired' | 'cancelled';
+  usageCount: number;
+  invitedEmails: Array<{
+    email: string;
+    sentAt: Date;
+    status: 'sent' | 'opened' | 'redeemed';
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }export interface DashboardStats {

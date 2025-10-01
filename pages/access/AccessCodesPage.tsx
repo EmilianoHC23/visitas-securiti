@@ -88,9 +88,10 @@ export const AccessCodesPage: React.FC = () => {
     }
   };
 
-  const handleToggleStatus = async (id: string, isActive: boolean) => {
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
     try {
-      const updatedAccess = await api.updateAccess(id, { isActive: !isActive });
+      const newStatus = currentStatus === 'active' ? 'cancelled' : 'active';
+      const updatedAccess = await api.updateAccess(id, { status: newStatus });
       setAccessCodes(accessCodes.map(access => 
         access._id === id ? updatedAccess : access
       ));
@@ -234,12 +235,12 @@ export const AccessCodesPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <button
-                        onClick={() => handleToggleStatus(access._id, access.isActive)}
+                        onClick={() => handleToggleStatus(access._id, access.status)}
                         className={`${
-                          access.isActive ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'
+                          access.status === 'active' ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'
                         }`}
                       >
-                        {access.isActive ? 'Desactivar' : 'Activar'}
+                        {access.status === 'active' ? 'Desactivar' : 'Activar'}
                       </button>
                       <button
                         onClick={() => handleDelete(access._id)}

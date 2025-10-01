@@ -255,4 +255,81 @@ router.put('/:id/status', auth, authorize(['admin', 'host']), async (req, res) =
   }
 });
 
+// Update access code
+router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    console.log('=== UPDATE ACCESS CODE DEBUG ===');
+    console.log('Access ID:', id);
+    console.log('Updates:', JSON.stringify(updates, null, 2));
+
+    // Find the access code
+    const access = await Access.findById(id);
+    if (!access) {
+      return res.status(404).json({ message: 'Código de acceso no encontrado' });
+    }
+
+    // Check if user has permission to update this access
+    if (req.user.role === 'host' && access.createdBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'No tiene permisos para actualizar este código' });
+    }
+
+    // Verify company ownership
+    if (access.companyId !== req.user.companyId) {
+      return res.status(403).json({ message: 'No tiene permisos para actualizar este código' });
+    }
+
+    // Update the access code
+    const updatedAccess = await Access.findByIdAndUpdate(
+      id,
+      updates,
+      { new: true, runValidators: true }
+    ).populate('createdBy', 'firstName lastName email');
+
+    console.log('Access updated successfully');
+    res.json(updatedAccess);
+  } catch (error) {
+    console.error('Update access error:', error);
+    res.status(500).json({ message: 'Error interno del servidor', error: error.message });
+  }
+});
+
+// Delete access code
+router.delete('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log('=== DELETE ACCESS CODE DEBUG ===');
+    console.log('Access ID:', id);
+    console.log('User:', req.user.email);
+
+    // Find the access code
+    const access = await Access.findById(id);
+    if (!access) {
+      return res.status(404).json({ message: 'Código de acceso no encontrado' });
+    }
+
+    // Check if user has permission to delete this access
+    if (req.user.role === 'host' && access.createdBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'No tiene permisos para eliminar este código' });
+    }
+
+    // Verify company ownership
+    if (access.companyId !== req.user.companyId) {
+      return res.status(403).json({ message: 'No tiene permisos para eliminar este código' });
+    }
+
+    // Delete the access code
+    await Access.findByIdAndDelete(id);
+
+    console.log('Access deleted successfully');
+    res.json({ message: 'Código de acceso eliminado exitosamente' });
+  } catch (error) {
+    console.error('Delete access error:', error);
+    res.status(500).json({ message: 'Error interno del servidor', error: error.message });
+  }
+});
+
 module.exports = router;

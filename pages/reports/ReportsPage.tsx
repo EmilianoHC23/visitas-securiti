@@ -44,14 +44,29 @@ export const ReportsPage: React.FC = () => {
     try {
       setLoading(true);
       
-      // Load visits first
-      const visitsData = await api.getVisits();
-      setVisits(visitsData);
+      // Load visits first with error handling
+      let visitsData: Visit[] = [];
+      try {
+        visitsData = await api.getVisits();
+        // Ensure visitsData is an array
+        if (!Array.isArray(visitsData)) {
+          visitsData = [];
+        }
+        setVisits(visitsData);
+      } catch (visitsError) {
+        console.error('Error loading visits:', visitsError);
+        setVisits([]);
+        visitsData = [];
+      }
       
       // Try to load analytics, but don't fail if it doesn't work
       try {
         const analyticsData = await api.getAdvancedAnalytics({ period, startDate, endDate });
-        setAnalytics(analyticsData);
+        if (analyticsData) {
+          setAnalytics(analyticsData);
+        } else {
+          throw new Error('No analytics data received');
+        }
       } catch (analyticsError) {
         console.error('Error loading analytics:', analyticsError);
         // Set default analytics data if API fails
@@ -69,6 +84,19 @@ export const ReportsPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error loading reports data:', error);
+      // Set safe defaults
+      setVisits([]);
+      setAnalytics({
+        totalVisits: 0,
+        uniqueVisitors: 0,
+        averageStayTime: 0,
+        topHosts: [],
+        visitsByDay: [],
+        visitsByHour: [],
+        topCompanies: [],
+        visitsByStatus: [],
+        monthlyTrend: []
+      });
       alert('Error al cargar los reportes');
     } finally {
       setLoading(false);
@@ -197,7 +225,7 @@ export const ReportsPage: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Empresas Diferentes</p>
-                  <p className="text-2xl font-semibold text-gray-900">{analytics.topCompanies.length}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{analytics.topCompanies ? analytics.topCompanies.length : 0}</p>
                 </div>
               </div>
             </div>
@@ -209,14 +237,14 @@ export const ReportsPage: React.FC = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Anfitriones Más Activos</h3>
               <div className="space-y-3">
-                {analytics.topHosts.slice(0, 5).map((host, index) => (
+                {(analytics.topHosts || []).slice(0, 5).map((host, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <span className="text-sm text-gray-700">{host.name}</span>
                     <div className="flex items-center">
                       <div className="w-20 bg-gray-200 rounded-full h-2 mr-3">
                         <div 
                           className="bg-blue-600 h-2 rounded-full" 
-                          style={{ width: `${(host.count / analytics.topHosts[0].count) * 100}%` }}
+                          style={{ width: `${analytics.topHosts && analytics.topHosts[0] ? (host.count / analytics.topHosts[0].count) * 100 : 0}%` }}
                         ></div>
                       </div>
                       <span className="text-sm font-semibold text-gray-900">{host.count}</span>
@@ -230,7 +258,7 @@ export const ReportsPage: React.FC = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Empresas Más Frecuentes</h3>
               <div className="space-y-3">
-                {analytics.topCompanies.slice(0, 5).map((company, index) => (
+                {(analytics.topCompanies || []).slice(0, 5).map((company, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <span className="text-sm text-gray-700">{company.company || 'Sin empresa'}</span>
                     <div className="flex items-center">
@@ -251,7 +279,7 @@ export const ReportsPage: React.FC = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Distribución por Estado</h3>
               <div className="space-y-3">
-                {analytics.visitsByStatus.map((status, index) => (
+                {(analytics.visitsByStatus || []).map((status, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <span className="text-sm text-gray-700 capitalize">{status.status}</span>
                     <div className="flex items-center">
@@ -284,7 +312,7 @@ export const ReportsPage: React.FC = () => {
                       <div className="w-16 bg-gray-200 rounded-full h-2 mr-3">
                         <div 
                           className="bg-orange-600 h-2 rounded-full" 
-                          style={{ width: `${(hour.count / Math.max(...analytics.visitsByHour.map(h => h.count))) * 100}%` }}
+                          style={{ width: `${analytics.visitsByHour && analytics.visitsByHour.length > 0 ? (hour.count / Math.max(...analytics.visitsByHour.map(h => h.count))) * 100 : 0}%` }}
                         ></div>
                       </div>
                       <span className="text-sm font-semibold text-gray-900">{hour.count}</span>
@@ -322,7 +350,7 @@ export const ReportsPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {visits.slice(0, 10).map((visit) => (
+                  {visits && visits.length > 0 ? visits.slice(0, 10).map((visit) => (
                     <tr key={visit._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{visit.visitorName}</div>
@@ -347,7 +375,13 @@ export const ReportsPage: React.FC = () => {
                         </span>
                       </td>
                     </tr>
-                  ))}
+                  )) : (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                        No hay visitas para mostrar
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

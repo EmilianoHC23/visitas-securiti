@@ -125,4 +125,19 @@ router.delete('/:id', auth, authorize('admin'), async (req, res) => {
   }
 });
 
+// Get hosts publicly (for visitor registration)
+router.get('/public/hosts', async (req, res) => {
+  try {
+    // Get hosts from all companies for general registration
+    const hosts = await User.find({ 
+      role: 'host', 
+      isActive: true 
+    }).select('firstName lastName email _id companyId');
+    res.json(hosts);
+  } catch (error) {
+    console.error('Get public hosts error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 module.exports = router;

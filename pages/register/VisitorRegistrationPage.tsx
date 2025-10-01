@@ -26,7 +26,7 @@ export const VisitorRegistrationPage: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
-        api.getHosts()
+        api.getHostsPublic()
             .then(setHosts)
             .catch(() => setError('No se pudieron cargar los anfitriones.'));
     }, []);

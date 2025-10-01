@@ -141,6 +141,10 @@ export const getHosts = async (): Promise<User[]> => {
   return apiRequest('/users/hosts');
 };
 
+export const getHostsPublic = async (): Promise<User[]> => {
+  return apiRequest('/users/public/hosts');
+};
+
 export const createUser = async (userData: {
   email: string;
   password: string;

@@ -12,14 +12,13 @@ import { SettingsPage } from './pages/settings/SettingsPage';
 import { CompanyConfigPage } from './pages/settings/CompanyConfigPage';
 import { AccessCodesPage } from './pages/access/AccessCodesPage';
 import { BlacklistPage } from './pages/blacklist/BlacklistPage';
-import { PublicRegistrationPage } from './pages/public/PublicRegistrationPage';
 import { UserRole } from './types';
 import { VisitorRegistrationPage } from './pages/register/VisitorRegistrationPage';
 import { RedeemPage } from './pages/redeem/RedeemPage';
 
 const PublicRegistrationWrapper: React.FC = () => {
     const { qrCode } = useParams<{ qrCode: string }>();
-    return <PublicRegistrationPage qrCode={qrCode} />;
+    return <VisitorRegistrationPage accessCode={qrCode} />;
 };
 
 

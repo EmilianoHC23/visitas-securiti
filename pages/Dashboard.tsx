@@ -3,7 +3,6 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGri
 import { Visit, VisitStatus, DashboardStats } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { CheckCircleIcon, ClockIcon, LoginIcon } from '../components/common/icons';
-import { useApiError } from '../hooks/useApiError';
 import * as api from '../services/api';
 
 const StatCard: React.FC<{ title: string; value: string | number; icon: React.ReactNode; color: string }> = ({ title, value, icon, color }) => (
@@ -47,7 +46,8 @@ const RecentActivityItem: React.FC<{ visit: Visit }> = ({ visit }) => {
 
 export const Dashboard: React.FC = () => {
     const { user } = useAuth();
-    const { error, isLoading, handleApiCall, clearError } = useApiError();
+    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
     const [stats, setStats] = useState<DashboardStats>({ 
         active: 0, 
         pending: 0, 
@@ -63,10 +63,13 @@ export const Dashboard: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                setIsLoading(true);
+                setError(null);
+                
                 const [statsData, recentVisitsData, analytics] = await Promise.all([
-                    handleApiCall(() => api.getDashboardStats()),
-                    handleApiCall(() => api.getRecentVisits(5)),
-                    handleApiCall(() => api.getAnalytics('week'))
+                    api.getDashboardStats(),
+                    api.getRecentVisits(5),
+                    api.getAnalytics('week')
                 ]);
                 
                 if (statsData) setStats(statsData);
@@ -79,8 +82,11 @@ export const Dashboard: React.FC = () => {
                     }));
                     setAnalyticsData(chartData);
                 }
-            } catch (error) {
-                console.error("Failed to fetch dashboard data:", error);
+            } catch (error: any) {
+                console.error('Error fetching dashboard data:', error);
+                setError(error.message || 'Error al cargar los datos del dashboard');
+            } finally {
+                setIsLoading(false);
             }
         };
 
@@ -103,7 +109,7 @@ export const Dashboard: React.FC = () => {
             {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex justify-between items-center">
                     <span>{error}</span>
-                    <button onClick={clearError} className="text-red-700 hover:text-red-900">
+                    <button onClick={() => setError(null)} className="text-red-700 hover:text-red-900">
                         ×
                     </button>
                 </div>

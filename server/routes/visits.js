@@ -63,22 +63,27 @@ router.get('/:id', auth, async (req, res) => {
 // Create new visit
 router.post('/', auth, async (req, res) => {
   try {
+    console.log('📝 Creating visit - User:', req.user?.email, 'Company:', req.user?.companyId);
     const { visitorName, visitorCompany, reason, hostId, scheduledDate, visitorEmail, visitorPhone } = req.body;
+    console.log('📝 Visit data:', { visitorName, visitorCompany, reason, hostId, scheduledDate });
 
     // Validate required fields
     if (!visitorName || !visitorCompany || !reason || !hostId || !scheduledDate) {
+      console.log('❌ Missing required fields');
       return res.status(400).json({ message: 'Todos los campos requeridos deben ser proporcionados' });
     }
 
     // Verify host exists and is active
     const host = await User.findById(hostId);
     if (!host || !host.isActive || host.role !== 'host') {
+      console.log('❌ Invalid host:', { hostId, found: !!host, active: host?.isActive, role: host?.role });
       return res.status(400).json({ message: 'Host no válido' });
     }
 
     // Get company settings for auto-approval
     const company = await Company.findOne({ _id: host.companyId });
     const autoApproval = company?.settings?.autoApproval || false;
+    console.log('🏢 Company settings:', { autoApproval, companyId: host.companyId });
 
     const visit = new Visit({
       visitorName,

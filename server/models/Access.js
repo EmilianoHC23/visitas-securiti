@@ -21,7 +21,6 @@ const accessSchema = new mongoose.Schema({
   },
   accessCode: {
     type: String,
-    required: true,
     unique: true
   },
   qrCode: {

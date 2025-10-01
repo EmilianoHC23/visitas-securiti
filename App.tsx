@@ -15,6 +15,7 @@ import { BlacklistPage } from './pages/blacklist/BlacklistPage';
 import { PublicRegistrationPage } from './pages/public/PublicRegistrationPage';
 import { UserRole } from './types';
 import { VisitorRegistrationPage } from './pages/register/VisitorRegistrationPage';
+import { RedeemPage } from './pages/redeem/RedeemPage';
 
 const PublicRegistrationWrapper: React.FC = () => {
     const { qrCode } = useParams<{ qrCode: string }>();
@@ -34,6 +35,7 @@ const AppRoutes: React.FC = () => {
             <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<VisitorRegistrationPage />} />
+                <Route path="/redeem/:accessCode" element={<RedeemPage />} />
                 <Route path="/public/:qrCode" element={<PublicRegistrationWrapper />} />
                 <Route path="*" element={<Navigate to="/login" />} />
             </Routes>

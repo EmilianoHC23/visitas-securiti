@@ -336,3 +336,8 @@ export const exportReports = async (format: 'json' | 'csv', filters: any = {}) =
     body: JSON.stringify({ format, filters }),
   });
 };
+
+// --- ACCESS CODE REDEMPTION ---
+export const getAccessByCode = async (accessCode: string) => {
+  return apiRequest(`/access/public/${accessCode}`);
+};

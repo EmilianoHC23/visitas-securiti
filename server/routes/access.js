@@ -188,52 +188,64 @@ router.post('/redeem', async (req, res) => {
       maxUses: access.settings.maxUses
     });
 
-    // Check if access is within valid date range
+    // Check if access is within valid date range with flexible validation
     const now = new Date();
     const startDate = new Date(access.schedule.startDate);
     const endDate = new Date(access.schedule.endDate);
     
-    // Create date-only comparisons to avoid timezone issues
-    const currentDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-    const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+    // Extract just the date parts for comparison (ignore time completely)
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const currentDay = now.getDate();
+    
+    const startYear = startDate.getFullYear();
+    const startMonth = startDate.getMonth();
+    const startDay = startDate.getDate();
+    
+    const endYear = endDate.getFullYear();
+    const endMonth = endDate.getMonth();
+    const endDay = endDate.getDate();
+    
+    // Create simple date numbers for comparison (YYYYMMDD format)
+    const currentDateNum = currentYear * 10000 + currentMonth * 100 + currentDay;
+    const startDateNum = startYear * 10000 + startMonth * 100 + startDay;
+    const endDateNum = endYear * 10000 + endMonth * 100 + endDay;
     
     console.log('🕐 Date validation debug:');
     console.log('Access code:', accessCode);
     console.log('Access title:', access.title);
-    console.log('Current time:', now.toISOString());
-    console.log('Current date only:', currentDateOnly.toISOString());
-    console.log('Start date from DB:', startDate.toISOString());
-    console.log('Start date only:', startDateOnly.toISOString());
-    console.log('End date from DB:', endDate.toISOString());
-    console.log('End date only:', endDateOnly.toISOString());
-    console.log('Comparison results:');
-    console.log('  - Current < Start?', currentDateOnly < startDateOnly);
-    console.log('  - Current > End?', currentDateOnly > endDateOnly);
-    console.log('  - Current === Start?', currentDateOnly.getTime() === startDateOnly.getTime());
-    console.log('  - Current === End?', currentDateOnly.getTime() === endDateOnly.getTime());
-    console.log('Time differences:');
-    console.log('  - Current vs Start (days):', (currentDateOnly - startDateOnly) / (1000 * 60 * 60 * 24));
-    console.log('  - Current vs End (days):', (currentDateOnly - endDateOnly) / (1000 * 60 * 60 * 24));
+    console.log('Current date components:', { year: currentYear, month: currentMonth, day: currentDay });
+    console.log('Start date components:', { year: startYear, month: startMonth, day: startDay });
+    console.log('End date components:', { year: endYear, month: endMonth, day: endDay });
+    console.log('Date numbers for comparison:');
+    console.log('  - Current:', currentDateNum);
+    console.log('  - Start:', startDateNum);
+    console.log('  - End:', endDateNum);
+    console.log('Validation checks:');
+    console.log('  - Is after start?', currentDateNum >= startDateNum);
+    console.log('  - Is before end?', currentDateNum <= endDateNum);
     
-    // Make validation more flexible - allow codes to work on the exact start and end dates
-    const isWithinDateRange = currentDateOnly >= startDateOnly && currentDateOnly <= endDateOnly;
+    // Simple numeric comparison avoids all timezone issues
+    const isWithinDateRange = currentDateNum >= startDateNum && currentDateNum <= endDateNum;
     
     if (!isWithinDateRange) {
       console.log('❌ Access code date validation failed');
-      console.log('📅 Detailed date info:');
-      console.log('  - Access created at:', access.createdAt);
+      console.log('📅 Detailed info:');
+      console.log('  - Current date string:', now.toDateString());
+      console.log('  - Start date string:', startDate.toDateString());
+      console.log('  - End date string:', endDate.toDateString());
       console.log('  - Schedule object:', JSON.stringify(access.schedule, null, 2));
       
       return res.status(400).json({ 
         message: 'Código de acceso fuera del período válido',
         debug: {
-          currentDate: currentDateOnly.toISOString().split('T')[0],
-          validFrom: startDateOnly.toISOString().split('T')[0],
-          validUntil: endDateOnly.toISOString().split('T')[0],
+          currentDate: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`,
+          validFrom: `${startYear}-${String(startMonth + 1).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`,
+          validUntil: `${endYear}-${String(endMonth + 1).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`,
           accessTitle: access.title,
-          daysFromStart: Math.round((currentDateOnly - startDateOnly) / (1000 * 60 * 60 * 24)),
-          daysUntilEnd: Math.round((endDateOnly - currentDateOnly) / (1000 * 60 * 60 * 24))
+          currentDateNum,
+          startDateNum,
+          endDateNum
         }
       });
     }

@@ -24,38 +24,74 @@ router.get('/', auth, authorize(['admin', 'reception']), async (req, res) => {
 // Add to blacklist
 router.post('/', auth, authorize(['admin', 'reception']), async (req, res) => {
   try {
-    const { email, name, reason } = req.body;
+    const { 
+      email, 
+      name, 
+      reason,
+      identifierType,
+      identifier,
+      notes
+    } = req.body;
 
-    if (!email || !name || !reason) {
-      return res.status(400).json({ message: 'Email, nombre y razón son requeridos' });
+    console.log('Blacklist add request:', JSON.stringify(req.body, null, 2));
+
+    // Support both legacy format (email, name, reason) and new format (identifierType, identifier, reason)
+    let finalData;
+    
+    if (identifierType && identifier) {
+      // New format
+      if (!identifier || !reason) {
+        return res.status(400).json({ message: 'Identificador y razón son requeridos' });
+      }
+      
+      finalData = {
+        identifierType,
+        identifier,
+        reason,
+        notes,
+        // Set legacy fields for compatibility
+        email: identifierType === 'email' ? identifier : null,
+        name: identifierType !== 'email' ? identifier : `Usuario (${identifierType})`,
+        addedBy: req.user._id,
+        companyId: req.user.companyId
+      };
+    } else {
+      // Legacy format
+      if (!email || !name || !reason) {
+        return res.status(400).json({ message: 'Email, nombre y razón son requeridos' });
+      }
+      
+      finalData = {
+        identifierType: 'email',
+        identifier: email,
+        email,
+        name,
+        reason,
+        addedBy: req.user._id,
+        companyId: req.user.companyId
+      };
     }
 
-    // Check if already exists
+    // Check if already exists (check both identifier and email for compatibility)
     const existing = await Blacklist.findOne({ 
-      email, 
-      companyId: req.user.companyId,
-      isActive: true 
+      $or: [
+        { identifier: finalData.identifier, companyId: req.user.companyId, isActive: true },
+        { email: finalData.email, companyId: req.user.companyId, isActive: true }
+      ]
     });
 
     if (existing) {
       return res.status(400).json({ message: 'Esta persona ya está en la lista negra' });
     }
 
-    const blacklistEntry = new Blacklist({
-      email,
-      name,
-      reason,
-      addedBy: req.user._id,
-      companyId: req.user.companyId
-    });
-
+    const blacklistEntry = new Blacklist(finalData);
     await blacklistEntry.save();
     await blacklistEntry.populate('addedBy', 'firstName lastName email');
 
     res.status(201).json(blacklistEntry);
   } catch (error) {
     console.error('Add to blacklist error:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
+    res.status(500).json({ message: 'Error interno del servidor', error: error.message });
   }
 });
 

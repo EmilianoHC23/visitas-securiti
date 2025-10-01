@@ -8,9 +8,10 @@ export const BlacklistPage: React.FC = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [newEntry, setNewEntry] = useState({
-    email: '',
-    name: '',
-    reason: ''
+    identifierType: 'email' as 'document' | 'phone' | 'email',
+    identifier: '',
+    reason: '',
+    notes: ''
   });
 
   useEffect(() => {
@@ -31,10 +32,28 @@ export const BlacklistPage: React.FC = () => {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!newEntry.identifier || !newEntry.reason) {
+      alert('El identificador y la razón son requeridos');
+      return;
+    }
+    
     try {
-      const entry = await api.addToBlacklist(newEntry);
+      // Convert form data to backend format
+      const blacklistData = {
+        email: newEntry.identifierType === 'email' ? newEntry.identifier : '',
+        name: newEntry.identifierType !== 'email' ? newEntry.identifier : `Usuario (${newEntry.identifierType})`,
+        reason: newEntry.reason
+      };
+      
+      const entry = await api.addToBlacklist(blacklistData);
       setBlacklistEntries([...blacklistEntries, entry]);
-      setNewEntry({ email: '', name: '', reason: '' });
+      setNewEntry({ 
+        identifierType: 'email' as 'document' | 'phone' | 'email',
+        identifier: '',
+        reason: '',
+        notes: ''
+      });
       setShowAddForm(false);
     } catch (error) {
       console.error('Error adding to blacklist:', error);

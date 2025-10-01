@@ -1,20 +1,33 @@
 const mongoose = require('mongoose');
 
 const blacklistSchema = new mongoose.Schema({
-  email: {
+  identifierType: {
+    type: String,
+    enum: ['email', 'document', 'phone'],
+    default: 'email'
+  },
+  identifier: {
     type: String,
     required: true,
+    trim: true
+  },
+  // Mantener campos legacy para compatibilidad
+  email: {
+    type: String,
     lowercase: true,
     trim: true
   },
   name: {
     type: String,
-    required: true,
     trim: true
   },
   reason: {
     type: String,
     required: true
+  },
+  notes: {
+    type: String,
+    trim: true
   },
   addedBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -34,6 +47,7 @@ const blacklistSchema = new mongoose.Schema({
 });
 
 // Index compuesto para búsquedas rápidas
-blacklistSchema.index({ email: 1, companyId: 1 });
+blacklistSchema.index({ identifier: 1, companyId: 1 });
+blacklistSchema.index({ email: 1, companyId: 1 }); // Legacy
 
 module.exports = mongoose.model('Blacklist', blacklistSchema);

@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const Blacklist = require('../models/Blacklist');
 const { auth, authorize } = require('../middleware/auth');
 
@@ -24,6 +25,8 @@ router.get('/', auth, authorize(['admin', 'reception']), async (req, res) => {
 // Add to blacklist
 router.post('/', auth, authorize(['admin', 'reception']), async (req, res) => {
   try {
+    console.log('🚫 Adding to blacklist - User:', req.user?.email, 'Company:', req.user?.companyId);
+    
     const { 
       email, 
       name, 
@@ -34,6 +37,12 @@ router.post('/', auth, authorize(['admin', 'reception']), async (req, res) => {
     } = req.body;
 
     console.log('Blacklist add request:', JSON.stringify(req.body, null, 2));
+
+    // Validate that user.companyId is valid
+    if (!req.user.companyId || !mongoose.Types.ObjectId.isValid(req.user.companyId)) {
+      console.log('❌ Invalid companyId for user:', { userId: req.user._id, companyId: req.user.companyId });
+      return res.status(400).json({ message: 'Configuración de empresa inválida. Contacte al administrador.' });
+    }
 
     // Support both legacy format (email, name, reason) and new format (identifierType, identifier, reason)
     let finalData;

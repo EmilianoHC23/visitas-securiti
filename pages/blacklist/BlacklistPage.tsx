@@ -39,6 +39,8 @@ export const BlacklistPage: React.FC = () => {
     }
     
     try {
+      console.log('🚫 Adding to blacklist:', newEntry);
+      
       // Convert form data to backend format
       const blacklistData = {
         email: newEntry.identifierType === 'email' ? newEntry.identifier : '',
@@ -46,7 +48,11 @@ export const BlacklistPage: React.FC = () => {
         reason: newEntry.reason
       };
       
+      console.log('📤 Sending blacklist data:', blacklistData);
+      
       const entry = await api.addToBlacklist(blacklistData);
+      console.log('✅ Blacklist entry added:', entry);
+      
       setBlacklistEntries([...blacklistEntries, entry]);
       setNewEntry({ 
         identifierType: 'email' as 'document' | 'phone' | 'email',
@@ -56,8 +62,9 @@ export const BlacklistPage: React.FC = () => {
       });
       setShowAddForm(false);
     } catch (error) {
-      console.error('Error adding to blacklist:', error);
-      alert('Error al agregar a la lista negra');
+      console.error('❌ Error adding to blacklist:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      alert(`Error al agregar a la lista negra: ${errorMessage}`);
     }
   };
 

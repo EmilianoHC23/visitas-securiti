@@ -23,6 +23,7 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   }
 
   try {
+    console.log(`🌐 API Request: ${options.method || 'GET'} ${BASE_URL}${endpoint}`);
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       ...options,
       headers: {
@@ -31,10 +32,14 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
       },
     });
 
+    console.log(`📡 API Response: ${response.status} ${response.statusText}`);
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ 
         message: 'Error de conexión con el servidor' 
       }));
+      
+      console.error(`❌ API Error: ${response.status}`, errorData);
       
       // Create enhanced error object with response details
       const error = new Error(errorData.message || `Error ${response.status}: ${response.statusText}`) as any;

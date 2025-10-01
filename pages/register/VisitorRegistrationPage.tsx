@@ -91,10 +91,13 @@ export const VisitorRegistrationPage: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            await api.selfRegisterVisit({ visitorName, visitorCompany, hostId, reason, visitorPhoto });
+            console.log('Enviando datos de visita:', { visitorName, visitorCompany, hostId, reason, visitorPhoto: visitorPhoto.substring(0, 50) + '...' });
+            const result = await api.selfRegisterVisit({ visitorName, visitorCompany, hostId, reason, visitorPhoto });
+            console.log('Visita registrada exitosamente:', result);
             setStep('success');
         } catch (err) {
-            setError("Ocurrió un error al registrar tu visita. Inténtalo de nuevo.");
+            console.error('Error al registrar visita:', err);
+            setError(`Error al registrar visita: ${err instanceof Error ? err.message : 'Error desconocido'}`);
         } finally {
             setLoading(false);
         }

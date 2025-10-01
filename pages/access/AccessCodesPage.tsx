@@ -52,7 +52,8 @@ export const AccessCodesPage: React.FC = () => {
         title: newAccess.title,
         description: newAccess.description,
         schedule: {
-          date: newAccess.scheduleDate,
+          startDate: new Date(newAccess.scheduleDate),
+          endDate: new Date(newAccess.scheduleDate + 'T23:59:59'), // Válido hasta el final del día
           startTime: newAccess.scheduleStartTime,
           endTime: newAccess.scheduleEndTime,
           recurrence: 'none'

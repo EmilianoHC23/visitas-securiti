@@ -54,28 +54,37 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
       invitedEmails
     });
 
-    if (!title || !schedule?.date) {
-      console.log('Validation failed: missing title or schedule.date');
+    if (!title || (!schedule?.date && !schedule?.startDate)) {
+      console.log('Validation failed: missing title or schedule date');
       return res.status(400).json({ message: 'Título y fecha son requeridos' });
     }
 
-    // Convert date and time to proper Date objects
-    console.log('Creating start date from:', schedule.date);
-    const startDate = new Date(schedule.date);
-    if (schedule.startTime) {
-      const [hours, minutes] = schedule.startTime.split(':');
-      startDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    // Handle both old format (date) and new format (startDate/endDate)
+    let startDate, endDate;
+    
+    if (schedule.startDate && schedule.endDate) {
+      // New format: direct startDate and endDate
+      startDate = new Date(schedule.startDate);
+      endDate = new Date(schedule.endDate);
     } else {
-      startDate.setHours(9, 0, 0, 0); // Default 9:00 AM
-    }
+      // Old format: convert date + time to startDate/endDate
+      console.log('Creating start date from:', schedule.date);
+      startDate = new Date(schedule.date);
+      if (schedule.startTime) {
+        const [hours, minutes] = schedule.startTime.split(':');
+        startDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      } else {
+        startDate.setHours(9, 0, 0, 0); // Default 9:00 AM
+      }
 
-    console.log('Creating end date from:', schedule.date);
-    const endDate = new Date(schedule.date);
-    if (schedule.endTime) {
-      const [hours, minutes] = schedule.endTime.split(':');
-      endDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-    } else {
-      endDate.setHours(17, 0, 0, 0); // Default 5:00 PM
+      console.log('Creating end date from:', schedule.date);
+      endDate = new Date(schedule.date);
+      if (schedule.endTime) {
+        const [hours, minutes] = schedule.endTime.split(':');
+        endDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      } else {
+        endDate.setHours(17, 0, 0, 0); // Default 5:00 PM
+      }
     }
 
     // If end time is before start time, assume it's next day

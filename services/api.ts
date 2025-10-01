@@ -240,7 +240,8 @@ export const createAccess = async (accessData: {
   title: string;
   description?: string;
   schedule: {
-    date: string;
+    startDate: Date;
+    endDate: Date;
     startTime: string;
     endTime: string;
     recurrence?: string;

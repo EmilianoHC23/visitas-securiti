@@ -6,7 +6,7 @@ const { auth, authorize } = require('../middleware/auth');
 const router = express.Router();
 
 // Get all access codes
-router.get('/', auth, authorize(['admin', 'host']), async (req, res) => {
+router.get('/', auth, authorize(['admin', 'reception', 'host']), async (req, res) => {
   try {
     const { status } = req.query;
     const filter = { companyId: req.user.companyId };
@@ -19,6 +19,7 @@ router.get('/', auth, authorize(['admin', 'host']), async (req, res) => {
     if (req.user.role === 'host') {
       filter.createdBy = req.user._id;
     }
+    // Reception can see all access codes (read-only)
 
     const accesses = await Access.find(filter)
       .populate('createdBy', 'firstName lastName email')
@@ -32,7 +33,7 @@ router.get('/', auth, authorize(['admin', 'host']), async (req, res) => {
 });
 
 // Create new access code
-router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
+router.post('/', auth, authorize(['admin', 'reception', 'host']), async (req, res) => {
   try {
     console.log('=== CREATE ACCESS CODE DEBUG ===');
     console.log('Request body:', JSON.stringify(req.body, null, 2));
@@ -325,11 +326,13 @@ router.get('/public/:accessCode', async (req, res) => {
 });
 
 // Update access status
-router.put('/:id/status', auth, authorize(['admin', 'host']), async (req, res) => {
+router.put('/:id/status', auth, authorize(['admin', 'reception', 'host']), async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
+    // Reception can only update status, not edit access details
+    // Host can only update their own access codes
     const access = await Access.findOneAndUpdate(
       { 
         _id: id, 

@@ -44,11 +44,10 @@ export const ReportsPage: React.FC = () => {
     try {
       setLoading(true);
       
-      // Load visits first with error handling
+      // Load visits with error handling
       let visitsData: Visit[] = [];
       try {
         visitsData = await api.getVisits();
-        // Ensure visitsData is an array
         if (!Array.isArray(visitsData)) {
           visitsData = [];
         }
@@ -59,32 +58,30 @@ export const ReportsPage: React.FC = () => {
         visitsData = [];
       }
       
-      // Try to load analytics, but don't fail if it doesn't work
-      try {
-        const analyticsData = await api.getAdvancedAnalytics({ period, startDate, endDate });
-        if (analyticsData) {
-          setAnalytics(analyticsData);
-        } else {
-          throw new Error('No analytics data received');
-        }
-      } catch (analyticsError) {
-        console.error('Error loading analytics:', analyticsError);
-        // Set default analytics data if API fails
-        setAnalytics({
-          totalVisits: visitsData.length,
-          uniqueVisitors: 0,
-          averageStayTime: 0,
-          topHosts: [],
-          visitsByDay: [],
-          visitsByHour: [],
-          topCompanies: [],
-          visitsByStatus: [],
-          monthlyTrend: []
-        });
-      }
+      // Generate simple analytics from visits data instead of calling API
+      const filteredVisits = visitsData.filter(visit => {
+        if (!startDate || !endDate) return true;
+        const visitDate = new Date(visit.scheduledDate || visit.createdAt);
+        return visitDate >= new Date(startDate) && visitDate <= new Date(endDate);
+      });
+
+      // Create analytics from filtered visits
+      const analyticsData = {
+        totalVisits: filteredVisits.length,
+        uniqueVisitors: new Set(filteredVisits.map(v => v.visitorName || 'Anónimo')).size,
+        averageStayTime: 0, // Not calculated for now
+        topHosts: getTopHosts(filteredVisits),
+        visitsByDay: getVisitsByDay(filteredVisits),
+        visitsByHour: getVisitsByHour(filteredVisits),
+        topCompanies: getTopCompanies(filteredVisits),
+        visitsByStatus: getVisitsByStatus(filteredVisits),
+        monthlyTrend: getMonthlyTrend(filteredVisits)
+      };
+
+      setAnalytics(analyticsData);
+      
     } catch (error) {
       console.error('Error loading reports data:', error);
-      // Set safe defaults
       setVisits([]);
       setAnalytics({
         totalVisits: 0,
@@ -97,10 +94,80 @@ export const ReportsPage: React.FC = () => {
         visitsByStatus: [],
         monthlyTrend: []
       });
-      alert('Error al cargar los reportes');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper functions to generate analytics
+  const getTopHosts = (visits: Visit[]) => {
+    const hostCounts: { [key: string]: number } = {};
+    visits.forEach(visit => {
+      const host = visit.host?.firstName && visit.host?.lastName 
+        ? `${visit.host.firstName} ${visit.host.lastName}` 
+        : 'Sin host';
+      hostCounts[host] = (hostCounts[host] || 0) + 1;
+    });
+    return Object.entries(hostCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  };
+
+  const getVisitsByDay = (visits: Visit[]) => {
+    const dayCounts: { [key: string]: number } = {};
+    visits.forEach(visit => {
+      const date = new Date(visit.scheduledDate || visit.createdAt).toISOString().split('T')[0];
+      dayCounts[date] = (dayCounts[date] || 0) + 1;
+    });
+    return Object.entries(dayCounts)
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  };
+
+  const getVisitsByHour = (visits: Visit[]) => {
+    const hourCounts: { [key: number]: number } = {};
+    visits.forEach(visit => {
+      const hour = new Date(visit.scheduledDate || visit.createdAt).getHours();
+      hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+    });
+    return Array.from({ length: 24 }, (_, hour) => ({
+      hour,
+      count: hourCounts[hour] || 0
+    }));
+  };
+
+  const getTopCompanies = (visits: Visit[]) => {
+    const companyCounts: { [key: string]: number } = {};
+    visits.forEach(visit => {
+      const company = visit.visitorCompany || 'Sin empresa';
+      companyCounts[company] = (companyCounts[company] || 0) + 1;
+    });
+    return Object.entries(companyCounts)
+      .map(([company, count]) => ({ company, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  };
+
+  const getVisitsByStatus = (visits: Visit[]) => {
+    const statusCounts: { [key: string]: number } = {};
+    visits.forEach(visit => {
+      const status = visit.status || 'pending';
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+    return Object.entries(statusCounts)
+      .map(([status, count]) => ({ status, count }));
+  };
+
+  const getMonthlyTrend = (visits: Visit[]) => {
+    const monthCounts: { [key: string]: number } = {};
+    visits.forEach(visit => {
+      const month = new Date(visit.scheduledDate || visit.createdAt).toISOString().slice(0, 7);
+      monthCounts[month] = (monthCounts[month] || 0) + 1;
+    });
+    return Object.entries(monthCounts)
+      .map(([month, count]) => ({ month, count }))
+      .sort((a, b) => a.month.localeCompare(b.month));
   };
 
   const handleExport = async (format: 'json' | 'csv') => {

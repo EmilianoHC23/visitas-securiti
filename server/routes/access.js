@@ -396,7 +396,7 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
 });
 
 // Delete access code
-router.delete('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
+router.delete('/:id', auth, authorize(['admin', 'reception', 'host']), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -411,6 +411,7 @@ router.delete('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
     }
 
     // Check if user has permission to delete this access
+    // Host can only delete their own codes, reception and admin can delete any
     if (req.user.role === 'host' && access.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'No tiene permisos para eliminar este código' });
     }

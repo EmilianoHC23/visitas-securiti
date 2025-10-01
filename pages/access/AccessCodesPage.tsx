@@ -95,7 +95,7 @@ export const AccessCodesPage: React.FC = () => {
   const handleToggleStatus = async (id: string, currentStatus: string) => {
     try {
       const newStatus = currentStatus === 'active' ? 'cancelled' : 'active';
-      const updatedAccess = await api.updateAccess(id, { status: newStatus });
+      const updatedAccess = await api.updateAccessStatus(id, newStatus);
       setAccessCodes(accessCodes.map(access => 
         access._id === id ? updatedAccess : access
       ));

@@ -120,8 +120,8 @@ export const AccessCodesPage: React.FC = () => {
 
   const generateQRCode = async (access: Access) => {
     try {
-      // URL base donde los visitantes pueden canjear el código
-      const redeemURL = `${window.location.origin}/redeem/${access.accessCode}`;
+      // URL base donde los visitantes pueden canjear el código (con hash para HashRouter)
+      const redeemURL = `${window.location.origin}/#/redeem/${access.accessCode}`;
       
       // Generar QR code como data URL
       const qrDataURL = await QRCode.toDataURL(redeemURL, {

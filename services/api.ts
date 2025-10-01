@@ -35,7 +35,16 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
       const errorData = await response.json().catch(() => ({ 
         message: 'Error de conexión con el servidor' 
       }));
-      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
+      
+      // Create enhanced error object with response details
+      const error = new Error(errorData.message || `Error ${response.status}: ${response.statusText}`) as any;
+      error.response = {
+        status: response.status,
+        statusText: response.statusText,
+        data: errorData
+      };
+      
+      throw error;
     }
 
     if (response.status === 204) {

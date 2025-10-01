@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Access } from '../../types';
 import * as api from '../../services/api';
+import QRCode from 'qrcode';
 
 export const AccessCodesPage: React.FC = () => {
   const [accessCodes, setAccessCodes] = useState<Access[]>([]);
@@ -8,6 +9,7 @@ export const AccessCodesPage: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingAccess, setEditingAccess] = useState<Access | null>(null);
   const [selectedQR, setSelectedQR] = useState<Access | null>(null);
+  const [qrDataURL, setQrDataURL] = useState<string>('');
   const [newAccess, setNewAccess] = useState({
     title: '',
     description: '',
@@ -116,6 +118,29 @@ export const AccessCodesPage: React.FC = () => {
     }
   };
 
+  const generateQRCode = async (access: Access) => {
+    try {
+      // URL base donde los visitantes pueden canjear el código
+      const redeemURL = `${window.location.origin}/redeem/${access.accessCode}`;
+      
+      // Generar QR code como data URL
+      const qrDataURL = await QRCode.toDataURL(redeemURL, {
+        width: 200,
+        margin: 1,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      
+      setQrDataURL(qrDataURL);
+      setSelectedQR(access);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      alert('Error al generar el código QR');
+    }
+  };
+
   const getStatusLabel = (access: Access) => {
     if (access.status === 'cancelled') return 'Inactivo';
     if (access.status === 'expired') return 'Expirado';
@@ -217,7 +242,7 @@ export const AccessCodesPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <button
-                        onClick={() => setSelectedQR(access)}
+                        onClick={() => generateQRCode(access)}
                         className="text-blue-600 hover:text-blue-900"
                         title="Ver código QR"
                       >
@@ -403,15 +428,19 @@ export const AccessCodesPage: React.FC = () => {
             <div className="flex justify-center mb-4">
               <div className="bg-white p-4 border border-gray-200 rounded-lg">
                 <div id="qrcode" className="flex justify-center">
-                  {/* QR Code será generado aquí */}
-                  <div className="w-48 h-48 bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-gray-500 text-sm mb-2">Código QR</div>
-                      <div className="text-xs text-gray-400 font-mono break-all">
-                        {selectedQR.accessCode}
+                  {qrDataURL ? (
+                    <img 
+                      src={qrDataURL} 
+                      alt="Código QR" 
+                      className="w-48 h-48"
+                    />
+                  ) : (
+                    <div className="w-48 h-48 bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-gray-500 text-sm mb-2">Generando QR...</div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -432,7 +461,10 @@ export const AccessCodesPage: React.FC = () => {
                 Copiar Código
               </button>
               <button
-                onClick={() => setSelectedQR(null)}
+                onClick={() => {
+                  setSelectedQR(null);
+                  setQrDataURL('');
+                }}
                 className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
               >
                 Cerrar

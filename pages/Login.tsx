@@ -1,13 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-const ShieldIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-securiti-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 20.944L12 23l9-2.056A12.02 12.02 0 0021.618 7.984a11.955 11.955 0 01-4.016-4.016z" />
-    </svg>
-);
-
-
 export const LoginPage: React.FC = () => {
     const [email, setEmail] = useState('reception@securiti.com');
     const [password, setPassword] = useState('password'); // Default password for demo purposes
@@ -28,7 +21,11 @@ export const LoginPage: React.FC = () => {
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
             <div className="max-w-md w-full bg-white p-6 sm:p-8 rounded-xl shadow-lg">
                 <div className="flex flex-col items-center mb-6">
-                    <ShieldIcon />
+                    <img 
+                        src="/logo.png" 
+                        alt="Visitas SecuriTI Logo" 
+                        className="h-16 w-auto mb-2"
+                    />
                     <h1 className="text-3xl font-bold text-gray-800 mt-2">Visitas SecuriTI</h1>
                     <p className="text-gray-500">Inicia sesión para continuar</p>
                 </div>

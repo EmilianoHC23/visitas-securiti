@@ -2,12 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { User } from '../../types';
 import * as api from '../../services/api';
 
-const ShieldIcon: React.FC<{className?: string}> = ({className = "h-16 w-16 text-securiti-blue-500"}) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 20.944L12 23l9-2.056A12.02 12.02 0 0021.618 7.984a11.955 11.955 0 01-4.016-4.016z" />
-    </svg>
-);
-
 type Step = 'form' | 'photo' | 'success';
 
 export const VisitorRegistrationPage: React.FC = () => {
@@ -182,8 +176,12 @@ export const VisitorRegistrationPage: React.FC = () => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
             <div className="max-w-md w-full bg-white p-6 sm:p-8 rounded-xl shadow-lg space-y-6">
-                 <div className="flex justify-center">
-                    <ShieldIcon />
+                <div className="flex justify-center">
+                    <img 
+                        src="/logo.png" 
+                        alt="Visitas SecuriTI Logo" 
+                        className="h-16 w-auto"
+                    />
                 </div>
                 {renderContent()}
             </div>

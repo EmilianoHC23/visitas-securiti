@@ -44,7 +44,9 @@ export const BlacklistPage: React.FC = () => {
       // Convert form data to backend format
       const blacklistData = {
         email: newEntry.identifierType === 'email' ? newEntry.identifier : '',
-        name: newEntry.identifierType !== 'email' ? newEntry.identifier : `Usuario (${newEntry.identifierType})`,
+        name: newEntry.identifierType === 'email' 
+          ? `Usuario con email ${newEntry.identifier}` 
+          : `${newEntry.identifier} (${newEntry.identifierType})`,
         reason: newEntry.reason
       };
       

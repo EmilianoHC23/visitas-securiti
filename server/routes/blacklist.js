@@ -65,15 +65,18 @@ router.post('/', auth, authorize(['admin', 'reception']), async (req, res) => {
         companyId: req.user.companyId
       };
     } else {
-      // Legacy format
-      if (!email || !name || !reason) {
-        return res.status(400).json({ message: 'Email, nombre y razón son requeridos' });
+      // Legacy format - adjust validation for empty email when not email type
+      if (!name || !reason) {
+        return res.status(400).json({ message: 'Nombre y razón son requeridos' });
       }
       
+      // For legacy format, if email is empty, treat as non-email identifier
+      const isEmailType = email && email.trim() !== '';
+      
       finalData = {
-        identifierType: 'email',
-        identifier: email,
-        email,
+        identifierType: isEmailType ? 'email' : 'document',
+        identifier: isEmailType ? email : name,
+        email: isEmailType ? email : null,
         name,
         reason,
         addedBy: req.user._id,
@@ -82,11 +85,17 @@ router.post('/', auth, authorize(['admin', 'reception']), async (req, res) => {
     }
 
     // Check if already exists (check both identifier and email for compatibility)
+    const queryConditions = [
+      { identifier: finalData.identifier, companyId: req.user.companyId, isActive: true }
+    ];
+    
+    // Only add email condition if email is not null/empty
+    if (finalData.email) {
+      queryConditions.push({ email: finalData.email, companyId: req.user.companyId, isActive: true });
+    }
+    
     const existing = await Blacklist.findOne({ 
-      $or: [
-        { identifier: finalData.identifier, companyId: req.user.companyId, isActive: true },
-        { email: finalData.email, companyId: req.user.companyId, isActive: true }
-      ]
+      $or: queryConditions
     });
 
     if (existing) {

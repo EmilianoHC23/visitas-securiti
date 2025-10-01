@@ -144,26 +144,101 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
 // Redeem access code (public endpoint)
 router.post('/redeem', async (req, res) => {
   try {
+    console.log('🎫 === REDEEM ACCESS CODE START ===');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('Request headers:', JSON.stringify(req.headers, null, 2));
+    console.log('Request URL:', req.url);
+    console.log('Request method:', req.method);
+    
     const { accessCode, visitorData } = req.body;
 
     if (!accessCode || !visitorData) {
+      console.log('❌ Missing required data:', { accessCode: !!accessCode, visitorData: !!visitorData });
       return res.status(400).json({ message: 'Código de acceso y datos del visitante son requeridos' });
     }
 
+    console.log('🔍 Looking for access code:', accessCode);
+    
     const access = await Access.findOne({ 
       accessCode, 
       status: 'active' 
     }).populate('createdBy', 'firstName lastName email');
 
     if (!access) {
+      console.log('❌ Access code not found or inactive');
+      // Let's also check if the code exists but is inactive
+      const inactiveAccess = await Access.findOne({ accessCode });
+      if (inactiveAccess) {
+        console.log('📋 Found inactive access:', {
+          id: inactiveAccess._id,
+          status: inactiveAccess.status,
+          title: inactiveAccess.title
+        });
+      } else {
+        console.log('📋 No access code found with this code at all');
+      }
       return res.status(404).json({ message: 'Código de acceso no válido o expirado' });
     }
 
+    console.log('✅ Access code found:', {
+      id: access._id,
+      title: access.title,
+      status: access.status,
+      usageCount: access.usageCount,
+      maxUses: access.settings.maxUses
+    });
+
     // Check if access is within valid date range
     const now = new Date();
-    if (now < access.schedule.startDate || now > access.schedule.endDate) {
-      return res.status(400).json({ message: 'Código de acceso fuera del período válido' });
+    const startDate = new Date(access.schedule.startDate);
+    const endDate = new Date(access.schedule.endDate);
+    
+    // Create date-only comparisons to avoid timezone issues
+    const currentDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+    
+    console.log('🕐 Date validation debug:');
+    console.log('Access code:', accessCode);
+    console.log('Access title:', access.title);
+    console.log('Current time:', now.toISOString());
+    console.log('Current date only:', currentDateOnly.toISOString());
+    console.log('Start date from DB:', startDate.toISOString());
+    console.log('Start date only:', startDateOnly.toISOString());
+    console.log('End date from DB:', endDate.toISOString());
+    console.log('End date only:', endDateOnly.toISOString());
+    console.log('Comparison results:');
+    console.log('  - Current < Start?', currentDateOnly < startDateOnly);
+    console.log('  - Current > End?', currentDateOnly > endDateOnly);
+    console.log('  - Current === Start?', currentDateOnly.getTime() === startDateOnly.getTime());
+    console.log('  - Current === End?', currentDateOnly.getTime() === endDateOnly.getTime());
+    console.log('Time differences:');
+    console.log('  - Current vs Start (days):', (currentDateOnly - startDateOnly) / (1000 * 60 * 60 * 24));
+    console.log('  - Current vs End (days):', (currentDateOnly - endDateOnly) / (1000 * 60 * 60 * 24));
+    
+    // Make validation more flexible - allow codes to work on the exact start and end dates
+    const isWithinDateRange = currentDateOnly >= startDateOnly && currentDateOnly <= endDateOnly;
+    
+    if (!isWithinDateRange) {
+      console.log('❌ Access code date validation failed');
+      console.log('📅 Detailed date info:');
+      console.log('  - Access created at:', access.createdAt);
+      console.log('  - Schedule object:', JSON.stringify(access.schedule, null, 2));
+      
+      return res.status(400).json({ 
+        message: 'Código de acceso fuera del período válido',
+        debug: {
+          currentDate: currentDateOnly.toISOString().split('T')[0],
+          validFrom: startDateOnly.toISOString().split('T')[0],
+          validUntil: endDateOnly.toISOString().split('T')[0],
+          accessTitle: access.title,
+          daysFromStart: Math.round((currentDateOnly - startDateOnly) / (1000 * 60 * 60 * 24)),
+          daysUntilEnd: Math.round((endDateOnly - currentDateOnly) / (1000 * 60 * 60 * 24))
+        }
+      });
     }
+    
+    console.log('✅ Date validation passed');
 
     // Check usage limits
     if (access.usageCount >= access.settings.maxUses) {

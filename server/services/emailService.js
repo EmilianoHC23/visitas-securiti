@@ -10,7 +10,7 @@ class EmailService {
     }
 
     this.resend = new Resend(process.env.RESEND_API_KEY);
-    this.fromDomain = process.env.EMAIL_FROM_DOMAIN || 'localhost';
+    this.fromDomain = process.env.EMAIL_FROM_DOMAIN || 'onboarding.resend.dev';
     this.fromName = process.env.EMAIL_FROM_NAME || 'Visitas SecuriTI';
     this.frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 

@@ -18,6 +18,11 @@ class EmailService {
       emailjs.init(EMAILJS_CONFIG.publicKey);
       this.enabled = true;
       console.log('✅ EmailJS initialized successfully');
+      console.log('📧 EmailJS Config:', {
+        serviceId: EMAILJS_CONFIG.serviceId,
+        templateId: EMAILJS_CONFIG.templateId,
+        publicKey: EMAILJS_CONFIG.publicKey?.substring(0, 8) + '...'
+      });
     } catch (error) {
       console.error('❌ Error initializing EmailJS:', error);
       this.enabled = false;

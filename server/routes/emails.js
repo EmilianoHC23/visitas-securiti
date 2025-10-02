@@ -7,14 +7,23 @@ const router = express.Router();
 // Test email endpoint - solo para admins
 router.post('/test', auth, authorize(['admin']), async (req, res) => {
   try {
+    console.log('📧 Test email endpoint called by user:', req.user.email);
     const { email } = req.body;
 
     if (!email) {
+      console.log('❌ No email provided in request');
       return res.status(400).json({ message: 'Email address is required' });
     }
 
-    console.log('🧪 Testing email service...');
+    console.log('🧪 Testing email service for:', email);
+    console.log('📊 Email service status:', {
+      enabled: emailService.isEnabled(),
+      configured: !!process.env.RESEND_API_KEY
+    });
+
     const result = await emailService.sendTestEmail(email, 'Test from Visitas SecuriTI');
+
+    console.log('📧 Email service result:', result);
 
     if (result.success) {
       res.json({ 
@@ -23,6 +32,7 @@ router.post('/test', auth, authorize(['admin']), async (req, res) => {
         emailService: emailService.isEnabled() ? 'enabled' : 'disabled'
       });
     } else {
+      console.error('❌ Email service failed:', result.error);
       res.status(500).json({ 
         message: 'Failed to send test email', 
         error: result.error,
@@ -30,7 +40,8 @@ router.post('/test', auth, authorize(['admin']), async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Email test error:', error);
+    console.error('❌ Email test endpoint error:', error);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 });

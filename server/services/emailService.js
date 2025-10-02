@@ -34,8 +34,12 @@ class EmailService {
       return { success: false, error: 'Email service not configured' };
     }
 
+    console.log('🧪 Attempting to send test email to:', to);
+    console.log('🔧 From address:', this.getFromAddress());
+    console.log('🌐 Resend API key configured:', !!process.env.RESEND_API_KEY);
+
     try {
-      const { data, error } = await this.resend.emails.send({
+      const emailData = {
         from: this.getFromAddress(),
         to: [to],
         subject: subject,
@@ -53,11 +57,15 @@ class EmailService {
         tags: [
           { name: 'category', value: 'test' }
         ]
-      });
+      };
+
+      console.log('📤 Sending email with data:', JSON.stringify(emailData, null, 2));
+
+      const { data, error } = await this.resend.emails.send(emailData);
 
       if (error) {
-        console.error('❌ Error sending test email:', error);
-        return { success: false, error: error.message };
+        console.error('❌ Resend API error:', error);
+        return { success: false, error: error.message || JSON.stringify(error) };
       }
 
       console.log('✅ Test email sent successfully:', data.id);
@@ -65,6 +73,7 @@ class EmailService {
 
     } catch (error) {
       console.error('❌ Exception sending test email:', error);
+      console.error('❌ Error stack:', error.stack);
       return { success: false, error: error.message };
     }
   }

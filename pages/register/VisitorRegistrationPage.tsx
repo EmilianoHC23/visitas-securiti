@@ -9,6 +9,7 @@ export const VisitorRegistrationPage: React.FC = () => {
     const [hosts, setHosts] = useState<User[]>([]);
     const [visitorName, setVisitorName] = useState('');
     const [visitorCompany, setVisitorCompany] = useState('');
+    const [visitorEmail, setVisitorEmail] = useState('');
     const [hostId, setHostId] = useState('');
     const [reason, setReason] = useState('');
     const [visitorPhoto, setVisitorPhoto] = useState('');
@@ -91,8 +92,8 @@ export const VisitorRegistrationPage: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            console.log('Enviando datos de visita:', { visitorName, visitorCompany, hostId, reason, visitorPhoto: visitorPhoto.substring(0, 50) + '...' });
-            const result = await api.selfRegisterVisit({ visitorName, visitorCompany, hostId, reason, visitorPhoto });
+            console.log('Enviando datos de visita:', { visitorName, visitorCompany, visitorEmail, hostId, reason, visitorPhoto: visitorPhoto.substring(0, 50) + '...' });
+            const result = await api.selfRegisterVisit({ visitorName, visitorCompany, visitorEmail, hostId, reason, visitorPhoto });
             console.log('Visita registrada exitosamente:', result);
             setStep('success');
         } catch (err) {
@@ -119,6 +120,11 @@ export const VisitorRegistrationPage: React.FC = () => {
                         <div>
                             <label htmlFor="visitorCompany" className="sr-only">Empresa</label>
                             <input id="visitorCompany" type="text" placeholder="Empresa" value={visitorCompany} onChange={e => setVisitorCompany(e.target.value)} className="w-full p-3 border border-gray-300 rounded-md focus:ring-securiti-blue-500 focus:border-securiti-blue-500" required />
+                        </div>
+
+                        <div>
+                            <label htmlFor="visitorEmail" className="sr-only">Correo Electrónico</label>
+                            <input id="visitorEmail" type="email" placeholder="Correo Electrónico (para confirmación)" value={visitorEmail} onChange={e => setVisitorEmail(e.target.value)} className="w-full p-3 border border-gray-300 rounded-md focus:ring-securiti-blue-500 focus:border-securiti-blue-500" />
                         </div>
 
                         <div>

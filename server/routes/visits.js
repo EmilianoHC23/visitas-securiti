@@ -191,6 +191,40 @@ router.post('/register', async (req, res) => {
     await visit.save();
     await visit.populate('host', 'firstName lastName email profileImage');
 
+    // Send confirmation email to visitor if email is provided
+    if (visitorEmail && emailService.isEnabled()) {
+      console.log('📧 Sending self-registration confirmation email to:', visitorEmail);
+      
+      const emailData = {
+        visitorName,
+        visitorEmail,
+        companyName: 'SecuriTI', // For self-registration, use default company name
+        hostName: `${visit.host.firstName} ${visit.host.lastName}`,
+        scheduledDate: visit.scheduledDate,
+        reason: visit.reason,
+        status: visit.status,
+        companyId: host.companyId
+      };
+
+      // Send email asynchronously (don't block the response)
+      emailService.sendVisitConfirmation(emailData)
+        .then(result => {
+          if (result.success) {
+            console.log('✅ Self-registration confirmation email sent:', result.messageId);
+          } else {
+            console.error('❌ Failed to send self-registration confirmation email:', result.error);
+          }
+        })
+        .catch(error => {
+          console.error('❌ Exception sending self-registration confirmation email:', error);
+        });
+    } else {
+      console.log('📧 Self-registration email not sent:', { 
+        hasEmail: !!visitorEmail, 
+        emailEnabled: emailService.isEnabled() 
+      });
+    }
+
     res.status(201).json(visit);
   } catch (error) {
     console.error('Self register visit error:', error);

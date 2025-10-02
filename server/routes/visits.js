@@ -4,7 +4,6 @@ const Visit = require('../models/Visit');
 const User = require('../models/User');
 const Company = require('../models/Company');
 const { auth, authorize } = require('../middleware/auth');
-const emailService = require('../services/emailService');
 
 const router = express.Router();
 
@@ -78,7 +77,7 @@ router.post('/', auth, async (req, res) => {
     // Verify host exists and is active
     const host = await User.findById(hostId);
     if (!host || !host.isActive || host.role !== 'host') {
-      console.log('❌ Invalid host:', { hostId, found: !!host, active: host?.isActive, role: host?.role });
+      console.log('❌ Invalid host:', { hostId, found: !!ht, active: host?.isActive, role: host?.role });
       return res.status(400).json({ message: 'Host no válido' });
     }
 
@@ -118,40 +117,6 @@ router.post('/', auth, async (req, res) => {
     await visit.save();
     await visit.populate('host', 'firstName lastName email profileImage');
 
-    // Send confirmation email to visitor if email is provided
-    if (visitorEmail && emailService.isEnabled()) {
-      console.log('📧 Sending visit confirmation email to:', visitorEmail);
-      
-      const emailData = {
-        visitorName,
-        visitorEmail,
-        companyName: company?.name || 'SecuriTI',
-        hostName: `${visit.host.firstName} ${visit.host.lastName}`,
-        scheduledDate: visit.scheduledDate,
-        reason: visit.reason,
-        status: visit.status,
-        companyId: req.user.companyId
-      };
-
-      // Send email asynchronously (don't block the response)
-      emailService.sendVisitConfirmation(emailData)
-        .then(result => {
-          if (result.success) {
-            console.log('✅ Visit confirmation email sent:', result.messageId);
-          } else {
-            console.error('❌ Failed to send visit confirmation email:', result.error);
-          }
-        })
-        .catch(error => {
-          console.error('❌ Exception sending visit confirmation email:', error);
-        });
-    } else {
-      console.log('📧 Email not sent:', { 
-        hasEmail: !!visitorEmail, 
-        emailEnabled: emailService.isEnabled() 
-      });
-    }
-
     res.status(201).json(visit);
   } catch (error) {
     console.error('Create visit error:', error);
@@ -190,40 +155,6 @@ router.post('/register', async (req, res) => {
 
     await visit.save();
     await visit.populate('host', 'firstName lastName email profileImage');
-
-    // Send confirmation email to visitor if email is provided
-    if (visitorEmail && emailService.isEnabled()) {
-      console.log('📧 Sending self-registration confirmation email to:', visitorEmail);
-      
-      const emailData = {
-        visitorName,
-        visitorEmail,
-        companyName: 'SecuriTI', // For self-registration, use default company name
-        hostName: `${visit.host.firstName} ${visit.host.lastName}`,
-        scheduledDate: visit.scheduledDate,
-        reason: visit.reason,
-        status: visit.status,
-        companyId: host.companyId
-      };
-
-      // Send email asynchronously (don't block the response)
-      emailService.sendVisitConfirmation(emailData)
-        .then(result => {
-          if (result.success) {
-            console.log('✅ Self-registration confirmation email sent:', result.messageId);
-          } else {
-            console.error('❌ Failed to send self-registration confirmation email:', result.error);
-          }
-        })
-        .catch(error => {
-          console.error('❌ Exception sending self-registration confirmation email:', error);
-        });
-    } else {
-      console.log('📧 Self-registration email not sent:', { 
-        hasEmail: !!visitorEmail, 
-        emailEnabled: emailService.isEnabled() 
-      });
-    }
 
     res.status(201).json(visit);
   } catch (error) {

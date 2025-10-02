@@ -24,7 +24,9 @@ class EmailService {
 
   // Construir dirección "from"
   getFromAddress() {
-    return `${this.fromName} <noreply@${this.fromDomain}>`;
+    // Para cuentas gratuitas de Resend, usar un email verificado del usuario
+    // En lugar de un dominio personalizado
+    return process.env.EMAIL_FROM_ADDRESS || `${this.fromName} <onboarding@resend.dev>`;
   }
 
   // Enviar email básico para testing

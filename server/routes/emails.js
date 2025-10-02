@@ -50,4 +50,18 @@ router.get('/status', auth, authorize(['admin']), async (req, res) => {
   }
 });
 
+// Public endpoint to check if email service is working (no auth required)
+router.get('/health', async (req, res) => {
+  try {
+    res.json({
+      emailServiceEnabled: emailService.isEnabled(),
+      resendConfigured: !!process.env.RESEND_API_KEY,
+      status: emailService.isEnabled() ? 'ready' : 'disabled'
+    });
+  } catch (error) {
+    console.error('Email health check error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 module.exports = router;

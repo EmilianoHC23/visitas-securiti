@@ -37,11 +37,13 @@ if (-not (Test-Path "backend\.env")) {
     @"
 NODE_ENV=development
 PORT=3001
-MONGODB_URI=mongodb://localhost:27017/visitas-securiti
-JWT_SECRET=desarrollo_jwt_secret_super_largo_y_seguro_para_desarrollo_local_2024
+MONGODB_URI=mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti
+DATABASE_URL=mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti
+JWT_SECRET=Prod_VisitasSecuriTI_2025_Ultra_Secure_JWT_Secret_Key_For_Production_Only!@#$%
+FRONTEND_URL=https://visitas-securiti.vercel.app/
 EMAILJS_SERVICE_ID=service_vxjzajn
 EMAILJS_TEMPLATE_ID=template_5oieypb
-VITE_EMAILJS_PUBLIC_KEY=vvtUk70Pk2tlCBQ52
+EMAILJS_PUBLIC_KEY=vvtUk70Pk2tlCBQ52
 "@ | Out-File -FilePath "backend\.env" -Encoding UTF8
     Write-Host "✅ Archivo backend/.env creado" -ForegroundColor Green
 }

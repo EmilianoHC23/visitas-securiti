@@ -10,14 +10,16 @@ const initializeDatabase = async () => {
     await mongoose.connect(mongoURI);
     console.log('✅ Connected to MongoDB Atlas');
     console.log('📊 Database:', mongoose.connection.db.databaseName);
-    if (process.env.NODE_ENV !== 'production') {
-      await User.deleteMany({});
-      await Visit.deleteMany({});
-      console.log('🗑️ Cleared existing data');
-    }
 
-    // Create default users with realistic data
-    const defaultUsers = [
+    // Check if users already exist
+    const existingUsers = await User.countDocuments();
+    console.log(`👥 Existing users: ${existingUsers}`);
+
+    if (existingUsers === 0) {
+      console.log('� Creating default users...');
+
+      // Create default users with realistic data
+      const defaultUsers = [
       {
         email: 'admin@securiti.com',
         password: 'password',
@@ -153,4 +155,7 @@ const initializeDatabase = async () => {
 };
 
 // Run initialization
-initializeDatabase();
+// initializeDatabase();
+
+// Export for use in other files
+module.exports = { initializeDatabase };

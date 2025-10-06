@@ -150,16 +150,18 @@ cd frontend && npm run dev
 ### 8. 🔑 Datos de Prueba
 
 #### Usuario Administrador:
-- Email: admin@empresa.com
-- Password: admin123
+- Email: admin@securiti.com
+- Password: password
 
 #### Usuario Recepción:
-- Email: recepcion@empresa.com  
-- Password: recepcion123
+- Email: reception@securiti.com  
+- Password: password
 
-#### Usuario Host:
-- Email: host@empresa.com
-- Password: host123
+#### Usuarios Host:
+- Email: juan.perez@securiti.com / password
+- Email: ana.garcia@securiti.com / password
+- Email: carlos.rodriguez@securiti.com / password
+- Email: sofia.lopez@securiti.com / password
 
 ### 9. 📚 Recursos Adicionales
 

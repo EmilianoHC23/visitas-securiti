@@ -147,9 +147,10 @@ git push origin feature/nombre-funcionalidad
 
 #### **Datos de prueba:**
 ```
-Admin: admin@empresa.com / admin123
-Recepción: recepcion@empresa.com / recepcion123  
-Host: host@empresa.com / host123
+Admin: admin@securiti.com / password
+Recepción: reception@securiti.com / password  
+Host: juan.perez@securiti.com / password
+Host: ana.garcia@securiti.com / password
 ```
 
 ### 🔧 **Scripts Disponibles**

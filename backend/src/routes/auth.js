@@ -102,4 +102,27 @@ router.post('/refresh', auth, async (req, res) => {
   }
 });
 
+// DEBUG: Get available users (temporal - remove in production)
+router.get('/debug/users', async (req, res) => {
+  try {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ message: 'Not found' });
+    }
+    
+    const users = await User.find({}, 'email firstName lastName role isActive');
+    res.json({
+      message: 'Available users for testing',
+      users: users.map(user => ({
+        email: user.email,
+        name: `${user.firstName} ${user.lastName}`,
+        role: user.role,
+        isActive: user.isActive
+      }))
+    });
+  } catch (error) {
+    console.error('Debug users error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 module.exports = router;

@@ -39,7 +39,7 @@ router.post('/', auth, authorize(['admin', 'reception']), async (req, res) => {
     console.log('Blacklist add request:', JSON.stringify(req.body, null, 2));
 
     // Validate that user.companyId is valid
-    if (!req.user.companyId || !mongoose.Types.ObjectId.isValid(req.user.companyId)) {
+    if (!req.user.companyId || req.user.companyId.trim() === '') {
       console.log('❌ Invalid companyId for user:', { userId: req.user._id, companyId: req.user.companyId });
       return res.status(400).json({ message: 'Configuración de empresa inválida. Contacte al administrador.' });
     }

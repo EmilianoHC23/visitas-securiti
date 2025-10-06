@@ -8,6 +8,189 @@
 
 Desarrollado con React 19, Node.js, Express, MongoDB Atlas y desplegado en Vercel.
 
+## 🚀 Configuración para Desarrollo Colaborativo
+
+### 📋 **Requisitos Previos**
+- Node.js v18+ y npm
+- Git configurado
+- MongoDB Atlas account (opcional para desarrollo local)
+- Cuenta de EmailJS para notificaciones
+
+### 🚀 **Configuración Automática (Recomendado)**
+
+**Windows PowerShell:**
+```powershell
+# Ejecutar script de configuración automática
+.\setup-dev.ps1
+```
+
+**Linux/macOS:**
+```bash
+# Dar permisos y ejecutar
+chmod +x setup-dev.sh
+./setup-dev.sh
+```
+
+### 🔧 **Configuración Manual**
+
+Si prefieres configurar manualmente, sigue estos pasos:
+
+1. **Clonar el repositorio:**
+```bash
+git clone https://github.com/EmilianoHC23/visitas-securiti.git
+cd visitas-securiti
+```
+
+2. **Instalar todas las dependencias:**
+```bash
+# Instalar dependencias del proyecto principal
+npm install
+
+# Instalar dependencias del frontend
+cd frontend
+npm install
+
+# Instalar dependencias del backend
+cd ../backend
+npm install
+
+# Volver al directorio principal
+cd ..
+```
+
+3. **Configurar variables de entorno:**
+```bash
+# Copiar archivos de ejemplo
+cp .env.example .env
+cp frontend/.env.example frontend/.env
+cp backend/.env.example backend/.env
+```
+
+4. **Configurar las variables en los archivos .env:**
+
+**Archivo raíz `.env`:**
+```
+NODE_ENV=development
+```
+
+**Frontend `frontend/.env`:**
+```
+VITE_ENVIRONMENT=development
+VITE_API_URL=http://localhost:3001/api
+VITE_EMAILJS_SERVICE_ID=service_vxjzajn
+VITE_EMAILJS_TEMPLATE_ID=template_5oieypb
+VITE_EMAILJS_PUBLIC_KEY=vvtUk70Pk2tlCBQ52
+```
+
+**Backend `backend/.env`:**
+```
+NODE_ENV=development
+PORT=3001
+MONGODB_URI=mongodb://localhost:27017/visitas-securiti
+# O usar MongoDB Atlas:
+# MONGODB_URI=mongodb+srv://usuario:password@cluster.mongodb.net/visitas-securiti
+JWT_SECRET=tu_jwt_secret_super_secreto
+EMAILJS_SERVICE_ID=service_vxjzajn
+EMAILJS_TEMPLATE_ID=template_5oieypb
+EMAILJS_PUBLIC_KEY=vvtUk70Pk2tlCBQ52
+```
+
+5. **Ejecutar en modo desarrollo:**
+```bash
+# Opción 1: Ejecutar todo desde el directorio raíz
+npm run dev
+
+# Opción 2: Ejecutar por separado en diferentes terminales
+# Terminal 1 - Backend:
+npm run dev:backend
+
+# Terminal 2 - Frontend:
+npm run dev:frontend
+```
+
+### 🔧 **Scripts Disponibles**
+
+Desde el **directorio raíz**:
+- `npm run dev` - Ejecuta frontend y backend simultáneamente
+- `npm run dev:frontend` - Solo frontend (Puerto 5173)
+- `npm run dev:backend` - Solo backend (Puerto 3001)
+- `npm run build` - Build de producción
+- `npm run preview` - Preview del build de producción
+
+### 🌐 **URLs de Desarrollo**
+- **Frontend:** http://localhost:5173
+- **Backend API:** http://localhost:3001/api
+- **Health Check:** http://localhost:3001/api/health
+
+### � **Trabajo Colaborativo**
+
+#### **Flujo de Git recomendado:**
+```bash
+# 1. Crear rama para nueva funcionalidad
+git checkout -b feature/nombre-funcionalidad
+
+# 2. Hacer cambios y commits frecuentes
+git add .
+git commit -m "feat: descripción de cambios"
+
+# 3. Push y crear Pull Request
+git push origin feature/nombre-funcionalidad
+```
+
+#### **Convenciones de commits:**
+- `feat:` nueva funcionalidad
+- `fix:` corrección de bug  
+- `docs:` documentación
+- `style:` formateo, sin cambios de código
+- `refactor:` refactorización de código
+- `test:` agregar/modificar tests
+
+#### **Datos de prueba:**
+```
+Admin: admin@empresa.com / admin123
+Recepción: recepcion@empresa.com / recepcion123  
+Host: host@empresa.com / host123
+```
+
+### 🔧 **Scripts Disponibles**
+
+Desde el **directorio raíz**:
+- `npm run dev` - Ejecuta frontend y backend simultáneamente
+- `npm run dev:frontend` - Solo frontend (Puerto 5173)
+- `npm run dev:backend` - Solo backend (Puerto 3001)
+- `npm run build` - Build de producción
+- `npm run preview` - Preview del build de producción
+- `npm run install:all` - Instala todas las dependencias
+- `npm run clean` - Limpia node_modules
+
+### �📂 **Estructura del Proyecto**
+```
+visitas-securiti/
+├── frontend/           # React + Vite + TypeScript
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   ├── contexts/
+│   │   └── types.ts
+│   ├── package.json
+│   └── .env
+├── backend/            # Node.js + Express + MongoDB
+│   ├── src/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── middleware/
+│   │   └── services/
+│   ├── package.json
+│   └── .env
+├── package.json       # Scripts del workspace
+├── vercel.json        # Configuración de despliegue
+├── DESARROLLO.md      # Guía detallada para desarrolladores
+├── setup-dev.ps1      # Script de configuración Windows
+├── setup-dev.sh       # Script de configuración Linux/macOS
+└── README.md
+```
+
 ## 🌟 Características Principales
 
 ### 📋 **FASE 1: Sistema Base**

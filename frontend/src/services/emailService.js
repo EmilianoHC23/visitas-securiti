@@ -75,6 +75,14 @@ class EmailService {
         visitor_name: templateParams.visitor_name,
         host_name: templateParams.host_name
       });
+      console.log('🔧 EmailJS Configuration:', {
+        serviceId: EMAILJS_CONFIG.serviceId,
+        templateId: EMAILJS_CONFIG.templateId
+      });
+      console.log('📧 Raw visitData received:', {
+        visitorEmail: visitData.visitorEmail,
+        visitorName: visitData.visitorName
+      });
 
       const response = await emailjs.send(
         EMAILJS_CONFIG.serviceId,
@@ -83,6 +91,7 @@ class EmailService {
       );
 
       console.log('✅ Visit confirmation email sent successfully via EmailJS');
+      console.log('📧 Response details:', response);
       console.log('📧 Email Log:', {
         to: visitData.visitorEmail,
         status: 'sent',
@@ -99,6 +108,12 @@ class EmailService {
 
     } catch (error) {
       console.error('❌ EmailJS error:', error);
+      console.error('❌ EmailJS error details:', {
+        name: error.name,
+        message: error.message,
+        text: error.text,
+        status: error.status
+      });
       console.log('📧 Email Log:', {
         to: visitData.visitorEmail,
         status: 'failed',

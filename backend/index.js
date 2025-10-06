@@ -46,7 +46,13 @@ app.use('/api/public', publicRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', timestamp: new Date().toISOString() });
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV,
+        hasJwtSecret: !!process.env.JWT_SECRET,
+        hasDatabase: !!(process.env.MONGODB_URI || process.env.DATABASE_URL)
+    });
 });
 
 // Error handling middleware

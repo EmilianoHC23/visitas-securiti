@@ -3,10 +3,17 @@ const User = require('./models/User');
 const Visit = require('./models/Visit');
 require('dotenv').config();
 
+console.log('🚀 Starting database initialization...');
+console.log('📝 Environment variables:');
+console.log('  DATABASE_URL:', process.env.DATABASE_URL ? '✅ Configured' : '❌ Not configured');
+console.log('  NODE_ENV:', process.env.NODE_ENV);
+
 const initializeDatabase = async () => {
+  console.log('🔄 Attempting to connect to MongoDB...');
   try {
     // Connect to MongoDB
     const mongoURI = process.env.DATABASE_URL || 'mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti';
+    console.log('🔗 Connection string:', mongoURI.replace(/:([^:@]{4})[^:@]*@/, ':****@'));
     await mongoose.connect(mongoURI);
     console.log('✅ Connected to MongoDB Atlas');
     console.log('📊 Database:', mongoose.connection.db.databaseName);
@@ -145,6 +152,7 @@ const initializeDatabase = async () => {
     console.log('   - Ana García: ana.garcia@securiti.com / password');
     console.log('   - Carlos Rodríguez: carlos.rodriguez@securiti.com / password');
     console.log('   - Sofía López: sofia.lopez@securiti.com / password');
+    }
 
   } catch (error) {
     console.error('❌ Error initializing database:', error);

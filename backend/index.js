@@ -8,6 +8,12 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const authRoutes = require('./src/routes/auth');
 const userRoutes = require('./src/routes/users');
 const visitRoutes = require('./src/routes/visits');
+const dashboardRoutes = require('./src/routes/dashboard');
+const reportsRoutes = require('./src/routes/reports');
+const accessRoutes = require('./src/routes/access');
+const blacklistRoutes = require('./src/routes/blacklist');
+const companyRoutes = require('./src/routes/company');
+const publicRoutes = require('./src/routes/public');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -31,6 +37,12 @@ mongoose.connect(process.env.MONGODB_URI || process.env.DATABASE_URL)
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/visits', visitRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/access', accessRoutes);
+app.use('/api/blacklist', blacklistRoutes);
+app.use('/api/company', companyRoutes);
+app.use('/api/public', publicRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

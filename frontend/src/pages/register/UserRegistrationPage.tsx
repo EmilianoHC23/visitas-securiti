@@ -23,6 +23,9 @@ export const UserRegistrationPage: React.FC = () => {
   const token = searchParams.get('token');
 
   useEffect(() => {
+    // Clear any existing token to ensure clean registration process
+    localStorage.removeItem('securitiToken');
+    
     if (!token) {
       setError('Token de invitación no válido');
       setVerifying(false);
@@ -72,7 +75,7 @@ export const UserRegistrationPage: React.FC = () => {
       // Auto-login after successful registration
       if (result.token) {
         localStorage.setItem('securitiToken', result.token);
-        navigate('/dashboard');
+        navigate('/');
       }
     } catch (error) {
       console.error('Error completing registration:', error);

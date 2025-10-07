@@ -67,7 +67,6 @@ const AppRoutes: React.FC = () => {
                 
                 {/* Public routes available to authenticated users */}
                 <Route path="/register" element={<VisitorRegistrationPage />} />
-                <Route path="/register/user" element={<UserRegistrationPage />} />
                 <Route path="/public/:qrCode" element={<PublicRegistrationWrapper />} />
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>

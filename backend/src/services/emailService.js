@@ -7,37 +7,49 @@ class EmailService {
   }
 
   initializeNodemailer() {
-    try {
+    // Inicialización básica - las variables se verificarán en tiempo de ejecución
+    this.enabled = null; // null = no verificado aún
+    this.transporter = null;
+  }
+
+  // Verificar si el servicio está habilitado (lazy initialization)
+  checkEnabled() {
+    if (this.enabled === null) {
       // Verificar que tengamos las credenciales necesarias
       if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
         console.log('⚠️  SMTP credentials not configured');
         this.enabled = false;
-        return;
+        return false;
       }
 
-      // Configuración SMTP - Puedes cambiar esto según tu proveedor
+      // Configuración SMTP
       const smtpConfig = {
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
         port: process.env.SMTP_PORT || 587,
-        secure: false, // true para 465, false para otros puertos
+        secure: false,
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
         }
       };
 
-      this.transporter = nodemailer.createTransporter(smtpConfig);
-      
-      // Verificar la conexión SMTP de forma asíncrona (no bloqueante)
-      this.verifyConnection();
-      
-      this.enabled = true;
-      console.log('✅ EmailService initialized with Nodemailer');
-
-    } catch (error) {
-      console.error('❌ Error initializing Nodemailer:', error);
-      this.enabled = false;
+      try {
+        this.transporter = nodemailer.createTransport(smtpConfig);
+        this.enabled = true;
+        console.log('✅ EmailService initialized with Nodemailer');
+        
+        // Verificar la conexión de forma asíncrona
+        this.verifyConnection();
+        
+        return true;
+      } catch (error) {
+        console.error('❌ Error initializing Nodemailer:', error);
+        this.enabled = false;
+        return false;
+      }
     }
+    
+    return this.enabled;
   }
 
   async verifyConnection() {
@@ -53,7 +65,7 @@ class EmailService {
   }
 
   isEnabled() {
-    return this.enabled;
+    return this.checkEnabled();
   }
 
   async sendTestEmail(to) {
@@ -156,7 +168,7 @@ class EmailService {
     }
 
     try {
-      const registrationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register?token=${invitationData.token}`;
+      const registrationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register/user?token=${invitationData.token}`;
 
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,

@@ -23,6 +23,9 @@ export const UserRegistrationPage: React.FC = () => {
   const token = searchParams.get('token');
 
   useEffect(() => {
+    // Clear any existing token to ensure clean registration process
+    localStorage.removeItem('securitiToken');
+    
     if (!token) {
       setError('Token de invitación no válido');
       setVerifying(false);
@@ -66,13 +69,13 @@ export const UserRegistrationPage: React.FC = () => {
       const result = await api.completeRegistration(token, {
         password,
         firstName: invitationData.firstName,
-        lastName: invitationData.lastName,
+        lastName: invitationData.lastName
       });
 
       // Auto-login after successful registration
       if (result.token) {
         localStorage.setItem('securitiToken', result.token);
-        navigate('/dashboard');
+        navigate('/');
       }
     } catch (error) {
       console.error('Error completing registration:', error);
@@ -124,23 +127,37 @@ export const UserRegistrationPage: React.FC = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-extrabold text-gray-900">
-            Completa tu Registro
+            Crear Contraseña
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Has sido invitado a unirte a <strong>{invitationData.companyName}</strong>
+            Completa tu registro para acceder al sistema
           </p>
         </div>
 
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          {/* User Information Section */}
           <div className="mb-6 p-4 bg-blue-50 rounded-md">
-            <div className="flex items-center">
-              <div className="text-blue-600 text-xl mr-3">👋</div>
+            <div className="space-y-3">
               <div>
-                <p className="text-sm font-medium text-blue-900">
-                  Bienvenido, {invitationData.firstName} {invitationData.lastName}
+                <label className="block text-sm font-medium text-blue-900">
+                  Email
+                </label>
+                <p className="text-sm text-blue-700 font-medium">{invitationData.email}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-blue-900">
+                  Nombre
+                </label>
+                <p className="text-sm text-blue-700 font-medium">
+                  {invitationData.firstName} {invitationData.lastName}
                 </p>
-                <p className="text-sm text-blue-700">
-                  Rol asignado: <span className="font-medium capitalize">{invitationData.role}</span>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-blue-900">
+                  Rol asignado
+                </label>
+                <p className="text-sm text-blue-700 font-medium capitalize">
+                  {invitationData.role}
                 </p>
               </div>
             </div>
@@ -153,20 +170,6 @@ export const UserRegistrationPage: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  type="email"
-                  value={invitationData.email}
-                  disabled
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 bg-gray-50 text-gray-500 sm:text-sm"
-                />
-              </div>
-            </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
@@ -210,19 +213,10 @@ export const UserRegistrationPage: React.FC = () => {
                 disabled={loading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Completando Registro...' : 'Completar Registro'}
+                {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
               </button>
             </div>
           </form>
-
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => navigate('/login')}
-              className="text-sm text-gray-600 hover:text-gray-900"
-            >
-              ¿Ya tienes cuenta? Inicia sesión
-            </button>
-          </div>
         </div>
       </div>
     </div>

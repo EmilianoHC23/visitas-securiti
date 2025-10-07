@@ -19,8 +19,8 @@
       "dest": "/backend/index.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "src": "/((?!assets/).*)",
+      "dest": "/index.html"
     }
   ]
 }

@@ -5,10 +5,9 @@ import * as api from '../../services/api';
 type Step = 'form' | 'photo' | 'success';
 
 interface VisitorRegistrationPageProps {
-    accessCode?: string;
 }
 
-export const VisitorRegistrationPage: React.FC<VisitorRegistrationPageProps> = ({ accessCode }) => {
+export const VisitorRegistrationPage: React.FC<VisitorRegistrationPageProps> = () => {
     const [step, setStep] = useState<Step>('form');
     const [hosts, setHosts] = useState<User[]>([]);
     const [visitorName, setVisitorName] = useState('');

@@ -7,7 +7,6 @@ export const AccessCodesPage: React.FC = () => {
   const [accessCodes, setAccessCodes] = useState<Access[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingAccess, setEditingAccess] = useState<Access | null>(null);
   const [selectedQR, setSelectedQR] = useState<Access | null>(null);
   const [qrDataURL, setQrDataURL] = useState<string>('');
   const [newAccess, setNewAccess] = useState({
@@ -31,7 +30,20 @@ export const AccessCodesPage: React.FC = () => {
     try {
       setLoading(true);
       const codes = await api.getAccesses();
-      setAccessCodes(codes);
+      
+      // Convertir fechas de string a Date objects
+      const processedCodes = codes.map(code => ({
+        ...code,
+        schedule: code.schedule ? {
+          ...code.schedule,
+          startDate: new Date(code.schedule.startDate),
+          endDate: new Date(code.schedule.endDate)
+        } : undefined,
+        createdAt: new Date(code.createdAt),
+        updatedAt: new Date(code.updatedAt)
+      }));
+      
+      setAccessCodes(processedCodes);
     } catch (error) {
       console.error('Error loading access codes:', error);
     } finally {
@@ -68,7 +80,20 @@ export const AccessCodesPage: React.FC = () => {
       };
 
       const createdAccess = await api.createAccess(accessData);
-      setAccessCodes([createdAccess, ...accessCodes]);
+      
+      // Convertir fechas del nuevo acceso
+      const processedAccess = {
+        ...createdAccess,
+        schedule: createdAccess.schedule ? {
+          ...createdAccess.schedule,
+          startDate: new Date(createdAccess.schedule.startDate),
+          endDate: new Date(createdAccess.schedule.endDate)
+        } : undefined,
+        createdAt: new Date(createdAccess.createdAt),
+        updatedAt: new Date(createdAccess.updatedAt)
+      };
+      
+      setAccessCodes([processedAccess, ...accessCodes]);
       
       // Reset form
       setNewAccess({
@@ -96,8 +121,21 @@ export const AccessCodesPage: React.FC = () => {
     try {
       const newStatus = currentStatus === 'active' ? 'cancelled' : 'active';
       const updatedAccess = await api.updateAccessStatus(id, newStatus);
+      
+      // Convertir fechas del acceso actualizado
+      const processedAccess = {
+        ...updatedAccess,
+        schedule: updatedAccess.schedule ? {
+          ...updatedAccess.schedule,
+          startDate: new Date(updatedAccess.schedule.startDate),
+          endDate: new Date(updatedAccess.schedule.endDate)
+        } : undefined,
+        createdAt: new Date(updatedAccess.createdAt),
+        updatedAt: new Date(updatedAccess.updatedAt)
+      };
+      
       setAccessCodes(accessCodes.map(access => 
-        access._id === id ? updatedAccess : access
+        access._id === id ? processedAccess : access
       ));
     } catch (error) {
       console.error('Error toggling access status:', error);
@@ -232,9 +270,9 @@ export const AccessCodesPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {access.schedule?.from && access.schedule?.to && (
+                      {access.schedule?.startDate && access.schedule?.endDate && (
                         <div>
-                          <div>Fecha: {access.schedule.from} - {access.schedule.to}</div>
+                          <div>Fecha: {access.schedule.startDate.toLocaleDateString()} - {access.schedule.endDate.toLocaleDateString()}</div>
                         </div>
                       )}
                       {access.description && (

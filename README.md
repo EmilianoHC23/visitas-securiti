@@ -287,14 +287,14 @@ visitas-securiti/
    DATABASE_URL=mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti
    JWT_SECRET=Prod_VisitasSecuriTI_2025_Ultra_Secure_JWT_Secret_Key_For_Production_Only!@#$%
    NODE_ENV=production
+   FRONTEND_URL=https://tu-app.vercel.app
    
-   # Configuración de Email (Opcional - para notificaciones)
+   # Configuración de Email (SMTP - Requerido para invitaciones)
    SMTP_HOST=smtp.gmail.com
    SMTP_PORT=587
-   SMTP_USER=notificaciones@tuempresa.com
-   SMTP_PASS=tu-password-de-aplicacion
-   FRONTEND_URL=https://tu-app.vercel.app
-   ADMIN_EMAILS=admin@tuempresa.com
+   SMTP_USER=tu-email@gmail.com
+   SMTP_PASS=tu-app-password-gmail
+   EMAIL_FROM=tu-email@gmail.com
    ```
 
 4. **Despliega:**

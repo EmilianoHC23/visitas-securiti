@@ -53,7 +53,7 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
       console.log('👤 Creating new pending user...');
       user = new User({
         email: email.toLowerCase(),
-        password: 'temp', // Contraseña temporal, será cambiada al completar registro
+        password: 'temp123', // Contraseña temporal, será cambiada al completar registro
         firstName,
         lastName,
         role,

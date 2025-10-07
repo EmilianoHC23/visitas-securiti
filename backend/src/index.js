@@ -18,6 +18,7 @@ const blacklistRoutes = require('./routes/blacklist');
 const accessRoutes = require('./routes/access');
 const publicRoutes = require('./routes/public');
 const reportsRoutes = require('./routes/reports');
+const invitationRoutes = require('./routes/invitations');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -64,6 +65,7 @@ app.use('/api/blacklist', blacklistRoutes);
 app.use('/api/access', accessRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/invitations', invitationRoutes);
 app.use('/api', debugRoutes); // Temporal debug route
 
 // Health check endpoint

@@ -42,6 +42,11 @@ const userSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  invitationStatus: {
+    type: String,
+    enum: ['registered', 'pending', 'none'],
+    default: 'none'
   }
 }, {
   timestamps: true

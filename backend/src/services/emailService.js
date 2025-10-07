@@ -132,6 +132,72 @@ class EmailService {
       return { success: false, error: error.message };
     }
   }
+
+  async sendInvitationEmail(invitationData) {
+    if (!this.isEnabled()) {
+      console.log('📧 Email service disabled - would send invitation to:', invitationData.email);
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    try {
+      const registrationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register?token=${invitationData.token}`;
+
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: invitationData.email,
+        subject: `Invitación para unirte a ${invitationData.companyName} - Visitas SecuriTI`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+              <h1 style="margin: 0; font-size: 28px;">🎉 ¡Has sido invitado!</h1>
+              <p style="margin: 10px 0 0 0; opacity: 0.9;">Únete al sistema de gestión de visitas</p>
+            </div>
+
+            <div style="background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 12px 12px;">
+              <p style="font-size: 18px; color: #1f2937;">Hola,</p>
+
+              <p style="font-size: 16px; line-height: 1.6; color: #4b5563;">
+                Has sido invitado a unirte al sistema de gestión de visitas de <strong>${invitationData.companyName}</strong>.
+                Tu rol asignado será: <strong>${invitationData.role}</strong>.
+              </p>
+
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${registrationUrl}"
+                   style="background: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);">
+                  🚀 Completar Registro
+                </a>
+              </div>
+
+              <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <p style="margin: 0; color: #92400e; font-size: 14px;">
+                  <strong>⚠️ Importante:</strong> Este enlace expirará en 7 días por razones de seguridad.
+                  Si el enlace no funciona, copia y pega esta URL en tu navegador:
+                </p>
+                <p style="margin: 10px 0 0 0; word-break: break-all; color: #92400e; font-family: monospace; font-size: 12px;">
+                  ${registrationUrl}
+                </p>
+              </div>
+
+              <p style="color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
+                Si no esperabas esta invitación, puedes ignorar este email de forma segura.
+              </p>
+
+              <p style="color: #6b7280; font-size: 14px; text-align: center;">
+                Sistema de Gestión de Visitas - SecuriTI
+              </p>
+            </div>
+          </div>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Invitation email sent to:', invitationData.email);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('❌ Error sending invitation email:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 module.exports = new EmailService();

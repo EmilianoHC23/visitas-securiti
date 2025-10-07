@@ -26,6 +26,7 @@
     "styled-components": "^6.1.19"
   },
   "devDependencies": {
+    "@esbuild/linux-x64": "^0.19.0",
     "@rollup/rollup-linux-x64-gnu": "^4.0.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",

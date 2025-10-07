@@ -7,17 +7,6 @@ const emailService = require('../services/emailService');
 
 const router = express.Router();
 
-// Endpoint de prueba para verificar conectividad
-router.get('/test', auth, (req, res) => {
-  console.log('🧪 Test endpoint called by:', req.user.email);
-  res.json({ 
-    message: 'Test endpoint working',
-    user: req.user.email,
-    timestamp: new Date().toISOString(),
-    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
-  });
-});
-
 // Enviar invitación
 router.post('/', auth, authorize(['admin']), async (req, res) => {
   try {

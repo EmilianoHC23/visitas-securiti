@@ -394,3 +394,8 @@ export const resendInvitation = async (userId: string) => {
     method: 'POST',
   });
 };
+
+// Función de prueba para verificar configuración SMTP
+export const testSMTPConfig = async () => {
+  return apiRequest('/invitations/test-smtp');
+};

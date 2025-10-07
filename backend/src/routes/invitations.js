@@ -7,6 +7,28 @@ const emailService = require('../services/emailService');
 
 const router = express.Router();
 
+// Endpoint de prueba para verificar configuración SMTP
+router.get('/test-smtp', auth, (req, res) => {
+  console.log('🧪 Testing SMTP configuration...');
+  console.log('📧 SMTP_HOST:', process.env.SMTP_HOST);
+  console.log('📧 SMTP_PORT:', process.env.SMTP_PORT);
+  console.log('📧 SMTP_USER:', process.env.SMTP_USER ? 'Set' : 'Not set');
+  console.log('📧 SMTP_PASS:', process.env.SMTP_PASS ? 'Set' : 'Not set');
+  console.log('📧 EMAIL_FROM:', process.env.EMAIL_FROM);
+  
+  const emailService = require('../services/emailService');
+  const isEnabled = emailService.isEnabled();
+  
+  res.json({
+    smtpConfigured: isEnabled,
+    smtpHost: process.env.SMTP_HOST,
+    smtpPort: process.env.SMTP_PORT,
+    smtpUser: process.env.SMTP_USER ? 'Configured' : 'Not configured',
+    emailFrom: process.env.EMAIL_FROM,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Enviar invitación
 router.post('/', auth, authorize(['admin']), async (req, res) => {
   try {

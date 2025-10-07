@@ -294,19 +294,19 @@ export const UserManagementPage: React.FC = () => {
     const [editLoading, setEditLoading] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
 
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                setLoading(true);
-                const usersData = await api.getUsers();
-                setUsers(usersData);
-            } catch (error) {
-                console.error("Failed to fetch users:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchUsers = async () => {
+        try {
+            setLoading(true);
+            const usersData = await api.getUsers();
+            setUsers(usersData);
+        } catch (error) {
+            console.error("Failed to fetch users:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchUsers();
     }, []);
 
@@ -320,10 +320,12 @@ export const UserManagementPage: React.FC = () => {
                 role: userData.role
             });
             setIsModalOpen(false);
-            alert('Invitación enviada exitosamente. El usuario recibirá un email con instrucciones para completar su registro.');
+            // Refrescar la lista de usuarios para mostrar el nuevo usuario invitado
+            await fetchUsers();
+            alert('Invitación enviada exitosamente. El usuario aparecerá en la tabla con estatus "Pendiente".');
         } catch (error) {
             console.error('Error sending invitation:', error);
-            alert('Error al enviar invitación');
+            alert('Error al enviar invitación. Revisa la consola para más detalles.');
         } finally {
             setInviteLoading(false);
         }

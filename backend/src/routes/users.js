@@ -8,7 +8,12 @@ const router = express.Router();
 router.get('/', auth, authorize('admin'), async (req, res) => {
   try {
     const { role } = req.query;
-    const filter = { isActive: true };
+    const filter = { 
+      $or: [
+        { isActive: true },
+        { invitationStatus: 'pending' }
+      ]
+    };
     
     if (role) {
       filter.role = role;

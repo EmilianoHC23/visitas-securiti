@@ -11,10 +11,14 @@ const router = express.Router();
 router.post('/', auth, authorize(['admin']), async (req, res) => {
   try {
     console.log('📧 Starting invitation process for:', req.body.email);
+    console.log('📧 Request body:', JSON.stringify(req.body, null, 2));
+    console.log('📧 User from token:', req.user ? req.user.email : 'No user');
+    
     const { firstName, lastName, email, role } = req.body;
 
     // Validar datos
     if (!firstName || !lastName || !email || !role) {
+      console.log('❌ Validation failed - missing fields');
       return res.status(400).json({ message: 'Todos los campos son requeridos' });
     }
 
@@ -35,6 +39,7 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
 
     // Si no existe usuario pendiente, crear uno
     if (!user) {
+      console.log('👤 Creating new pending user...');
       user = new User({
         email: email.toLowerCase(),
         password: 'temp', // Contraseña temporal, será cambiada al completar registro
@@ -45,21 +50,34 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
         invitationStatus: 'pending',
         isActive: false // Usuario inactivo hasta completar registro
       });
-      await user.save();
+      
+      try {
+        await user.save();
+        console.log('✅ User created successfully:', user._id);
+      } catch (userError) {
+        console.error('❌ Error creating user:', userError);
+        throw userError;
+      }
+    } else {
+      console.log('✅ Using existing pending user:', user._id);
     }
 
     // Verificar que no haya una invitación pendiente
+    console.log('🔍 Checking for existing pending invitations...');
     const existingInvitation = await Invitation.findOne({
       email: email.toLowerCase(),
       status: 'pending',
       expiresAt: { $gt: new Date() }
     });
+    console.log('📊 Existing invitation check result:', existingInvitation ? 'Found' : 'Not found');
 
     if (existingInvitation) {
+      console.log('❌ Invitation already exists');
       return res.status(400).json({ message: 'Ya existe una invitación pendiente para este email' });
     }
 
     // Crear invitación
+    console.log('📧 Creating invitation...');
     const invitation = new Invitation({
       firstName,
       lastName,
@@ -69,7 +87,13 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
       companyId: req.user.companyId
     });
 
-    await invitation.save();
+    try {
+      await invitation.save();
+      console.log('✅ Invitation created successfully:', invitation._id);
+    } catch (invitationError) {
+      console.error('❌ Error creating invitation:', invitationError);
+      throw invitationError;
+    }
 
     // Enviar email de invitación
     const invitationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register?token=${invitation.invitationToken}`;
@@ -112,7 +136,19 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error sending invitation:', error);
+    console.error('💥 CRITICAL ERROR in invitation process:', error);
+    console.error('💥 Error stack:', error.stack);
+    console.error('💥 Error message:', error.message);
+    
+    // En desarrollo, devolver más detalles del error
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(500).json({ 
+        message: 'Error interno del servidor', 
+        error: error.message,
+        stack: error.stack
+      });
+    }
+    
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

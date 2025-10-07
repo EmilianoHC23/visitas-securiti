@@ -14,6 +14,7 @@ const accessRoutes = require('./src/routes/access');
 const blacklistRoutes = require('./src/routes/blacklist');
 const companyRoutes = require('./src/routes/company');
 const publicRoutes = require('./src/routes/public');
+const invitationRoutes = require('./src/routes/invitations');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -43,6 +44,7 @@ app.use('/api/access', accessRoutes);
 app.use('/api/blacklist', blacklistRoutes);
 app.use('/api/company', companyRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/invitations', invitationRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -54,6 +56,18 @@ app.get('/api/health', (req, res) => {
         hasDatabase: !!(process.env.MONGODB_URI || process.env.DATABASE_URL)
     });
 });
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/visits', visitRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/company', companyRoutes);
+app.use('/api/blacklist', blacklistRoutes);
+app.use('/api/access', accessRoutes);
+app.use('/api/public', publicRoutes);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/invitations', invitationRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

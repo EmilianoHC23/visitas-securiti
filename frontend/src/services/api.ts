@@ -356,3 +356,41 @@ export const exportReports = async (format: 'json' | 'csv', filters: any = {}) =
 export const getAccessByCode = async (accessCode: string) => {
   return apiRequest(`/access/public/${accessCode}`);
 };
+
+// --- INVITATIONS ---
+export const sendInvitation = async (invitationData: {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}) => {
+  return apiRequest('/invitations', {
+    method: 'POST',
+    body: JSON.stringify(invitationData),
+  });
+};
+
+export const verifyInvitationToken = async (token: string) => {
+  return apiRequest(`/invitations/verify/${token}`);
+};
+
+export const completeRegistration = async (token: string, userData: {
+  password: string;
+  firstName: string;
+  lastName: string;
+}) => {
+  return apiRequest('/invitations/complete', {
+    method: 'POST',
+    body: JSON.stringify({ token, ...userData }),
+  });
+};
+
+export const getInvitations = async () => {
+  return apiRequest('/invitations');
+};
+
+export const resendInvitation = async (userId: string) => {
+  return apiRequest(`/invitations/resend/${userId}`, {
+    method: 'POST',
+  });
+};

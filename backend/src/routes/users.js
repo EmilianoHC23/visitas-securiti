@@ -81,11 +81,24 @@ router.put('/:id', auth, authorize('admin'), async (req, res) => {
     delete updates.password;
     delete updates._id;
 
+    // If email is being updated, check for duplicates
+    if (updates.email) {
+      const existingUser = await User.findOne({ 
+        email: updates.email.toLowerCase(),
+        _id: { $ne: id } // Exclude current user
+      });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Ya existe un usuario con este email' });
+      }
+      // Ensure email is stored in lowercase
+      updates.email = updates.email.toLowerCase();
+    }
+
     const user = await User.findByIdAndUpdate(
       id,
       updates,
       { new: true, runValidators: true }
-    );
+    ).select('-password');
 
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado' });

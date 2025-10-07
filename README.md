@@ -1,6 +1,48 @@
 # 🛡️ Visitas SecuriTI
 
-[![Build Status](https://github.com/EmilianoHC23/visitas-securiti/workflows/🚀%20Build%20and%20Test/badge.svg)](https://github.com/EmilianoHC23/visitas-securiti/actions)
+[![Build Status](https://github.com/EmilianoHC23/visita**Backend `backend/.env`:**  
+```
+NODE_ENV=development
+PORT=3001
+MONGODB_URI=mongodb://localhost:27017/visitas-securiti
+# O usar MongoDB Atlas:
+# MONGODB_URI=mongodb+srv://usuario:password@cluster.mongodb.net/visitas-securiti
+JWT_SECRET=tu_jwt_secret_super_secreto
+
+# Configuración SMTP para emails (Nodemailer)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=tu-email@gmail.com
+SMTP_PASS=tu-app-password-gmail
+EMAIL_FROM=tu-email@gmail.com
+```
+
+### 📧 **Configuración de Email (Nodemailer)**
+
+Para envío de emails de confirmación de visitas:
+
+**Gmail:**
+1. Activar autenticación de 2 factores
+2. Generar "App Password" en configuración de Google
+3. Usar el App Password como `SMTP_PASS`
+
+**Outlook/Hotmail:**
+```bash
+SMTP_HOST=smtp-mail.outlook.com
+SMTP_PORT=587
+SMTP_USER=tu-email@outlook.com
+SMTP_PASS=tu-password
+```
+
+**Servidor SMTP personalizado:**
+```bash
+SMTP_HOST=tu-servidor-smtp.com
+SMTP_PORT=587
+SMTP_USER=usuario
+SMTP_PASS=password
+```
+
+5. **Ejecutar en modo desarrollo:**workflows/🚀%20Build%20and%20Test/badge.svg)](https://github.com/EmilianoHC23/visitas-securiti/actions)
 [![GitHub repo](https://img.shields.io/badge/GitHub-EmilianoHC23%2Fvisitas--securiti-blue?logo=github)](https://github.com/EmilianoHC23/visitas-securiti)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -14,7 +56,7 @@ Desarrollado con React 19, Node.js, Express, MongoDB Atlas y desplegado en Verce
 - Node.js v18+ y npm
 - Git configurado
 - MongoDB Atlas account (opcional para desarrollo local)
-- Cuenta de EmailJS para notificaciones
+- Servidor SMTP para envío de emails (Gmail, Outlook, etc.)
 
 ### 🚀 **Configuración Automática (Recomendado)**
 
@@ -77,9 +119,6 @@ NODE_ENV=development
 ```
 VITE_ENVIRONMENT=development
 VITE_API_URL=http://localhost:3001/api
-VITE_EMAILJS_SERVICE_ID=service_vxjzajn
-VITE_EMAILJS_TEMPLATE_ID=template_5oieypb
-VITE_EMAILJS_PUBLIC_KEY=vvtUk70Pk2tlCBQ52
 ```
 
 **Backend `backend/.env`:**
@@ -90,9 +129,6 @@ MONGODB_URI=mongodb://localhost:27017/visitas-securiti
 # O usar MongoDB Atlas:
 # MONGODB_URI=mongodb+srv://usuario:password@cluster.mongodb.net/visitas-securiti
 JWT_SECRET=tu_jwt_secret_super_secreto
-EMAILJS_SERVICE_ID=service_vxjzajn
-EMAILJS_TEMPLATE_ID=template_5oieypb
-EMAILJS_PUBLIC_KEY=vvtUk70Pk2tlCBQ52
 ```
 
 5. **Ejecutar en modo desarrollo:**
@@ -251,14 +287,14 @@ visitas-securiti/
    DATABASE_URL=mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti
    JWT_SECRET=Prod_VisitasSecuriTI_2025_Ultra_Secure_JWT_Secret_Key_For_Production_Only!@#$%
    NODE_ENV=production
+   FRONTEND_URL=https://tu-app.vercel.app
    
-   # Configuración de Email (Opcional - para notificaciones)
+   # Configuración de Email (SMTP - Requerido para invitaciones)
    SMTP_HOST=smtp.gmail.com
    SMTP_PORT=587
-   SMTP_USER=notificaciones@tuempresa.com
-   SMTP_PASS=tu-password-de-aplicacion
-   FRONTEND_URL=https://tu-app.vercel.app
-   ADMIN_EMAILS=admin@tuempresa.com
+   SMTP_USER=tu-email@gmail.com
+   SMTP_PASS=tu-app-password-gmail
+   EMAIL_FROM=tu-email@gmail.com
    ```
 
 4. **Despliega:**
@@ -491,10 +527,11 @@ visitas-securiti/
 ## 🛠️ Tecnologías utilizadas
 
 - **Frontend**: React 19, TypeScript, Tailwind CSS, Vite
-- **Backend**: Node.js, Express, MongoDB, Mongoose
+- **Backend**: Node.js, Express, MongoDB, Mongoose, Nodemailer
 - **Authentication**: JWT, bcryptjs
 - **Deployment**: Vercel
 - **Database**: MongoDB Atlas
+- **Email**: Nodemailer con SMTP
 
 ## 🤝 Contribuir
 

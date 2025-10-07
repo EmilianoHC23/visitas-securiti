@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User } from '../../types';
 import * as api from '../../services/api';
-import emailService from '../../services/emailService';
 
 type Step = 'form' | 'photo' | 'success';
 
@@ -100,32 +99,6 @@ export const VisitorRegistrationPage: React.FC<VisitorRegistrationPageProps> = (
             console.log('Enviando datos de visita:', { visitorName, visitorCompany, visitorEmail, hostId, reason, visitorPhoto: visitorPhoto.substring(0, 50) + '...' });
             const result = await api.selfRegisterVisit({ visitorName, visitorCompany, visitorEmail, hostId, reason, visitorPhoto });
             console.log('Visita registrada exitosamente:', result);
-            
-            // Enviar email de confirmación si se proporcionó email
-            if (visitorEmail && result.host) {
-                console.log('📧 Enviando email de confirmación...');
-                
-                const emailData = {
-                    visitorName,
-                    visitorEmail,
-                    companyName: 'SecuriTI',
-                    hostName: `${result.host.firstName} ${result.host.lastName}`,
-                    scheduledDate: result.scheduledDate || new Date(),
-                    reason: result.reason,
-                    status: result.status
-                };
-
-                try {
-                    const emailResult = await emailService.sendVisitConfirmation(emailData);
-                    if (emailResult.success) {
-                        console.log('✅ Email de confirmación enviado exitosamente');
-                    } else {
-                        console.log('⚠️ No se pudo enviar el email de confirmación:', emailResult.error);
-                    }
-                } catch (emailError) {
-                    console.error('❌ Error enviando email de confirmación:', emailError);
-                }
-            }
             
             setStep('success');
         } catch (err) {

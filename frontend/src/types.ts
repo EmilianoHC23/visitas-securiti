@@ -14,6 +14,7 @@ export interface User {
   companyId: string;
   profileImage: string;
   isActive?: boolean;
+  invitationStatus?: 'registered' | 'pending' | 'none';
   createdAt?: string;
   updatedAt?: string;
 }

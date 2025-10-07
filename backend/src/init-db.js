@@ -33,7 +33,8 @@ const initializeDatabase = async () => {
         firstName: 'Carlos',
         lastName: 'Administrador',
         role: 'admin',
-        companyId: 'comp-1'
+        companyId: 'comp-1',
+        invitationStatus: 'registered'
       },
       {
         email: 'reception@securiti.com',
@@ -41,7 +42,8 @@ const initializeDatabase = async () => {
         firstName: 'María',
         lastName: 'Recepcionista',
         role: 'reception',
-        companyId: 'comp-1'
+        companyId: 'comp-1',
+        invitationStatus: 'registered'
       },
       {
         email: 'juan.perez@securiti.com',
@@ -49,7 +51,8 @@ const initializeDatabase = async () => {
         firstName: 'Juan',
         lastName: 'Pérez',
         role: 'host',
-        companyId: 'comp-1'
+        companyId: 'comp-1',
+        invitationStatus: 'registered'
       },
       {
         email: 'ana.garcia@securiti.com',
@@ -57,7 +60,8 @@ const initializeDatabase = async () => {
         firstName: 'Ana',
         lastName: 'García',
         role: 'host',
-        companyId: 'comp-1'
+        companyId: 'comp-1',
+        invitationStatus: 'registered'
       },
       {
         email: 'carlos.rodriguez@securiti.com',
@@ -65,7 +69,8 @@ const initializeDatabase = async () => {
         firstName: 'Carlos',
         lastName: 'Rodríguez',
         role: 'host',
-        companyId: 'comp-1'
+        companyId: 'comp-1',
+        invitationStatus: 'registered'
       },
       {
         email: 'sofia.lopez@securiti.com',
@@ -73,7 +78,8 @@ const initializeDatabase = async () => {
         firstName: 'Sofía',
         lastName: 'López',
         role: 'host',
-        companyId: 'comp-1'
+        companyId: 'comp-1',
+        invitationStatus: 'registered'
       }
     ];
 
@@ -142,6 +148,32 @@ const initializeDatabase = async () => {
 
     await Visit.insertMany(sampleVisits);
     console.log('📋 Created sample visits');
+
+    // Migration: Update existing users without invitationStatus
+    console.log('🔄 Checking for users that need invitationStatus migration...');
+    const usersWithoutStatus = await User.find({ invitationStatus: { $exists: false } });
+    
+    if (usersWithoutStatus.length > 0) {
+      console.log(`📝 Found ${usersWithoutStatus.length} users without invitationStatus, updating...`);
+      
+      for (const user of usersWithoutStatus) {
+        // If user is active and has a password, mark as registered
+        // If user is inactive, mark as pending (from old invitation system)
+        const newStatus = user.isActive ? 'registered' : 'pending';
+        
+        await User.findByIdAndUpdate(user._id, { 
+          invitationStatus: newStatus,
+          // Also ensure isActive is set for pending users
+          ...(newStatus === 'pending' && { isActive: false })
+        });
+        
+        console.log(`✅ Updated ${user.email}: ${newStatus}`);
+      }
+      
+      console.log('🎉 Migration completed!');
+    } else {
+      console.log('✅ All users have invitationStatus field');
+    }
 
     console.log('\n✅ Database initialized successfully!');
     console.log('\n📊 Credenciales de acceso actualizadas:');

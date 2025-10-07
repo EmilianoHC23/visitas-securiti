@@ -73,14 +73,15 @@ export const LoginPage: React.FC = () => {
     };
 
     return (
-        <div 
-            className="min-h-screen flex items-center justify-center bg-cover bg-center relative"
-            style={{ 
-                backgroundImage: "url('src/assets/images/pattern.png')",
-                backgroundSize: "60%",
-                backgroundRepeat: "repeat"
-            }}
+       <div 
+        className="min-h-screen flex items-center justify-center bg-cover bg-center relative"
+        style={{ 
+        backgroundImage: "url('/pattern.png')",
+        backgroundSize: "60%",
+        backgroundRepeat: "repeat"
+         }}
         >
+
             {/* Overlay para opacidad */}
             <div className="absolute inset-0 bg-white opacity-60 pointer-events-none"></div>
             <div className="relative z-10 max-w-md w-full bg-white rounded-2xl shadow-lg border border-gray-200 p-8 flex flex-col items-center mx-2 sm:mx-0">

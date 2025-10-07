@@ -77,8 +77,21 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
         await user.save();
         console.log('✅ User created successfully:', user._id);
       } catch (userError) {
-        console.error('❌ Error creating user:', userError);
-        throw userError;
+        console.error('❌ Error creating user:', userError.message);
+        console.error('❌ Error code:', userError.code);
+        
+        // Si es un error de duplicado (email ya existe)
+        if (userError.code === 11000) {
+          return res.status(400).json({ 
+            message: 'Ya existe un usuario registrado con este email',
+            error: 'DUPLICATE_EMAIL'
+          });
+        }
+        
+        return res.status(500).json({ 
+          message: 'Error al crear el usuario',
+          error: userError.message
+        });
       }
     } else {
       console.log('✅ Using existing pending user:', user._id);

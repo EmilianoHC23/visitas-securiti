@@ -27,7 +27,18 @@ class EmailService {
       };
 
       this.transporter = nodemailer.createTransport(smtpConfig);
-      this.enabled = true; // Asumir que está configurado si llega aquí
+      
+      // Verificar la conexión SMTP
+      try {
+        await this.transporter.verify();
+        console.log('✅ SMTP connection verified successfully');
+      } catch (verifyError) {
+        console.error('❌ SMTP verification failed:', verifyError.message);
+        this.enabled = false;
+        return;
+      }
+      
+      this.enabled = true;
       console.log('✅ EmailService initialized with Nodemailer');
 
     } catch (error) {
@@ -192,7 +203,9 @@ class EmailService {
 
       const result = await this.transporter.sendMail(mailOptions);
       console.log('✅ Invitation email sent to:', invitationData.email);
-      return { success: true, messageId: result.messageId };
+      console.log('📧 Message ID:', result.messageId);
+      console.log('📧 Response:', result.response);
+      return { success: true, messageId: result.messageId, response: result.response };
     } catch (error) {
       console.error('❌ Error sending invitation email:', error);
       return { success: false, error: error.message };

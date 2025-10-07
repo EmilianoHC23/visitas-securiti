@@ -34,7 +34,7 @@ class EmailService {
       };
 
       try {
-        this.transporter = nodemailer.createTransporter(smtpConfig);
+        this.transporter = nodemailer.createTransport(smtpConfig);
         this.enabled = true;
         console.log('✅ EmailService initialized with Nodemailer');
         

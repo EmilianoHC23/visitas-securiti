@@ -12,7 +12,7 @@ const BASE_URL = isDevelopment
 console.log('🌐 API Base URL:', BASE_URL);
 console.log('🌍 Environment:', import.meta.env.VITE_ENVIRONMENT || 'not set');
 
-const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
+const apiRequest = async (endpoint: string, options: RequestInit = {}) => { // eslint-disable-line no-undef
   const token = localStorage.getItem('securitiToken');
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',

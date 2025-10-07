@@ -7,7 +7,6 @@ export const AccessCodesPage: React.FC = () => {
   const [accessCodes, setAccessCodes] = useState<Access[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingAccess, setEditingAccess] = useState<Access | null>(null);
   const [selectedQR, setSelectedQR] = useState<Access | null>(null);
   const [qrDataURL, setQrDataURL] = useState<string>('');
   const [newAccess, setNewAccess] = useState({
@@ -232,9 +231,9 @@ export const AccessCodesPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {access.schedule?.from && access.schedule?.to && (
+                      {access.schedule?.startDate && access.schedule?.endDate && (
                         <div>
-                          <div>Fecha: {access.schedule.from} - {access.schedule.to}</div>
+                          <div>Fecha: {access.schedule.startDate.toLocaleDateString()} - {access.schedule.endDate.toLocaleDateString()}</div>
                         </div>
                       )}
                       {access.description && (

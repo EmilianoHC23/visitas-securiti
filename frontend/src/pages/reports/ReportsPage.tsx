@@ -18,7 +18,7 @@ export const ReportsPage: React.FC = () => {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState('month');
+  const [period] = useState('month');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -427,7 +427,7 @@ export const ReportsPage: React.FC = () => {
                         {visit.visitorCompany || 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {typeof visit.hostId === 'object' ? visit.hostId.name : 'N/A'}
+                        {visit.host ? `${visit.host.firstName} ${visit.host.lastName}` : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {visit.createdAt ? new Date(visit.createdAt).toLocaleDateString() : 'N/A'}

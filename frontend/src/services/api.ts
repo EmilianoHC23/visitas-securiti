@@ -378,6 +378,7 @@ export const completeRegistration = async (token: string, userData: {
   password: string;
   firstName: string;
   lastName: string;
+  email?: string;
 }) => {
   return apiRequest('/invitations/complete', {
     method: 'POST',

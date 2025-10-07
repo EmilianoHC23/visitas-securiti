@@ -241,7 +241,7 @@ router.get('/verify/:token', async (req, res) => {
 // Completar registro desde invitación
 router.post('/complete', async (req, res) => {
   try {
-    const { token, password, firstName, lastName } = req.body;
+    const { token, password, firstName, lastName, email } = req.body;
 
     if (!password || password.length < 6) {
       return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
@@ -257,18 +257,25 @@ router.post('/complete', async (req, res) => {
       return res.status(400).json({ message: 'Invitación inválida o expirada' });
     }
 
-    // Crear el usuario
-    const user = new User({
+    // Buscar el usuario pendiente creado durante la invitación
+    const existingUser = await User.findOne({
       email: invitation.email,
-      password,
-      firstName: firstName || invitation.firstName,
-      lastName: lastName || invitation.lastName,
-      role: invitation.role,
-      companyId: invitation.companyId,
-      invitationStatus: 'registered'
+      invitationStatus: 'pending'
     });
 
-    await user.save();
+    if (!existingUser) {
+      return res.status(400).json({ message: 'Usuario invitado no encontrado' });
+    }
+
+    // Actualizar el usuario existente con los datos proporcionados
+    existingUser.password = password;
+    existingUser.firstName = firstName || invitation.firstName;
+    existingUser.lastName = lastName || invitation.lastName;
+    existingUser.email = email ? email.toLowerCase() : invitation.email;
+    existingUser.invitationStatus = 'registered';
+    existingUser.isActive = true;
+
+    await existingUser.save();
 
     // Marcar invitación como aceptada
     invitation.status = 'accepted';
@@ -278,7 +285,7 @@ router.post('/complete', async (req, res) => {
     // Generar token JWT para login automático
     const jwt = require('jsonwebtoken');
     const token_jwt = jwt.sign(
-      { userId: user._id, email: user.email, role: user.role, companyId: user.companyId },
+      { userId: existingUser._id, email: existingUser.email, role: existingUser.role, companyId: existingUser.companyId },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -286,11 +293,11 @@ router.post('/complete', async (req, res) => {
     res.json({
       message: 'Registro completado exitosamente',
       user: {
-        id: user._id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role
+        id: existingUser._id,
+        email: existingUser.email,
+        firstName: existingUser.firstName,
+        lastName: existingUser.lastName,
+        role: existingUser.role
       },
       token: token_jwt
     });

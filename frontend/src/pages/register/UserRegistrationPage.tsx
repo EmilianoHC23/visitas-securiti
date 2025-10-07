@@ -16,6 +16,7 @@ export const UserRegistrationPage: React.FC = () => {
   const [invitationData, setInvitationData] = useState<InvitationData | null>(null);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +37,7 @@ export const UserRegistrationPage: React.FC = () => {
       try {
         const data = await api.verifyInvitationToken(token);
         setInvitationData(data);
+        setEmail(data.email); // Initialize email with invitation data
       } catch (error) {
         console.error('Error verifying token:', error);
         setError('Token de invitación inválido o expirado');
@@ -70,6 +72,7 @@ export const UserRegistrationPage: React.FC = () => {
         password,
         firstName: invitationData.firstName,
         lastName: invitationData.lastName,
+        email: email // Include the potentially edited email
       });
 
       // Auto-login after successful registration
@@ -150,7 +153,8 @@ export const UserRegistrationPage: React.FC = () => {
                 <input
                   id="email"
                   type="email"
-                  value={invitationData.email}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>

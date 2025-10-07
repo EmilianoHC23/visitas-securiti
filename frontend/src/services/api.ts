@@ -394,3 +394,8 @@ export const resendInvitation = async (userId: string) => {
     method: 'POST',
   });
 };
+
+// Función de prueba para verificar conectividad
+export const testInvitationsEndpoint = async () => {
+  return apiRequest('/invitations/test');
+};

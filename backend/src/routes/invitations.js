@@ -274,7 +274,12 @@ router.post('/complete', async (req, res) => {
     existingUser.invitationStatus = 'registered';
     existingUser.isActive = true;
 
+    // Asegurar que la contraseña se marque como modificada para que se hashee
+    existingUser.markModified('password');
+
+    console.log('🔐 Updating user password for:', existingUser.email);
     await existingUser.save();
+    console.log('✅ User updated successfully, password hashed');
 
     // Marcar invitación como aceptada
     invitation.status = 'accepted';

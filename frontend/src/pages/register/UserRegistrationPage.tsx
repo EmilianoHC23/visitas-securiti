@@ -16,7 +16,6 @@ export const UserRegistrationPage: React.FC = () => {
   const [invitationData, setInvitationData] = useState<InvitationData | null>(null);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +36,6 @@ export const UserRegistrationPage: React.FC = () => {
       try {
         const data = await api.verifyInvitationToken(token);
         setInvitationData(data);
-        setEmail(data.email); // Initialize email with invitation data
       } catch (error) {
         console.error('Error verifying token:', error);
         setError('Token de invitación inválido o expirado');
@@ -71,8 +69,7 @@ export const UserRegistrationPage: React.FC = () => {
       const result = await api.completeRegistration(token, {
         password,
         firstName: invitationData.firstName,
-        lastName: invitationData.lastName,
-        email: email // Include the potentially edited email
+        lastName: invitationData.lastName
       });
 
       // Auto-login after successful registration
@@ -130,14 +127,42 @@ export const UserRegistrationPage: React.FC = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-extrabold text-gray-900">
-            Completa tu Registro
+            Crear Contraseña
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Has sido invitado a unirte a <strong>{invitationData.companyName}</strong>
+            Completa tu registro para acceder al sistema
           </p>
         </div>
 
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          {/* User Information Section */}
+          <div className="mb-6 p-4 bg-blue-50 rounded-md">
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-blue-900">
+                  Email
+                </label>
+                <p className="text-sm text-blue-700 font-medium">{invitationData.email}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-blue-900">
+                  Nombre
+                </label>
+                <p className="text-sm text-blue-700 font-medium">
+                  {invitationData.firstName} {invitationData.lastName}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-blue-900">
+                  Rol asignado
+                </label>
+                <p className="text-sm text-blue-700 font-medium capitalize">
+                  {invitationData.role}
+                </p>
+              </div>
+            </div>
+          </div>
+
           {error && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
               {error}
@@ -145,20 +170,6 @@ export const UserRegistrationPage: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-            </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
@@ -202,7 +213,7 @@ export const UserRegistrationPage: React.FC = () => {
                 disabled={loading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Completando Registro...' : 'Completar Registro'}
+                {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
               </button>
             </div>
           </form>

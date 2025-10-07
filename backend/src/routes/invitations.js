@@ -241,7 +241,7 @@ router.get('/verify/:token', async (req, res) => {
 // Completar registro desde invitación
 router.post('/complete', async (req, res) => {
   try {
-    const { token, password, firstName, lastName, email } = req.body;
+    const { token, password, firstName, lastName } = req.body;
 
     if (!password || password.length < 6) {
       return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
@@ -271,7 +271,6 @@ router.post('/complete', async (req, res) => {
     existingUser.password = password;
     existingUser.firstName = firstName || invitation.firstName;
     existingUser.lastName = lastName || invitation.lastName;
-    existingUser.email = email ? email.toLowerCase() : invitation.email;
     existingUser.invitationStatus = 'registered';
     existingUser.isActive = true;
 

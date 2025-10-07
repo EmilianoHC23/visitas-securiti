@@ -370,6 +370,22 @@ export const UserManagementPage: React.FC = () => {
         }
     };
 
+    const handleDeleteInvitation = async (userId: string) => {
+        if (!confirm('¿Estás seguro de que quieres eliminar esta invitación? El usuario será eliminado permanentemente.')) {
+            return;
+        }
+
+        try {
+            await api.deleteInvitation(userId);
+            alert('Invitación eliminada exitosamente');
+            // Recargar la lista de usuarios
+            fetchUsers();
+        } catch (error) {
+            console.error('Error deleting invitation:', error);
+            alert('Error al eliminar invitación');
+        }
+    };
+
     const handleDeleteUser = async (userId: string) => {
         if (!confirm('¿Estás seguro de que quieres desactivar este usuario?')) {
             return;
@@ -429,13 +445,22 @@ export const UserManagementPage: React.FC = () => {
                                         <StatusBadge status={user.invitationStatus || 'none'} />
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        {(user.invitationStatus === 'pending') && (
+                                        {(user.invitationStatus === 'pending' || user.invitationStatus === 'none') && (
                                             <button 
                                                 onClick={() => handleResendInvitation(user._id)}
                                                 className="font-medium text-blue-600 hover:underline mr-4"
                                                 title="Reenviar invitación"
                                             >
                                                 📧 Reenviar
+                                            </button>
+                                        )}
+                                        {user.invitationStatus === 'pending' && (
+                                            <button 
+                                                onClick={() => handleDeleteInvitation(user._id)}
+                                                className="font-medium text-orange-600 hover:underline mr-4"
+                                                title="Eliminar invitación"
+                                            >
+                                                🗑️ Eliminar Inv.
                                             </button>
                                         )}
                                         <button 

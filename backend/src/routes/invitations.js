@@ -349,6 +349,10 @@ router.post('/resend/:userId', auth, authorize(['admin']), async (req, res) => {
       return res.status(400).json({ message: 'Ya se envió una invitación recientemente. Espera 5 minutos antes de reenviar.' });
     }
 
+    // Eliminar cualquier invitación existente para este email antes de crear una nueva
+    console.log('🗑️ Removing existing invitations for email:', user.email);
+    await Invitation.deleteMany({ email: user.email });
+
     // Crear nueva invitación
     const crypto = require('crypto');
     const invitationToken = crypto.randomBytes(32).toString('hex');

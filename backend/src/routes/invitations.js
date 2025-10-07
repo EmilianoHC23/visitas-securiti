@@ -19,11 +19,15 @@ router.get('/test-smtp', auth, (req, res) => {
   const emailService = require('../services/emailService');
   const isEnabled = emailService.isEnabled();
   
+  // Verificar manualmente las credenciales
+  const hasCredentials = !!(process.env.SMTP_USER && process.env.SMTP_PASS);
+  
   res.json({
-    smtpConfigured: isEnabled,
+    smtpConfigured: hasCredentials, // Usar verificación manual en lugar de isEnabled()
     smtpHost: process.env.SMTP_HOST,
     smtpPort: process.env.SMTP_PORT,
     smtpUser: process.env.SMTP_USER ? 'Configured' : 'Not configured',
+    smtpPass: process.env.SMTP_PASS ? 'Configured' : 'Not configured',
     emailFrom: process.env.EMAIL_FROM,
     timestamp: new Date().toISOString()
   });

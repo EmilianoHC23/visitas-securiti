@@ -8,7 +8,7 @@ const emailService = require('../services/emailService');
 const router = express.Router();
 
 // Enviar invitación
-router.post('/invite', auth, authorize(['admin']), async (req, res) => {
+router.post('/', auth, authorize(['admin']), async (req, res) => {
   try {
     const { firstName, lastName, email, role } = req.body;
 
@@ -136,10 +136,9 @@ router.get('/verify/:token', async (req, res) => {
 });
 
 // Completar registro desde invitación
-router.post('/complete/:token', async (req, res) => {
+router.post('/complete', async (req, res) => {
   try {
-    const { token } = req.params;
-    const { password, profileImage } = req.body;
+    const { token, password, firstName, lastName } = req.body;
 
     if (!password || password.length < 6) {
       return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
@@ -159,11 +158,10 @@ router.post('/complete/:token', async (req, res) => {
     const user = new User({
       email: invitation.email,
       password,
-      firstName: invitation.firstName,
-      lastName: invitation.lastName,
+      firstName: firstName || invitation.firstName,
+      lastName: lastName || invitation.lastName,
       role: invitation.role,
       companyId: invitation.companyId,
-      profileImage: profileImage || undefined,
       invitationStatus: 'registered'
     });
 

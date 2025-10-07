@@ -26,23 +26,28 @@ class EmailService {
         }
       };
 
-      this.transporter = nodemailer.createTransport(smtpConfig);
+      this.transporter = nodemailer.createTransporter(smtpConfig);
       
-      // Verificar la conexión SMTP
-      try {
-        await this.transporter.verify();
-        console.log('✅ SMTP connection verified successfully');
-      } catch (verifyError) {
-        console.error('❌ SMTP verification failed:', verifyError.message);
-        this.enabled = false;
-        return;
-      }
+      // Verificar la conexión SMTP de forma asíncrona (no bloqueante)
+      this.verifyConnection();
       
       this.enabled = true;
       console.log('✅ EmailService initialized with Nodemailer');
 
     } catch (error) {
       console.error('❌ Error initializing Nodemailer:', error);
+      this.enabled = false;
+    }
+  }
+
+  async verifyConnection() {
+    try {
+      if (this.transporter) {
+        await this.transporter.verify();
+        console.log('✅ SMTP connection verified successfully');
+      }
+    } catch (verifyError) {
+      console.error('❌ SMTP verification failed:', verifyError.message);
       this.enabled = false;
     }
   }

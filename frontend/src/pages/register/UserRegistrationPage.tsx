@@ -135,20 +135,6 @@ export const UserRegistrationPage: React.FC = () => {
         </div>
 
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <div className="mb-6 p-4 bg-blue-50 rounded-md">
-            <div className="flex items-center">
-              <div className="text-blue-600 text-xl mr-3">👋</div>
-              <div>
-                <p className="text-sm font-medium text-blue-900">
-                  Bienvenido, {invitationData.firstName} {invitationData.lastName}
-                </p>
-                <p className="text-sm text-blue-700">
-                  Rol asignado: <span className="font-medium capitalize">{invitationData.role}</span>
-                </p>
-              </div>
-            </div>
-          </div>
-
           {error && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
               {error}
@@ -165,8 +151,7 @@ export const UserRegistrationPage: React.FC = () => {
                   id="email"
                   type="email"
                   value={invitationData.email}
-                  disabled
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 bg-gray-50 text-gray-500 sm:text-sm"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
             </div>
@@ -217,15 +202,6 @@ export const UserRegistrationPage: React.FC = () => {
               </button>
             </div>
           </form>
-
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => navigate('/login')}
-              className="text-sm text-gray-600 hover:text-gray-900"
-            >
-              ¿Ya tienes cuenta? Inicia sesión
-            </button>
-          </div>
         </div>
       </div>
     </div>

@@ -89,9 +89,16 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
     console.log('📧 Email result:', emailResult);
 
     if (!emailResult.success) {
-      // Si falla el email, eliminar la invitación
-      await Invitation.findByIdAndDelete(invitation._id);
-      return res.status(500).json({ message: 'Error al enviar la invitación por email' });
+      console.error('❌ Email sending failed:', emailResult.error);
+      // En desarrollo o si el email falla, aún así guardamos la invitación
+      // pero informamos al usuario
+      if (process.env.NODE_ENV === 'production') {
+        await Invitation.findByIdAndDelete(invitation._id);
+        return res.status(500).json({ 
+          message: 'Error al enviar la invitación por email. Verifica la configuración SMTP.',
+          error: emailResult.error 
+        });
+      }
     }
 
     res.status(201).json({

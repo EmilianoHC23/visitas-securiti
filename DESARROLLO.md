@@ -22,12 +22,10 @@ cp frontend/.env.example frontend/.env
 cp backend/.env.example backend/.env
 ```
 
-#### B. Configurar EmailJS (para notificaciones):
-1. Ir a [EmailJS](https://www.emailjs.com/)
-2. Crear una cuenta gratuita
-3. Crear un servicio de email
-4. Crear un template
-5. Obtener las claves y configurarlas en los archivos .env
+#### B. Configurar Servidor SMTP (para notificaciones):
+1. Configurar un servidor SMTP (Gmail, Outlook, servidor propio)
+2. Obtener credenciales de autenticación
+3. Configurar las variables de entorno para Nodemailer en el backend
 
 #### C. Configurar Base de Datos:
 
@@ -111,10 +109,6 @@ git push origin feature/nueva-funcionalidad
 - Verificar connection string (Atlas)
 - Verificar firewall/IP whitelist (Atlas)
 
-#### Error de EmailJS:
-- Verificar que las claves estén en ambos archivos .env
-- Verificar que el servicio esté activo en EmailJS
-
 #### Error de Puertos:
 ```bash
 # Ver qué está usando el puerto
@@ -169,7 +163,7 @@ cd frontend && npm run dev
 - [Documentación Vite](https://vitejs.dev/)
 - [Documentación Express](https://expressjs.com/)
 - [Documentación MongoDB](https://docs.mongodb.com/)
-- [EmailJS Docs](https://www.emailjs.com/docs/)
+- [Documentación Nodemailer](https://nodemailer.com/)
 
 ### 10. 🤝 Contacto y Soporte
 

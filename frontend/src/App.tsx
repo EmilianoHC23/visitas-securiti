@@ -14,6 +14,7 @@ import { AccessCodesPage } from './pages/access/AccessCodesPage';
 import { BlacklistPage } from './pages/blacklist/BlacklistPage';
 import { UserRole } from './types';
 import { VisitorRegistrationPage } from './pages/register/VisitorRegistrationPage';
+import { UserRegistrationPage } from './pages/register/UserRegistrationPage';
 import { RedeemPage } from './pages/redeem/RedeemPage';
 
 const PublicRegistrationWrapper: React.FC = () => {
@@ -34,6 +35,7 @@ const AppRoutes: React.FC = () => {
             <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<VisitorRegistrationPage />} />
+                <Route path="/register/user" element={<UserRegistrationPage />} />
                 <Route path="/redeem/:accessCode" element={<RedeemPage />} />
                 <Route path="/public/:qrCode" element={<PublicRegistrationWrapper />} />
                 <Route path="*" element={<Navigate to="/login" />} />

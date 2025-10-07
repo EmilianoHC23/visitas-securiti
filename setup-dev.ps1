@@ -25,11 +25,8 @@ if (-not (Test-Path "frontend\.env")) {
     @"
 VITE_ENVIRONMENT=development
 VITE_API_URL=http://localhost:3001/api
-VITE_EMAILJS_SERVICE_ID=service_vxjzajn
-VITE_EMAILJS_TEMPLATE_ID=template_5oieypb
-VITE_EMAILJS_PUBLIC_KEY=vvtUk70Pk2tlCBQ52
 "@ | Out-File -FilePath "frontend\.env" -Encoding UTF8
-    Write-Host "✅ Archivo frontend/.env creado con configuración EmailJS" -ForegroundColor Green
+    Write-Host "✅ Archivo frontend/.env creado" -ForegroundColor Green
 }
 
 # Configurar backend/.env si no existe
@@ -41,9 +38,6 @@ MONGODB_URI=mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/vi
 DATABASE_URL=mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti
 JWT_SECRET=Prod_VisitasSecuriTI_2025_Ultra_Secure_JWT_Secret_Key_For_Production_Only!@#$%
 FRONTEND_URL=https://visitas-securiti.vercel.app/
-EMAILJS_SERVICE_ID=service_vxjzajn
-EMAILJS_TEMPLATE_ID=template_5oieypb
-EMAILJS_PUBLIC_KEY=vvtUk70Pk2tlCBQ52
 "@ | Out-File -FilePath "backend\.env" -Encoding UTF8
     Write-Host "✅ Archivo backend/.env creado" -ForegroundColor Green
 }

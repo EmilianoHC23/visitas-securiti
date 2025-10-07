@@ -76,7 +76,7 @@ export const LoginPage: React.FC = () => {
         <div 
             className="min-h-screen flex items-center justify-center bg-cover bg-center relative"
             style={{ 
-                backgroundImage: "url('/src/assets/images/pattern.webp')",
+                backgroundImage: "url('/src/assets/images/pattern.jpg')",
                 backgroundSize: "60%",
                 backgroundRepeat: "repeat"
             }}

@@ -10,15 +10,12 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-<<<<<<< HEAD
     "@emailjs/browser": "^4.4.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.4",
     "@mui/material": "^7.3.4",
     "@mui/styled-engine-sc": "^7.3.3",
-=======
->>>>>>> 815f863d94955cabe743ff4e4193c3c04c35921f
     "@types/qrcode": "^1.5.5",
     "qrcode": "^1.5.4",
     "react": "^19.1.1",

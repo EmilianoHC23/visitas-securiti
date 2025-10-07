@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
+
 export const LoginPage: React.FC = () => {
-    const [email, setEmail] = useState('reception@securiti.com');
-    const [password, setPassword] = useState('password'); // Default password for demo purposes
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<string | null>(null);
     const [emailError, setEmailError] = useState<string | null>(null);
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const { login, loading } = useAuth();
@@ -56,9 +57,7 @@ export const LoginPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-        setSuccess(null);
 
-        // Validar campos
         const isEmailValid = validateEmail(email);
         const isPasswordValid = validatePassword(password);
 
@@ -68,122 +67,125 @@ export const LoginPage: React.FC = () => {
 
         try {
             await login(email, password);
-            setSuccess('¡Inicio de sesión exitoso! Redirigiendo...');
         } catch (err: any) {
-            console.error('Login error:', err);
-            
-            // Manejar errores específicos del servidor
-            if (err.response?.status === 401) {
-                const message = err.response.data?.message || '';
-                if (message.includes('Credenciales incorrectas')) {
-                    if (message.includes('Usuario no encontrado') || message.includes('not found')) {
-                        setError('El usuario no existe. Verifique su email.');
-                    } else {
-                        setError('Contraseña incorrecta. Inténtelo de nuevo.');
-                    }
-                } else if (message.includes('Usuario desactivado')) {
-                    setError('Su cuenta está desactivada. Contacte al administrador.');
-                } else {
-                    setError('Email o contraseña incorrectos.');
-                }
-            } else if (err.response?.status === 400) {
-                setError('Datos incompletos. Verifique email y contraseña.');
-            } else if (err.response?.status === 500) {
-                setError('Error del servidor. Inténtelo más tarde.');
-            } else {
-                setError('Error de conexión. Verifique su internet.');
-            }
+            setError('Email o contraseña incorrectos.');
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-            <div className="max-w-md w-full bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-                <div className="flex flex-col items-center mb-6">
-                    <img 
-                        src="/logo.png" 
-                        alt="Visitas SecuriTI Logo" 
-                        className="h-16 w-auto mb-2"
-                    />
-                    <h1 className="text-3xl font-bold text-gray-800 mt-2">Visitas SecuriTI</h1>
-                    <p className="text-gray-500">Inicia sesión para continuar</p>
-                </div>
-                <form onSubmit={handleSubmit} className="space-y-6">
+        <div 
+            className="min-h-screen flex items-center justify-center bg-cover bg-center relative"
+            style={{ 
+                backgroundImage: "url('/src/assets/images/pattern.webp')",
+                backgroundSize: "60%",
+                backgroundRepeat: "repeat"
+            }}
+        >
+            {/* Overlay para opacidad */}
+            <div className="absolute inset-0 bg-white opacity-60 pointer-events-none"></div>
+            <div className="relative z-10 max-w-md w-full bg-white rounded-2xl shadow-lg border border-gray-200 p-8 flex flex-col items-center mx-2 sm:mx-0">
+                <img 
+                    src="/logo.png" 
+                    alt="Logo" 
+                    className="h-24 w-auto mb-2 mt-2"
+                    draggable={false}
+                />
+                <h1 className="text-3xl font-bold text-gray-800 mb-1 text-center">Visitas SecuriTI</h1>
+                <h2 className="text-base text-gray-400 mb-6 text-center">Inicia sesión para continuar</h2>
+                <form onSubmit={handleSubmit} className="w-full space-y-6">
                     {error && (
-                        <div role="alert" aria-live="polite" className="p-3 bg-red-100 border border-red-300 text-red-700 rounded-md text-sm">
-                            <div className="flex items-center">
-                                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                </svg>
-                                {error}
-                            </div>
-                        </div>
-                    )}
-                    {success && (
-                        <div role="alert" aria-live="polite" className="p-3 bg-green-100 border border-green-300 text-green-700 rounded-md text-sm">
-                            <div className="flex items-center">
-                                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                                {success}
-                            </div>
+                        <div className="p-2 bg-red-100 border border-red-300 text-red-700 rounded text-sm text-center">
+                            {error}
                         </div>
                     )}
                     <div>
-                        <label htmlFor="email" className="text-sm font-medium text-gray-700">Email</label>
-                        <input
-                            id="email"
-                            type="email"
-                            value={email}
-                            onChange={handleEmailChange}
-                            required
-                            placeholder="tu@email.com"
-                            className={`mt-1 w-full px-4 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-offset-1 ${
-                                emailError 
-                                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                                    : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-                            }`}
-                        />
+                        <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1">
+                            Correo Electrónico
+                        </label>
+                        <div className="relative group">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-colors duration-200 group-hover:text-blue-600">
+                                {/* Icono de mail */}
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                                    <path d="M3 7l9 6 9-6" />
+                                </svg>
+                            </span>
+                            <input
+                                id="email"
+                                type="email"
+                                value={email}
+                                onChange={handleEmailChange}
+                                required
+                                placeholder="Ingresa tu correo"
+                                className={`pl-10 pr-4 py-2 w-full border-0 border-b-2 rounded-none bg-transparent shadow-none focus:ring-0 focus:border-blue-600 focus:outline-none transition-colors duration-200 group-hover:border-blue-400 group-hover:bg-blue-50 ${
+                                    emailError 
+                                        ? 'border-b-red-300 focus:border-b-red-500' 
+                                        : 'border-b-gray-200'
+                                }`}
+                            />
+                        </div>
                         {emailError && (
                             <p className="mt-1 text-sm text-red-600">{emailError}</p>
                         )}
                     </div>
                     <div>
-                        <label htmlFor="password-login" className="text-sm font-medium text-gray-700">Contraseña</label>
-                         <input
+                        <label htmlFor="password-login" className="block text-sm font-semibold text-gray-700 mb-1">
+                            Contraseña
+                        </label>
+                        <div className="relative group">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-colors duration-200 group-hover:text-blue-600">
+                                {/* Icono de candado */}
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <rect x="3" y="11" width="18" height="10" rx="2" />
+                                    <path d="M7 11V7a5 5 0 0110 0v4" />
+                                </svg>
+                            </span>
+                            <input
                             id="password-login"
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             value={password}
                             onChange={handlePasswordChange}
                             required
-                            placeholder="••••••••"
-                            className={`mt-1 w-full px-4 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-offset-1 ${
+                            placeholder="Ingresa tu contraseña"
+                            className={`pl-10 pr-10 py-2 w-full border-0 border-b-2 rounded-none bg-transparent shadow-none focus:ring-0 focus:border-blue-600 focus:outline-none transition-colors duration-200 group-hover:border-blue-400 group-hover:bg-blue-50 ${
                                 passwordError 
-                                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                                    : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                    ? 'border-b-red-300 focus:border-b-red-500' 
+                                    : 'border-b-gray-200'
                             }`}
-                        />
+                            />
+                            {/* Icono de ojo */}
+                           <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-colors duration-200 group-hover:text-blue-600 focus:outline-none"
+                            tabIndex={-1}
+                            >
+                                {showPassword ? (
+                                    // Ojo abierto
+                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                                ) : (
+                                    // Ojo cerrado
+                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path d="M17.94 17.94A10.94 10.94 0 0112 19c-7 0-11-7-11-7a21.77 21.77 0 014.22-5.94M1 1l22 22" />
+                                    <path d="M9.53 9.53A3 3 0 0112 9c1.66 0 3 1.34 3 3 0 .47-.11.91-.29 1.29" />
+                                </svg>
+                                )}
+                            </button>
+                        </div>
                         {passwordError && (
                             <p className="mt-1 text-sm text-red-600">{passwordError}</p>
                         )}
                     </div>
-                    <div>
-                        <button
-                            type="submit"
-                            disabled={loading || !!emailError || !!passwordError}
-                            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                        >
-                            {loading ? (
-                                <div className="flex items-center">
-                                    <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Ingresando...
-                                </div>
-                            ) : 'Ingresar'}
-                        </button>
-                    </div>
+                    <button
+                        type="submit"
+                        disabled={loading || !!emailError || !!passwordError}
+                        className="w-full py-3 rounded-lg text-white font-semibold text-base transition-colors bg-gradient-to-r from-blue-900 to-blue-700 hover:from-blue-800 hover:to-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed mt-2 shadow"
+                    >
+                        {loading ? 'Ingresando...' : 'Iniciar Sesión'}
+                    </button>
                 </form>
             </div>
         </div>

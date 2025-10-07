@@ -78,13 +78,17 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
 
     // Crear invitación
     console.log('📧 Creating invitation...');
+    const crypto = require('crypto');
+    const invitationToken = crypto.randomBytes(32).toString('hex');
+    
     const invitation = new Invitation({
       firstName,
       lastName,
       email: email.toLowerCase(),
       role,
       invitedBy: req.user._id,
-      companyId: req.user.companyId
+      companyId: req.user.companyId,
+      invitationToken
     });
 
     try {

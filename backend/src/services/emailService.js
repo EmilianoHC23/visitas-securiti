@@ -8,29 +8,27 @@ class EmailService {
 
   initializeNodemailer() {
     try {
+      // Verificar que tengamos las credenciales necesarias
+      if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+        console.log('⚠️  SMTP credentials not configured');
+        this.enabled = false;
+        return;
+      }
+
       // Configuración SMTP - Puedes cambiar esto según tu proveedor
       const smtpConfig = {
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
         port: process.env.SMTP_PORT || 587,
         secure: false, // true para 465, false para otros puertos
         auth: {
-          user: process.env.SMTP_USER || process.env.EMAIL_USER,
-          pass: process.env.SMTP_PASS || process.env.EMAIL_PASS
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
         }
       };
 
-      this.transporter = nodemailer.createTransporter(smtpConfig);
-
-      // Verificar conexión
-      this.transporter.verify((error, success) => {
-        if (error) {
-          console.error('❌ Error de conexión SMTP:', error);
-          this.enabled = false;
-        } else {
-          console.log('✅ EmailService initialized with Nodemailer');
-          this.enabled = true;
-        }
-      });
+      this.transporter = nodemailer.createTransport(smtpConfig);
+      this.enabled = true; // Asumir que está configurado si llega aquí
+      console.log('✅ EmailService initialized with Nodemailer');
 
     } catch (error) {
       console.error('❌ Error initializing Nodemailer:', error);

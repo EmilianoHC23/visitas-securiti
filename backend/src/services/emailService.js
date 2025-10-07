@@ -168,7 +168,7 @@ class EmailService {
     }
 
     try {
-      const registrationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register?token=${invitationData.token}`;
+      const registrationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register/user?token=${invitationData.token}`;
 
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,

@@ -10,6 +10,7 @@ const router = express.Router();
 // Enviar invitación
 router.post('/', auth, authorize(['admin']), async (req, res) => {
   try {
+    console.log('📧 Starting invitation process for:', req.body.email);
     const { firstName, lastName, email, role } = req.body;
 
     // Validar datos
@@ -72,15 +73,20 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
 
     // Enviar email de invitación
     const invitationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register?token=${invitation.invitationToken}`;
+    console.log('📧 Email service enabled:', emailService.isEnabled());
+    console.log('📧 Sending invitation email to:', email.toLowerCase());
 
     const emailResult = await emailService.sendInvitationEmail({
       firstName,
       lastName,
       email: email.toLowerCase(),
       role,
-      invitationUrl,
+      token: invitation.invitationToken,
+      companyName: 'Visitas SecuriTI', // TODO: Obtener de la compañía
       invitedBy: req.user.firstName + ' ' + req.user.lastName
     });
+
+    console.log('📧 Email result:', emailResult);
 
     if (!emailResult.success) {
       // Si falla el email, eliminar la invitación

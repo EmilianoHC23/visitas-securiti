@@ -164,15 +164,19 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
 
     if (!emailResult.success) {
       console.error('❌ Email sending failed:', emailResult.error);
-      // En desarrollo o si el email falla, aún así guardamos la invitación
-      // pero informamos al usuario
-      if (process.env.NODE_ENV === 'production') {
-        await Invitation.findByIdAndDelete(invitation._id);
-        return res.status(500).json({ 
-          message: 'Error al enviar la invitación por email. Verifica la configuración SMTP.',
-          error: emailResult.error 
-        });
-      }
+      // En lugar de eliminar la invitación, la guardamos y permitimos reenviarla
+      console.log('⚠️ Invitation saved but email failed. User can resend later.');
+      return res.status(201).json({
+        message: 'Invitación creada pero el email no pudo enviarse. El usuario puede reenviar la invitación desde la tabla.',
+        invitation: {
+          id: invitation._id,
+          email: invitation.email,
+          role: invitation.role,
+          status: 'email_failed',
+          expiresAt: invitation.expiresAt
+        },
+        warning: 'Email no enviado. Verifica la configuración SMTP.'
+      });
     }
 
     res.status(201).json({

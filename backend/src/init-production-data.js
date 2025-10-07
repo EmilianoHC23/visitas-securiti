@@ -24,7 +24,7 @@ const initializeProductionData = async () => {
 
     // Create company configuration
     const company = new Company({
-      _id: 'comp-1',
+      companyId: 'comp-1',
       name: 'SecuriTI Solutions',
       logo: null,
       settings: {
@@ -148,7 +148,7 @@ const initializeProductionData = async () => {
         companyId: 'comp-1',
         visitorEmail: 'roberto.silva@techcorp.com',
         visitorPhone: '+521234567890',
-        visitType: 'scheduled'
+        visitType: 'pre-registered'
       },
       {
         visitorName: 'Isabel Méndez',
@@ -160,7 +160,7 @@ const initializeProductionData = async () => {
         companyId: 'comp-1',
         visitorEmail: 'isabel.mendez@innovacion.com',
         visitorPhone: '+521234567891',
-        visitType: 'scheduled'
+        visitType: 'pre-registered'
       },
       {
         visitorName: 'Fernando Gutiérrez',
@@ -173,7 +173,7 @@ const initializeProductionData = async () => {
         companyId: 'comp-1',
         visitorEmail: 'fernando.gutierrez@consultoria.com',
         visitorPhone: '+521234567892',
-        visitType: 'scheduled'
+        visitType: 'pre-registered'
       },
       {
         visitorName: 'Patricia Vega',
@@ -187,7 +187,7 @@ const initializeProductionData = async () => {
         companyId: 'comp-1',
         visitorEmail: 'patricia.vega@sistemasem.com',
         visitorPhone: '+521234567893',
-        visitType: 'scheduled'
+        visitType: 'pre-registered'
       },
       {
         visitorName: 'Alejandro Morales',
@@ -199,7 +199,7 @@ const initializeProductionData = async () => {
         companyId: 'comp-1',
         visitorEmail: 'alejandro.morales@datasecurity.com',
         visitorPhone: '+521234567894',
-        visitType: 'scheduled'
+        visitType: 'pre-registered'
       },
       {
         visitorName: 'Carmen Herrera',
@@ -211,7 +211,7 @@ const initializeProductionData = async () => {
         companyId: 'comp-1',
         visitorEmail: 'carmen.herrera@cloudtech.com',
         visitorPhone: '+521234567895',
-        visitType: 'scheduled'
+        visitType: 'pre-registered'
       },
       {
         visitorName: 'Eduardo Ramírez',
@@ -225,7 +225,7 @@ const initializeProductionData = async () => {
         companyId: 'comp-1',
         visitorEmail: 'eduardo.ramirez@aiml.com',
         visitorPhone: '+521234567896',
-        visitType: 'scheduled'
+        visitType: 'pre-registered'
       },
       {
         visitorName: 'Valeria Castro',
@@ -237,7 +237,7 @@ const initializeProductionData = async () => {
         companyId: 'comp-1',
         visitorEmail: 'valeria.castro@blockchain.com',
         visitorPhone: '+521234567897',
-        visitType: 'scheduled'
+        visitType: 'pre-registered'
       }
     ];
 
@@ -259,6 +259,8 @@ const initializeProductionData = async () => {
     // Create sample blacklist entries
     const sampleBlacklistEntries = [
       {
+        identifier: 'usuario.bloqueado@empresa.com',
+        identifierType: 'email',
         email: 'usuario.bloqueado@empresa.com',
         name: 'Usuario Bloqueado',
         reason: 'Comportamiento inapropiado en visita anterior',
@@ -266,6 +268,8 @@ const initializeProductionData = async () => {
         companyId: 'comp-1'
       },
       {
+        identifier: 'visitante.problematico@corp.com',
+        identifierType: 'email',
         email: 'visitante.problematico@corp.com',
         name: 'Visitante Problemático',
         reason: 'No cumplió con protocolos de seguridad',

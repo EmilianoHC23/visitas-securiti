@@ -395,6 +395,12 @@ export const resendInvitation = async (userId: string) => {
   });
 };
 
+export const deleteInvitation = async (userId: string) => {
+  return apiRequest(`/invitations/${userId}`, {
+    method: 'DELETE',
+  });
+};
+
 // Función de prueba para verificar configuración SMTP
 export const testSMTPConfig = async () => {
   return apiRequest('/invitations/test-smtp');

@@ -44,23 +44,32 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
       return res.status(400).json({ message: 'Todos los campos son requeridos' });
     }
 
-    // Verificar que el email no esté ya registrado como usuario activo
+    // Verificar si ya existe un usuario con este email
     const existingUser = await User.findOne({ 
-      email: email.toLowerCase(),
-      invitationStatus: { $ne: 'pending' } // Permitir usuarios pendientes
+      email: email.toLowerCase()
     });
-    if (existingUser) {
-      return res.status(400).json({ message: 'Ya existe un usuario activo con este email' });
+
+    // Si existe un usuario registrado, permitir reinvitación pero actualizar sus datos
+    if (existingUser && existingUser.invitationStatus === 'registered') {
+      console.log('🔄 User already registered, updating for reinvitation...');
+      
+      // Actualizar datos del usuario existente
+      existingUser.firstName = firstName;
+      existingUser.lastName = lastName;
+      existingUser.role = role;
+      existingUser.invitationStatus = 'pending';
+      existingUser.isActive = false; // Desactivar hasta que complete el registro
+      
+      await existingUser.save();
+      user = existingUser;
+    } 
+    // Si existe un usuario pendiente, usar ese
+    else if (existingUser && existingUser.invitationStatus === 'pending') {
+      console.log('✅ Using existing pending user:', existingUser._id);
+      user = existingUser;
     }
-
-    // Verificar si ya hay un usuario pendiente con este email
-    let user = await User.findOne({ 
-      email: email.toLowerCase(),
-      invitationStatus: 'pending'
-    });
-
-    // Si no existe usuario pendiente, crear uno
-    if (!user) {
+    // Si no existe, crear uno nuevo
+    else {
       console.log('👤 Creating new pending user...');
       user = new User({
         email: email.toLowerCase(),
@@ -93,8 +102,6 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
           error: userError.message
         });
       }
-    } else {
-      console.log('✅ Using existing pending user:', user._id);
     }
 
     // Verificar que no haya una invitación pendiente
@@ -335,13 +342,17 @@ router.post('/resend/:userId', auth, authorize(['admin']), async (req, res) => {
     }
 
     // Crear nueva invitación
+    const crypto = require('crypto');
+    const invitationToken = crypto.randomBytes(32).toString('hex');
+    
     const invitation = new Invitation({
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
       role: user.role,
       invitedBy: req.user._id,
-      companyId: req.user.companyId
+      companyId: req.user.companyId,
+      invitationToken
     });
 
     await invitation.save();
@@ -376,6 +387,42 @@ router.post('/resend/:userId', auth, authorize(['admin']), async (req, res) => {
 
   } catch (error) {
     console.error('Error resending invitation:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Eliminar invitación y usuario pendiente
+router.delete('/:userId', auth, authorize(['admin']), async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log('🗑️ Deleting invitation for user:', userId);
+
+    // Buscar el usuario
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Verificar que sea un usuario pendiente
+    if (user.invitationStatus !== 'pending') {
+      return res.status(400).json({ message: 'Solo se pueden eliminar usuarios con invitación pendiente' });
+    }
+
+    // Buscar y eliminar la invitación asociada
+    const invitation = await Invitation.findOne({ email: user.email });
+    if (invitation) {
+      await Invitation.findByIdAndDelete(invitation._id);
+      console.log('🗑️ Invitation deleted:', invitation._id);
+    }
+
+    // Eliminar el usuario pendiente
+    await User.findByIdAndDelete(userId);
+    console.log('🗑️ User deleted:', userId);
+
+    res.json({ message: 'Invitación eliminada exitosamente' });
+
+  } catch (error) {
+    console.error('Error deleting invitation:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

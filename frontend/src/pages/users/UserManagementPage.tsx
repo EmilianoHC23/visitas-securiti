@@ -370,34 +370,28 @@ export const UserManagementPage: React.FC = () => {
         }
     };
 
-    const handleDeleteInvitation = async (userId: string) => {
-        if (!confirm('¿Estás seguro de que quieres eliminar esta invitación? El usuario será eliminado permanentemente.')) {
+    const handleDeleteUser = async (user: User) => {
+        const message = user.invitationStatus === 'registered' 
+            ? '¿Estás seguro de que quieres eliminar este usuario registrado? Esta acción no se puede deshacer.'
+            : '¿Estás seguro de que quieres eliminar esta invitación? El usuario será eliminado permanentemente y podrás reutilizar este correo.';
+        
+        if (!confirm(message)) {
             return;
         }
 
         try {
-            await api.deleteInvitation(userId);
-            alert('Invitación eliminada exitosamente');
+            if (user.invitationStatus === 'pending' || user.invitationStatus === 'none') {
+                await api.deleteInvitation(user._id);
+                alert('Invitación eliminada exitosamente. Puedes reutilizar este correo para invitar a un nuevo usuario.');
+            } else {
+                await api.deactivateUser(user._id);
+                alert('Usuario eliminado exitosamente.');
+            }
             // Recargar la lista de usuarios
             fetchUsers();
         } catch (error) {
-            console.error('Error deleting invitation:', error);
-            alert('Error al eliminar invitación');
-        }
-    };
-
-    const handleDeleteUser = async (userId: string) => {
-        if (!confirm('¿Estás seguro de que quieres desactivar este usuario?')) {
-            return;
-        }
-
-        try {
-            await api.deactivateUser(userId);
-            setUsers(prev => prev.filter(user => user._id !== userId));
-            alert('Usuario desactivado exitosamente');
-        } catch (error) {
-            console.error('Error deactivating user:', error);
-            alert('Error al desactivar usuario');
+            console.error('Error deleting user:', error);
+            alert('Error al eliminar usuario');
         }
     };
 
@@ -445,36 +439,31 @@ export const UserManagementPage: React.FC = () => {
                                         <StatusBadge status={user.invitationStatus || 'none'} />
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        {(user.invitationStatus === 'pending' || user.invitationStatus === 'none') && (
+                                        <div className="flex justify-end space-x-2">
+                                            {user.invitationStatus === 'pending' && (
+                                                <button 
+                                                    onClick={() => handleResendInvitation(user._id)}
+                                                    className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded hover:bg-blue-200"
+                                                    title="Reenviar invitación"
+                                                >
+                                                    📧 Reenviar
+                                                </button>
+                                            )}
                                             <button 
-                                                onClick={() => handleResendInvitation(user._id)}
-                                                className="font-medium text-blue-600 hover:underline mr-4"
-                                                title="Reenviar invitación"
+                                                onClick={() => handleEditUser(user)}
+                                                className="px-3 py-1 text-xs font-medium text-green-600 bg-green-100 rounded hover:bg-green-200"
+                                                title="Editar usuario"
                                             >
-                                                📧 Reenviar
+                                                ✏️ Editar
                                             </button>
-                                        )}
-                                        {user.invitationStatus === 'pending' && (
                                             <button 
-                                                onClick={() => handleDeleteInvitation(user._id)}
-                                                className="font-medium text-orange-600 hover:underline mr-4"
-                                                title="Eliminar invitación"
+                                                onClick={() => handleDeleteUser(user)}
+                                                className="px-3 py-1 text-xs font-medium text-red-600 bg-red-100 rounded hover:bg-red-200"
+                                                title="Eliminar usuario"
                                             >
-                                                🗑️ Eliminar Inv.
+                                                🗑️ Eliminar
                                             </button>
-                                        )}
-                                        <button 
-                                            onClick={() => handleEditUser(user)}
-                                            className="font-medium text-securiti-blue-600 hover:underline mr-4"
-                                        >
-                                            Editar
-                                        </button>
-                                        <button 
-                                            onClick={() => handleDeleteUser(user._id)}
-                                            className="font-medium text-red-600 hover:underline"
-                                        >
-                                            Eliminar
-                                        </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

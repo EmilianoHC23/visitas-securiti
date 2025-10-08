@@ -103,4 +103,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // For Vercel deployment - export at the very end
-module.exports = app;
+module.exports = (req, res) => {
+  console.log(`🔄 Vercel serverless function called: ${req.method} ${req.url}`);
+  return app(req, res);
+};

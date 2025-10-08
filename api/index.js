@@ -79,18 +79,6 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/visits', visitRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/company', companyRoutes);
-app.use('/api/blacklist', blacklistRoutes);
-app.use('/api/access', accessRoutes);
-app.use('/api/public', publicRoutes);
-app.use('/api/reports', reportsRoutes);
-app.use('/api/invitations', invitationRoutes);
-
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);

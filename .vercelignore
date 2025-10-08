@@ -19,6 +19,13 @@ Thumbs.db
 # Documentation (keep README.md for GitHub)
 # *.md
 
+# Package lock files (let Vercel generate its own)
+package-lock.json
+
+# Development scripts
+setup-dev.ps1
+setup-dev.sh
+
 # Server initialization (not needed in production)
 server/init-db.js
 

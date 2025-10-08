@@ -49,20 +49,20 @@ const connectDB = async () => {
 connectDB();
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/visits', visitRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/debug', debugRoutes);
-app.use('/api/company', companyRoutes);
-app.use('/api/blacklist', blacklistRoutes);
-app.use('/api/access', accessRoutes);
-app.use('/api/public', publicRoutes);
-app.use('/api/reports', reportsRoutes);
-app.use('/api/invitations', invitationRoutes);
+app.use('/auth', authRoutes);
+app.use('/users', userRoutes);
+app.use('/visits', visitRoutes);
+app.use('/dashboard', dashboardRoutes);
+app.use('/debug', debugRoutes);
+app.use('/company', companyRoutes);
+app.use('/blacklist', blacklistRoutes);
+app.use('/access', accessRoutes);
+app.use('/public', publicRoutes);
+app.use('/reports', reportsRoutes);
+app.use('/invitations', invitationRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 

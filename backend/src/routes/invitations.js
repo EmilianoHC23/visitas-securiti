@@ -363,25 +363,39 @@ router.post('/resend/:userId', auth, authorize(['admin']), async (req, res) => {
       return res.status(400).json({ message: 'Ya se envió una invitación recientemente. Espera 1 minuto antes de reenviar.' });
     }
 
-    // Eliminar cualquier invitación existente para este email antes de crear una nueva
-    console.log('🗑️ Removing existing invitations for email:', user.email);
-    await Invitation.deleteMany({ email: user.email });
+    // Buscar invitación existente para este email
+    let invitation = await Invitation.findOne({ email: user.email });
 
-    // Crear nueva invitación
-    const crypto = require('crypto');
-    const invitationToken = crypto.randomBytes(32).toString('hex');
-    
-    const invitation = new Invitation({
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      role: user.role,
-      invitedBy: req.user._id,
-      companyId: req.user.companyId,
-      invitationToken
-    });
+    if (invitation) {
+      // Actualizar la invitación existente con un nuevo token
+      console.log('� Updating existing invitation for email:', user.email);
+      const crypto = require('crypto');
+      invitation.invitationToken = crypto.randomBytes(32).toString('hex');
+      invitation.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
+      invitation.status = 'pending';
+      invitation.createdAt = new Date();
+      
+      await invitation.save();
+      console.log('✅ Invitation updated successfully:', invitation._id);
+    } else {
+      // Crear nueva invitación si no existe
+      console.log('📧 Creating new invitation for email:', user.email);
+      const crypto = require('crypto');
+      const invitationToken = crypto.randomBytes(32).toString('hex');
+      
+      invitation = new Invitation({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        invitedBy: req.user._id,
+        companyId: req.user.companyId,
+        invitationToken
+      });
 
-    await invitation.save();
+      await invitation.save();
+      console.log('✅ Invitation created successfully:', invitation._id);
+    }
 
     // Enviar email de invitación
     const invitationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register?token=${invitation.invitationToken}`;

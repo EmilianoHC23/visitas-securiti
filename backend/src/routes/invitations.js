@@ -109,40 +109,50 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
       }
     }
 
-    // Verificar que no haya una invitación pendiente
-    console.log('🔍 Checking for existing pending invitations...');
+    // Verificar si ya existe alguna invitación para este email (independientemente del estado)
+    console.log('🔍 Checking for any existing invitation for email...');
     const existingInvitation = await Invitation.findOne({
-      email: email.toLowerCase(),
-      status: 'pending',
-      expiresAt: { $gt: new Date() }
+      email: email.toLowerCase()
     });
-    console.log('📊 Existing invitation check result:', existingInvitation ? 'Found' : 'Not found');
+    console.log('📊 Existing invitation check result:', existingInvitation ? `Found (status: ${existingInvitation.status})` : 'Not found');
 
-    if (existingInvitation) {
-      console.log('❌ Invitation already exists');
-      return res.status(400).json({ message: 'Ya existe una invitación pendiente para este email' });
-    }
-
-    // Crear invitación
-    console.log('📧 Creating invitation...');
+    let invitation;
     const crypto = require('crypto');
     const invitationToken = crypto.randomBytes(32).toString('hex');
-    
-    const invitation = new Invitation({
-      firstName,
-      lastName,
-      email: email.toLowerCase(),
-      role,
-      invitedBy: req.user._id,
-      companyId: req.user.companyId,
-      invitationToken
-    });
+
+    if (existingInvitation) {
+      // Actualizar invitación existente con nuevos datos
+      console.log('🔄 Updating existing invitation...');
+      existingInvitation.firstName = firstName;
+      existingInvitation.lastName = lastName;
+      existingInvitation.role = role;
+      existingInvitation.invitedBy = req.user._id;
+      existingInvitation.companyId = req.user.companyId;
+      existingInvitation.invitationToken = invitationToken;
+      existingInvitation.status = 'pending';
+      existingInvitation.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
+      existingInvitation.createdAt = new Date();
+      
+      invitation = existingInvitation;
+    } else {
+      // Crear nueva invitación
+      console.log('📧 Creating new invitation...');
+      invitation = new Invitation({
+        firstName,
+        lastName,
+        email: email.toLowerCase(),
+        role,
+        invitedBy: req.user._id,
+        companyId: req.user.companyId,
+        invitationToken
+      });
+    }
 
     try {
       await invitation.save();
-      console.log('✅ Invitation created successfully:', invitation._id);
+      console.log(`✅ Invitation ${existingInvitation ? 'updated' : 'created'} successfully:`, invitation._id);
     } catch (invitationError) {
-      console.error('❌ Error creating invitation:', invitationError);
+      console.error('❌ Error saving invitation:', invitationError);
       throw invitationError;
     }
 

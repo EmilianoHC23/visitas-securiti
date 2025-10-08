@@ -179,8 +179,9 @@ export const updateUser = async (userId: string, userData: Partial<User>): Promi
   });
 };
 
-export const deactivateUser = async (userId: string): Promise<void> => {
-  return apiRequest(`/users/${userId}`, {
+export const deactivateUser = async (userId: string, force?: boolean): Promise<void> => {
+  const url = force ? `/users/${userId}?force=true` : `/users/${userId}`;
+  return apiRequest(url, {
     method: 'DELETE',
   });
 };

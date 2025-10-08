@@ -371,9 +371,24 @@ export const UserManagementPage: React.FC = () => {
     };
 
     const handleDeleteUser = async (user: User) => {
-        const message = user.invitationStatus === 'registered' 
-            ? '¿Estás seguro de que quieres eliminar este usuario registrado? Esta acción no se puede deshacer.'
-            : '¿Estás seguro de que quieres eliminar esta invitación? El usuario será eliminado permanentemente y podrás reutilizar este correo.';
+        let message = '';
+        let forceDelete = false;
+
+        if (user.invitationStatus === 'pending' || user.invitationStatus === 'none') {
+            message = '¿Estás seguro de que quieres eliminar esta invitación? El usuario será eliminado permanentemente y podrás reutilizar este correo.';
+        } else if (user.invitationStatus === 'registered') {
+            message = '¿Quieres desactivar este usuario o eliminarlo completamente del sistema?\n\n- Desactivar: El usuario quedará inactivo pero podrá ser reactivado\n- Eliminar: El usuario será removido permanentemente del sistema';
+            
+            const choice = confirm(message + '\n\nPresiona Aceptar para DESACTIVAR o Cancelar para ELIMINAR COMPLETAMENTE');
+            if (choice) {
+                // Desactivar (comportamiento actual)
+                message = '¿Estás seguro de que quieres desactivar este usuario?';
+            } else {
+                // Eliminar completamente
+                forceDelete = true;
+                message = '¿Estás seguro de que quieres eliminar completamente este usuario del sistema? Esta acción no se puede deshacer.';
+            }
+        }
         
         if (!confirm(message)) {
             return;
@@ -384,14 +399,19 @@ export const UserManagementPage: React.FC = () => {
                 await api.deleteInvitation(user._id);
                 alert('Invitación eliminada exitosamente. Puedes reutilizar este correo para invitar a un nuevo usuario.');
             } else {
-                await api.deactivateUser(user._id);
-                alert('Usuario eliminado exitosamente.');
+                await api.deactivateUser(user._id, forceDelete);
+                if (forceDelete) {
+                    alert('Usuario eliminado completamente del sistema.');
+                } else {
+                    alert('Usuario desactivado exitosamente.');
+                }
             }
             // Recargar la lista de usuarios
             fetchUsers();
         } catch (error) {
             console.error('Error deleting user:', error);
-            alert('Error al eliminar usuario');
+            const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+            alert(`Error al eliminar usuario: ${errorMessage}`);
         }
     };
 

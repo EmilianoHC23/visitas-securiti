@@ -7,6 +7,8 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 console.log('🚀 Backend starting...');
 console.log('🌍 NODE_ENV:', process.env.NODE_ENV);
 console.log('🔧 Vercel environment detected:', !!process.env.VERCEL);
+console.log('📂 Current directory:', __dirname);
+console.log('🔗 Request URL would be:', process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api/health` : 'Not in Vercel');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -29,16 +31,16 @@ try {
 
   // API Routes
   console.log('📡 Mounting API routes...');
-  app.use('/auth', authRoutes);
-  app.use('/users', userRoutes);
-  app.use('/visits', visitRoutes);
-  app.use('/dashboard', dashboardRoutes);
-  app.use('/reports', reportsRoutes);
-  app.use('/access', accessRoutes);
-  app.use('/blacklist', blacklistRoutes);
-  app.use('/company', companyRoutes);
-  app.use('/public', publicRoutes);
-  app.use('/invitations', invitationRoutes);
+  app.use('/api/auth', authRoutes);
+  app.use('/api/users', userRoutes);
+  app.use('/api/visits', visitRoutes);
+  app.use('/api/dashboard', dashboardRoutes);
+  app.use('/api/reports', reportsRoutes);
+  app.use('/api/access', accessRoutes);
+  app.use('/api/blacklist', blacklistRoutes);
+  app.use('/api/company', companyRoutes);
+  app.use('/api/public', publicRoutes);
+  app.use('/api/invitations', invitationRoutes);
   console.log('✅ API routes mounted');
 } catch (error) {
   console.error('❌ Error importing routes:', error);
@@ -55,13 +57,19 @@ app.use(cors({
 
 app.use(express.json());
 
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`📨 ${req.method} ${req.url} - ${new Date().toISOString()}`);
+  next();
+});
+
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || process.env.DATABASE_URL)
 .then(() => console.log('✅ Connected to MongoDB Atlas'))
 .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'OK', 
         timestamp: new Date().toISOString(),
@@ -105,5 +113,5 @@ if (process.env.NODE_ENV !== 'production') {
     });
 }
 
-// For Vercel deployment
+// For Vercel deployment - export at the very end
 module.exports = app;

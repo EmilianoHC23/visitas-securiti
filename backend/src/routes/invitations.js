@@ -352,15 +352,15 @@ router.post('/resend/:userId', auth, authorize(['admin']), async (req, res) => {
       return res.status(404).json({ message: 'Usuario pendiente no encontrado' });
     }
 
-    // Verificar que no haya una invitación pendiente reciente (menos de 5 minutos)
+    // Verificar que no haya una invitación pendiente reciente (menos de 1 minuto)
     const recentInvitation = await Invitation.findOne({
       email: user.email,
       status: 'pending',
-      createdAt: { $gt: new Date(Date.now() - 5 * 60 * 1000) } // Últimos 5 minutos
+      createdAt: { $gt: new Date(Date.now() - 1 * 60 * 1000) } // Último 1 minuto
     });
 
     if (recentInvitation) {
-      return res.status(400).json({ message: 'Ya se envió una invitación recientemente. Espera 5 minutos antes de reenviar.' });
+      return res.status(400).json({ message: 'Ya se envió una invitación recientemente. Espera 1 minuto antes de reenviar.' });
     }
 
     // Eliminar cualquier invitación existente para este email antes de crear una nueva

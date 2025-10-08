@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User, UserRole } from '../../types';
 import * as api from '../../services/api';
 
@@ -294,7 +294,7 @@ export const UserManagementPage: React.FC = () => {
     const [editLoading, setEditLoading] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
 
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         try {
             setLoading(true);
             const usersData = await api.getUsers();
@@ -304,11 +304,20 @@ export const UserManagementPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchUsers();
-    }, []);
+    }, [fetchUsers]);
+
+    // Actualización en tiempo real cada 10 segundos
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchUsers();
+        }, 10000); // 10 segundos
+
+        return () => clearInterval(interval);
+    }, [fetchUsers]);
 
     const handleInviteUser = async (userData: NewUserData) => {
         try {

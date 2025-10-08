@@ -7,6 +7,8 @@ const router = express.Router();
 
 // Login
 router.post('/login', async (req, res) => {
+  console.log('🔐 Login route called with method:', req.method, 'path:', req.path);
+  console.log('📨 Request body:', req.body ? 'present' : 'missing');
   try {
     const { email, password } = req.body;
     

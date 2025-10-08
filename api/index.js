@@ -32,6 +32,7 @@ try {
   // API Routes
   console.log('📡 Mounting API routes...');
   app.use('/api/auth', authRoutes);
+  console.log('✅ Auth routes mounted at /api/auth');
   app.use('/api/users', userRoutes);
   app.use('/api/visits', visitRoutes);
   app.use('/api/dashboard', dashboardRoutes);
@@ -41,7 +42,7 @@ try {
   app.use('/api/company', companyRoutes);
   app.use('/api/public', publicRoutes);
   app.use('/api/invitations', invitationRoutes);
-  console.log('✅ API routes mounted');
+  console.log('✅ All API routes mounted successfully');
 } catch (error) {
   console.error('❌ Error importing routes:', error);
   process.exit(1);

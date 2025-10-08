@@ -367,10 +367,8 @@ router.post('/resend/:userId', auth, authorize(['admin']), async (req, res) => {
     let invitation = await Invitation.findOne({ email: user.email });
 
     if (invitation) {
-      // Actualizar la invitación existente con un nuevo token
-      console.log('� Updating existing invitation for email:', user.email);
-      const crypto = require('crypto');
-      invitation.invitationToken = crypto.randomBytes(32).toString('hex');
+      // Actualizar la invitación existente sin cambiar el token
+      console.log('🔄 Updating existing invitation for email:', user.email);
       invitation.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
       invitation.status = 'pending';
       invitation.createdAt = new Date();

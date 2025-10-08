@@ -7,12 +7,16 @@
       "config": {
         "distDir": "frontend/dist"
       }
+    },
+    {
+      "src": "backend/package.json",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/index.js"
+      "dest": "/backend/$1"
     },
     {
       "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",

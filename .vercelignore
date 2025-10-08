@@ -26,11 +26,8 @@ package-lock.json
 setup-dev.ps1
 setup-dev.sh
 
-# Backend directory (now using Vercel Functions in /api)
-backend/
-
 # Keep these for deployment:
 # - dist/ (frontend)
-# - api/ (serverless functions)
+# - backend/ (server code)
 # - package.json
 # - vercel.json

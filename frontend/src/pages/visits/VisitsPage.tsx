@@ -395,15 +395,6 @@ export const VisitsPage: React.FC = () => {
             
     }, [fetchVisits]);
 
-    const updateVisitStatus = async (id: string, status: VisitStatus) => {
-        try {
-            const updatedVisit = await api.updateVisitStatus(id, status);
-            setVisits(visits.map(v => v._id === id ? updatedVisit : v));
-        } catch (error) {
-            console.error("Failed to update visit status:", error);
-        }
-    };
-
     const handleApprove = async (id: string, notes?: string) => {
         try {
             const updatedVisit = await api.approveVisit(id, notes);

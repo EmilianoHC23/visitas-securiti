@@ -9,16 +9,38 @@ console.log('🌍 NODE_ENV:', process.env.NODE_ENV);
 console.log('🔧 Vercel environment detected:', !!process.env.VERCEL);
 
 // Import routes
-const authRoutes = require('../backend/src/routes/auth');
-const userRoutes = require('../backend/src/routes/users');
-const visitRoutes = require('../backend/src/routes/visits');
-const dashboardRoutes = require('../backend/src/routes/dashboard');
-const reportsRoutes = require('../backend/src/routes/reports');
-const accessRoutes = require('../backend/src/routes/access');
-const blacklistRoutes = require('../backend/src/routes/blacklist');
-const companyRoutes = require('../backend/src/routes/company');
-const publicRoutes = require('../backend/src/routes/public');
-const invitationRoutes = require('../backend/src/routes/invitations');
+let authRoutes, userRoutes, visitRoutes, dashboardRoutes, reportsRoutes, accessRoutes, blacklistRoutes, companyRoutes, publicRoutes, invitationRoutes;
+
+try {
+  authRoutes = require('../backend/src/routes/auth');
+  userRoutes = require('../backend/src/routes/users');
+  visitRoutes = require('../backend/src/routes/visits');
+  dashboardRoutes = require('../backend/src/routes/dashboard');
+  reportsRoutes = require('../backend/src/routes/reports');
+  accessRoutes = require('../backend/src/routes/access');
+  blacklistRoutes = require('../backend/src/routes/blacklist');
+  companyRoutes = require('../backend/src/routes/company');
+  publicRoutes = require('../backend/src/routes/public');
+  invitationRoutes = require('../backend/src/routes/invitations');
+  console.log('✅ All routes imported successfully');
+
+  // API Routes
+  console.log('📡 Mounting API routes...');
+  app.use('/auth', authRoutes);
+  app.use('/users', userRoutes);
+  app.use('/visits', visitRoutes);
+  app.use('/dashboard', dashboardRoutes);
+  app.use('/reports', reportsRoutes);
+  app.use('/access', accessRoutes);
+  app.use('/blacklist', blacklistRoutes);
+  app.use('/company', companyRoutes);
+  app.use('/public', publicRoutes);
+  app.use('/invitations', invitationRoutes);
+  console.log('✅ API routes mounted');
+} catch (error) {
+  console.error('❌ Error importing routes:', error);
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -37,20 +59,6 @@ app.use(express.json());
 mongoose.connect(process.env.MONGODB_URI || process.env.DATABASE_URL)
 .then(() => console.log('✅ Connected to MongoDB Atlas'))
 .catch(err => console.error('❌ MongoDB connection error:', err));
-
-// API Routes
-console.log('📡 Mounting API routes...');
-app.use('/auth', authRoutes);
-app.use('/users', userRoutes);
-app.use('/visits', visitRoutes);
-app.use('/dashboard', dashboardRoutes);
-app.use('/reports', reportsRoutes);
-app.use('/access', accessRoutes);
-app.use('/blacklist', blacklistRoutes);
-app.use('/company', companyRoutes);
-app.use('/public', publicRoutes);
-app.use('/invitations', invitationRoutes);
-console.log('✅ API routes mounted');
 
 // Health check endpoint
 app.get('/health', (req, res) => {

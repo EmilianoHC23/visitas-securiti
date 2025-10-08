@@ -8,6 +8,9 @@ console.log('🚀 Backend starting...');
 console.log('🌍 NODE_ENV:', process.env.NODE_ENV);
 console.log('🔧 Vercel environment detected:', !!process.env.VERCEL);
 
+const app = express();
+const PORT = process.env.PORT || 3001;
+
 // Import routes
 let authRoutes, userRoutes, visitRoutes, dashboardRoutes, reportsRoutes, accessRoutes, blacklistRoutes, companyRoutes, publicRoutes, invitationRoutes;
 
@@ -41,9 +44,6 @@ try {
   console.error('❌ Error importing routes:', error);
   process.exit(1);
 }
-
-const app = express();
-const PORT = process.env.PORT || 3001;
 
 // CORS configuration
 app.use(cors({

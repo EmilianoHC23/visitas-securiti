@@ -9,16 +9,16 @@ console.log('🌍 NODE_ENV:', process.env.NODE_ENV);
 console.log('🔧 Vercel environment detected:', !!process.env.VERCEL);
 
 // Import routes
-const authRoutes = require('./src/routes/auth');
-const userRoutes = require('./src/routes/users');
-const visitRoutes = require('./src/routes/visits');
-const dashboardRoutes = require('./src/routes/dashboard');
-const reportsRoutes = require('./src/routes/reports');
-const accessRoutes = require('./src/routes/access');
-const blacklistRoutes = require('./src/routes/blacklist');
-const companyRoutes = require('./src/routes/company');
-const publicRoutes = require('./src/routes/public');
-const invitationRoutes = require('./src/routes/invitations');
+const authRoutes = require('../backend/src/routes/auth');
+const userRoutes = require('../backend/src/routes/users');
+const visitRoutes = require('../backend/src/routes/visits');
+const dashboardRoutes = require('../backend/src/routes/dashboard');
+const reportsRoutes = require('../backend/src/routes/reports');
+const accessRoutes = require('../backend/src/routes/access');
+const blacklistRoutes = require('../backend/src/routes/blacklist');
+const companyRoutes = require('../backend/src/routes/company');
+const publicRoutes = require('../backend/src/routes/public');
+const invitationRoutes = require('../backend/src/routes/invitations');
 
 const app = express();
 const PORT = process.env.PORT || 3001;

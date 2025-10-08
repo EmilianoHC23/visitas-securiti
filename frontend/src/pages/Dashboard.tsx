@@ -126,28 +126,28 @@ export const Dashboard: React.FC = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 <StatCard 
-                    title="Visitas Activas" 
-                    value={stats.checkedIn} 
-                    icon={<LoginIcon className="w-6 h-6 text-white"/>} 
-                    color="bg-green-500" 
+                    title="Total Registros Hoy" 
+                    value={stats.pending + stats.approved + stats.checkedIn + stats.completed} 
+                    icon={<CheckCircleIcon className="w-6 h-6 text-white"/>} 
+                    color="bg-blue-500" 
                 />
                 <StatCard 
-                    title="Pendientes" 
+                    title="En Espera" 
                     value={stats.pending} 
                     icon={<ClockIcon className="w-6 h-6 text-white"/>} 
                     color="bg-yellow-500" 
                 />
                 <StatCard 
-                    title="Pre-aprobadas" 
+                    title="Respuesta Recibida" 
                     value={stats.approved} 
                     icon={<CheckCircleIcon className="w-6 h-6 text-white"/>} 
-                    color="bg-blue-500" 
+                    color="bg-green-500" 
                 />
                 <StatCard 
-                    title="Completadas Hoy" 
-                    value={stats.completed} 
-                    icon={<CheckCircleIcon className="w-6 h-6 text-white"/>} 
-                    color="bg-gray-500" 
+                    title="Dentro" 
+                    value={stats.checkedIn} 
+                    icon={<LoginIcon className="w-6 h-6 text-white"/>} 
+                    color="bg-purple-500" 
                 />
             </div>
 

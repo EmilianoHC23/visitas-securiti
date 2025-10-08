@@ -104,6 +104,7 @@ export const createVisit = async (visitData: {
   scheduledDate: string;
   visitorEmail?: string;
   visitorPhone?: string;
+  visitorPhoto?: string;
 }): Promise<Visit> => {
   return apiRequest('/visits', {
     method: 'POST',
@@ -130,6 +131,33 @@ export const updateVisitStatus = async (visitId: string, status: VisitStatus): P
   return apiRequest(`/visits/${visitId}/status`, {
     method: 'PUT',
     body: JSON.stringify({ status }),
+  });
+};
+
+export const approveVisit = async (visitId: string, notes?: string): Promise<Visit> => {
+  return apiRequest(`/visits/approve/${visitId}`, {
+    method: 'POST',
+    body: JSON.stringify({ notes }),
+  });
+};
+
+export const rejectVisit = async (visitId: string, reason?: string): Promise<Visit> => {
+  return apiRequest(`/visits/reject/${visitId}`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+};
+
+export const checkInVisit = async (visitId: string): Promise<Visit> => {
+  return apiRequest(`/visits/checkin/${visitId}`, {
+    method: 'POST',
+  });
+};
+
+export const checkOutVisit = async (visitId: string, photos?: string[]): Promise<Visit> => {
+  return apiRequest(`/visits/checkout/${visitId}`, {
+    method: 'POST',
+    body: JSON.stringify({ photos }),
   });
 };
 

@@ -3,25 +3,24 @@ import { useAuth } from '../contexts/AuthContext';
 
 
 export const LoginPage: React.FC = () => {
-    const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [emailError, setEmailError] = useState<string | null>(null);
+    const [usernameError, setUsernameError] = useState<string | null>(null);
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const { login, loading } = useAuth();
 
-    const validateEmail = (email: string): boolean => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!email) {
-            setEmailError('El email es requerido');
+    const validateUsername = (username: string): boolean => {
+        if (!username) {
+            setUsernameError('El nombre de usuario es requerido');
             return false;
         }
-        if (!emailRegex.test(email)) {
-            setEmailError('Por favor ingrese un email válido');
+        if (username.length < 3) {
+            setUsernameError('El nombre de usuario debe tener al menos 3 caracteres');
             return false;
         }
-        setEmailError(null);
+        setUsernameError(null);
         return true;
     };
 
@@ -38,11 +37,11 @@ export const LoginPage: React.FC = () => {
         return true;
     };
 
-    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newEmail = e.target.value;
-        setEmail(newEmail);
-        if (emailError) {
-            validateEmail(newEmail);
+    const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newUsername = e.target.value;
+        setUsername(newUsername);
+        if (usernameError) {
+            validateUsername(newUsername);
         }
     };
 
@@ -58,17 +57,17 @@ export const LoginPage: React.FC = () => {
         e.preventDefault();
         setError(null);
 
-        const isEmailValid = validateEmail(email);
+        const isUsernameValid = validateUsername(username);
         const isPasswordValid = validatePassword(password);
 
-        if (!isEmailValid || !isPasswordValid) {
+        if (!isUsernameValid || !isPasswordValid) {
             return;
         }
 
         try {
-            await login(email, password);
+            await login(username, password);
         } catch (err: any) {
-            setError('Email o contraseña incorrectos.');
+            setError('Usuario o contraseña incorrectos.');
         }
     };
 
@@ -100,33 +99,33 @@ export const LoginPage: React.FC = () => {
                         </div>
                     )}
                     <div>
-                        <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1">
-                            Correo Electrónico
+                        <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-1">
+                            Nombre de Usuario
                         </label>
                         <div className="relative group">
                             <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-colors duration-200 group-hover:text-blue-600">
-                                {/* Icono de mail */}
+                                {/* Icono de usuario */}
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                    <rect x="3" y="5" width="18" height="14" rx="2" />
-                                    <path d="M3 7l9 6 9-6" />
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
                                 </svg>
                             </span>
                             <input
-                                id="email"
-                                type="email"
-                                value={email}
-                                onChange={handleEmailChange}
+                                id="username"
+                                type="text"
+                                value={username}
+                                onChange={handleUsernameChange}
                                 required
-                                placeholder="Ingresa tu correo"
+                                placeholder="Ingresa tu nombre de usuario"
                                 className={`pl-10 pr-4 py-2 w-full border-0 border-b-2 rounded-none bg-transparent shadow-none focus:ring-0 focus:border-blue-600 focus:outline-none transition-colors duration-200 group-hover:border-blue-400 group-hover:bg-blue-50 ${
-                                    emailError 
+                                    usernameError 
                                         ? 'border-b-red-300 focus:border-b-red-500' 
                                         : 'border-b-gray-200'
                                 }`}
                             />
                         </div>
-                        {emailError && (
-                            <p className="mt-1 text-sm text-red-600">{emailError}</p>
+                        {usernameError && (
+                            <p className="mt-1 text-sm text-red-600">{usernameError}</p>
                         )}
                     </div>
                     <div>

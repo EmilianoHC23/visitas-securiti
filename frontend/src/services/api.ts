@@ -70,10 +70,10 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => { // e
 };
 
 // --- AUTENTICACIÓN ---
-export const login = async (email: string, password: string): Promise<{ token: string; user: User }> => {
+export const login = async (username: string, password: string): Promise<{ token: string; user: User }> => {
   return apiRequest('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ username, password }),
   });
 };
 

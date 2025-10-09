@@ -3,27 +3,27 @@ const User = require('./models/User');
 const Visit = require('./models/Visit');
 require('dotenv').config();
 
-console.log('🚀 Starting database initialization...');
-console.log('📝 Environment variables:');
-console.log('  DATABASE_URL:', process.env.DATABASE_URL ? '✅ Configured' : '❌ Not configured');
-console.log('  NODE_ENV:', process.env.NODE_ENV);
+let alreadyInitialized = false;
 
 const initializeDatabase = async () => {
-  console.log('🔄 Attempting to connect to MongoDB...');
   try {
-    // Connect to MongoDB
-    const mongoURI = process.env.DATABASE_URL || 'mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti';
-    console.log('🔗 Connection string:', mongoURI.replace(/:([^:@]{4})[^:@]*@/, ':****@'));
-    await mongoose.connect(mongoURI);
-    console.log('✅ Connected to MongoDB Atlas');
-    console.log('📊 Database:', mongoose.connection.db.databaseName);
+    if (alreadyInitialized) {
+      return;
+    }
+    // Ensure we have an active connection (1 = connected)
+    if (mongoose.connection.readyState !== 1) {
+      console.warn('⚠️ initializeDatabase called without active mongoose connection. Skipping init.');
+      return;
+    }
+    const dbName = mongoose.connection.db && mongoose.connection.db.databaseName;
+    console.log('✅ Mongo connection ready. DB:', dbName || 'unknown');
 
     // Check if users already exist
     const existingUsers = await User.countDocuments();
     console.log(`👥 Existing users: ${existingUsers}`);
 
     if (existingUsers === 0) {
-      console.log('� Creating default users...');
+      console.log('👤 Creating default users...');
 
       // Create default users with realistic data
       const defaultUsers = [
@@ -146,8 +146,8 @@ const initializeDatabase = async () => {
       }
     ];
 
-    await Visit.insertMany(sampleVisits);
-    console.log('📋 Created sample visits');
+  await Visit.insertMany(sampleVisits);
+  console.log('📋 Created sample visits');
 
     // Migration: Update existing users without invitationStatus
     console.log('🔄 Checking for users that need invitationStatus migration...');
@@ -175,8 +175,8 @@ const initializeDatabase = async () => {
       console.log('✅ All users have invitationStatus field');
     }
 
-    console.log('\n✅ Database initialized successfully!');
-    console.log('\n📊 Credenciales de acceso actualizadas:');
+  console.log('\n✅ Database initialized successfully!');
+  console.log('\n📊 Credenciales de acceso actualizadas:');
     console.log('👑 Admin: admin@securiti.com / password');
     console.log('📥 Recepción: reception@securiti.com / password');
     console.log('🏢 Hosts:');
@@ -186,11 +186,10 @@ const initializeDatabase = async () => {
     console.log('   - Sofía López: sofia.lopez@securiti.com / password');
     }
 
+    alreadyInitialized = true;
+
   } catch (error) {
     console.error('❌ Error initializing database:', error);
-  } finally {
-    await mongoose.disconnect();
-    console.log('\n📡 Disconnected from MongoDB');
   }
 };
 

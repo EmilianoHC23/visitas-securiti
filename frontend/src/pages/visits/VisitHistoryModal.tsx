@@ -113,7 +113,7 @@ export const VisitHistoryModal: React.FC<Props> = ({ visitId, isOpen, onClose })
                   <div className="text-gray-500 text-center py-4">No hay eventos registrados</div>
                 ) : (
                   <div className="space-y-4">
-                    {events.map((event, index) => (
+                    {events.map((event) => (
                       <div key={event._id} className="flex items-start space-x-4">
                         <div className={`w-3 h-3 rounded-full mt-2 ${
                           event.type === 'check-in' ? 'bg-green-500' : 'bg-red-500'

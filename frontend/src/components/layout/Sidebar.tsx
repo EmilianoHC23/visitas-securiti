@@ -13,12 +13,11 @@ const ShieldIcon = () => (
 );
 
 const NavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => {
-    const location = useLocation();
-    const isActive = location.pathname === to;
     return (
         <li className="nav-item">
             <NavLink
                 to={to}
+                end
                 className={({ isActive }) =>
                     `nav-link d-flex align-items-center px-3 py-2 rounded ${isActive ? 'active bg-primary text-white' : 'text-dark'} `
                 }

@@ -1,15 +1,19 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     return (
-        <div className="flex h-screen bg-gray-100">
-            <Sidebar />
-            <div className="flex-1 flex flex-col overflow-hidden">
-                <Header />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+        <div className="container-fluid min-vh-100 d-flex flex-column p-0 bg-light" style={{ height: '100vh' }}>
+            <Header sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed} />
+            <div className="d-flex flex-row flex-grow-1 min-vh-0" style={{ flex: 1, minHeight: 0 }}>
+                {!sidebarCollapsed && <Sidebar />}
+                <main
+                    className="flex-grow-1 p-4 bg-light"
+                    style={{ overflowY: 'auto', height: '100%', maxHeight: '100%' }}
+                >
                     {children}
                 </main>
             </div>

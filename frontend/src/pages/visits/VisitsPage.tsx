@@ -1,4 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import DatePicker, { registerLocale } from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { es } from 'date-fns/locale';
+registerLocale('es', es);
 import { Visit, VisitStatus, User } from '../../types';
 import * as api from '../../services/api';
 
@@ -49,17 +53,73 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
     const [visitorCompany, setVisitorCompany] = useState('');
     const [reason, setReason] = useState('');
     const [hostId, setHostId] = useState('');
-    const [scheduledDate, setScheduledDate] = useState('');
-    
+    // Inicializar con la fecha y hora actual como objeto Date
+    const getNow = () => {
+        const now = new Date();
+        now.setSeconds(0, 0);
+        return now;
+    };
+    const [scheduledDate, setScheduledDate] = useState<Date>(getNow());
+    // Cuando se abre el modal, reiniciar la fecha a la actual
+    React.useEffect(() => {
+        if (isOpen) {
+            setScheduledDate(getNow());
+        }
+    }, [isOpen]);
+    const [nameError, setNameError] = useState('');
+    const [companyError, setCompanyError] = useState('');
+
+    // Expresión regular: solo letras, puede tener acentos, debe tener al menos un espacio (nombre y apellido)
+    const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ]+(\s+[A-Za-zÁÉÍÓÚáéíóúÑñ]+)+$/;
+    // Expresión regular mejorada para empresa: al menos dos palabras o una palabra de mínimo 3 letras, permite letras, números y algunos símbolos, no solo letras repetidas
+    const companyRegex = /^(?!.*(.)\1{3,})[A-Za-zÁÉÍÓÚáéíóúÑñ0-9&.,'"\-]{3,}(\s+[A-Za-zÁÉÍÓÚáéíóúÑñ0-9&.,'"\-]{2,})+$/;
+
+    // Función auxiliar para detectar cadenas tipo garabato (letras iguales, sin vocales, etc.)
+    function isGibberishCompany(str: string) {
+        // No debe ser solo letras iguales o solo consonantes
+        const onlyConsonants = /^[^AEIOUaeiouÁÉÍÓÚáéíóú]+$/;
+        const repeatedChar = /(.)\1{3,}/;
+        // Debe tener al menos una vocal
+        const hasVowel = /[AEIOUaeiouÁÉÍÓÚáéíóú]/;
+        // Debe tener al menos dos palabras o una palabra de mínimo 3 letras
+        const twoWords = /\w+\s+\w+/;
+        const minLength = str.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ]/g, '').length >= 3;
+        return (
+            onlyConsonants.test(str.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ]/g, '')) ||
+            repeatedChar.test(str) ||
+            !hasVowel.test(str) ||
+            (!twoWords.test(str) && !minLength)
+        );
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        let valid = true;
+        // Validar nombre
+        if (!nameRegex.test(visitorName.trim())) {
+            setNameError('Por favor ingresa un nombre y apellido válidos (solo letras, sin símbolos ni garabatos).');
+            valid = false;
+        } else {
+            setNameError('');
+        }
+        // Validar empresa
+        const companyValue = visitorCompany.trim();
+        if (!companyRegex.test(companyValue) || isGibberishCompany(companyValue)) {
+            setCompanyError('Por favor ingresa un nombre de empresa válido (debe ser un nombre real, no garabatos, puede incluir letras, números y algunos símbolos como & . , -).');
+            valid = false;
+        } else {
+            setCompanyError('');
+        }
+        if (!valid) return;
         try {
-            await api.createVisit({ visitorName, visitorCompany, reason, hostId, scheduledDate });
+            // Formatear la fecha a string ISO (o el formato que espera tu backend)
+            const scheduledDateStr = scheduledDate.toISOString();
+            await api.createVisit({ visitorName, visitorCompany, reason, hostId, scheduledDate: scheduledDateStr });
             onSave(); // This will trigger a refetch in the parent component
             onClose(); // Close modal on success
         } catch (error) {
             console.error("Failed to create visit:", error);
-            // Here you could show an error message in the modal
+            // Aquí podrías mostrar un mensaje de error en el modal
         }
     };
 
@@ -70,8 +130,24 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
             <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
                 <h2 className="text-xl font-bold mb-6">Registrar Nueva Visita</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <input type="text" placeholder="Nombre del Visitante" value={visitorName} onChange={e => setVisitorName(e.target.value)} className="w-full p-2 border rounded" required />
-                    <input type="text" placeholder="Empresa del Visitante" value={visitorCompany} onChange={e => setVisitorCompany(e.target.value)} className="w-full p-2 border rounded" required />
+                    <input
+                        type="text"
+                        placeholder="Nombre del Visitante"
+                        value={visitorName}
+                        onChange={e => setVisitorName(e.target.value)}
+                        className={`w-full p-2 border rounded ${nameError ? 'border-red-500' : ''}`}
+                        required
+                    />
+                    {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
+                    <input
+                        type="text"
+                        placeholder="Empresa del Visitante"
+                        value={visitorCompany}
+                        onChange={e => setVisitorCompany(e.target.value)}
+                        className={`w-full p-2 border rounded ${companyError ? 'border-red-500' : ''}`}
+                        required
+                    />
+                    {companyError && <p className="text-red-500 text-xs mt-1">{companyError}</p>}
                     <textarea placeholder="Motivo de la visita" value={reason} onChange={e => setReason(e.target.value)} className="w-full p-2 border rounded" required />
                     <select value={hostId} onChange={e => setHostId(e.target.value)} className="w-full p-2 border rounded bg-white" required>
                         <option value="" disabled>Seleccionar Anfitrión</option>
@@ -79,8 +155,22 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
                             <option key={host._id} value={host._id}>{host.firstName} {host.lastName}</option>
                         ))}
                     </select>
-                    <input type="datetime-local" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} className="w-full p-2 border rounded" required />
-                    
+                    <div>
+                        <label className="block text-sm font-medium mb-1">Fecha y hora de la visita</label>
+                        <DatePicker
+                            selected={scheduledDate}
+                            onChange={(date: Date | null) => date && setScheduledDate(date)}
+                            showTimeSelect
+                            timeFormat="HH:mm"
+                            timeIntervals={15}
+                            dateFormat="dd/MM/yyyy HH:mm"
+                            timeCaption="Hora"
+                            className="w-full p-2 border rounded"
+                            minDate={new Date()}
+                            popperPlacement="right-start"
+                            locale="es"
+                        />
+                    </div>
                     <div className="flex justify-end space-x-4 pt-4">
                         <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">Cancelar</button>
                         <button type="submit" className="px-4 py-2 bg-securiti-blue-600 text-white rounded">Guardar</button>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { LogoutIcon, SettingsIcon } from '../../components/common/icons';
 import { User, UserRole } from '../../types';
 import * as api from '../../services/api';
 
@@ -443,25 +444,28 @@ export const UserManagementPage: React.FC = () => {
                                             {user.invitationStatus === 'pending' && (
                                                 <button 
                                                     onClick={() => handleResendInvitation(user._id)}
-                                                    className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded hover:bg-blue-200"
+                                                    className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded hover:bg-blue-200 flex items-center gap-1"
                                                     title="Reenviar invitación"
                                                 >
-                                                    📧 Reenviar
+                                                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a3 3 0 003.22 0L22 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                                    Reenviar
                                                 </button>
                                             )}
                                             <button 
                                                 onClick={() => handleEditUser(user)}
-                                                className="px-3 py-1 text-xs font-medium text-green-600 bg-green-100 rounded hover:bg-green-200"
+                                                className="px-3 py-1 text-xs font-medium text-green-600 bg-green-100 rounded hover:bg-green-200 flex items-center gap-1"
                                                 title="Editar usuario"
                                             >
-                                                ✏️ Editar
+                                                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-1.414.828l-4.243 1.414a1 1 0 01-1.263-1.263l1.414-4.243a4 4 0 01.828-1.414z" /></svg>
+                                                Editar
                                             </button>
                                             <button 
                                                 onClick={() => handleDeleteUser(user)}
-                                                className="px-3 py-1 text-xs font-medium text-red-600 bg-red-100 rounded hover:bg-red-200"
+                                                className="px-3 py-1 text-xs font-medium text-red-600 bg-red-100 rounded hover:bg-red-200 flex items-center gap-1"
                                                 title="Eliminar usuario"
                                             >
-                                                🗑️ Eliminar
+                                                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                Eliminar
                                             </button>
                                         </div>
                                     </td>

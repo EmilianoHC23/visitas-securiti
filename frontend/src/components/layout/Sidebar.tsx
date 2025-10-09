@@ -6,35 +6,37 @@ import { useAuth } from '../../contexts/AuthContext';
 import { DashboardIcon, VisitsIcon, UsersIcon, ReportsIcon, SettingsIcon } from '../common/icons';
 
 const ShieldIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-securiti-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 20.944L12 23l9-2.056A12.02 12.02 0 0021.618 7.984a11.955 11.955 0 01-4.016-4.016z" />
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" className="bi bi-shield-lock text-primary" viewBox="0 0 16 16">
+        <path d="M5.5 8a1.5 1.5 0 1 1 3 0v1a.5.5 0 0 1-1 0V8a.5.5 0 0 0-1 0v1a.5.5 0 0 1-1 0V8z"/>
+        <path d="M8 0c-.69 0-1.342.132-1.972.378C3.668 1.07 2.5 2.522 2.5 4.118v2.09c0 3.1 2.5 5.482 5.5 7.292 3-1.81 5.5-4.192 5.5-7.292v-2.09c0-1.596-1.168-3.048-3.528-3.74A6.978 6.978 0 0 0 8 0z"/>
     </svg>
 );
-
 
 const NavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => {
     const location = useLocation();
     const isActive = location.pathname === to;
-
     return (
-        <NavLink
-            to={to}
-            className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 ${
-                isActive
-                    ? 'bg-securiti-blue-600 text-white'
-                    : 'text-gray-200 hover:bg-securiti-blue-800 hover:text-white'
-            }`}
-        >
-            {icon}
-            <span className="ml-4">{label}</span>
-        </NavLink>
+        <li className="nav-item">
+            <NavLink
+                to={to}
+                className={({ isActive }) =>
+                    `nav-link d-flex align-items-center px-3 py-2 rounded ${isActive ? 'active bg-primary text-white' : 'text-dark'} `
+                }
+            >
+                <span className="me-2">{icon}</span>
+                {label}
+            </NavLink>
+        </li>
     );
 };
 
+type SidebarProps = {
+    collapsed?: boolean;
+};
 
-export const Sidebar: React.FC = () => {
+export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
     const { user } = useAuth();
-    
+
     const navLinks = [
         { to: "/", label: "Dashboard", icon: <DashboardIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
         { to: "/visits", label: "Visitas", icon: <VisitsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
@@ -46,17 +48,14 @@ export const Sidebar: React.FC = () => {
         { to: "/settings/company", label: "Config. Empresa", icon: <SettingsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
     ];
 
-    return (
-        <div className="flex flex-col w-64 h-screen bg-securiti-blue-900 text-white">
-            <div className="flex items-center justify-center h-20 border-b border-securiti-blue-800">
-                <ShieldIcon />
-                <h1 className="text-xl font-bold ml-2">Visitas SecuriTI</h1>
-            </div>
-            <nav className="flex-1 px-4 py-6 space-y-2">
+    return collapsed ? null : (
+        <nav className="sidebar bg-white border-end" style={{ minWidth: 220, transition: 'min-width 0.2s' }}>
+            {/* Logo y nombre movidos al header */}
+            <ul className="nav flex-column mt-3">
                 {navLinks.filter(link => user && link.roles.includes(user.role)).map((link) => (
                     <NavItem key={link.to} {...link} />
                 ))}
-            </nav>
-        </div>
+            </ul>
+        </nav>
     );
 };

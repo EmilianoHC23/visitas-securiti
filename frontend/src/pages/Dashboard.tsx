@@ -6,13 +6,15 @@ import { CheckCircleIcon, ClockIcon, LoginIcon } from '../components/common/icon
 import * as api from '../services/api';
 
 const StatCard: React.FC<{ title: string; value: string | number; icon: React.ReactNode; color: string }> = ({ title, value, icon, color }) => (
-    <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
-        <div className={`p-3 rounded-full ${color}`}>
-            {icon}
-        </div>
-        <div className="ml-4">
-            <p className="text-3xl font-bold text-gray-800">{value}</p>
-            <p className="text-sm text-gray-500">{title}</p>
+    <div className="card shadow-sm border-0 mb-3">
+        <div className="card-body d-flex align-items-center">
+            <div className={`d-flex align-items-center justify-content-center rounded-circle ${color}`} style={{ width: 48, height: 48 }}>
+                {icon}
+            </div>
+            <div className="ms-3">
+                <div className="h3 mb-0 fw-bold text-dark">{value}</div>
+                <div className="text-muted small">{title}</div>
+            </div>
         </div>
     </div>
 );
@@ -105,112 +107,129 @@ export const Dashboard: React.FC = () => {
     }
 
     return (
-        <div className="container mx-auto">
+        <div className="container-fluid px-0">
             {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex justify-between items-center">
+                <div className="alert alert-danger d-flex justify-content-between align-items-center mb-4" role="alert">
                     <span>{error}</span>
-                    <button onClick={() => setError(null)} className="text-red-700 hover:text-red-900">
-                        ×
-                    </button>
+                    <button onClick={() => setError(null)} className="btn-close" aria-label="Cerrar"></button>
                 </div>
             )}
 
-            <div className="mb-6">
-                <h2 className="text-2xl font-semibold text-gray-700 mb-2">
+            <div className="mb-4">
+                <h2 className="h2 fw-semibold text-dark mb-1">
                     Bienvenido de nuevo, {user?.firstName}!
                 </h2>
-                <p className="text-gray-500">
+                <div className="text-muted">
                     Aquí tienes un resumen de la actividad de hoy
-                </p>
+                </div>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <StatCard 
-                    title="Visitas Activas" 
-                    value={stats.checkedIn} 
-                    icon={<LoginIcon className="w-6 h-6 text-white"/>} 
-                    color="bg-green-500" 
-                />
-                <StatCard 
-                    title="Pendientes" 
-                    value={stats.pending} 
-                    icon={<ClockIcon className="w-6 h-6 text-white"/>} 
-                    color="bg-yellow-500" 
-                />
-                <StatCard 
-                    title="Pre-aprobadas" 
-                    value={stats.approved} 
-                    icon={<CheckCircleIcon className="w-6 h-6 text-white"/>} 
-                    color="bg-blue-500" 
-                />
-                <StatCard 
-                    title="Completadas Hoy" 
-                    value={stats.completed} 
-                    icon={<CheckCircleIcon className="w-6 h-6 text-white"/>} 
-                    color="bg-gray-500" 
-                />
+
+            <div className="row g-3 mb-3">
+                <div className="col-12 col-md-6 col-lg-3">
+                    <StatCard 
+                        title="Visitas Activas" 
+                        value={stats.checkedIn} 
+                        icon={<LoginIcon className="text-white" />} 
+                        color="bg-success"
+                    />
+                </div>
+                <div className="col-12 col-md-6 col-lg-3">
+                    <StatCard 
+                        title="Pendientes" 
+                        value={stats.pending} 
+                        icon={<ClockIcon className="text-white" />} 
+                        color="bg-warning"
+                    />
+                </div>
+                <div className="col-12 col-md-6 col-lg-3">
+                    <StatCard 
+                        title="Pre-aprobadas" 
+                        value={stats.approved} 
+                        icon={<CheckCircleIcon className="text-white" />} 
+                        color="bg-primary"
+                    />
+                </div>
+                <div className="col-12 col-md-6 col-lg-3">
+                    <StatCard 
+                        title="Completadas Hoy" 
+                        value={stats.completed} 
+                        icon={<CheckCircleIcon className="text-white" />}
+                        color="bg-secondary"
+                    />
+                </div>
             </div>
 
             {user?.role === 'admin' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <StatCard 
-                        title="Total Usuarios" 
-                        value={stats.totalUsers} 
-                        icon={<div className="w-6 h-6 text-white">👥</div>} 
-                        color="bg-purple-500" 
-                    />
-                    <StatCard 
-                        title="Hosts Disponibles" 
-                        value={stats.totalHosts} 
-                        icon={<div className="w-6 h-6 text-white">🏢</div>} 
-                        color="bg-indigo-500" 
-                    />
+                <div className="row g-3 mb-3">
+                    <div className="col-12 col-md-6">
+                        <StatCard 
+                            title="Total Usuarios" 
+                            value={stats.totalUsers} 
+                            icon={<div className="text-white" style={{ fontSize: 24 }}>👥</div>} 
+                            color="bg-purple"
+                        />
+                    </div>
+                    <div className="col-12 col-md-6">
+                        <StatCard 
+                            title="Hosts Disponibles" 
+                            value={stats.totalHosts} 
+                            icon={<div className="text-white" style={{ fontSize: 24 }}>🏢</div>} 
+                            color="bg-info"
+                        />
+                    </div>
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
-                    <h3 className="font-semibold text-gray-800 mb-4">Visitas Esta Semana</h3>
-                    <div style={{ width: '100%', height: 300 }}>
-                        <ResponsiveContainer>
-                            <BarChart data={analyticsData.length > 0 ? analyticsData : [
-                                { day: 'Lun', visits: 0 },
-                                { day: 'Mar', visits: 0 },
-                                { day: 'Mié', visits: 0 },
-                                { day: 'Jue', visits: 0 },
-                                { day: 'Vie', visits: 0 },
-                                { day: 'Sáb', visits: 0 },
-                                { day: 'Dom', visits: 0 },
-                            ]}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false}/>
-                                <XAxis dataKey="day" tick={{fontSize: 12}}/>
-                                <YAxis allowDecimals={false} tick={{fontSize: 12}} />
-                                <Tooltip 
-                                    wrapperClassName="shadow-lg rounded-md border" 
-                                    cursor={{fill: 'rgba(34, 131, 229, 0.1)'}} 
-                                    labelFormatter={(label) => `${label}`}
-                                    formatter={(value) => [value, 'Visitas']}
-                                />
-                                <Bar dataKey="visits" fill="#2283e5" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+            <div className="row g-3">
+                <div className="col-12 col-lg-8">
+                    <div className="card shadow-sm border-0 h-100">
+                        <div className="card-body">
+                            <h5 className="card-title fw-semibold mb-3">Visitas Esta Semana</h5>
+                            <div style={{ width: '100%', height: 300 }}>
+                                <ResponsiveContainer>
+                                    <BarChart data={analyticsData.length > 0 ? analyticsData : [
+                                        { day: 'Lun', visits: 0 },
+                                        { day: 'Mar', visits: 0 },
+                                        { day: 'Mié', visits: 0 },
+                                        { day: 'Jue', visits: 0 },
+                                        { day: 'Vie', visits: 0 },
+                                        { day: 'Sáb', visits: 0 },
+                                        { day: 'Dom', visits: 0 },
+                                    ]}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false}/>
+                                        <XAxis dataKey="day" tick={{fontSize: 12}}/>
+                                        <YAxis allowDecimals={false} tick={{fontSize: 12}} />
+                                        <Tooltip 
+                                            wrapperClassName="shadow rounded border" 
+                                            cursor={{fill: 'rgba(34, 131, 229, 0.1)'}} 
+                                            labelFormatter={(label) => `${label}`}
+                                            formatter={(value) => [value, 'Visitas']}
+                                        />
+                                        <Bar dataKey="visits" fill="#2283e5" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h3 className="font-semibold text-gray-800 mb-4">Actividad Reciente</h3>
-                    {recentVisits.length > 0 ? (
-                        <ul className="space-y-2">
-                            {recentVisits.map(visit => (
-                                <RecentActivityItem key={visit._id} visit={visit} />
-                            ))}
-                        </ul>
-                    ) : (
-                        <div className="text-center py-8">
-                            <p className="text-sm text-gray-500 mb-2">No hay actividad reciente</p>
-                            <p className="text-xs text-gray-400">Las visitas aparecerán aquí cuando se registren</p>
+                <div className="col-12 col-lg-4">
+                    <div className="card shadow-sm border-0 h-100">
+                        <div className="card-body">
+                            <h5 className="card-title fw-semibold mb-3">Actividad Reciente</h5>
+                            {recentVisits.length > 0 ? (
+                                <ul className="list-unstyled mb-0">
+                                    {recentVisits.map(visit => (
+                                        <RecentActivityItem key={visit._id} visit={visit} />
+                                    ))}
+                                </ul>
+                            ) : (
+                                <div className="text-center py-5">
+                                    <div className="text-muted mb-2">No hay actividad reciente</div>
+                                    <div className="small text-secondary">Las visitas aparecerán aquí cuando se registren</div>
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>

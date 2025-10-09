@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LogoutIcon, SettingsIcon } from '../../components/common/icons';
+import { LogoutIcon, SettingsIcon, UsersIcon } from '../../components/common/icons';
 import { User, UserRole } from '../../types';
 import * as api from '../../services/api';
 
@@ -447,7 +447,28 @@ export const UserManagementPage: React.FC = () => {
                             {users.map(user => (
                                 <tr key={user._id} className="bg-white border-b hover:bg-gray-50">
                                     <td className="px-6 py-4">
-                                        <img src={user.profileImage} alt={`${user.firstName} ${user.lastName}`} className="w-10 h-10 rounded-full" />
+                                        {user.profileImage && user.profileImage.trim() !== '' ? (
+                                            <img 
+                                                src={user.profileImage} 
+                                                alt={`${user.firstName} ${user.lastName}`} 
+                                                className="w-10 h-10 rounded-full object-cover"
+                                                onError={e => {
+                                                    const target = e.target as HTMLImageElement;
+                                                    target.onerror = null;
+                                                    target.style.display = 'none';
+                                                    const fallback = document.createElement('div');
+                                                    fallback.className = 'w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center';
+                                                    fallback.innerHTML = `<svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-7 h-7 text-gray-400\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M5.121 17.804A9 9 0 1112 21a9 9 0 01-6.879-3.196z\" /><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M15 11a3 3 0 11-6 0 3 3 0 016 0z\" /></svg>`;
+                                                    target.parentNode?.appendChild(fallback);
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-7 h-7 text-gray-400">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                                </svg>
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                         {user.firstName} {user.lastName}

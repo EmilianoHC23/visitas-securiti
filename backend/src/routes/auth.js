@@ -7,16 +7,20 @@ const router = express.Router();
 
 // Login
 router.post('/login', async (req, res) => {
-  console.log('🔐 Login route called with method:', req.method, 'path:', req.path);
-  console.log('📨 Request body:', req.body ? 'present' : 'missing');
   try {
+    console.log('🔐 Login request received');
+    console.log('📦 Request body:', req.body);
+    console.log('📡 Content-Type:', req.headers['content-type']);
+    
     const { email, password } = req.body;
     
     console.log('🔐 Login attempt for:', email);
-    console.log('📊 Environment:', process.env.NODE_ENV);
+    console.log('� Password provided:', !!password);
+    console.log('�📊 Environment:', process.env.NODE_ENV);
     console.log('🔑 JWT_SECRET exists:', !!process.env.JWT_SECRET);
 
     if (!email || !password) {
+      console.log('❌ Missing credentials - email:', !!email, 'password:', !!password);
       return res.status(400).json({ message: 'Email y contraseña son requeridos' });
     }
 

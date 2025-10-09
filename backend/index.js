@@ -27,7 +27,21 @@ app.use(cors({
     credentials: true
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Debug middleware to log request details
+app.use((req, res, next) => {
+    console.log(`📡 ${req.method} ${req.path} - ${new Date().toISOString()}`);
+    if (req.method === 'POST' && req.path.includes('/login')) {
+        console.log('📦 Login request body keys:', Object.keys(req.body || {}));
+        console.log('📦 Request headers:', {
+            'content-type': req.headers['content-type'],
+            'content-length': req.headers['content-length']
+        });
+    }
+    next();
+});
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || process.env.DATABASE_URL)

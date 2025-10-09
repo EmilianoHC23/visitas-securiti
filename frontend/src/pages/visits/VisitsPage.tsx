@@ -1,23 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Visit, VisitStatus, User } from '../../types';
 import * as api from '../../services/api';
+import { CheckoutModal } from './CheckoutModal';
+import { VisitHistoryModal } from './VisitHistoryModal';
 
-const VisitCard: React.FC<{ 
-  visit: Visit, 
-  onApprove: (id: string, notes?: string) => void,
-  onReject: (id: string, reason?: string) => void,
-  onCheckIn: (id: string) => void,
-  onCheckOut: (id: string) => void
-}> = ({ visit, onApprove, onReject, onCheckIn, onCheckOut }) => {
+const VisitCard: React.FC<{ visit: Visit; onApprove: (id: string) => void; onCheckIn: (id: string) => void; onCheckout: (visit: Visit) => void }> = ({ visit, onApprove, onCheckIn, onCheckout }) => {
+    
+    const [showHistory, setShowHistory] = useState(false);
     
     const getStatusBadge = (status: VisitStatus) => {
         switch (status) {
-            case VisitStatus.PENDING: return <span className="px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-200 rounded-full">En Espera</span>;
+            case VisitStatus.PENDING: return <span className="px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-200 rounded-full">Pendiente</span>;
             case VisitStatus.APPROVED: return <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full">Aprobado</span>;
-            case VisitStatus.REJECTED: return <span className="px-2 py-1 text-xs font-semibold text-red-800 bg-red-200 rounded-full">Rechazado</span>;
-            case VisitStatus.CHECKED_IN: return <span className="px-2 py-1 text-xs font-semibold text-green-800 bg-green-200 rounded-full">Dentro</span>;
+            case VisitStatus.CHECKED_IN: return <span className="px-2 py-1 text-xs font-semibold text-green-800 bg-green-200 rounded-full">Activo</span>;
             case VisitStatus.COMPLETED: return <span className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">Completado</span>;
-            default: return <span className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">Desconocido</span>;
         }
     };
     
@@ -34,61 +30,55 @@ const VisitCard: React.FC<{
                 <p><strong>Motivo:</strong> {visit.reason}</p>
                 <p><strong>Anfitrión:</strong> {visit.host.firstName} {visit.host.lastName}</p>
                 <p><strong>Fecha Programada:</strong> {new Date(visit.scheduledDate).toLocaleString()}</p>
-                {visit.checkInTime && <p><strong>Check-in:</strong> {new Date(visit.checkInTime).toLocaleString()}</p>}
-                {visit.checkOutTime && <p><strong>Check-out:</strong> {new Date(visit.checkOutTime).toLocaleString()}</p>}
-                {visit.approvalTimestamp && (
-                    <p><strong>Procesado:</strong> {new Date(visit.approvalTimestamp).toLocaleString()}</p>
-                )}
-                {visit.rejectionReason && (
-                    <p><strong>Motivo rechazo:</strong> {visit.rejectionReason}</p>
-                )}
+                {visit.checkInTime && <p><strong>Check-in:</strong> {visit.checkInTime}</p>}
+                {visit.checkOutTime && <p><strong>Check-out:</strong> {visit.checkOutTime}</p>}
             </div>
              <div className="mt-4 pt-4 border-t flex space-x-2">
                 {visit.status === VisitStatus.PENDING && (
                     <>
                         <button 
                             onClick={() => onApprove(visit._id)} 
-                            className="px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 flex items-center gap-1"
+                            className="px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                            Aprobar
+                            ✅ Aprobar
                         </button>
                         <button 
                             onClick={() => onReject(visit._id)} 
-                            className="px-3 py-1 text-xs font-semibold text-white bg-red-500 rounded hover:bg-red-600 flex items-center gap-1"
+                            className="px-3 py-1 text-xs font-semibold text-white bg-red-500 rounded hover:bg-red-600"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                            Rechazar
+                            ❌ Rechazar
                         </button>
                     </>
                 )}
                 {visit.status === VisitStatus.APPROVED && (
                     <button 
                         onClick={() => onCheckIn(visit._id)} 
-                        className="px-3 py-1 text-xs font-semibold text-white bg-blue-500 rounded hover:bg-blue-600 flex items-center gap-1"
+                        className="px-3 py-1 text-xs font-semibold text-white bg-blue-500 rounded hover:bg-blue-600"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 21V8a2 2 0 012-2h2a2 2 0 012 2v13" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 0a4 4 0 014 4v1a4 4 0 01-4 4 4 4 0 01-4-4V8a4 4 0 014-4z" /></svg>
-                        Check-in
+                        🚪 Check-in
                     </button>
                 )}
-                {visit.status === VisitStatus.CHECKED_IN && (
+                 {visit.status === VisitStatus.CHECKED_IN && (
                     <button 
                         onClick={() => onCheckOut(visit._id)} 
-                        className="px-3 py-1 text-xs font-semibold text-white bg-purple-500 rounded hover:bg-purple-600 flex items-center gap-1"
+                        className="px-3 py-1 text-xs font-semibold text-white bg-purple-500 rounded hover:bg-purple-600"
                     >
-                        {/* Icono de puerta abierta para Check-out */}
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21V3h13v4m0 10v4H3V3h13v4m0 10h4m0 0l-2-2m2 2l-2 2" /></svg>
-                        Check-out
+                        👋 Check-out
                     </button>
                 )}
             </div>
+            
+                <VisitHistoryModal
+                    visitId={visit._id}
+                    isOpen={showHistory}
+                    onClose={() => setShowHistory(false)}
+                />
         </div>
     );
 };
 
 const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: () => void; hosts: User[] }> = ({ isOpen, onClose, onSave, hosts }) => {
     const [visitorName, setVisitorName] = useState('');
-    const [visitorEmail, setVisitorEmail] = useState('');
     const [visitorCompany, setVisitorCompany] = useState('');
     const [destination, setDestination] = useState('SecurITI');
     const [reason, setReason] = useState('');
@@ -98,7 +88,7 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.createVisit({ visitorName, visitorCompany, reason, hostId, scheduledDate });
+            await api.createVisit({ visitorName, visitorCompany, reason, hostId, scheduledDate, destination });
             onSave(); // This will trigger a refetch in the parent component
             onClose(); // Close modal on success
         } catch (error) {
@@ -115,7 +105,8 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
                 <h2 className="text-xl font-bold mb-6">Registrar Nueva Visita</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <input type="text" placeholder="Nombre del Visitante" value={visitorName} onChange={e => setVisitorName(e.target.value)} className="w-full p-2 border rounded" required />
-                    <input type="text" placeholder="Empresa del Visitante" value={visitorCompany} onChange={e => setVisitorCompany(e.target.value)} className="w-full p-2 border rounded" required />
+                    <input type="text" placeholder="Empresa del Visitante (opcional)" value={visitorCompany} onChange={e => setVisitorCompany(e.target.value)} className="w-full p-2 border rounded" />
+                    <input type="text" placeholder="Destino (opcional)" value={destination} onChange={e => setDestination(e.target.value)} className="w-full p-2 border rounded" />
                     <textarea placeholder="Motivo de la visita" value={reason} onChange={e => setReason(e.target.value)} className="w-full p-2 border rounded" required />
                     <select value={hostId} onChange={e => setHostId(e.target.value)} className="w-full p-2 border rounded bg-white" required>
                         <option value="" disabled>Seleccionar Anfitrión</option>
@@ -142,6 +133,8 @@ export const VisitsPage: React.FC = () => {
     const [hosts, setHosts] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+    const [checkoutVisit, setCheckoutVisit] = useState<Visit | null>(null);
 
     const fetchVisits = useCallback(async () => {
         try {
@@ -164,26 +157,21 @@ export const VisitsPage: React.FC = () => {
             
     }, [fetchVisits]);
 
-    const handleApprove = async (id: string, notes?: string) => {
+    const updateVisitStatus = async (id: string, status: VisitStatus) => {
         try {
-            const updatedVisit = await api.approveVisit(id, notes);
+            const updatedVisit = await api.updateVisitStatus(id, status);
             setVisits(visits.map(v => v._id === id ? updatedVisit : v));
-            alert('Visita aprobada exitosamente');
         } catch (error) {
-            console.error("Failed to approve visit:", error);
-            alert('Error al aprobar la visita');
+            console.error("Failed to update visit status:", error);
         }
     };
 
-    const handleReject = async (id: string, reason?: string) => {
-        const rejectionReason = reason || prompt('Motivo del rechazo (opcional):');
+    const handleApprove = async (id: string) => {
         try {
-            const updatedVisit = await api.rejectVisit(id, rejectionReason);
+            const updatedVisit = await api.approveVisit(id);
             setVisits(visits.map(v => v._id === id ? updatedVisit : v));
-            alert('Visita rechazada exitosamente');
         } catch (error) {
-            console.error("Failed to reject visit:", error);
-            alert('Error al rechazar la visita');
+            console.error('Failed to approve visit:', error);
         }
     };
 
@@ -191,28 +179,33 @@ export const VisitsPage: React.FC = () => {
         try {
             const updatedVisit = await api.checkInVisit(id);
             setVisits(visits.map(v => v._id === id ? updatedVisit : v));
-            alert('Check-in realizado exitosamente');
         } catch (error) {
-            console.error("Failed to check-in visit:", error);
-            alert('Error al realizar check-in');
+            console.error('Failed to check in:', error);
         }
     };
 
-    const handleCheckOut = async (id: string) => {
+    const openCheckoutModal = (visit: Visit) => {
+        setCheckoutVisit(visit);
+        setIsCheckoutOpen(true);
+    };
+
+    const handleCheckoutConfirm = async (photos: string[]) => {
         try {
-            const updatedVisit = await api.checkOutVisit(id);
-            setVisits(visits.map(v => v._id === id ? updatedVisit : v));
-            alert('Check-out realizado exitosamente');
+            if (!checkoutVisit) return;
+            const result = await api.checkOutVisit(checkoutVisit._id, photos);
+            setVisits(visits.map(v => v._id === checkoutVisit._id ? result.visit : v));
         } catch (error) {
-            console.error("Failed to check-out visit:", error);
-            alert('Error al realizar check-out');
+            console.error('Failed to check out:', error);
+        } finally {
+            setIsCheckoutOpen(false);
+            setCheckoutVisit(null);
         }
     };
 
     const filteredVisits = visits.filter(visit => {
         if (activeTab === 'active') return visit.status === VisitStatus.CHECKED_IN;
         if (activeTab === 'pending') return visit.status === VisitStatus.PENDING || visit.status === VisitStatus.APPROVED;
-        if (activeTab === 'history') return visit.status === VisitStatus.COMPLETED || visit.status === VisitStatus.REJECTED;
+        if (activeTab === 'history') return visit.status === VisitStatus.COMPLETED;
         return false;
     });
 
@@ -248,14 +241,7 @@ export const VisitsPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredVisits.length > 0 ? (
                         filteredVisits.map(visit => (
-                            <VisitCard 
-                                key={visit._id} 
-                                visit={visit} 
-                                onApprove={handleApprove}
-                                onReject={handleReject}
-                                onCheckIn={handleCheckIn}
-                                onCheckOut={handleCheckOut}
-                            />
+                            <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
                         ))
                     ) : (
                         <p className="col-span-full text-center text-gray-500 mt-8">No hay visitas que mostrar en esta categoría.</p>
@@ -268,6 +254,12 @@ export const VisitsPage: React.FC = () => {
                 onClose={() => setIsModalOpen(false)}
                 onSave={fetchVisits}
                 hosts={hosts}
+            />
+
+            <CheckoutModal
+                isOpen={isCheckoutOpen}
+                onClose={() => { setIsCheckoutOpen(false); setCheckoutVisit(null); }}
+                onConfirm={handleCheckoutConfirm}
             />
         </div>
     );

@@ -8,7 +8,7 @@ const visitSchema = new mongoose.Schema({
   },
   visitorCompany: {
     type: String,
-    required: true,
+    required: false,
     trim: true
   },
   visitorPhoto: {
@@ -27,9 +27,8 @@ const visitSchema = new mongoose.Schema({
   },
   destination: {
     type: String,
-    required: true,
-    default: 'SecurITI',
-    trim: true
+    trim: true,
+    default: 'SecurITI'
   },
   status: {
     type: String,
@@ -70,27 +69,15 @@ const visitSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  checkOutPhotos: [{
+  visitorEmail: {
     type: String,
-    default: []
-  }],
-  approvalDecision: {
+    trim: true,
+    lowercase: true
+  },
+  visitorPhone: {
     type: String,
-    enum: ['approved', 'rejected', null],
-    default: null
-  },
-  approvalTimestamp: {
-    type: Date,
-    default: null
-  },
-  approvalNotes: {
-    type: String,
-    default: ''
-  },
-  rejectionReason: {
-    type: String,
-    default: ''
-  },
+    trim: true
+  }
 }, {
   timestamps: true
 });

@@ -4,7 +4,8 @@ const Visit = require('../models/Visit');
 const User = require('../models/User');
 const Company = require('../models/Company');
 const { auth, authorize } = require('../middleware/auth');
-const emailService = require('../services/emailService');
+const Approval = require('../models/Approval');
+const VisitEvent = require('../models/VisitEvent');
 
 const router = express.Router();
 
@@ -66,11 +67,11 @@ router.get('/:id', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     console.log('📝 Creating visit - User:', req.user?.email, 'Company:', req.user?.companyId);
-    const { visitorName, visitorCompany, reason, hostId, scheduledDate, visitorEmail, visitorPhone, visitorPhoto } = req.body;
+    const { visitorName, visitorCompany, reason, hostId, scheduledDate, visitorEmail, visitorPhone } = req.body;
     console.log('📝 Visit data:', { visitorName, visitorCompany, reason, hostId, scheduledDate });
 
     // Validate required fields
-    if (!visitorName || !visitorCompany || !reason || !hostId || !scheduledDate) {
+    if (!visitorName || !reason || !hostId || !scheduledDate) {
       console.log('❌ Missing required fields');
       return res.status(400).json({ message: 'Todos los campos requeridos deben ser proporcionados' });
     }
@@ -78,7 +79,7 @@ router.post('/', auth, async (req, res) => {
     // Verify host exists and is active
     const host = await User.findById(hostId);
     if (!host || !host.isActive || host.role !== 'host') {
-      console.log('❌ Invalid host:', { hostId, found: !!ht, active: host?.isActive, role: host?.role });
+      console.log('❌ Invalid host:', { hostId, found: !!host, active: host?.isActive, role: host?.role });
       return res.status(400).json({ message: 'Host no válido' });
     }
 
@@ -105,19 +106,40 @@ router.post('/', auth, async (req, res) => {
 
     const visit = new Visit({
       visitorName,
-      visitorCompany,
+      visitorCompany: visitorCompany || '',
       reason,
+      destination: req.body.destination || 'SecurITI',
       host: hostId,
       scheduledDate: new Date(scheduledDate),
       companyId: req.user.companyId,
       visitorEmail,
       visitorPhone,
-      visitorPhoto,
       status: autoApproval ? 'approved' : 'pending'
     });
 
     await visit.save();
     await visit.populate('host', 'firstName lastName email profileImage');
+
+    // Create approval token and send email to host if not auto-approved
+    if (!autoApproval) {
+      const approval = Approval.createWithExpiry(visit._id, host._id, 48);
+      await approval.save();
+
+  const FE = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+    const approveUrl = `${FE}/api/visits/approve/${approval.token}`;
+    const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
+      await require('../services/emailService').sendApprovalRequestEmail({
+        hostEmail: host.email,
+        companyName: (company && company.name) || 'SecurITI',
+        visitorName,
+        visitorCompany,
+        visitorPhoto: req.body.visitorPhoto,
+        reason,
+        scheduledDate,
+        approveUrl,
+        rejectUrl
+      });
+    }
 
     res.status(201).json(visit);
   } catch (error) {
@@ -132,7 +154,7 @@ router.post('/register', async (req, res) => {
     const { visitorName, visitorCompany, reason, hostId, visitorPhoto, visitorEmail, visitorPhone } = req.body;
 
     // Validate required fields
-    if (!visitorName || !visitorCompany || !reason || !hostId) {
+    if (!visitorName || !reason || !hostId) {
       return res.status(400).json({ message: 'Todos los campos requeridos deben ser proporcionados' });
     }
 
@@ -144,8 +166,9 @@ router.post('/register', async (req, res) => {
 
     const visit = new Visit({
       visitorName,
-      visitorCompany,
+      visitorCompany: visitorCompany || '',
       reason,
+      destination: req.body.destination || 'SecurITI',
       host: hostId,
       scheduledDate: new Date(), // Current date for self-registration
       companyId: host.companyId,
@@ -157,6 +180,24 @@ router.post('/register', async (req, res) => {
 
     await visit.save();
     await visit.populate('host', 'firstName lastName email profileImage');
+
+    // Create approval token and email host
+    const approval = Approval.createWithExpiry(visit._id, host._id, 48);
+    await approval.save();
+  const FE = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+  const approveUrl = `${FE}/api/visits/approve/${approval.token}`;
+  const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
+    await require('../services/emailService').sendApprovalRequestEmail({
+      hostEmail: host.email,
+      companyName: 'SecurITI',
+      visitorName,
+      visitorCompany,
+      visitorPhoto,
+      reason,
+      scheduledDate: new Date(),
+      approveUrl,
+      rejectUrl
+    });
 
     res.status(201).json(visit);
   } catch (error) {
@@ -171,7 +212,7 @@ router.put('/:id/status', auth, async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!['pending', 'approved', 'checked-in', 'completed'].includes(status)) {
+    if (!['pending', 'approved', 'checked-in', 'completed', 'rejected', 'cancelled'].includes(status)) {
       return res.status(400).json({ message: 'Estado no válido' });
     }
 
@@ -243,176 +284,6 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-// Approve visit
-router.post('/approve/:id', auth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { notes } = req.body;
-
-    const visit = await Visit.findById(id).populate('host', 'firstName lastName email');
-    if (!visit) {
-      return res.status(404).json({ message: 'Visita no encontrada' });
-    }
-
-    // Check if user can approve this visit
-    if (req.user.role === 'host' && visit.host._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'No tienes permisos para aprobar esta visita' });
-    }
-
-    if (visit.status !== 'pending') {
-      return res.status(400).json({ message: 'Esta visita ya ha sido procesada' });
-    }
-
-    // Update visit
-    visit.status = 'approved';
-    visit.approvalDecision = 'approved';
-    visit.approvalTimestamp = new Date();
-    visit.approvalNotes = notes || '';
-    await visit.save();
-
-    // Send email notification to visitor if email provided
-    if (visit.visitorEmail && emailService.isEnabled()) {
-      try {
-        const approvalUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/visits/checkin/${visit._id}`;
-        
-        await emailService.sendVisitApprovalEmail({
-          visitorName: visit.visitorName,
-          visitorEmail: visit.visitorEmail,
-          hostName: `${visit.host.firstName} ${visit.host.lastName}`,
-          approvalUrl,
-          visitDetails: {
-            date: visit.scheduledDate.toLocaleDateString(),
-            reason: visit.reason,
-            company: visit.visitorCompany
-          }
-        });
-      } catch (emailError) {
-        console.error('Error sending approval email:', emailError);
-        // Don't fail the approval if email fails
-      }
-    }
-
-    await visit.populate('host', 'firstName lastName email profileImage');
-    res.json(visit);
-  } catch (error) {
-    console.error('Approve visit error:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
-  }
-});
-
-// Reject visit
-router.post('/reject/:id', auth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { reason } = req.body;
-
-    const visit = await Visit.findById(id).populate('host', 'firstName lastName email');
-    if (!visit) {
-      return res.status(404).json({ message: 'Visita no encontrada' });
-    }
-
-    // Check if user can reject this visit
-    if (req.user.role === 'host' && visit.host._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'No tienes permisos para rechazar esta visita' });
-    }
-
-    if (visit.status !== 'pending') {
-      return res.status(400).json({ message: 'Esta visita ya ha sido procesada' });
-    }
-
-    // Update visit
-    visit.status = 'rejected';
-    visit.approvalDecision = 'rejected';
-    visit.approvalTimestamp = new Date();
-    visit.rejectionReason = reason || '';
-    await visit.save();
-
-    // Send email notification to visitor if email provided
-    if (visit.visitorEmail && emailService.isEnabled()) {
-      try {
-        await emailService.sendVisitRejectionEmail({
-          visitorName: visit.visitorName,
-          visitorEmail: visit.visitorEmail,
-          hostName: `${visit.host.firstName} ${visit.host.lastName}`,
-          rejectionReason: reason || 'Sin motivo especificado',
-          visitDetails: {
-            date: visit.scheduledDate.toLocaleDateString(),
-            reason: visit.reason,
-            company: visit.visitorCompany
-          }
-        });
-      } catch (emailError) {
-        console.error('Error sending rejection email:', emailError);
-        // Don't fail the rejection if email fails
-      }
-    }
-
-    await visit.populate('host', 'firstName lastName email profileImage');
-    res.json(visit);
-  } catch (error) {
-    console.error('Reject visit error:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
-  }
-});
-
-// Check-in visit
-router.post('/checkin/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const visit = await Visit.findById(id).populate('host', 'firstName lastName email');
-    if (!visit) {
-      return res.status(404).json({ message: 'Visita no encontrada' });
-    }
-
-    if (visit.status !== 'approved') {
-      return res.status(400).json({ message: 'Esta visita no está aprobada para check-in' });
-    }
-
-    // Update visit
-    visit.status = 'checked-in';
-    visit.checkInTime = new Date();
-    await visit.save();
-
-    await visit.populate('host', 'firstName lastName email profileImage');
-    res.json(visit);
-  } catch (error) {
-    console.error('Check-in visit error:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
-  }
-});
-
-// Check-out visit
-router.post('/checkout/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { photos } = req.body; // Array of photo URLs
-
-    const visit = await Visit.findById(id).populate('host', 'firstName lastName email');
-    if (!visit) {
-      return res.status(404).json({ message: 'Visita no encontrada' });
-    }
-
-    if (visit.status !== 'checked-in') {
-      return res.status(400).json({ message: 'Esta visita no está activa para check-out' });
-    }
-
-    // Update visit
-    visit.status = 'completed';
-    visit.checkOutTime = new Date();
-    if (photos && Array.isArray(photos)) {
-      visit.checkOutPhotos = photos.slice(0, 5); // Max 5 photos
-    }
-    await visit.save();
-
-    await visit.populate('host', 'firstName lastName email profileImage');
-    res.json(visit);
-  } catch (error) {
-    console.error('Check-out visit error:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
-  }
-});
-
 // Delete visit
 router.delete('/:id', auth, authorize('admin', 'reception'), async (req, res) => {
   try {
@@ -430,3 +301,172 @@ router.delete('/:id', auth, authorize('admin', 'reception'), async (req, res) =>
 });
 
 module.exports = router;
+
+// Additional endpoints
+
+// Get visit status by id (mapped)
+router.get('/status/:id', auth, async (req, res) => {
+  try {
+    const visit = await Visit.findById(req.params.id);
+    if (!visit) return res.status(404).json({ message: 'Visita no encontrada' });
+    const estados = {
+      PENDIENTE: 'en_espera',
+      APROBADO: 'respuesta_recibida',
+      RECHAZADO: 'respuesta_recibida',
+      DENTRO: 'dentro',
+      COMPLETADO: 'completado'
+    };
+    let mapped;
+    switch (visit.status) {
+      case 'pending': mapped = estados.PENDIENTE; break;
+      case 'approved': mapped = estados.APROBADO; break;
+      case 'rejected': mapped = estados.RECHAZADO; break;
+      case 'checked-in': mapped = estados.DENTRO; break;
+      case 'completed': mapped = estados.COMPLETADO; break;
+      default: mapped = 'en_espera';
+    }
+    res.json({ status: visit.status, mapped });
+  } catch (e) {
+    console.error('Get status error:', e);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Approve/reject by token from email and redirect
+router.get('/approve/:token', async (req, res) => {
+  try {
+    const approval = await Approval.findOne({ token: req.params.token });
+    if (!approval || approval.status !== 'pending') return res.status(400).send('Token inválido o ya utilizado');
+    if (approval.isExpired()) return res.status(400).send('El enlace de aprobación ha expirado');
+    
+    const visit = await Visit.findById(approval.visitId);
+    if (!visit) return res.status(404).send('Visita no encontrada');
+    
+    visit.status = 'approved';
+    await visit.save();
+    approval.status = 'decided';
+    approval.decision = 'approved';
+    approval.decidedAt = new Date();
+    await approval.save();
+    
+    // Send notification to visitor if email exists
+    if (visit.visitorEmail) {
+      await visit.populate('host', 'firstName lastName');
+      await require('../services/emailService').sendVisitorNotificationEmail({
+        visitorEmail: visit.visitorEmail,
+        visitorName: visit.visitorName,
+        hostName: `${visit.host.firstName} ${visit.host.lastName}`,
+        companyName: 'SecurITI',
+        status: 'approved',
+        reason: visit.reason,
+        scheduledDate: visit.scheduledDate,
+        destination: visit.destination
+      });
+    }
+    
+    const redirect = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/visit-confirmation?result=approved`;
+    res.redirect(302, redirect);
+  } catch (e) {
+    console.error('Approve error:', e);
+    res.status(500).send('Error interno');
+  }
+});
+
+router.get('/reject/:token', async (req, res) => {
+  try {
+    const approval = await Approval.findOne({ token: req.params.token });
+      if (!approval || approval.status !== 'pending') return res.status(400).send('Token inválido o ya utilizado');
+      if (approval.isExpired()) return res.status(400).send('El enlace de aprobación ha expirado');
+    
+    const visit = await Visit.findById(approval.visitId);
+    if (!visit) return res.status(404).send('Visita no encontrada');
+    
+    visit.status = 'rejected';
+    await visit.save();
+    approval.status = 'decided';
+    approval.decision = 'rejected';
+    approval.decidedAt = new Date();
+    await approval.save();
+    
+      // Send notification to visitor if email exists
+      if (visit.visitorEmail) {
+        await visit.populate('host', 'firstName lastName');
+        await require('../services/emailService').sendVisitorNotificationEmail({
+          visitorEmail: visit.visitorEmail,
+          visitorName: visit.visitorName,
+          hostName: `${visit.host.firstName} ${visit.host.lastName}`,
+          companyName: 'SecurITI',
+          status: 'rejected',
+          reason: visit.reason,
+          scheduledDate: visit.scheduledDate,
+          destination: visit.destination
+        });
+      }
+    
+    const redirect = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/visit-confirmation?result=rejected`;
+    res.redirect(302, redirect);
+  } catch (e) {
+    console.error('Reject error:', e);
+    res.status(500).send('Error interno');
+  }
+});
+
+// Check-in
+router.post('/checkin/:id', auth, async (req, res) => {
+  try {
+    const visit = await Visit.findById(req.params.id);
+    if (!visit) return res.status(404).json({ message: 'Visita no encontrada' });
+    visit.status = 'checked-in';
+    visit.checkInTime = new Date();
+    await visit.save();
+    await new VisitEvent({ visitId: visit._id, type: 'check-in' }).save();
+    res.json(visit);
+  } catch (e) {
+    console.error('Check-in error:', e);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Check-out with up to 5 photos
+router.post('/checkout/:id', auth, async (req, res) => {
+  try {
+    const { photos } = req.body; // array of base64 strings
+    const visit = await Visit.findById(req.params.id);
+    if (!visit) return res.status(404).json({ message: 'Visita no encontrada' });
+    visit.status = 'completed';
+    visit.checkOutTime = new Date();
+    await visit.save();
+    const limitedPhotos = Array.isArray(photos) ? photos.slice(0, 5) : [];
+    await new VisitEvent({ visitId: visit._id, type: 'check-out', photos: limitedPhotos }).save();
+    const elapsedMs = visit.checkInTime ? (visit.checkOutTime - visit.checkInTime) : null;
+    res.json({ visit, elapsedMs });
+  } catch (e) {
+    console.error('Check-out error:', e);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Agenda endpoint
+router.get('/agenda', auth, async (req, res) => {
+  try {
+    const { from, to, hostId, q } = req.query;
+    const filter = { companyId: req.user.companyId };
+    const now = new Date();
+    const start = from ? new Date(from) : now;
+    const end = to ? new Date(to) : new Date(now.getTime() + 30*24*60*60*1000);
+    filter.scheduledDate = { $gte: start, $lte: end };
+    if (hostId) filter.host = hostId;
+    if (q) {
+      filter.$or = [
+        { visitorName: { $regex: q, $options: 'i' } },
+        { visitorCompany: { $regex: q, $options: 'i' } },
+        { reason: { $regex: q, $options: 'i' } }
+      ];
+    }
+    const visits = await Visit.find(filter).populate('host', 'firstName lastName email');
+    res.json(visits);
+  } catch (e) {
+    console.error('Agenda error:', e);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});

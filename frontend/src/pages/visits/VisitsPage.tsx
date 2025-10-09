@@ -48,32 +48,37 @@ const VisitCard: React.FC<{
                     <>
                         <button 
                             onClick={() => onApprove(visit._id)} 
-                            className="px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600"
+                            className="px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 flex items-center gap-1"
                         >
-                            ✅ Aprobar
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                            Aprobar
                         </button>
                         <button 
                             onClick={() => onReject(visit._id)} 
-                            className="px-3 py-1 text-xs font-semibold text-white bg-red-500 rounded hover:bg-red-600"
+                            className="px-3 py-1 text-xs font-semibold text-white bg-red-500 rounded hover:bg-red-600 flex items-center gap-1"
                         >
-                            ❌ Rechazar
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            Rechazar
                         </button>
                     </>
                 )}
                 {visit.status === VisitStatus.APPROVED && (
                     <button 
                         onClick={() => onCheckIn(visit._id)} 
-                        className="px-3 py-1 text-xs font-semibold text-white bg-blue-500 rounded hover:bg-blue-600"
+                        className="px-3 py-1 text-xs font-semibold text-white bg-blue-500 rounded hover:bg-blue-600 flex items-center gap-1"
                     >
-                        🚪 Check-in
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 21V8a2 2 0 012-2h2a2 2 0 012 2v13" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 0a4 4 0 014 4v1a4 4 0 01-4 4 4 4 0 01-4-4V8a4 4 0 014-4z" /></svg>
+                        Check-in
                     </button>
                 )}
-                 {visit.status === VisitStatus.CHECKED_IN && (
+                {visit.status === VisitStatus.CHECKED_IN && (
                     <button 
                         onClick={() => onCheckOut(visit._id)} 
-                        className="px-3 py-1 text-xs font-semibold text-white bg-purple-500 rounded hover:bg-purple-600"
+                        className="px-3 py-1 text-xs font-semibold text-white bg-purple-500 rounded hover:bg-purple-600 flex items-center gap-1"
                     >
-                        👋 Check-out
+                        {/* Icono de puerta abierta para Check-out */}
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21V3h13v4m0 10v4H3V3h13v4m0 10h4m0 0l-2-2m2 2l-2 2" /></svg>
+                        Check-out
                     </button>
                 )}
             </div>

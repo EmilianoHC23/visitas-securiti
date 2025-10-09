@@ -86,7 +86,6 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
     const [visitorEmail, setVisitorEmail] = useState('');
     const [visitorCompany, setVisitorCompany] = useState('');
     const [destination, setDestination] = useState('SecurITI');
-    const [hostId, setHostId] = useState('');
     const [reason, setReason] = useState('');
     const [hostId, setHostId] = useState('');
     const [scheduledDate, setScheduledDate] = useState('');

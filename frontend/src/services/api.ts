@@ -1,44 +1,3 @@
-// Aprobar visita
-export async function approveVisit(id: string, notes?: string) {
-  const res = await fetch(`/api/visits/${id}/approve`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ notes })
-  });
-  if (!res.ok) throw new Error('Error aprobando visita');
-  return await res.json();
-}
-
-// Rechazar visita
-export async function rejectVisit(id: string, reason?: string) {
-  const res = await fetch(`/api/visits/${id}/reject`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reason })
-  });
-  if (!res.ok) throw new Error('Error rechazando visita');
-  return await res.json();
-}
-
-// Check-in visita
-export async function checkInVisit(id: string) {
-  const res = await fetch(`/api/visits/${id}/checkin`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
-  });
-  if (!res.ok) throw new Error('Error en check-in');
-  return await res.json();
-}
-
-// Check-out visita
-export async function checkOutVisit(id: string) {
-  const res = await fetch(`/api/visits/${id}/checkout`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
-  });
-  if (!res.ok) throw new Error('Error en check-out');
-  return await res.json();
-}
 import { User, Visit, VisitStatus, Company, Blacklist, Access } from '../types';
 
 // =================================================================
@@ -142,10 +101,11 @@ export const getVisits = async (filters?: {
 
 export const createVisit = async (visitData: { 
   visitorName: string; 
-  visitorCompany: string; 
+  visitorCompany?: string; 
   reason: string; 
   hostId: string; 
   scheduledDate: string;
+  destination?: string;
   visitorEmail?: string;
   visitorPhone?: string;
 }): Promise<Visit> => {
@@ -157,9 +117,10 @@ export const createVisit = async (visitData: {
 
 export const selfRegisterVisit = async (visitData: { 
   visitorName: string; 
-  visitorCompany: string; 
+  visitorCompany?: string; 
   reason: string; 
   hostId: string; 
+  destination?: string;
   visitorPhoto?: string;
   visitorEmail?: string;
   visitorPhone?: string;

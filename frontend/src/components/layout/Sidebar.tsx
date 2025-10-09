@@ -1,11 +1,12 @@
 
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { UserRole } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { DashboardIcon, VisitsIcon, UsersIcon, ReportsIcon, SettingsIcon } from '../common/icons';
 
-const NavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => {
+type NavItemProps = { to: string; icon: React.ReactNode; label: string; collapsed: boolean };
+const NavItem: React.FC<NavItemProps> = ({ to, icon, label, collapsed }) => {
     const location = useLocation();
     const isActive = location.pathname === to;
     return (
@@ -52,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
                 width: collapsed ? 64 : 220,
                 transition: 'min-width 0.2s, width 0.2s',
                 overflowX: 'hidden',
-                zIndex: 100,
+                zIndex: 10,
             }}
         >
             {/* Logo y nombre movidos al header */}

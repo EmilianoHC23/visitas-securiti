@@ -4,10 +4,6 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-console.log('🚀 Backend starting...');
-console.log('🌍 NODE_ENV:', process.env.NODE_ENV);
-console.log('🔧 Vercel environment detected:', !!process.env.VERCEL);
-
 // Import routes
 const authRoutes = require('./src/routes/auth');
 const userRoutes = require('./src/routes/users');
@@ -39,7 +35,6 @@ mongoose.connect(process.env.MONGODB_URI || process.env.DATABASE_URL)
 .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // API Routes
-console.log('📡 Mounting API routes...');
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/visits', visitRoutes);
@@ -50,7 +45,6 @@ app.use('/api/blacklist', blacklistRoutes);
 app.use('/api/company', companyRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/invitations', invitationRoutes);
-console.log('✅ API routes mounted');
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -63,18 +57,6 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/visits', visitRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/company', companyRoutes);
-app.use('/api/blacklist', blacklistRoutes);
-app.use('/api/access', accessRoutes);
-app.use('/api/public', publicRoutes);
-app.use('/api/reports', reportsRoutes);
-app.use('/api/invitations', invitationRoutes);
-
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
@@ -86,8 +68,7 @@ app.use((err, req, res, next) => {
 
 // Catch all handler for 404s
 app.use('*', (req, res) => {
-    console.log(`❌ 404 - Route not found: ${req.method} ${req.originalUrl}`);
-    res.status(404).json({ message: 'Route not found', path: req.originalUrl });
+    res.status(404).json({ message: 'Route not found' });
 });
 
 // For local development

@@ -48,7 +48,7 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                     <img src="/logo.png" alt="Logo" style={{ width: 52, height: 52 }} className="me-3" />
                     <div className="d-flex flex-column lh-1 me-4">
                         <span className="fw-bold text-dark" style={{ fontSize: 18, letterSpacing: 1 }}>VISITAS</span>
-                        <span className="fw-bold text-primary" style={{ fontSize: 18, letterSpacing: 1 }}>SECURITI</span>
+                        <span className="fw-bold" style={{ fontSize: 18, letterSpacing: 1, color: '#232b3e' }}>SECURITI</span>
                     </div>
                     {/* Botón hamburguesa a la izquierda */}
                     <button

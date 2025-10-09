@@ -3,8 +3,9 @@ import { Visit, VisitStatus, User } from '../../types';
 import * as api from '../../services/api';
 import { CheckoutModal } from './CheckoutModal';
 import { VisitHistoryModal } from './VisitHistoryModal';
+import { CheckCircleIcon, LogoutIcon, LoginIcon, ClockIcon } from '../../components/common/icons';
 
-const VisitCard: React.FC<{ visit: Visit; onApprove: (id: string) => void; onCheckIn: (id: string) => void; onCheckout: (visit: Visit) => void }> = ({ visit, onApprove, onCheckIn, onCheckout }) => {
+const VisitCard: React.FC<{ visit: Visit; onApprove: (id: string) => void; onReject: (id: string) => void; onCheckIn: (id: string) => void; onCheckout: (visit: Visit) => void }> = ({ visit, onApprove, onReject, onCheckIn, onCheckout }) => {
     
     const [showHistory, setShowHistory] = useState(false);
     
@@ -38,32 +39,32 @@ const VisitCard: React.FC<{ visit: Visit; onApprove: (id: string) => void; onChe
                     <>
                         <button 
                             onClick={() => onApprove(visit._id)} 
-                            className="px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600"
+                            className="px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 flex items-center gap-1"
                         >
-                            ✅ Aprobar
+                            <CheckCircleIcon className="w-4 h-4" /> Aprobar
                         </button>
                         <button 
                             onClick={() => onReject(visit._id)} 
-                            className="px-3 py-1 text-xs font-semibold text-white bg-red-500 rounded hover:bg-red-600"
+                            className="px-3 py-1 text-xs font-semibold text-white bg-red-500 rounded hover:bg-red-600 flex items-center gap-1"
                         >
-                            ❌ Rechazar
+                            <LogoutIcon className="w-4 h-4" /> Rechazar
                         </button>
                     </>
                 )}
                 {visit.status === VisitStatus.APPROVED && (
                     <button 
                         onClick={() => onCheckIn(visit._id)} 
-                        className="px-3 py-1 text-xs font-semibold text-white bg-blue-500 rounded hover:bg-blue-600"
+                        className="px-3 py-1 text-xs font-semibold text-white bg-blue-500 rounded hover:bg-blue-600 flex items-center gap-1"
                     >
-                        🚪 Check-in
+                        <LoginIcon className="w-4 h-4" /> Check-in
                     </button>
                 )}
                  {visit.status === VisitStatus.CHECKED_IN && (
                     <button 
-                        onClick={() => onCheckOut(visit._id)} 
-                        className="px-3 py-1 text-xs font-semibold text-white bg-purple-500 rounded hover:bg-purple-600"
+                        onClick={() => onCheckout(visit)} 
+                        className="px-3 py-1 text-xs font-semibold text-white bg-purple-500 rounded hover:bg-purple-600 flex items-center gap-1"
                     >
-                        👋 Check-out
+                        <ClockIcon className="w-4 h-4" /> Check-out
                     </button>
                 )}
             </div>
@@ -128,6 +129,14 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
 
 
 export const VisitsPage: React.FC = () => {
+    const handleReject = async (id: string) => {
+        try {
+            const updatedVisit = await api.rejectVisit(id);
+            setVisits(visits.map(v => v._id === id ? updatedVisit : v));
+        } catch (error) {
+            console.error('Failed to reject visit:', error);
+        }
+    };
     const [activeTab, setActiveTab] = useState('active');
     const [visits, setVisits] = useState<Visit[]>([]);
     const [hosts, setHosts] = useState<User[]>([]);
@@ -241,7 +250,7 @@ export const VisitsPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredVisits.length > 0 ? (
                         filteredVisits.map(visit => (
-                            <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
+                            <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onReject={handleReject} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
                         ))
                     ) : (
                         <p className="col-span-full text-center text-gray-500 mt-8">No hay visitas que mostrar en esta categoría.</p>

@@ -184,6 +184,33 @@ export const updateVisit = async (visitId: string, visitData: Partial<Visit>): P
   });
 };
 
+// Convenience helpers for explicit actions used by some views
+export const approveVisit = async (visitId: string): Promise<Visit> => {
+  return updateVisitStatus(visitId, VisitStatus.APPROVED);
+};
+
+export const rejectVisit = async (visitId: string): Promise<Visit> => {
+  return updateVisitStatus(visitId, VisitStatus.REJECTED);
+};
+
+// New visit APIs
+export const getVisitStatus = async (visitId: string): Promise<{ status: string; mapped: string }> => {
+  return apiRequest(`/visits/status/${visitId}`);
+};
+
+export const checkInVisit = async (visitId: string): Promise<Visit> => {
+  return apiRequest(`/visits/checkin/${visitId}`, { method: 'POST' });
+};
+
+export const checkOutVisit = async (visitId: string, photos: string[] = []): Promise<{ visit: Visit; elapsedMs: number | null }> => {
+  return apiRequest(`/visits/checkout/${visitId}`, { method: 'POST', body: JSON.stringify({ photos }) });
+};
+
+export const getAgenda = async (params: { from?: string; to?: string; hostId?: string; q?: string } = {}) => {
+  const query = new URLSearchParams(params as any).toString();
+  return apiRequest(`/visits/agenda${query ? `?${query}` : ''}`);
+};
+
 export const deleteVisit = async (visitId: string): Promise<void> => {
   return apiRequest(`/visits/${visitId}`, {
     method: 'DELETE',

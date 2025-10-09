@@ -40,6 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
     const navLinks = [
         { to: "/", label: "Dashboard", icon: <DashboardIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
         { to: "/visits", label: "Visitas", icon: <VisitsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
+        { to: "/agenda", label: "Agenda", icon: <VisitsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
         { to: "/users", label: "Usuarios", icon: <UsersIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
         { to: "/access-codes", label: "Códigos de Acceso", icon: <SettingsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
         { to: "/blacklist", label: "Lista Negra", icon: <UsersIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },

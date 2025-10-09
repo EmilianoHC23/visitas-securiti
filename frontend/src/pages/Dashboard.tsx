@@ -128,25 +128,38 @@ export const Dashboard: React.FC = () => {
                 <StatCard 
                     title="Visitas Activas" 
                     value={stats.checkedIn} 
-                    icon={<LoginIcon className="w-6 h-6 text-white"/>} 
+                    icon={
+                        <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M23 20v-2a4 4 0 0 0-3-3.87" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                    } 
                     color="bg-green-500" 
                 />
                 <StatCard 
                     title="Pendientes" 
                     value={stats.pending} 
-                    icon={<ClockIcon className="w-6 h-6 text-white"/>} 
+                    icon={
+                        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3" /><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={2} fill="none" /></svg>
+                    } 
                     color="bg-yellow-500" 
                 />
                 <StatCard 
                     title="Pre-aprobadas" 
                     value={stats.approved} 
-                    icon={<CheckCircleIcon className="w-6 h-6 text-white"/>} 
+                    icon={
+                        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    } 
                     color="bg-blue-500" 
                 />
                 <StatCard 
                     title="Completadas Hoy" 
                     value={stats.completed} 
-                    icon={<CheckCircleIcon className="w-6 h-6 text-white"/>} 
+                    icon={
+                        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3" /><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={2} fill="none" /></svg>
+                    } 
                     color="bg-gray-500" 
                 />
             </div>
@@ -154,18 +167,24 @@ export const Dashboard: React.FC = () => {
             {user?.role === 'admin' && (
                 <div className="row g-3 mb-3">
                     <div className="col-12 col-md-6">
-                        <StatCard 
-                            title="Total Usuarios" 
-                            value={stats.totalUsers} 
-                            icon={<div className="text-white" style={{ fontSize: 24 }}>👥</div>} 
-                            color="bg-purple"
+                         <StatCard 
+                             title="Total Usuarios" 
+                             value={stats.totalUsers} 
+                             icon={
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" className="w-8 h-8 text-white">
+                             <path strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                             </svg>
+                      }
+                            color="bg-purple-500"
                         />
                     </div>
                     <div className="col-12 col-md-6">
                         <StatCard 
                             title="Hosts Disponibles" 
                             value={stats.totalHosts} 
-                            icon={<div className="text-white" style={{ fontSize: 24 }}>🏢</div>} 
+                            icon={
+                                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="7" width="18" height="13" rx="2" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 3v4M8 3v4" /></svg>
+                            }
                             color="bg-info"
                         />
                     </div>

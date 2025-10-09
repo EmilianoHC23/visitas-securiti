@@ -34,7 +34,32 @@ const RecentActivityItem: React.FC<{ visit: Visit }> = ({ visit }) => {
 
     return (
         <li className="flex items-center space-x-3 py-3 border-b last:border-b-0">
-            <img className="w-10 h-10 rounded-full" src={visit.visitorPhoto || `https://i.pravatar.cc/100?u=${visit._id}`} alt={visit.visitorName} />
+            <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                {visit.visitorPhoto ? (
+                    <img 
+                        className="w-10 h-10 object-cover" 
+                        src={visit.visitorPhoto} 
+                        alt={visit.visitorName}
+                        onError={e => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const fallback = target.nextElementSibling as HTMLElement;
+                            if (fallback) fallback.style.display = 'inline';
+                        }}
+                    />
+                ) : null}
+                <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    fill="currentColor" 
+                    viewBox="0 0 24 24" 
+                    strokeWidth="1.5" 
+                    stroke="currentColor" 
+                    className="w-7 h-7 text-gray-400" 
+                    style={{ display: visit.visitorPhoto ? 'none' : 'inline' }}
+                >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                </svg>
+            </span>
             <div className="flex-1">
                 <p className="text-sm text-gray-700">
                     <span className="font-semibold">{visit.visitorName}</span> de {visit.visitorCompany}

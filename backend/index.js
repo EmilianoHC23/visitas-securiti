@@ -27,7 +27,21 @@ app.use(cors({
     credentials: true
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Debug middleware to log request details
+app.use((req, res, next) => {
+    console.log(`📡 ${req.method} ${req.path} - ${new Date().toISOString()}`);
+    if (req.method === 'POST' && req.path.includes('/login')) {
+        console.log('📦 Login request body keys:', Object.keys(req.body || {}));
+        console.log('📦 Request headers:', {
+            'content-type': req.headers['content-type'],
+            'content-length': req.headers['content-length']
+        });
+    }
+    next();
+});
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || process.env.DATABASE_URL)
@@ -48,26 +62,22 @@ app.use('/api/invitations', invitationRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
+    console.log('🏥 Health check requested');
     res.json({ 
         status: 'OK', 
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV,
         hasJwtSecret: !!process.env.JWT_SECRET,
-        hasDatabase: !!(process.env.MONGODB_URI || process.env.DATABASE_URL)
+        hasDatabase: !!(process.env.MONGODB_URI || process.env.DATABASE_URL),
+        routes: 'API routes loaded successfully'
     });
 });
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/visits', visitRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/company', companyRoutes);
-app.use('/api/blacklist', blacklistRoutes);
-app.use('/api/access', accessRoutes);
-app.use('/api/public', publicRoutes);
-app.use('/api/reports', reportsRoutes);
-app.use('/api/invitations', invitationRoutes);
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+    console.log(`📡 ${req.method} ${req.path} - ${new Date().toISOString()}`);
+    next();
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

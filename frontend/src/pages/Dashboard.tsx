@@ -123,40 +123,32 @@ export const Dashboard: React.FC = () => {
                     Aquí tienes un resumen de la actividad de hoy
                 </div>
             </div>
-
-            <div className="row g-3 mb-3">
-                <div className="col-12 col-md-6 col-lg-3">
-                    <StatCard 
-                        title="Visitas Activas" 
-                        value={stats.checkedIn} 
-                        icon={<LoginIcon className="text-white" />} 
-                        color="bg-success"
-                    />
-                </div>
-                <div className="col-12 col-md-6 col-lg-3">
-                    <StatCard 
-                        title="Pendientes" 
-                        value={stats.pending} 
-                        icon={<ClockIcon className="text-white" />} 
-                        color="bg-warning"
-                    />
-                </div>
-                <div className="col-12 col-md-6 col-lg-3">
-                    <StatCard 
-                        title="Pre-aprobadas" 
-                        value={stats.approved} 
-                        icon={<CheckCircleIcon className="text-white" />} 
-                        color="bg-primary"
-                    />
-                </div>
-                <div className="col-12 col-md-6 col-lg-3">
-                    <StatCard 
-                        title="Completadas Hoy" 
-                        value={stats.completed} 
-                        icon={<CheckCircleIcon className="text-white" />}
-                        color="bg-secondary"
-                    />
-                </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <StatCard 
+                    title="Visitas Activas" 
+                    value={stats.checkedIn} 
+                    icon={<LoginIcon className="w-6 h-6 text-white"/>} 
+                    color="bg-green-500" 
+                />
+                <StatCard 
+                    title="Pendientes" 
+                    value={stats.pending} 
+                    icon={<ClockIcon className="w-6 h-6 text-white"/>} 
+                    color="bg-yellow-500" 
+                />
+                <StatCard 
+                    title="Pre-aprobadas" 
+                    value={stats.approved} 
+                    icon={<CheckCircleIcon className="w-6 h-6 text-white"/>} 
+                    color="bg-blue-500" 
+                />
+                <StatCard 
+                    title="Completadas Hoy" 
+                    value={stats.completed} 
+                    icon={<CheckCircleIcon className="w-6 h-6 text-white"/>} 
+                    color="bg-gray-500" 
+                />
             </div>
 
             {user?.role === 'admin' && (

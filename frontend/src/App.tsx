@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { LoginPage } from './pages/Login';
@@ -18,7 +18,6 @@ import { UserRegistrationPage } from './pages/register/UserRegistrationPage';
 import { RedeemPage } from './pages/redeem/RedeemPage';
 
 const PublicRegistrationWrapper: React.FC = () => {
-    const { qrCode } = useParams<{ qrCode: string }>();
     return <VisitorRegistrationPage />;
 };
 

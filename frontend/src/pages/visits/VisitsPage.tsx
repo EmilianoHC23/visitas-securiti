@@ -1,19 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import DatePicker, { registerLocale } from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import { es } from 'date-fns/locale';
-registerLocale('es', es);
 import { Visit, VisitStatus, User } from '../../types';
 import * as api from '../../services/api';
 
-const VisitCard: React.FC<{ visit: Visit, onUpdateStatus: (id: string, status: VisitStatus) => void }> = ({ visit, onUpdateStatus }) => {
+const VisitCard: React.FC<{ 
+  visit: Visit, 
+  onApprove: (id: string, notes?: string) => void,
+  onReject: (id: string, reason?: string) => void,
+  onCheckIn: (id: string) => void,
+  onCheckOut: (id: string) => void
+}> = ({ visit, onApprove, onReject, onCheckIn, onCheckOut }) => {
     
     const getStatusBadge = (status: VisitStatus) => {
         switch (status) {
-            case VisitStatus.PENDING: return <span className="px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-200 rounded-full">Pendiente</span>;
+            case VisitStatus.PENDING: return <span className="px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-200 rounded-full">En Espera</span>;
             case VisitStatus.APPROVED: return <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full">Aprobado</span>;
-            case VisitStatus.CHECKED_IN: return <span className="px-2 py-1 text-xs font-semibold text-green-800 bg-green-200 rounded-full">Activo</span>;
+            case VisitStatus.REJECTED: return <span className="px-2 py-1 text-xs font-semibold text-red-800 bg-red-200 rounded-full">Rechazado</span>;
+            case VisitStatus.CHECKED_IN: return <span className="px-2 py-1 text-xs font-semibold text-green-800 bg-green-200 rounded-full">Dentro</span>;
             case VisitStatus.COMPLETED: return <span className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">Completado</span>;
+            default: return <span className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">Desconocido</span>;
         }
     };
     
@@ -30,18 +34,47 @@ const VisitCard: React.FC<{ visit: Visit, onUpdateStatus: (id: string, status: V
                 <p><strong>Motivo:</strong> {visit.reason}</p>
                 <p><strong>Anfitrión:</strong> {visit.host.firstName} {visit.host.lastName}</p>
                 <p><strong>Fecha Programada:</strong> {new Date(visit.scheduledDate).toLocaleString()}</p>
-                {visit.checkInTime && <p><strong>Check-in:</strong> {visit.checkInTime}</p>}
-                {visit.checkOutTime && <p><strong>Check-out:</strong> {visit.checkOutTime}</p>}
+                {visit.checkInTime && <p><strong>Check-in:</strong> {new Date(visit.checkInTime).toLocaleString()}</p>}
+                {visit.checkOutTime && <p><strong>Check-out:</strong> {new Date(visit.checkOutTime).toLocaleString()}</p>}
+                {visit.approvalTimestamp && (
+                    <p><strong>Procesado:</strong> {new Date(visit.approvalTimestamp).toLocaleString()}</p>
+                )}
+                {visit.rejectionReason && (
+                    <p><strong>Motivo rechazo:</strong> {visit.rejectionReason}</p>
+                )}
             </div>
              <div className="mt-4 pt-4 border-t flex space-x-2">
                 {visit.status === VisitStatus.PENDING && (
-                    <button onClick={() => onUpdateStatus(visit._id, VisitStatus.APPROVED)} className="px-3 py-1 text-xs font-semibold text-white bg-blue-500 rounded hover:bg-blue-600">Aprobar</button>
+                    <>
+                        <button 
+                            onClick={() => onApprove(visit._id)} 
+                            className="px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600"
+                        >
+                            ✅ Aprobar
+                        </button>
+                        <button 
+                            onClick={() => onReject(visit._id)} 
+                            className="px-3 py-1 text-xs font-semibold text-white bg-red-500 rounded hover:bg-red-600"
+                        >
+                            ❌ Rechazar
+                        </button>
+                    </>
                 )}
                 {visit.status === VisitStatus.APPROVED && (
-                    <button onClick={() => onUpdateStatus(visit._id, VisitStatus.CHECKED_IN)} className="px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600">Check-in</button>
+                    <button 
+                        onClick={() => onCheckIn(visit._id)} 
+                        className="px-3 py-1 text-xs font-semibold text-white bg-blue-500 rounded hover:bg-blue-600"
+                    >
+                        🚪 Check-in
+                    </button>
                 )}
                  {visit.status === VisitStatus.CHECKED_IN && (
-                    <button onClick={() => onUpdateStatus(visit._id, VisitStatus.COMPLETED)} className="px-3 py-1 text-xs font-semibold text-white bg-red-500 rounded hover:bg-red-600">Check-out</button>
+                    <button 
+                        onClick={() => onCheckOut(visit._id)} 
+                        className="px-3 py-1 text-xs font-semibold text-white bg-purple-500 rounded hover:bg-purple-600"
+                    >
+                        👋 Check-out
+                    </button>
                 )}
             </div>
         </div>
@@ -50,76 +83,23 @@ const VisitCard: React.FC<{ visit: Visit, onUpdateStatus: (id: string, status: V
 
 const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: () => void; hosts: User[] }> = ({ isOpen, onClose, onSave, hosts }) => {
     const [visitorName, setVisitorName] = useState('');
+    const [visitorEmail, setVisitorEmail] = useState('');
     const [visitorCompany, setVisitorCompany] = useState('');
+    const [destination, setDestination] = useState('SecurITI');
+    const [hostId, setHostId] = useState('');
     const [reason, setReason] = useState('');
     const [hostId, setHostId] = useState('');
-    // Inicializar con la fecha y hora actual como objeto Date
-    const getNow = () => {
-        const now = new Date();
-        now.setSeconds(0, 0);
-        return now;
-    };
-    const [scheduledDate, setScheduledDate] = useState<Date>(getNow());
-    // Cuando se abre el modal, reiniciar la fecha a la actual
-    React.useEffect(() => {
-        if (isOpen) {
-            setScheduledDate(getNow());
-        }
-    }, [isOpen]);
-    const [nameError, setNameError] = useState('');
-    const [companyError, setCompanyError] = useState('');
-
-    // Expresión regular: solo letras, puede tener acentos, debe tener al menos un espacio (nombre y apellido)
-    const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ]+(\s+[A-Za-zÁÉÍÓÚáéíóúÑñ]+)+$/;
-    // Expresión regular mejorada para empresa: al menos dos palabras o una palabra de mínimo 3 letras, permite letras, números y algunos símbolos, no solo letras repetidas
-    const companyRegex = /^(?!.*(.)\1{3,})[A-Za-zÁÉÍÓÚáéíóúÑñ0-9&.,'"\-]{3,}(\s+[A-Za-zÁÉÍÓÚáéíóúÑñ0-9&.,'"\-]{2,})+$/;
-
-    // Función auxiliar para detectar cadenas tipo garabato (letras iguales, sin vocales, etc.)
-    function isGibberishCompany(str: string) {
-        // No debe ser solo letras iguales o solo consonantes
-        const onlyConsonants = /^[^AEIOUaeiouÁÉÍÓÚáéíóú]+$/;
-        const repeatedChar = /(.)\1{3,}/;
-        // Debe tener al menos una vocal
-        const hasVowel = /[AEIOUaeiouÁÉÍÓÚáéíóú]/;
-        // Debe tener al menos dos palabras o una palabra de mínimo 3 letras
-        const twoWords = /\w+\s+\w+/;
-        const minLength = str.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ]/g, '').length >= 3;
-        return (
-            onlyConsonants.test(str.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ]/g, '')) ||
-            repeatedChar.test(str) ||
-            !hasVowel.test(str) ||
-            (!twoWords.test(str) && !minLength)
-        );
-    }
-
+    const [scheduledDate, setScheduledDate] = useState('');
+    
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        let valid = true;
-        // Validar nombre
-        if (!nameRegex.test(visitorName.trim())) {
-            setNameError('Por favor ingresa un nombre y apellido válidos (solo letras, sin símbolos ni garabatos).');
-            valid = false;
-        } else {
-            setNameError('');
-        }
-        // Validar empresa
-        const companyValue = visitorCompany.trim();
-        if (!companyRegex.test(companyValue) || isGibberishCompany(companyValue)) {
-            setCompanyError('Por favor ingresa un nombre de empresa válido (debe ser un nombre real, no garabatos, puede incluir letras, números y algunos símbolos como & . , -).');
-            valid = false;
-        } else {
-            setCompanyError('');
-        }
-        if (!valid) return;
         try {
-            // Formatear la fecha a string ISO (o el formato que espera tu backend)
-            const scheduledDateStr = scheduledDate.toISOString();
-            await api.createVisit({ visitorName, visitorCompany, reason, hostId, scheduledDate: scheduledDateStr });
+            await api.createVisit({ visitorName, visitorCompany, reason, hostId, scheduledDate });
             onSave(); // This will trigger a refetch in the parent component
             onClose(); // Close modal on success
         } catch (error) {
             console.error("Failed to create visit:", error);
-            // Aquí podrías mostrar un mensaje de error en el modal
+            // Here you could show an error message in the modal
         }
     };
 
@@ -130,24 +110,8 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
             <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
                 <h2 className="text-xl font-bold mb-6">Registrar Nueva Visita</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <input
-                        type="text"
-                        placeholder="Nombre del Visitante"
-                        value={visitorName}
-                        onChange={e => setVisitorName(e.target.value)}
-                        className={`w-full p-2 border rounded ${nameError ? 'border-red-500' : ''}`}
-                        required
-                    />
-                    {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
-                    <input
-                        type="text"
-                        placeholder="Empresa del Visitante"
-                        value={visitorCompany}
-                        onChange={e => setVisitorCompany(e.target.value)}
-                        className={`w-full p-2 border rounded ${companyError ? 'border-red-500' : ''}`}
-                        required
-                    />
-                    {companyError && <p className="text-red-500 text-xs mt-1">{companyError}</p>}
+                    <input type="text" placeholder="Nombre del Visitante" value={visitorName} onChange={e => setVisitorName(e.target.value)} className="w-full p-2 border rounded" required />
+                    <input type="text" placeholder="Empresa del Visitante" value={visitorCompany} onChange={e => setVisitorCompany(e.target.value)} className="w-full p-2 border rounded" required />
                     <textarea placeholder="Motivo de la visita" value={reason} onChange={e => setReason(e.target.value)} className="w-full p-2 border rounded" required />
                     <select value={hostId} onChange={e => setHostId(e.target.value)} className="w-full p-2 border rounded bg-white" required>
                         <option value="" disabled>Seleccionar Anfitrión</option>
@@ -155,22 +119,8 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
                             <option key={host._id} value={host._id}>{host.firstName} {host.lastName}</option>
                         ))}
                     </select>
-                    <div>
-                        <label className="block text-sm font-medium mb-1">Fecha y hora de la visita</label>
-                        <DatePicker
-                            selected={scheduledDate}
-                            onChange={(date: Date | null) => date && setScheduledDate(date)}
-                            showTimeSelect
-                            timeFormat="HH:mm"
-                            timeIntervals={15}
-                            dateFormat="dd/MM/yyyy HH:mm"
-                            timeCaption="Hora"
-                            className="w-full p-2 border rounded"
-                            minDate={new Date()}
-                            popperPlacement="right-start"
-                            locale="es"
-                        />
-                    </div>
+                    <input type="datetime-local" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} className="w-full p-2 border rounded" required />
+                    
                     <div className="flex justify-end space-x-4 pt-4">
                         <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">Cancelar</button>
                         <button type="submit" className="px-4 py-2 bg-securiti-blue-600 text-white rounded">Guardar</button>
@@ -210,19 +160,55 @@ export const VisitsPage: React.FC = () => {
             
     }, [fetchVisits]);
 
-    const updateVisitStatus = async (id: string, status: VisitStatus) => {
+    const handleApprove = async (id: string, notes?: string) => {
         try {
-            const updatedVisit = await api.updateVisitStatus(id, status);
+            const updatedVisit = await api.approveVisit(id, notes);
             setVisits(visits.map(v => v._id === id ? updatedVisit : v));
+            alert('Visita aprobada exitosamente');
         } catch (error) {
-            console.error("Failed to update visit status:", error);
+            console.error("Failed to approve visit:", error);
+            alert('Error al aprobar la visita');
+        }
+    };
+
+    const handleReject = async (id: string, reason?: string) => {
+        const rejectionReason = reason || prompt('Motivo del rechazo (opcional):');
+        try {
+            const updatedVisit = await api.rejectVisit(id, rejectionReason);
+            setVisits(visits.map(v => v._id === id ? updatedVisit : v));
+            alert('Visita rechazada exitosamente');
+        } catch (error) {
+            console.error("Failed to reject visit:", error);
+            alert('Error al rechazar la visita');
+        }
+    };
+
+    const handleCheckIn = async (id: string) => {
+        try {
+            const updatedVisit = await api.checkInVisit(id);
+            setVisits(visits.map(v => v._id === id ? updatedVisit : v));
+            alert('Check-in realizado exitosamente');
+        } catch (error) {
+            console.error("Failed to check-in visit:", error);
+            alert('Error al realizar check-in');
+        }
+    };
+
+    const handleCheckOut = async (id: string) => {
+        try {
+            const updatedVisit = await api.checkOutVisit(id);
+            setVisits(visits.map(v => v._id === id ? updatedVisit : v));
+            alert('Check-out realizado exitosamente');
+        } catch (error) {
+            console.error("Failed to check-out visit:", error);
+            alert('Error al realizar check-out');
         }
     };
 
     const filteredVisits = visits.filter(visit => {
         if (activeTab === 'active') return visit.status === VisitStatus.CHECKED_IN;
         if (activeTab === 'pending') return visit.status === VisitStatus.PENDING || visit.status === VisitStatus.APPROVED;
-        if (activeTab === 'history') return visit.status === VisitStatus.COMPLETED;
+        if (activeTab === 'history') return visit.status === VisitStatus.COMPLETED || visit.status === VisitStatus.REJECTED;
         return false;
     });
 
@@ -258,7 +244,14 @@ export const VisitsPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredVisits.length > 0 ? (
                         filteredVisits.map(visit => (
-                            <VisitCard key={visit._id} visit={visit} onUpdateStatus={updateVisitStatus} />
+                            <VisitCard 
+                                key={visit._id} 
+                                visit={visit} 
+                                onApprove={handleApprove}
+                                onReject={handleReject}
+                                onCheckIn={handleCheckIn}
+                                onCheckOut={handleCheckOut}
+                            />
                         ))
                     ) : (
                         <p className="col-span-full text-center text-gray-500 mt-8">No hay visitas que mostrar en esta categoría.</p>

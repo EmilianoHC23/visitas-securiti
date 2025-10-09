@@ -24,6 +24,9 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => { // e
 
   try {
     console.log(`🌐 API Request: ${options.method || 'GET'} ${BASE_URL}${endpoint}`);
+    if (options.body) {
+      console.log('📦 Request body:', options.body);
+    }
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       ...options,
       headers: {

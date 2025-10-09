@@ -228,6 +228,131 @@ class EmailService {
       return { success: false, error: error.message };
     }
   }
+
+  // Send visit approval email
+  async sendVisitApprovalEmail(visitData) {
+    if (!this.isEnabled()) {
+      console.log('📧 Email service disabled - would send visit approval to:', visitData.visitorEmail);
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    try {
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: visitData.visitorEmail,
+        subject: `✅ Tu visita ha sido aprobada - SecurITI`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+              <h1 style="margin: 0; font-size: 28px;">✅ ¡Visita Aprobada!</h1>
+              <p style="margin: 10px 0 0 0; opacity: 0.9;">Tu solicitud de visita ha sido aprobada</p>
+            </div>
+
+            <div style="background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 12px 12px;">
+              <p style="font-size: 18px; color: #1f2937;">Hola <strong>${visitData.visitorName}</strong>,</p>
+
+              <p style="font-size: 16px; line-height: 1.6; color: #4b5563;">
+                ¡Excelentes noticias! Tu visita programada para el <strong>${visitData.visitDetails.date}</strong> 
+                ha sido <strong>aprobada</strong> por ${visitData.hostName}.
+              </p>
+
+              <div style="background: #f0fdf4; border: 1px solid #10b981; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin: 0 0 15px 0; color: #059669;">Detalles de tu visita:</h3>
+                <p style="margin: 5px 0;"><strong>📅 Fecha:</strong> ${visitData.visitDetails.date}</p>
+                <p style="margin: 5px 0;"><strong>🏢 Empresa:</strong> ${visitData.visitDetails.company}</p>
+                <p style="margin: 5px 0;"><strong>🎯 Motivo:</strong> ${visitData.visitDetails.reason}</p>
+                <p style="margin: 5px 0;"><strong>👤 Anfitrión:</strong> ${visitData.hostName}</p>
+              </div>
+
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${visitData.approvalUrl}"
+                   style="background: #10b981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);">
+                  🚪 Hacer Check-in
+                </a>
+              </div>
+
+              <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <p style="margin: 0; color: #92400e; font-size: 14px;">
+                  <strong>⏰ Importante:</strong> Preséntate en recepción con identificación válida para completar el proceso de check-in.
+                </p>
+              </div>
+
+              <p style="color: #6b7280; font-size: 14px; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
+                Sistema de Gestión de Visitas - SecurITI
+              </p>
+            </div>
+          </div>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Visit approval email sent to:', visitData.visitorEmail);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('❌ Error sending visit approval email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Send visit rejection email
+  async sendVisitRejectionEmail(visitData) {
+    if (!this.isEnabled()) {
+      console.log('📧 Email service disabled - would send visit rejection to:', visitData.visitorEmail);
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    try {
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: visitData.visitorEmail,
+        subject: `❌ Tu visita ha sido rechazada - SecurITI`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+              <h1 style="margin: 0; font-size: 28px;">❌ Visita Rechazada</h1>
+              <p style="margin: 10px 0 0 0; opacity: 0.9;">Tu solicitud de visita no pudo ser aprobada</p>
+            </div>
+
+            <div style="background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 12px 12px;">
+              <p style="font-size: 18px; color: #1f2937;">Hola <strong>${visitData.visitorName}</strong>,</p>
+
+              <p style="font-size: 16px; line-height: 1.6; color: #4b5563;">
+                Lamentablemente, tu visita programada para el <strong>${visitData.visitDetails.date}</strong> 
+                ha sido <strong>rechazada</strong> por ${visitData.hostName}.
+              </p>
+
+              <div style="background: #fef2f2; border: 1px solid #ef4444; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin: 0 0 15px 0; color: #dc2626;">Detalles de la visita:</h3>
+                <p style="margin: 5px 0;"><strong>📅 Fecha solicitada:</strong> ${visitData.visitDetails.date}</p>
+                <p style="margin: 5px 0;"><strong>🏢 Empresa:</strong> ${visitData.visitDetails.company}</p>
+                <p style="margin: 5px 0;"><strong>🎯 Motivo:</strong> ${visitData.visitDetails.reason}</p>
+                <p style="margin: 5px 0;"><strong>👤 Anfitrión:</strong> ${visitData.hostName}</p>
+                <p style="margin: 5px 0;"><strong>📝 Motivo del rechazo:</strong> ${visitData.rejectionReason}</p>
+              </div>
+
+              <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <p style="margin: 0; color: #92400e; font-size: 14px;">
+                  <strong>💡 Sugerencia:</strong> Si crees que esto es un error o necesitas reagendar tu visita, 
+                  contacta directamente con ${visitData.hostName} para coordinar una nueva fecha.
+                </p>
+              </div>
+
+              <p style="color: #6b7280; font-size: 14px; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
+                Sistema de Gestión de Visitas - SecurITI
+              </p>
+            </div>
+          </div>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Visit rejection email sent to:', visitData.visitorEmail);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('❌ Error sending visit rejection email:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 module.exports = new EmailService();

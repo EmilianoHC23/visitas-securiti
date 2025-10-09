@@ -25,6 +25,12 @@ const visitSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  destination: {
+    type: String,
+    required: true,
+    default: 'SecurITI',
+    trim: true
+  },
   status: {
     type: String,
     enum: ['pending', 'approved', 'checked-in', 'completed', 'rejected', 'cancelled'],
@@ -64,15 +70,27 @@ const visitSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  visitorEmail: {
+  checkOutPhotos: [{
     type: String,
-    trim: true,
-    lowercase: true
+    default: []
+  }],
+  approvalDecision: {
+    type: String,
+    enum: ['approved', 'rejected', null],
+    default: null
   },
-  visitorPhone: {
+  approvalTimestamp: {
+    type: Date,
+    default: null
+  },
+  approvalNotes: {
     type: String,
-    trim: true
-  }
+    default: ''
+  },
+  rejectionReason: {
+    type: String,
+    default: ''
+  },
 }, {
   timestamps: true
 });

@@ -4,6 +4,7 @@ const Visit = require('../models/Visit');
 const User = require('../models/User');
 const Company = require('../models/Company');
 const { auth, authorize } = require('../middleware/auth');
+const emailService = require('../services/emailService');
 
 const router = express.Router();
 
@@ -65,7 +66,7 @@ router.get('/:id', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     console.log('📝 Creating visit - User:', req.user?.email, 'Company:', req.user?.companyId);
-    const { visitorName, visitorCompany, reason, hostId, scheduledDate, visitorEmail, visitorPhone } = req.body;
+    const { visitorName, visitorCompany, reason, hostId, scheduledDate, visitorEmail, visitorPhone, visitorPhoto } = req.body;
     console.log('📝 Visit data:', { visitorName, visitorCompany, reason, hostId, scheduledDate });
 
     // Validate required fields
@@ -111,6 +112,7 @@ router.post('/', auth, async (req, res) => {
       companyId: req.user.companyId,
       visitorEmail,
       visitorPhone,
+      visitorPhoto,
       status: autoApproval ? 'approved' : 'pending'
     });
 
@@ -237,6 +239,176 @@ router.put('/:id', auth, async (req, res) => {
     res.json(updatedVisit);
   } catch (error) {
     console.error('Update visit error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Approve visit
+router.post('/approve/:id', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { notes } = req.body;
+
+    const visit = await Visit.findById(id).populate('host', 'firstName lastName email');
+    if (!visit) {
+      return res.status(404).json({ message: 'Visita no encontrada' });
+    }
+
+    // Check if user can approve this visit
+    if (req.user.role === 'host' && visit.host._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'No tienes permisos para aprobar esta visita' });
+    }
+
+    if (visit.status !== 'pending') {
+      return res.status(400).json({ message: 'Esta visita ya ha sido procesada' });
+    }
+
+    // Update visit
+    visit.status = 'approved';
+    visit.approvalDecision = 'approved';
+    visit.approvalTimestamp = new Date();
+    visit.approvalNotes = notes || '';
+    await visit.save();
+
+    // Send email notification to visitor if email provided
+    if (visit.visitorEmail && emailService.isEnabled()) {
+      try {
+        const approvalUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/visits/checkin/${visit._id}`;
+        
+        await emailService.sendVisitApprovalEmail({
+          visitorName: visit.visitorName,
+          visitorEmail: visit.visitorEmail,
+          hostName: `${visit.host.firstName} ${visit.host.lastName}`,
+          approvalUrl,
+          visitDetails: {
+            date: visit.scheduledDate.toLocaleDateString(),
+            reason: visit.reason,
+            company: visit.visitorCompany
+          }
+        });
+      } catch (emailError) {
+        console.error('Error sending approval email:', emailError);
+        // Don't fail the approval if email fails
+      }
+    }
+
+    await visit.populate('host', 'firstName lastName email profileImage');
+    res.json(visit);
+  } catch (error) {
+    console.error('Approve visit error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Reject visit
+router.post('/reject/:id', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const visit = await Visit.findById(id).populate('host', 'firstName lastName email');
+    if (!visit) {
+      return res.status(404).json({ message: 'Visita no encontrada' });
+    }
+
+    // Check if user can reject this visit
+    if (req.user.role === 'host' && visit.host._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'No tienes permisos para rechazar esta visita' });
+    }
+
+    if (visit.status !== 'pending') {
+      return res.status(400).json({ message: 'Esta visita ya ha sido procesada' });
+    }
+
+    // Update visit
+    visit.status = 'rejected';
+    visit.approvalDecision = 'rejected';
+    visit.approvalTimestamp = new Date();
+    visit.rejectionReason = reason || '';
+    await visit.save();
+
+    // Send email notification to visitor if email provided
+    if (visit.visitorEmail && emailService.isEnabled()) {
+      try {
+        await emailService.sendVisitRejectionEmail({
+          visitorName: visit.visitorName,
+          visitorEmail: visit.visitorEmail,
+          hostName: `${visit.host.firstName} ${visit.host.lastName}`,
+          rejectionReason: reason || 'Sin motivo especificado',
+          visitDetails: {
+            date: visit.scheduledDate.toLocaleDateString(),
+            reason: visit.reason,
+            company: visit.visitorCompany
+          }
+        });
+      } catch (emailError) {
+        console.error('Error sending rejection email:', emailError);
+        // Don't fail the rejection if email fails
+      }
+    }
+
+    await visit.populate('host', 'firstName lastName email profileImage');
+    res.json(visit);
+  } catch (error) {
+    console.error('Reject visit error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Check-in visit
+router.post('/checkin/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const visit = await Visit.findById(id).populate('host', 'firstName lastName email');
+    if (!visit) {
+      return res.status(404).json({ message: 'Visita no encontrada' });
+    }
+
+    if (visit.status !== 'approved') {
+      return res.status(400).json({ message: 'Esta visita no está aprobada para check-in' });
+    }
+
+    // Update visit
+    visit.status = 'checked-in';
+    visit.checkInTime = new Date();
+    await visit.save();
+
+    await visit.populate('host', 'firstName lastName email profileImage');
+    res.json(visit);
+  } catch (error) {
+    console.error('Check-in visit error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Check-out visit
+router.post('/checkout/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { photos } = req.body; // Array of photo URLs
+
+    const visit = await Visit.findById(id).populate('host', 'firstName lastName email');
+    if (!visit) {
+      return res.status(404).json({ message: 'Visita no encontrada' });
+    }
+
+    if (visit.status !== 'checked-in') {
+      return res.status(400).json({ message: 'Esta visita no está activa para check-out' });
+    }
+
+    // Update visit
+    visit.status = 'completed';
+    visit.checkOutTime = new Date();
+    if (photos && Array.isArray(photos)) {
+      visit.checkOutPhotos = photos.slice(0, 5); // Max 5 photos
+    }
+    await visit.save();
+
+    await visit.populate('host', 'firstName lastName email profileImage');
+    res.json(visit);
+  } catch (error) {
+    console.error('Check-out visit error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

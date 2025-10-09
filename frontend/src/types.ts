@@ -35,6 +35,7 @@ export interface Visit {
   visitorPhoto?: string;
   host: User;
   reason: string;
+  destination: string;
   status: VisitStatus;
   scheduledDate: string;
   checkInTime?: string;
@@ -46,6 +47,11 @@ export interface Visit {
   visitType?: 'spontaneous' | 'pre-registered' | 'access-code';
   accessCode?: string;
   accessId?: string;
+  checkOutPhotos?: string[];
+  approvalDecision?: 'approved' | 'rejected' | null;
+  approvalTimestamp?: string;
+  approvalNotes?: string;
+  rejectionReason?: string;
   createdAt?: string;
   updatedAt?: string;
 }

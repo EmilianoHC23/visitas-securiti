@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Invitation = require('../models/Invitation');
 const User = require('../models/User');
+const Company = require('../models/Company');
 const { auth, authorize } = require('../middleware/auth');
 const emailService = require('../services/emailService');
 
@@ -108,40 +109,50 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
       }
     }
 
-    // Verificar que no haya una invitación pendiente
-    console.log('🔍 Checking for existing pending invitations...');
+    // Verificar si ya existe alguna invitación para este email (independientemente del estado)
+    console.log('🔍 Checking for any existing invitation for email...');
     const existingInvitation = await Invitation.findOne({
-      email: email.toLowerCase(),
-      status: 'pending',
-      expiresAt: { $gt: new Date() }
+      email: email.toLowerCase()
     });
-    console.log('📊 Existing invitation check result:', existingInvitation ? 'Found' : 'Not found');
+    console.log('📊 Existing invitation check result:', existingInvitation ? `Found (status: ${existingInvitation.status})` : 'Not found');
 
-    if (existingInvitation) {
-      console.log('❌ Invitation already exists');
-      return res.status(400).json({ message: 'Ya existe una invitación pendiente para este email' });
-    }
-
-    // Crear invitación
-    console.log('📧 Creating invitation...');
+    let invitation;
     const crypto = require('crypto');
     const invitationToken = crypto.randomBytes(32).toString('hex');
-    
-    const invitation = new Invitation({
-      firstName,
-      lastName,
-      email: email.toLowerCase(),
-      role,
-      invitedBy: req.user._id,
-      companyId: req.user.companyId,
-      invitationToken
-    });
+
+    if (existingInvitation) {
+      // Actualizar invitación existente con nuevos datos
+      console.log('🔄 Updating existing invitation...');
+      existingInvitation.firstName = firstName;
+      existingInvitation.lastName = lastName;
+      existingInvitation.role = role;
+      existingInvitation.invitedBy = req.user._id;
+      existingInvitation.companyId = req.user.companyId;
+      existingInvitation.invitationToken = invitationToken;
+      existingInvitation.status = 'pending';
+      existingInvitation.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
+      existingInvitation.createdAt = new Date();
+      
+      invitation = existingInvitation;
+    } else {
+      // Crear nueva invitación
+      console.log('📧 Creating new invitation...');
+      invitation = new Invitation({
+        firstName,
+        lastName,
+        email: email.toLowerCase(),
+        role,
+        invitedBy: req.user._id,
+        companyId: req.user.companyId,
+        invitationToken
+      });
+    }
 
     try {
       await invitation.save();
-      console.log('✅ Invitation created successfully:', invitation._id);
+      console.log(`✅ Invitation ${existingInvitation ? 'updated' : 'created'} successfully:`, invitation._id);
     } catch (invitationError) {
-      console.error('❌ Error creating invitation:', invitationError);
+      console.error('❌ Error saving invitation:', invitationError);
       throw invitationError;
     }
 
@@ -150,13 +161,17 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
     console.log('📧 Email service enabled:', emailService.isEnabled());
     console.log('📧 Sending invitation email to:', email.toLowerCase());
 
+    // Obtener el nombre de la compañía
+    const company = await Company.findOne({ companyId: req.user.companyId });
+    const companyName = company ? company.name : 'Visitas SecuriTI';
+
     const emailResult = await emailService.sendInvitationEmail({
       firstName,
       lastName,
       email: email.toLowerCase(),
       role,
       token: invitation.invitationToken,
-      companyName: 'Visitas SecuriTI', // TODO: Obtener de la compañía
+      companyName,
       invitedBy: req.user.firstName + ' ' + req.user.lastName
     });
 
@@ -238,6 +253,41 @@ router.get('/verify/:token', async (req, res) => {
   }
 });
 
+// Verificar token de invitación
+router.get('/verify/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    const invitation = await Invitation.findOne({
+      invitationToken: token,
+      status: 'pending',
+      expiresAt: { $gt: new Date() }
+    });
+
+    if (!invitation) {
+      return res.status(400).json({ message: 'Token inválido o expirado' });
+    }
+
+    // Obtener el nombre de la compañía
+    const company = await Company.findOne({ companyId: invitation.companyId });
+    const companyName = company ? company.name : 'Visitas SecuriTI';
+
+    res.json({
+      invitation: {
+        email: invitation.email,
+        firstName: invitation.firstName,
+        lastName: invitation.lastName,
+        role: invitation.role,
+        companyName
+      }
+    });
+
+  } catch (error) {
+    console.error('Error verifying invitation token:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 // Completar registro desde invitación
 router.post('/complete', async (req, res) => {
   try {
@@ -252,6 +302,15 @@ router.post('/complete', async (req, res) => {
       status: 'pending',
       expiresAt: { $gt: new Date() }
     });
+
+    console.log('🔍 Looking for invitation with token:', token);
+    console.log('🔍 Found invitation:', invitation ? 'YES' : 'NO');
+    if (invitation) {
+      console.log('🔍 Invitation status:', invitation.status);
+      console.log('🔍 Invitation expiresAt:', invitation.expiresAt);
+      console.log('🔍 Current time:', new Date());
+      console.log('🔍 Is expired?', invitation.expiresAt <= new Date());
+    }
 
     if (!invitation) {
       return res.status(400).json({ message: 'Invitación inválida o expirada' });
@@ -352,46 +411,66 @@ router.post('/resend/:userId', auth, authorize(['admin']), async (req, res) => {
       return res.status(404).json({ message: 'Usuario pendiente no encontrado' });
     }
 
-    // Verificar que no haya una invitación pendiente reciente (menos de 5 minutos)
+    // Verificar que no haya una invitación pendiente reciente (menos de 1 minuto)
     const recentInvitation = await Invitation.findOne({
       email: user.email,
       status: 'pending',
-      createdAt: { $gt: new Date(Date.now() - 5 * 60 * 1000) } // Últimos 5 minutos
+      createdAt: { $gt: new Date(Date.now() - 1 * 60 * 1000) } // Último 1 minuto
     });
 
     if (recentInvitation) {
-      return res.status(400).json({ message: 'Ya se envió una invitación recientemente. Espera 5 minutos antes de reenviar.' });
+      return res.status(400).json({ message: 'Ya se envió una invitación recientemente. Espera 1 minuto antes de reenviar.' });
     }
 
-    // Eliminar cualquier invitación existente para este email antes de crear una nueva
-    console.log('🗑️ Removing existing invitations for email:', user.email);
-    await Invitation.deleteMany({ email: user.email });
+    // Buscar invitación existente para este email
+    let invitation = await Invitation.findOne({ email: user.email });
 
-    // Crear nueva invitación
-    const crypto = require('crypto');
-    const invitationToken = crypto.randomBytes(32).toString('hex');
-    
-    const invitation = new Invitation({
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      role: user.role,
-      invitedBy: req.user._id,
-      companyId: req.user.companyId,
-      invitationToken
-    });
+    if (invitation) {
+      // Actualizar la invitación existente sin cambiar el token
+      console.log('🔄 Updating existing invitation for email:', user.email);
+      console.log('🔄 Current invitation token:', invitation.invitationToken);
+      invitation.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
+      invitation.status = 'pending';
+      invitation.createdAt = new Date();
+      
+      await invitation.save();
+      console.log('✅ Invitation updated successfully:', invitation._id);
+      console.log('✅ Updated invitation token:', invitation.invitationToken);
+      console.log('✅ Updated invitation expiresAt:', invitation.expiresAt);
+    } else {
+      // Crear nueva invitación si no existe
+      console.log('📧 Creating new invitation for email:', user.email);
+      const crypto = require('crypto');
+      const invitationToken = crypto.randomBytes(32).toString('hex');
+      
+      invitation = new Invitation({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        invitedBy: req.user._id,
+        companyId: req.user.companyId,
+        invitationToken
+      });
 
-    await invitation.save();
+      await invitation.save();
+      console.log('✅ Invitation created successfully:', invitation._id);
+    }
 
     // Enviar email de invitación
     const invitationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register?token=${invitation.invitationToken}`;
+
+    // Obtener el nombre de la compañía
+    const company = await Company.findOne({ companyId: req.user.companyId });
+    const companyName = company ? company.name : 'Visitas SecuriTI';
 
     const emailResult = await emailService.sendInvitationEmail({
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
       role: user.role,
-      invitationUrl,
+      token: invitation.invitationToken,
+      companyName,
       invitedBy: req.user.firstName + ' ' + req.user.lastName
     });
 

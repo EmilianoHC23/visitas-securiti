@@ -48,13 +48,21 @@ app.use('/api/invitations', invitationRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
+    console.log('🏥 Health check requested');
     res.json({ 
         status: 'OK', 
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV,
         hasJwtSecret: !!process.env.JWT_SECRET,
-        hasDatabase: !!(process.env.MONGODB_URI || process.env.DATABASE_URL)
+        hasDatabase: !!(process.env.MONGODB_URI || process.env.DATABASE_URL),
+        routes: 'API routes loaded successfully'
     });
+});
+
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+    console.log(`📡 ${req.method} ${req.path} - ${new Date().toISOString()}`);
+    next();
 });
 
 // Error handling middleware

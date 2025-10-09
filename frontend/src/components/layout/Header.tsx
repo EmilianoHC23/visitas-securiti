@@ -101,7 +101,7 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                             <div className="fw-semibold text-dark">{user.firstName} {user.lastName}</div>
                             <div className="text-muted text-capitalize small">{user.role}</div>
                         </div>
-                        <ChevronDownIcon className="text-secondary" />
+                        <ChevronDownIcon className="text-secondary w-5 h-5" />
                     </button>
                     {dropdownOpen && (
                         <div className="dropdown-menu dropdown-menu-end show mt-2 shadow" style={{ minWidth: 200, right: 0 }}>

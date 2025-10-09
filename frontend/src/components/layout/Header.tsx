@@ -86,7 +86,7 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                                 onClick={logout}
                                 className="dropdown-item d-flex align-items-center"
                             >
-                                <LogoutIcon className="me-2" />
+                                    <LogoutIcon className="me-2 w-5 h-5" />
                                 Cerrar Sesión
                             </button>
                         </div>

@@ -76,19 +76,20 @@ export const LoginPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex flex-col md:flex-row">
+    <div className="min-h-screen flex flex-col md:flex-row">
             {/* Logo y nombre en la esquina superior izquierda */}
             <div className="absolute top-0 left-0 w-full flex items-center px-8 py-6 z-20">
                 <img 
                     src="/logo.png" 
                     alt="Logo" 
-                    className="h-10 w-auto mr-3"
+                    className="w-auto mr-3" 
+                    style={{ maxHeight: '80px', maxWidth: '220px', objectFit: 'contain', imageRendering: 'crisp-edges' }}
                     draggable={false}
                 />
                 <span className="text-2xl font-bold text-gray-800 tracking-tight">VisitasSecuriTI</span>
             </div>
             {/* Columna izquierda: Formulario */}
-            <div className="w-full md:w-2/3 flex flex-col justify-center items-center bg-gray-100 px-6 py-12 md:py-0 relative">
+            <div className="w-full flex flex-col justify-center items-center bg-gray-100 px-4 py-12 md:w-2/3 md:px-6 md:py-0 relative">
                 <div className="w-full max-w-md mx-auto mt-20 md:mt-0">
                     <h2 className="text-lg text-gray-500 mb-1 font-medium">Comienza tu experiencia</h2>
                     <h1 className="text-3xl font-bold text-gray-800 mb-6">Inicia sesión en Visitas SecuriTI</h1>

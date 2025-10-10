@@ -568,28 +568,42 @@ export const UserManagementPage: React.FC = () => {
                                             {user.invitationStatus === 'pending' && (
                                                 <button 
                                                     onClick={e => { e.stopPropagation(); handleResendInvitation(user._id); }}
-                                                    className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded hover:bg-blue-200 flex items-center gap-1"
+                                                    className="p-2 text-blue-600 hover:text-blue-800 bg-transparent border-none shadow-none"
                                                     title="Reenviar invitación"
+                                                    style={{ background: 'none' }}
                                                 >
-                                                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a3 3 0 003.22 0L22 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                                                    Reenviar
+                                                    {/* Heroicons outline: Envelope + Arrow Right (forward email) */}
+                                                    <span className="relative inline-block w-5 h-5">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="absolute left-0 top-0 w-5 h-5">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-.659 1.591l-7.5 7.5a2.25 2.25 0 01-3.182 0l-7.5-7.5A2.25 2.25 0 012.25 6.993V6.75" />
+                                                        </svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="absolute right-0 bottom-0 w-3 h-3">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h8m0 0l-3-3m3 3l-3 3" />
+                                                        </svg>
+                                                    </span>
                                                 </button>
                                             )}
                                             <button 
                                                 onClick={e => { e.stopPropagation(); handleEditUser(user); }}
-                                                className="px-3 py-1 text-xs font-medium text-green-600 bg-green-100 rounded hover:bg-green-200 flex items-center gap-1"
+                                                className="p-2 text-green-600 hover:text-green-800 bg-transparent border-none shadow-none"
                                                 title="Editar usuario"
+                                                style={{ background: 'none' }}
                                             >
-                                                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 20h9" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.5 3.5a2.121 2.121 0 113 3L7 19.5 3 21l1.5-4L16.5 3.5z" /></svg>
-                                                Editar
+                                                {/* Heroicons outline: Pencil Square */}
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.313 3 21l1.687-4.5 12.175-13.013z" />
+                                                </svg>
                                             </button>
                                             <button 
                                                 onClick={e => { e.stopPropagation(); handleDeleteUser(user); }}
-                                                className="px-3 py-1 text-xs font-medium text-red-600 bg-red-100 rounded hover:bg-red-200 flex items-center gap-1"
+                                                className="p-2 text-red-600 hover:text-red-800 bg-transparent border-none shadow-none"
                                                 title="Eliminar usuario"
+                                                style={{ background: 'none' }}
                                             >
-                                                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                                Eliminar
+                                                {/* Heroicons outline: X-Mark (tache) */}
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
                                             </button>
                                         </div>
                                     </td>

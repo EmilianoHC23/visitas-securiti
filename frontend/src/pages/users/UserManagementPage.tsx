@@ -1,4 +1,70 @@
 import React, { useState, useEffect } from 'react';
+// Modal de vista previa de usuario
+const UserPreviewModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    user: User | null;
+}> = ({ isOpen, onClose, user }) => {
+    if (!isOpen || !user) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 w-full max-w-2xl mx-4 relative">
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
+                    title="Cerrar"
+                >
+                    ✕
+                </button>
+                <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
+                    <div className="flex flex-col items-center">
+                        <span className="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden border-4 border-blue-200 mb-4">
+                            {user.profileImage && user.profileImage.trim() !== '' ? (
+                                <img
+                                    src={user.profileImage}
+                                    alt={`${user.firstName} ${user.lastName}`}
+                                    className="w-32 h-32 object-cover"
+                                    onError={e => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                        const fallback = target.nextElementSibling as HTMLElement;
+                                        if (fallback) fallback.style.display = 'inline';
+                                    }}
+                                />
+                            ) : null}
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth="1.5"
+                                stroke="currentColor"
+                                className="w-20 h-20 text-blue-300"
+                                style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'none' : 'inline' }}
+                            >
+                                <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                                <path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                            </svg>
+                        </span>
+                    </div>
+                    <div className="flex-1">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-2">Detalle de usuario</h2>
+                        <div className="mb-6">
+                            <h3 className="text-lg font-semibold text-blue-900 mb-2">Datos generales</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-gray-700">
+                                <div><span className="font-semibold">Nombre</span><br />{user.firstName}</div>
+                                <div><span className="font-semibold">Apellido</span><br />{user.lastName}</div>
+                                <div><span className="font-semibold">Correo electrónico</span><br />{user.email}</div>
+                                <div><span className="font-semibold">Rol de usuario</span><br /><RoleBadge role={user.role} /></div>
+                            </div>
+                        </div>
+                        {/* Aquí puedes agregar más secciones como permisos, etc. */}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 import { LogoutIcon, SettingsIcon, UsersIcon } from '../../components/common/icons';
 import { User, UserRole } from '../../types';
 import * as api from '../../services/api';
@@ -296,6 +362,8 @@ export const UserManagementPage: React.FC = () => {
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [preview, setPreview] = useState<{ img?: string, name?: string } | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+    const [previewUser, setPreviewUser] = useState<User | null>(null);
 
     const fetchUsers = async () => {
         try {
@@ -430,10 +498,9 @@ export const UserManagementPage: React.FC = () => {
                     Invitar Usuario
                 </button>
             </div>
-            
             <div className="overflow-x-auto">
                 {loading ? (
-                     <div className="text-center p-8">Cargando usuarios...</div>
+                    <div className="text-center p-8">Cargando usuarios...</div>
                 ) : (
                     <table className="w-full text-sm text-left text-gray-500">
                         <thead className="text-xs text-gray-700 uppercase bg-gray-50">
@@ -450,7 +517,7 @@ export const UserManagementPage: React.FC = () => {
                             {users.map(user => (
                                 <tr key={user._id} className="bg-white border-b hover:bg-gray-50">
                                     <td className="px-6 py-4">
-                                        <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden cursor-pointer" onClick={() => setPreview({ img: user.profileImage, name: `${user.firstName} ${user.lastName}` })} title="Ver foto">
+                                        <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                                             {user.profileImage && user.profileImage.trim() !== '' ? (
                                                 <img
                                                     src={user.profileImage}
@@ -477,53 +544,13 @@ export const UserManagementPage: React.FC = () => {
                                             </svg>
                                         </span>
                                     </td>
-            {/* Modal de vista previa de imagen o icono */}
-            {preview && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60" onClick={() => setPreview(null)}>
-                    <div className="bg-white rounded-lg shadow-lg p-4 max-w-xs sm:max-w-md flex flex-col items-center" onClick={e => e.stopPropagation()}>
-                        {preview.img && preview.img.trim() !== '' ? (
-                            <img
-                                src={preview.img}
-                                alt={preview.name || 'Vista previa'}
-                                className="max-w-full max-h-[60vh] rounded"
-                                onError={e => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.style.display = 'none';
-                                    const fallback = target.nextElementSibling as HTMLElement;
-                                    if (fallback) fallback.style.display = 'block';
-                                }}
-                            />
-                        ) : null}
-                        {/* Icono de usuario si no hay imagen o si falla */}
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1.5"
-                            stroke="currentColor"
-                            className="w-24 h-24 text-gray-400 mt-2"
-                            style={{ display: (!preview.img || preview.img.trim() === '') ? 'block' : 'none' }}
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                        </svg>
-                        <button className="block mx-auto mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onClick={() => setPreview(null)}>
-                            Cerrar
-                        </button>
-                    </div>
-                </div>
-            )}
-            {/* Modal de vista previa de imagen */}
-            {previewImage && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60" onClick={() => setPreviewImage(null)}>
-                    <div className="bg-white rounded-lg shadow-lg p-4 max-w-xs sm:max-w-md" onClick={e => e.stopPropagation()}>
-                        <img src={previewImage} alt="Vista previa" className="max-w-full max-h-[60vh] rounded" />
-                        <button className="block mx-auto mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onClick={() => setPreviewImage(null)}>
-                            Cerrar
-                        </button>
-                    </div>
-                </div>
-            )}
-                                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                    <td className="px-6 py-4 font-medium text-blue-700 whitespace-nowrap cursor-pointer hover:underline"
+                                        onClick={() => {
+                                            setPreviewUser(user);
+                                            setIsPreviewModalOpen(true);
+                                        }}
+                                        title="Ver información de usuario"
+                                    >
                                         {user.firstName} {user.lastName}
                                     </td>
                                     <td className="px-6 py-4">{user.email}</td>
@@ -569,14 +596,29 @@ export const UserManagementPage: React.FC = () => {
                     </table>
                 )}
             </div>
-
+            {/* Modal de vista previa de usuario */}
+            <UserPreviewModal
+                isOpen={isPreviewModalOpen}
+                onClose={() => setIsPreviewModalOpen(false)}
+                user={previewUser}
+            />
+            {/* Modal de vista previa de imagen */}
+            {previewImage && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60" onClick={() => setPreviewImage(null)}>
+                    <div className="bg-white rounded-lg shadow-lg p-4 max-w-xs sm:max-w-md" onClick={e => e.stopPropagation()}>
+                        <img src={previewImage} alt="Vista previa" className="max-w-full max-h-[60vh] rounded" />
+                        <button className="block mx-auto mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onClick={() => setPreviewImage(null)}>
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            )}
             <InviteUserModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onInvite={handleInviteUser}
                 loading={inviteLoading}
             />
-
             <EditUserModal
                 isOpen={isEditModalOpen}
                 onClose={() => {

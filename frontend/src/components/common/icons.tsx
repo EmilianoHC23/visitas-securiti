@@ -1,3 +1,37 @@
+export const CompanyIcon: React.FC<IconProps> = ({ className = 'w-6 h-6' }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <rect x="4" y="7" width="16" height="13" rx="2" stroke="currentColor" strokeWidth="2" fill="none" />
+    <rect x="7" y="10" width="2" height="2" fill="currentColor" />
+    <rect x="11" y="10" width="2" height="2" fill="currentColor" />
+    <rect x="15" y="10" width="2" height="2" fill="currentColor" />
+    <rect x="7" y="14" width="2" height="2" fill="currentColor" />
+    <rect x="11" y="14" width="2" height="2" fill="currentColor" />
+    <rect x="15" y="14" width="2" height="2" fill="currentColor" />
+    <rect x="11" y="17" width="2" height="3" fill="currentColor" />
+    <rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" strokeWidth="2" fill="none" />
+  </svg>
+);
+export const BlacklistIcon: React.FC<IconProps> = ({ className = 'w-6 h-6' }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" fill="none" />
+    <line x1="7" y1="7" x2="17" y2="17" stroke="currentColor" strokeWidth="2" />
+  </svg>
+);
+export const QrIcon: React.FC<IconProps> = ({ className = 'w-6 h-6' }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <rect x="3" y="3" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="2" fill="none" />
+    <rect x="15" y="3" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="2" fill="none" />
+    <rect x="3" y="15" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="2" fill="none" />
+    <path d="M15 17h2v2h-2zM19 15h2v2h-2zM17 19h2v2h-2z" fill="currentColor" />
+  </svg>
+);
+export const AgendaIcon: React.FC<IconProps> = ({ className = 'w-6 h-6' }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <rect x="5" y="3" width="14" height="18" rx="2" fill="none" stroke="currentColor" strokeWidth="2"/>
+    <path d="M9 7h6M9 11h6M9 15h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    <rect x="3" y="7" width="2" height="10" rx="1" fill="currentColor"/>
+  </svg>
+);
 
 import React from 'react';
 
@@ -13,13 +47,18 @@ export const DashboardIcon: React.FC<IconProps> = ({ className = 'w-6 h-6' }) =>
 
 export const VisitsIcon: React.FC<IconProps> = ({ className = 'w-6 h-6' }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a3.002 3.002 0 013.4-2.285M11 14a4 4 0 100-8 4 4 0 000 8z" />
+    <rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke="currentColor" strokeWidth="2"/>
+    <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    <circle cx="8" cy="14" r="1.5" fill="currentColor"/>
+    <circle cx="12" cy="14" r="1.5" fill="currentColor"/>
+    <circle cx="16" cy="14" r="1.5" fill="currentColor"/>
   </svg>
 );
 
 export const UsersIcon: React.FC<IconProps> = ({ className = 'w-6 h-6' }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+    <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" fill="none" />
+    <path d="M4 20c0-3.314 3.134-6 8-6s8 2.686 8 6" stroke="currentColor" strokeWidth="2" fill="none" />
   </svg>
 );
 

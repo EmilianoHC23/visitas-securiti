@@ -3,7 +3,7 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { UserRole } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
-import { DashboardIcon, VisitsIcon, UsersIcon, ReportsIcon, SettingsIcon } from '../common/icons';
+import { DashboardIcon, VisitsIcon, UsersIcon, ReportsIcon, SettingsIcon, AgendaIcon, QrIcon, BlacklistIcon, CompanyIcon } from '../common/icons';
 
 type NavItemProps = { to: string; icon: React.ReactNode; label: string; collapsed: boolean };
 const NavItem: React.FC<NavItemProps> = ({ to, icon, label, collapsed }) => {
@@ -36,13 +36,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
     const navLinks = [
         { to: "/", label: "Dashboard", icon: <DashboardIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
         { to: "/visits", label: "Visitas", icon: <VisitsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
-        { to: "/agenda", label: "Agenda", icon: <VisitsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
+    { to: "/agenda", label: "Agenda", icon: <AgendaIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
         { to: "/users", label: "Usuarios", icon: <UsersIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
-        { to: "/access-codes", label: "Códigos de Acceso", icon: <SettingsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
-        { to: "/blacklist", label: "Lista Negra", icon: <UsersIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
+    { to: "/access-codes", label: "Códigos de Acceso", icon: <QrIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
+    { to: "/blacklist", label: "Lista Negra", icon: <BlacklistIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
         { to: "/reports", label: "Reportes", icon: <ReportsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
         { to: "/settings", label: "Configuración", icon: <SettingsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
-        { to: "/settings/company", label: "Config. Empresa", icon: <SettingsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
+    { to: "/settings/company", label: "Config. Empresa", icon: <CompanyIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
     ];
 
     return (

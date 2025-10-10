@@ -1,4 +1,12 @@
+
 import { User, Visit, VisitStatus, Company, Blacklist, Access } from '../types';
+
+// Eliminar completamente un usuario (force delete)
+export const deleteUser = async (userId: string): Promise<void> => {
+  return apiRequest(`/users/${userId}?force=true`, {
+    method: 'DELETE',
+  });
+};
 
 // =================================================================
 // CONFIGURACIÓN DE LA API

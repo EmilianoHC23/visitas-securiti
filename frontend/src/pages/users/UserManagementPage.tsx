@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 // Modal de vista previa de usuario
 const UserPreviewModal: React.FC<{
     isOpen: boolean;
@@ -6,7 +5,6 @@ const UserPreviewModal: React.FC<{
     user: User | null;
 }> = ({ isOpen, onClose, user }) => {
     if (!isOpen || !user) return null;
-
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-8 w-full max-w-2xl mx-4 relative">
@@ -65,6 +63,7 @@ const UserPreviewModal: React.FC<{
         </div>
     );
 };
+import React, { useState, useEffect } from 'react';
 import { LogoutIcon, SettingsIcon, UsersIcon } from '../../components/common/icons';
 import { User, UserRole } from '../../types';
 import * as api from '../../services/api';
@@ -360,8 +359,8 @@ export const UserManagementPage: React.FC = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editLoading, setEditLoading] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [preview, setPreview] = useState<{ img?: string, name?: string } | null>(null);
-    const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+    // Estado para la vista previa
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [previewUser, setPreviewUser] = useState<User | null>(null);
 
@@ -498,9 +497,10 @@ export const UserManagementPage: React.FC = () => {
                     Invitar Usuario
                 </button>
             </div>
+            
             <div className="overflow-x-auto">
                 {loading ? (
-                    <div className="text-center p-8">Cargando usuarios...</div>
+                     <div className="text-center p-8">Cargando usuarios...</div>
                 ) : (
                     <table className="w-full text-sm text-left text-gray-500">
                         <thead className="text-xs text-gray-700 uppercase bg-gray-50">
@@ -515,8 +515,17 @@ export const UserManagementPage: React.FC = () => {
                         </thead>
                         <tbody>
                             {users.map(user => (
-                                <tr key={user._id} className="bg-white border-b hover:bg-gray-50">
-                                    <td className="px-6 py-4">
+                                <tr
+                                    key={user._id}
+                                    className="bg-white border-b cursor-pointer group"
+                                    onClick={e => {
+                                        // Evitar que los botones de acción abran el modal
+                                        if ((e.target as HTMLElement).closest('button')) return;
+                                        setPreviewUser(user);
+                                        setIsPreviewModalOpen(true);
+                                    }}
+                                >
+                                    <td className="px-6 py-4 transition-colors group-hover:bg-blue-100">
                                         <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                                             {user.profileImage && user.profileImage.trim() !== '' ? (
                                                 <img
@@ -544,27 +553,21 @@ export const UserManagementPage: React.FC = () => {
                                             </svg>
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 font-medium text-blue-700 whitespace-nowrap cursor-pointer hover:underline"
-                                        onClick={() => {
-                                            setPreviewUser(user);
-                                            setIsPreviewModalOpen(true);
-                                        }}
-                                        title="Ver información de usuario"
-                                    >
+                                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap transition-colors group-hover:bg-blue-100">
                                         {user.firstName} {user.lastName}
                                     </td>
-                                    <td className="px-6 py-4">{user.email}</td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-4 transition-colors group-hover:bg-blue-100">{user.email}</td>
+                                    <td className="px-6 py-4 transition-colors group-hover:bg-blue-100">
                                         <RoleBadge role={user.role} />
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-4 transition-colors group-hover:bg-blue-100">
                                         <StatusBadge status={user.invitationStatus || 'none'} />
                                     </td>
-                                    <td className="px-6 py-4 text-right">
+                                    <td className="px-6 py-4 text-right transition-colors group-hover:bg-blue-100">
                                         <div className="flex justify-end space-x-2">
                                             {user.invitationStatus === 'pending' && (
                                                 <button 
-                                                    onClick={() => handleResendInvitation(user._id)}
+                                                    onClick={e => { e.stopPropagation(); handleResendInvitation(user._id); }}
                                                     className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded hover:bg-blue-200 flex items-center gap-1"
                                                     title="Reenviar invitación"
                                                 >
@@ -573,7 +576,7 @@ export const UserManagementPage: React.FC = () => {
                                                 </button>
                                             )}
                                             <button 
-                                                onClick={() => handleEditUser(user)}
+                                                onClick={e => { e.stopPropagation(); handleEditUser(user); }}
                                                 className="px-3 py-1 text-xs font-medium text-green-600 bg-green-100 rounded hover:bg-green-200 flex items-center gap-1"
                                                 title="Editar usuario"
                                             >
@@ -581,7 +584,7 @@ export const UserManagementPage: React.FC = () => {
                                                 Editar
                                             </button>
                                             <button 
-                                                onClick={() => handleDeleteUser(user)}
+                                                onClick={e => { e.stopPropagation(); handleDeleteUser(user); }}
                                                 className="px-3 py-1 text-xs font-medium text-red-600 bg-red-100 rounded hover:bg-red-200 flex items-center gap-1"
                                                 title="Eliminar usuario"
                                             >
@@ -592,33 +595,24 @@ export const UserManagementPage: React.FC = () => {
                                     </td>
                                 </tr>
                             ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
             {/* Modal de vista previa de usuario */}
             <UserPreviewModal
                 isOpen={isPreviewModalOpen}
                 onClose={() => setIsPreviewModalOpen(false)}
                 user={previewUser}
             />
-            {/* Modal de vista previa de imagen */}
-            {previewImage && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60" onClick={() => setPreviewImage(null)}>
-                    <div className="bg-white rounded-lg shadow-lg p-4 max-w-xs sm:max-w-md" onClick={e => e.stopPropagation()}>
-                        <img src={previewImage} alt="Vista previa" className="max-w-full max-h-[60vh] rounded" />
-                        <button className="block mx-auto mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onClick={() => setPreviewImage(null)}>
-                            Cerrar
-                        </button>
-                    </div>
-                </div>
-            )}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+
             <InviteUserModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onInvite={handleInviteUser}
                 loading={inviteLoading}
             />
+
             <EditUserModal
                 isOpen={isEditModalOpen}
                 onClose={() => {

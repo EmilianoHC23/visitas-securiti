@@ -19,22 +19,22 @@ const VisitCard: React.FC<{ visit: Visit; onApprove: (id: string) => void; onRej
     };
     
     return (
-        <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-securiti-blue-500">
-            <div className="flex justify-between items-start">
+    <div className="bg-white rounded-lg shadow-md p-3 border-l-4 border-securiti-blue-500 min-h-[180px] flex flex-col justify-between">
+            <div className="flex justify-between items-start gap-2">
                 <div>
-                    <p className="text-lg font-bold text-gray-800">{visit.visitorName}</p>
-                    <p className="text-sm text-gray-500">{visit.visitorCompany}</p>
+                    <p className="text-base font-bold text-gray-800 leading-tight">{visit.visitorName}</p>
+                    <p className="text-xs text-gray-500 leading-tight">{visit.visitorCompany}</p>
                 </div>
                 {getStatusBadge(visit.status)}
             </div>
-            <div className="mt-4 space-y-2 text-sm text-gray-600">
+            <div className="mt-2 space-y-1 text-xs text-gray-600">
                 <p><strong>Motivo:</strong> {visit.reason}</p>
                 <p><strong>Anfitrión:</strong> {visit.host.firstName} {visit.host.lastName}</p>
-                <p><strong>Fecha Programada:</strong> {new Date(visit.scheduledDate).toLocaleString()}</p>
+                <p><strong>Fecha:</strong> {new Date(visit.scheduledDate).toLocaleString()}</p>
                 {visit.checkInTime && <p><strong>Check-in:</strong> {visit.checkInTime}</p>}
                 {visit.checkOutTime && <p><strong>Check-out:</strong> {visit.checkOutTime}</p>}
             </div>
-             <div className="mt-4 pt-4 border-t flex space-x-2">
+             <div className="mt-3 pt-3 border-t flex space-x-2">
                 {visit.status === VisitStatus.PENDING && (
                     <>
                         <button 
@@ -247,7 +247,7 @@ export const VisitsPage: React.FC = () => {
             {loading ? (
                 <div className="text-center p-8">Cargando visitas...</div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {filteredVisits.length > 0 ? (
                         filteredVisits.map(visit => (
                             <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onReject={handleReject} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />

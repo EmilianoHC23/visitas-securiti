@@ -1,0 +1,3 @@
+[
+	{"_id":{"$oid":"68ed33f486176e649a87d38e"},"title":"Festival tecnologico","description":"Feria de tecnología y arte.","createdBy":{"$oid":"68e6b0c9479ec29123a74e7b"},"companyId":"comp-1","settings":{"autoApproval":true,"maxUses":3,"allowGuests":false,"requireApproval":false},"schedule":{"startDate":{"$date":"2025-10-15T00:00:00Z"},"endDate":{"$date":"2025-10-16T05:59:59Z"},"startTime":"10:30","endTime":"18:00","recurrence":"none"},"status":"active","usageCount":0,"invitedEmails":[],"createdAt":{"$date":"2025-10-13T17:16:36.614Z"},"updatedAt":{"$date":"2025-10-13T17:16:36.614Z"},"accessCode":"ACC_1760375796614_6IRFKU","qrCode":"QR_ACC_1760375796614_6IRFKU","__v":0}
+]

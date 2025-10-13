@@ -15,7 +15,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, collapsed }) => {
                 to={to}
                 end
                 className={({ isActive }) =>
-                    `nav-link d-flex align-items-center ${collapsed ? 'justify-content-center' : ''} px-3 py-2 ${isActive ? 'active bg-primary text-white' : 'text-dark'} border-0 w-100`
+                    `nav-link d-flex align-items-center ${collapsed ? 'justify-content-center' : ''} px-3 py-2 ${isActive ? 'active bg-logo-contrast text-white' : 'text-dark'} border-0 w-100`
                 }
                 style={collapsed ? { flexDirection: 'column', width: 56, height: 56, padding: 0, borderRadius: 8, margin: '0 auto' } : { borderRadius: 8 }}
             >

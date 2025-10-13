@@ -3,3 +3,9 @@
 body {
   font-family: 'Inter', Arial, Helvetica, sans-serif !important;
 }
+
+/* Color de fondo para el item activo del sidebar que contrasta con el logo */
+.bg-logo-contrast {
+  background-color: #232a36 !important;
+  color: #fff !important;
+}

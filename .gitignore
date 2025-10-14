@@ -50,6 +50,9 @@ visitas-securiti.zip
 # Excluir carpeta visitas-laravel
 visitas-laravel/
 
+# Ignorar backend Laravel local
+visitas-laravel-backend/
+
 # Cache directories
 .cache
 .parcel-cache

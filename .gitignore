@@ -47,6 +47,9 @@ vite.svg
 # Project specific
 visitas-securiti.zip
 
+# Excluir carpeta visitas-laravel
+visitas-laravel/
+
 # Cache directories
 .cache
 .parcel-cache

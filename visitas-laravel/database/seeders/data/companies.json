@@ -1,3 +1,0 @@
-[
-	{"_id":{"$oid":"68e6b4bd20286cc6f92fa10d"},"companyId":"comp-1","name":"Mi Empresa","logo":null,"settings":{"autoApproval":false,"requirePhoto":true,"enableSelfRegister":true,"notificationEmail":null},"isActive":true,"qrCode":"QR_comp-1_1759950013188","createdAt":{"$date":"2025-10-08T19:00:13.218Z"},"updatedAt":{"$date":"2025-10-08T19:00:13.218Z"},"__v":0}
-]

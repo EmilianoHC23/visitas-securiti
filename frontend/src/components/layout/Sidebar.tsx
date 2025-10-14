@@ -38,11 +38,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
         { to: "/visits", label: "Visitas", icon: <VisitsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
     { to: "/agenda", label: "Agenda", icon: <AgendaIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
         { to: "/users", label: "Usuarios", icon: <UsersIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
+<<<<<<< HEAD
     { to: "/access-codes", label: "Códigos de Acceso", icon: <QrIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
     { to: "/blacklist", label: "Lista Negra", icon: <BlacklistIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
         { to: "/reports", label: "Reportes", icon: <ReportsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
         { to: "/settings", label: "Configuración", icon: <SettingsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
     { to: "/settings/company", label: "Config. Empresa", icon: <CompanyIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
+=======
+        { to: "/access-codes", label: "Accesos/Eventos", icon: <SettingsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
+        { to: "/public-registration", label: "Auto-registro", icon: <VisitsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
+        { to: "/blacklist", label: "Lista Negra", icon: <UsersIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
+        { to: "/reports", label: "Reportes", icon: <ReportsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
+        { to: "/settings", label: "Configuración", icon: <SettingsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
+        { to: "/settings/company", label: "Config. Empresa", icon: <SettingsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
+        { to: "/settings/email-test", label: "Prueba Email", icon: <SettingsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
+>>>>>>> 9b9a908 (Implementación completa de Accesos/Eventos, pre-registro público, auto-registro, integración de emails y mejoras de UX. Todo el flujo listo para producción.)
     ];
 
     return (

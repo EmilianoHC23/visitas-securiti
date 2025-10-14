@@ -1,6 +1,5 @@
 const express = require('express');
 const User = require('../models/User');
-const Invitation = require('../models/Invitation');
 const { auth, authorize } = require('../middleware/auth');
 
 const router = express.Router();
@@ -117,51 +116,29 @@ router.put('/:id', auth, authorize('admin'), async (req, res) => {
   }
 });
 
-// Delete/Deactivate user (Admin only)
+// Deactivate user (Admin only)
 router.delete('/:id', auth, authorize('admin'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { force } = req.query; // force=true para eliminación completa
 
-    // Don't allow admin to delete/deactivate themselves
+    // Don't allow admin to deactivate themselves
     if (id === req.user._id.toString()) {
-      return res.status(400).json({ message: 'No puedes eliminar tu propia cuenta' });
+      return res.status(400).json({ message: 'No puedes desactivar tu propia cuenta' });
     }
 
-    const user = await User.findById(id);
+    const user = await User.findByIdAndUpdate(
+      id,
+      { isActive: false },
+      { new: true }
+    );
+
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    // Si se solicita eliminación completa (force=true)
-    if (force === 'true') {
-      // Verificar si el usuario tiene invitaciones pendientes
-      const pendingInvitation = await Invitation.findOne({
-        email: user.email,
-        status: 'pending',
-        expiresAt: { $gt: new Date() }
-      });
-
-      if (pendingInvitation) {
-        return res.status(400).json({ 
-          message: 'No se puede eliminar el usuario porque tiene una invitación pendiente activa' 
-        });
-      }
-
-      // Eliminar completamente el usuario
-      await User.findByIdAndDelete(id);
-      console.log(`🗑️ User completely deleted: ${user.email} (${user._id})`);
-      
-      res.json({ message: 'Usuario eliminado completamente del sistema' });
-    } else {
-      // Desactivación normal (comportamiento actual)
-      await User.findByIdAndUpdate(id, { isActive: false }, { new: true });
-      console.log(`🚫 User deactivated: ${user.email} (${user._id})`);
-      
-      res.json({ message: 'Usuario desactivado exitosamente' });
-    }
+    res.json({ message: 'Usuario desactivado exitosamente' });
   } catch (error) {
-    console.error('Delete/Deactivate user error:', error);
+    console.error('Deactivate user error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

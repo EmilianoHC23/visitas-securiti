@@ -1,4 +1,22 @@
+<<<<<<< HEAD
 
+=======
+// Asignar recurso (tarjeta/acceso) a una visita
+export const updateVisitAccess = async (visitId, accessId) => {
+  return apiRequest(`/visits/${visitId}/access`, {
+    method: 'PUT',
+    body: JSON.stringify({ accessId }),
+  });
+};
+// Obtener eventos/accesos para agenda (unificados)
+export const getAgendaEvents = async () => {
+  // Se puede combinar visitas y accesos si el backend lo soporta, aquí solo ejemplo de accesos
+  const accesses = await getAccesses();
+  // Si hay endpoint de eventos, se puede agregar aquí
+  // const events = await getEvents();
+  return { events: accesses };
+};
+>>>>>>> 9b9a908 (Implementación completa de Accesos/Eventos, pre-registro público, auto-registro, integración de emails y mejoras de UX. Todo el flujo listo para producción.)
 import { User, Visit, VisitStatus, Company, Blacklist, Access } from '../types';
 
 // Eliminar completamente un usuario (force delete)
@@ -94,15 +112,18 @@ export const getMe = async (): Promise<User> => {
 
 // --- VISITAS ---
 export const getVisits = async (filters?: { 
-  status?: VisitStatus; 
-  date?: string; 
-  hostId?: string; 
-}): Promise<Visit[]> => {
+  status?: VisitStatus;
+  date?: string;
+  hostId?: string;
+  limit?: number;
+  page?: number;
+}): Promise<{ visits: Visit[]; meta: any }> => {
   const params = new URLSearchParams();
   if (filters?.status) params.append('status', filters.status);
   if (filters?.date) params.append('date', filters.date);
   if (filters?.hostId) params.append('hostId', filters.hostId);
-  
+  if (filters?.limit) params.append('limit', filters.limit.toString());
+  if (filters?.page) params.append('page', filters.page.toString());
   const queryString = params.toString();
   return apiRequest(`/visits${queryString ? `?${queryString}` : ''}`);
 };
@@ -139,10 +160,12 @@ export const selfRegisterVisit = async (visitData: {
   });
 };
 
-export const updateVisitStatus = async (visitId: string, status: VisitStatus): Promise<Visit> => {
+export const updateVisitStatus = async (visitId: string, status: VisitStatus, reason?: string): Promise<Visit> => {
+  const body: any = { status };
+  if (reason) body.reason = reason;
   return apiRequest(`/visits/${visitId}/status`, {
     method: 'PUT',
-    body: JSON.stringify({ status }),
+    body: JSON.stringify(body),
   });
 };
 
@@ -173,6 +196,10 @@ export const checkInVisit = async (visitId: string): Promise<Visit> => {
 
 export const checkOutVisit = async (visitId: string, photos: string[] = []): Promise<{ visit: Visit; elapsedMs: number | null }> => {
   return apiRequest(`/visits/checkout/${visitId}`, { method: 'POST', body: JSON.stringify({ photos }) });
+};
+
+export const checkoutWithQR = async (qrToken: string): Promise<{ message: string; visit: Visit }> => {
+  return apiRequest('/visits/scan-qr', { method: 'POST', body: JSON.stringify({ qrToken }) });
 };
 
 export const getAgenda = async (params: { from?: string; to?: string; hostId?: string; q?: string } = {}) => {
@@ -445,4 +472,8 @@ export const deleteInvitation = async (userId: string) => {
 // Función de prueba para verificar configuración SMTP
 export const testSMTPConfig = async () => {
   return apiRequest('/invitations/test-smtp');
+};
+
+export const getVisitDetails = async (visitId: string): Promise<{ visit: Visit; events: any[] }> => {
+  return apiRequest(`/visits/${visitId}`);
 };

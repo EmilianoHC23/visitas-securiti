@@ -5,7 +5,7 @@ import * as api from '../services/api';
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -35,10 +35,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     checkUser();
   }, []);
 
-  const login = useCallback(async (username: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
     try {
-      const { token, user: loggedInUser } = await api.login(username, password);
+      const { token, user: loggedInUser } = await api.login(email, password);
       localStorage.setItem('securitiToken', token);
       setUser(loggedInUser);
     } catch (error) {

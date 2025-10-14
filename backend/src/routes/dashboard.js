@@ -41,11 +41,8 @@ router.get('/stats', auth, async (req, res) => {
       // Pending visits today
       Visit.countDocuments({ ...todayFilter, status: 'pending' }),
       
-      // Response received visits today (approved + rejected)
-      Visit.countDocuments({ 
-        ...todayFilter, 
-        status: { $in: ['approved', 'rejected'] } 
-      }),
+      // Approved visits today
+      Visit.countDocuments({ ...todayFilter, status: 'approved' }),
       
       // Checked-in visits today
       Visit.countDocuments({ ...todayFilter, status: 'checked-in' }),

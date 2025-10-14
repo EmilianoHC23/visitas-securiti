@@ -112,12 +112,15 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
     const [hostId, setHostId] = useState('');
     const [visitorEmail, setVisitorEmail] = useState('');
     const [photo, setPhoto] = useState<string | null>(null);
-    const [photoError, setPhotoError] = useState('');
-    const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+    const [qrCode, setQrCode] = useState('');
+    const [hasQrInvitation, setHasQrInvitation] = useState(false);
     const videoRef = React.useRef<HTMLVideoElement | null>(null);
     const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
+    const qrScannerRef = React.useRef<HTMLVideoElement | null>(null);
     const [isCameraOn, setIsCameraOn] = useState(false);
+    const [isQrScannerOn, setIsQrScannerOn] = useState(false);
     const [stream, setStream] = useState<MediaStream | null>(null);
+    const [qrStream, setQrStream] = useState<MediaStream | null>(null);
 
     const startCamera = async () => {
         try {
@@ -152,38 +155,71 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
             ctx.drawImage(video, 0, 0);
             const dataURL = canvas.toDataURL('image/jpeg', 0.8);
             setPhoto(dataURL);
-            setPhotoError('');
+            stopCamera();
         }
     };
 
-    const handleFile = async (files: FileList | null) => {
-        if (!files || files.length === 0) return;
-        const file = files[0];
-        const reader = new FileReader();
-        reader.onload = () => {
-            setPhoto(reader.result as string);
-            setPhotoError('');
-        };
-        reader.onerror = () => setPhotoError('Error al leer la foto');
-        reader.readAsDataURL(file);
+    const startQrScanner = async () => {
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment' } 
+            });
+            setQrStream(mediaStream);
+            if (qrScannerRef.current) {
+                qrScannerRef.current.srcObject = mediaStream;
+                qrScannerRef.current.play();
+            }
+            setIsQrScannerOn(true);
+        } catch (error) {
+            alert('No se pudo acceder a la cámara para escanear QR. Ingresa el código manualmente.');
+        }
     };
+
+    const stopQrScanner = () => {
+        if (qrStream) {
+            qrStream.getTracks().forEach(track => track.stop());
+            setQrStream(null);
+        }
+        setIsQrScannerOn(false);
+    };
+
+    React.useEffect(() => {
+        return () => {
+            stopCamera();
+            stopQrScanner();
+        };
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!photo) {
-            setPhotoError('La foto es obligatoria');
-            return;
-        }
         if (!visitorEmail) {
             return;
         }
         try {
             // Usar fecha/hora actual para visitas espontáneas
             const scheduledDate = new Date().toISOString();
-            await api.createVisit({ visitorName, visitorCompany, reason, hostId, scheduledDate, destination, visitorEmail, visitorPhoto: photo });
+            await api.createVisit({ 
+                visitorName, 
+                visitorCompany, 
+                reason, 
+                hostId, 
+                scheduledDate, 
+                destination, 
+                visitorEmail, 
+                visitorPhoto: photo || undefined,
+                qrToken: qrCode || undefined
+            });
             onSave();
             onClose();
+            // Reset form
             setPhoto(null);
+            setQrCode('');
+            setHasQrInvitation(false);
+            setVisitorName('');
+            setVisitorCompany('');
+            setVisitorEmail('');
+            setReason('');
+            setHostId('');
         } catch (error) {
             console.error("Failed to create visit:", error);
         }
@@ -193,48 +229,177 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-            <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+            <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
                 <h2 className="text-xl font-bold mb-6">Registrar Nueva Visita</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <input type="text" placeholder="Nombre del Visitante" value={visitorName} onChange={e => setVisitorName(e.target.value)} className="w-full p-2 border rounded" required />
-                    <input type="text" placeholder="Empresa del Visitante (opcional)" value={visitorCompany} onChange={e => setVisitorCompany(e.target.value)} className="w-full p-2 border rounded" />
-                    <input type="email" placeholder="Email del Visitante" value={visitorEmail} onChange={e => setVisitorEmail(e.target.value)} className="w-full p-2 border rounded" required />
-                    <input type="text" placeholder="Destino (opcional)" value={destination} onChange={e => setDestination(e.target.value)} className="w-full p-2 border rounded" />
-                    <textarea placeholder="Motivo de la visita" value={reason} onChange={e => setReason(e.target.value)} className="w-full p-2 border rounded" required />
-                    <select value={hostId} onChange={e => setHostId(e.target.value)} className="w-full p-2 border rounded bg-white" required>
-                        <option value="" disabled>Seleccionar Anfitrión</option>
+                    
+                    {/* Opción: ¿Tiene QR de invitación? */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                checked={hasQrInvitation}
+                                onChange={(e) => {
+                                    setHasQrInvitation(e.target.checked);
+                                    if (!e.target.checked) {
+                                        setQrCode('');
+                                        stopQrScanner();
+                                    }
+                                }}
+                                className="w-4 h-4"
+                            />
+                            <span className="text-sm font-medium text-gray-700">El visitante tiene QR de invitación</span>
+                        </label>
+                    </div>
+
+                    {/* Campo QR (solo si tiene invitación) */}
+                    {hasQrInvitation && (
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                            <label className="block font-medium mb-2 text-sm">Código QR de Invitación</label>
+                            <div className="space-y-2">
+                                <input 
+                                    type="text" 
+                                    placeholder="Ingresa el código QR manualmente" 
+                                    value={qrCode}
+                                    onChange={e => setQrCode(e.target.value)}
+                                    className="w-full p-2 border rounded text-sm"
+                                />
+                                <button 
+                                    type="button" 
+                                    onClick={isQrScannerOn ? stopQrScanner : startQrScanner}
+                                    className={`w-full px-3 py-2 rounded text-sm font-medium ${
+                                        isQrScannerOn 
+                                            ? 'bg-red-600 hover:bg-red-700 text-white' 
+                                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                    }`}
+                                >
+                                    {isQrScannerOn ? '✕ Cerrar escáner QR' : '📷 Escanear código QR'}
+                                </button>
+                                {isQrScannerOn && (
+                                    <div className="mt-2">
+                                        <video ref={qrScannerRef} width="100%" autoPlay className="rounded border" />
+                                        <p className="text-xs text-gray-500 mt-1">Enfoca el código QR para escanearlo</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Foto del visitante (OPCIONAL - primero en el formulario) */}
+                    <div>
+                        <label className="block font-medium mb-2 text-sm">Foto del visitante (opcional)</label>
+                        <div className="space-y-2">
+                            <button 
+                                type="button" 
+                                className={`w-full px-3 py-2 rounded text-sm font-medium ${
+                                    isCameraOn 
+                                        ? 'bg-red-600 hover:bg-red-700 text-white' 
+                                        : 'bg-securiti-blue-600 hover:bg-securiti-blue-700 text-white'
+                                }`}
+                                onClick={isCameraOn ? stopCamera : startCamera}
+                            >
+                                {isCameraOn ? '✕ Cerrar cámara' : '📷 Tomar foto'}
+                            </button>
+                            
+                            {isCameraOn && (
+                                <div className="border rounded-lg p-3 bg-gray-50">
+                                    <video ref={videoRef} width="100%" autoPlay className="rounded mb-2" />
+                                    <canvas ref={canvasRef} style={{ display: 'none' }} />
+                                    <button 
+                                        type="button" 
+                                        className="w-full px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
+                                        onClick={capturePhoto}
+                                    >
+                                        ✓ Capturar foto
+                                    </button>
+                                </div>
+                            )}
+                            
+                            {photo && !isCameraOn && (
+                                <div className="border rounded-lg p-3 bg-gray-50">
+                                    <img src={photo} alt="Foto visitante" className="w-full h-48 object-cover rounded mb-2" />
+                                    <button 
+                                        type="button" 
+                                        className="w-full px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                                        onClick={() => setPhoto(null)}
+                                    >
+                                        🗑 Eliminar foto
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Campos del formulario */}
+                    <input 
+                        type="text" 
+                        placeholder="Nombre del Visitante *" 
+                        value={visitorName} 
+                        onChange={e => setVisitorName(e.target.value)} 
+                        className="w-full p-2 border rounded" 
+                        required 
+                    />
+                    
+                    <input 
+                        type="text" 
+                        placeholder="Empresa del Visitante (opcional)" 
+                        value={visitorCompany} 
+                        onChange={e => setVisitorCompany(e.target.value)} 
+                        className="w-full p-2 border rounded" 
+                    />
+                    
+                    <input 
+                        type="email" 
+                        placeholder="Email del Visitante *" 
+                        value={visitorEmail} 
+                        onChange={e => setVisitorEmail(e.target.value)} 
+                        className="w-full p-2 border rounded" 
+                        required 
+                    />
+                    
+                    <input 
+                        type="text" 
+                        placeholder="Destino (opcional)" 
+                        value={destination} 
+                        onChange={e => setDestination(e.target.value)} 
+                        className="w-full p-2 border rounded" 
+                    />
+                    
+                    <textarea 
+                        placeholder="Motivo de la visita *" 
+                        value={reason} 
+                        onChange={e => setReason(e.target.value)} 
+                        className="w-full p-2 border rounded" 
+                        rows={3}
+                        required 
+                    />
+                    
+                    <select 
+                        value={hostId} 
+                        onChange={e => setHostId(e.target.value)} 
+                        className="w-full p-2 border rounded bg-white" 
+                        required
+                    >
+                        <option value="" disabled>Seleccionar Anfitrión *</option>
                         {hosts.map(host => (
                             <option key={host._id} value={host._id}>{host.firstName} {host.lastName}</option>
                         ))}
                     </select>
 
-                    <div>
-                        <label className="block font-medium mb-1">Foto del visitante <span className="text-red-500">*</span></label>
-                        <div className="flex gap-2 mb-2">
-                            <button type="button" className="px-2 py-1 bg-securiti-blue-600 text-white rounded" onClick={startCamera}>Usar cámara</button>
-                            <button type="button" className="px-2 py-1 bg-securiti-blue-600 text-white rounded" onClick={() => fileInputRef.current?.click()}>Subir archivo</button>
-                            <input type="file" accept="image/*" ref={fileInputRef} style={{ display: 'none' }} onChange={e => handleFile(e.target.files)} />
-                        </div>
-                        {isCameraOn && (
-                            <div className="mb-2">
-                                <video ref={videoRef} width={240} height={180} autoPlay className="rounded border" />
-                                <canvas ref={canvasRef} style={{ display: 'none' }} />
-                                <button type="button" className="mt-2 px-2 py-1 bg-green-600 text-white rounded" onClick={capturePhoto}>Capturar foto</button>
-                                <button type="button" className="ml-2 px-2 py-1 bg-gray-400 text-white rounded" onClick={stopCamera}>Cerrar cámara</button>
-                            </div>
-                        )}
-                        {photo && (
-                            <div className="mb-2">
-                                <img src={photo} alt="Foto visitante" className="w-32 h-32 object-cover rounded border" />
-                                <button type="button" className="mt-2 px-2 py-1 bg-red-500 text-white rounded" onClick={() => setPhoto(null)}>Eliminar foto</button>
-                            </div>
-                        )}
-                        {photoError && <p className="text-red-500 text-xs">{photoError}</p>}
-                    </div>
-
-                    <div className="flex justify-end space-x-4 pt-4">
-                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 bg-securiti-blue-600 text-white rounded">Guardar</button>
+                    <div className="flex justify-end space-x-4 pt-4 border-t">
+                        <button 
+                            type="button" 
+                            onClick={onClose} 
+                            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                        >
+                            Cancelar
+                        </button>
+                        <button 
+                            type="submit" 
+                            className="px-4 py-2 bg-securiti-blue-600 text-white rounded hover:bg-securiti-blue-700"
+                        >
+                            Guardar
+                        </button>
                     </div>
                 </form>
             </div>

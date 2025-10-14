@@ -134,6 +134,7 @@ export const createVisit = async (visitData: {
   visitorEmail?: string;
   visitorPhone?: string;
   visitorPhoto?: string;
+  qrToken?: string;
 }): Promise<Visit> => {
   return apiRequest('/visits', {
     method: 'POST',

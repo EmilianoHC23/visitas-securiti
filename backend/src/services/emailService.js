@@ -162,151 +162,325 @@ class EmailService {
 
   async sendVisitorNotificationEmail(data) {
     if (!this.isEnabled()) {
-      console.log('📧 Email service disabled - would send visitor notification to:', data.visitorEmail);
+      console.log('Email service disabled - would send visitor notification to:', data.visitorEmail);
       return { success: false, error: 'Email service not configured' };
     }
 
     if (!data.visitorEmail) {
-      console.log('📧 No visitor email provided, skipping notification');
+      console.log('No visitor email provided, skipping notification');
       return { success: false, error: 'No visitor email' };
     }
 
-    // Logo de la empresa (puedes usar una variable o URL fija)
-    const COMPANY_LOGO_URL = process.env.COMPANY_LOGO_URL || 'https://securiti.mx/logo.png';
+    const COMPANY_LOGO_URL = process.env.COMPANY_LOGO_URL || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png`;
 
     try {
       const isApproved = data.status === 'approved';
       const statusText = isApproved ? 'APROBADA' : 'RECHAZADA';
+      const primaryColor = '#1e3a8a'; // Azul oscuro SecuriTI
+      const accentColor = '#f97316'; // Naranja SecuriTI
       const statusColor = isApproved ? '#10b981' : '#ef4444';
-      const statusIcon = isApproved ? '✅' : '❌';
 
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
         to: data.visitorEmail,
-        subject: `${statusIcon} Tu visita ha sido ${statusText.toLowerCase()} - ${data.companyName}`,
+        subject: `Tu visita ha sido ${statusText.toLowerCase()} - ${data.companyName}`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto;">
-            <div style="background: ${statusColor}; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
-              <h1 style="margin: 0; font-size: 24px;">${statusIcon} Visita ${statusText}</h1>
-            </div>
-            
-            <div style="background: white; padding: 20px; border: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
-              <div style="text-align:center; padding: 16px 0;">
-                <img src="${COMPANY_LOGO_URL}" alt="Logo ${data.companyName}" style="height: 48px;" />
-              </div>
-              <p style="font-size: 18px; color: #1f2937;">Hola, ${data.visitorName}</p>
-              
-              ${isApproved ? `
-                <p style="font-size: 16px; line-height: 1.6; color: #4b5563;">
-                  ¡Excelentes noticias! Tu visita a <strong>${data.companyName}</strong> ha sido <span style="color: ${statusColor}; font-weight: bold;">aprobada</span>.
-                </p>
-                <div style="background: #f0fdf4; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin: 20px 0;">
-                  <h3 style="margin-top: 0; color: #065f46;">Detalles de tu visita:</h3>
-                  <p><strong>Anfitrión:</strong> ${data.hostName}</p>
-                  <p><strong>Fecha:</strong> ${new Date(data.scheduledDate).toLocaleString('es-ES')}</p>
-                  <p><strong>Motivo:</strong> ${data.reason}</p>
-                  <p><strong>Destino:</strong> ${data.destination || 'SecurITI'}</p>
-                </div>
-                
-                <!-- Código QR para check-in rápido -->
-                <div style="background: #f9fafb; border: 2px solid #10b981; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
-                  <h3 style="margin-top: 0; color: #065f46;">Tu Pase de Visita</h3>
-                  <p style="font-size: 14px; color: #4b5563; margin-bottom: 16px;">Presenta este código QR en recepción para un check-in rápido</p>
-                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(JSON.stringify({ visitId: data.visitId, type: 'visit-checkin' }))}" 
-                       alt="Código QR de visita" 
-                       style="width: 200px; height: 200px; margin: 0 auto; display: block; border: 1px solid #e5e7eb; border-radius: 8px;" />
-                  <p style="font-size: 12px; color: #6b7280; margin-top: 12px;">ID de Visita: ${data.visitId}</p>
-                </div>
-                
-                <p><strong>Próximos pasos:</strong></p>
-                <ul>
-                  <li>Llega 10 minutos antes de tu hora programada</li>
-                  <li>Trae una identificación válida</li>
-                  <li>Presenta tu código QR en recepción para el check-in</li>
-                </ul>
-              ` : `
-                <p style="font-size: 16px; line-height: 1.6; color: #4b5563;">
-                  Lamentamos informarte que tu visita a <strong>${data.companyName}</strong> ha sido <span style="color: ${statusColor}; font-weight: bold;">rechazada</span>.
-                </p>
-                <div style="background: #fef2f2; border: 1px solid #ef4444; border-radius: 8px; padding: 16px; margin: 20px 0;">
-                  <p><strong>Motivo de la visita:</strong> ${data.reason}</p>
-                  <p><strong>Fecha solicitada:</strong> ${new Date(data.scheduledDate).toLocaleString('es-ES')}</p>
-                </div>
-                <p>Si tienes preguntas, puedes contactar directamente con ${data.hostName} o intentar programar una nueva visita.</p>
-              `}
-              
-              <div style="color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
-                Sistema de Gestión de Visitas - ${data.companyName}
-              </div>
-            </div>
-          </div>
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: Arial, sans-serif;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 20px 0;">
+              <tr>
+                <td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
+                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 60px; margin-bottom: 20px;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Visita ${statusText}</h1>
+                      </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                      <td style="padding: 40px 30px;">
+                        <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hola, <strong>${data.visitorName}</strong></p>
+                        
+                        ${isApproved ? `
+                          <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin: 0 0 25px 0;">
+                            Excelentes noticias. Tu solicitud de visita a <strong>${data.companyName}</strong> ha sido <strong style="color: ${statusColor};">aprobada</strong>.
+                          </p>
+                          
+                          <!-- Visit Details Card -->
+                          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0fdf4; border-left: 4px solid ${statusColor}; border-radius: 8px; margin: 25px 0;">
+                            <tr>
+                              <td style="padding: 20px;">
+                                <h3 style="color: #065f46; margin: 0 0 15px 0; font-size: 18px;">Detalles de tu Visita</h3>
+                                <table width="100%" cellpadding="5" cellspacing="0">
+                                  <tr>
+                                    <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Anfitrión:</strong></td>
+                                    <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${data.hostName}</td>
+                                  </tr>
+                                  <tr>
+                                    <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Fecha:</strong></td>
+                                    <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${new Date(data.scheduledDate).toLocaleString('es-ES', { 
+                                      weekday: 'long', 
+                                      year: 'numeric', 
+                                      month: 'long', 
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}</td>
+                                  </tr>
+                                  <tr>
+                                    <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Motivo:</strong></td>
+                                    <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${data.reason}</td>
+                                  </tr>
+                                  <tr>
+                                    <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Destino:</strong></td>
+                                    <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${data.destination || 'SecurITI'}</td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                          
+                          <!-- QR Code Card -->
+                          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border: 2px solid ${primaryColor}; border-radius: 8px; margin: 25px 0;">
+                            <tr>
+                              <td style="padding: 30px; text-align: center;">
+                                <h3 style="color: ${primaryColor}; margin: 0 0 15px 0; font-size: 20px;">Tu Pase de Visita</h3>
+                                <p style="font-size: 14px; color: #4b5563; margin: 0 0 20px 0;">Presenta este código QR en recepción</p>
+                                <div style="background-color: #ffffff; padding: 15px; display: inline-block; border-radius: 8px;">
+                                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(JSON.stringify({ visitId: data.visitId, type: 'visit-checkin' }))}" 
+                                       alt="Código QR de visita" 
+                                       style="width: 200px; height: 200px; display: block;" />
+                                </div>
+                                <p style="font-size: 12px; color: #6b7280; margin: 15px 0 0 0;">ID: ${data.visitId}</p>
+                              </td>
+                            </tr>
+                          </table>
+                          
+                          <!-- Instructions -->
+                          <div style="background-color: #fef3c7; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                            <h4 style="color: #92400e; margin: 0 0 12px 0; font-size: 16px;">Instrucciones Importantes</h4>
+                            <ul style="color: #78350f; margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.8;">
+                              <li>Llega 10 minutos antes de tu hora programada</li>
+                              <li>Trae una identificación oficial vigente</li>
+                              <li>Presenta tu código QR en recepción para check-in rápido</li>
+                            </ul>
+                          </div>
+                        ` : `
+                          <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin: 0 0 25px 0;">
+                            Lamentamos informarte que tu solicitud de visita a <strong>${data.companyName}</strong> ha sido <strong style="color: ${statusColor};">rechazada</strong>.
+                          </p>
+                          
+                          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef2f2; border-left: 4px solid ${statusColor}; border-radius: 8px; margin: 25px 0;">
+                            <tr>
+                              <td style="padding: 20px;">
+                                <h3 style="color: #991b1b; margin: 0 0 15px 0; font-size: 18px;">Detalles de la Solicitud</h3>
+                                <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Motivo:</strong> ${data.reason}</p>
+                                <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Fecha solicitada:</strong> ${new Date(data.scheduledDate).toLocaleString('es-ES')}</p>
+                              </td>
+                            </tr>
+                          </table>
+                          
+                          <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+                            Si tienes preguntas sobre esta decisión, puedes contactar directamente con <strong>${data.hostName}</strong> o intentar programar una nueva visita.
+                          </p>
+                        `}
+                      </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+                        <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
+                          Este es un mensaje automático del Sistema de Gestión de Visitas<br>
+                          <strong>${data.companyName}</strong>
+                        </p>
+                      </td>
+                    </tr>
+                    
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
         `
       };
 
       const result = await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Visitor notification email sent to: ${data.visitorEmail} (${statusText})`);
+      console.log(`Visitor notification email sent to: ${data.visitorEmail} (${statusText})`);
       return { success: true, messageId: result.messageId };
     } catch (error) {
-      console.error('❌ Error sending visitor notification email:', error);
+      console.error('Error sending visitor notification email:', error);
       return { success: false, error: error.message };
     }
   }
 
   async sendApprovalRequestEmail(data) {
     if (!this.isEnabled()) {
-      console.log('📧 Email service disabled - would send approval request to host:', data.hostEmail);
-      console.log('🔗 Approve URL:', data.approveUrl);
-      console.log('🔗 Reject URL:', data.rejectUrl);
+      console.log('Email service disabled - would send approval request to host:', data.hostEmail);
+      console.log('Approve URL:', data.approveUrl);
+      console.log('Reject URL:', data.rejectUrl);
       return { success: false, error: 'Email service not configured' };
     }
 
-    // Logo de la empresa (puedes usar una variable o URL fija)
-    const COMPANY_LOGO_URL = process.env.COMPANY_LOGO_URL || 'https://securiti.mx/logo.png';
+    const COMPANY_LOGO_URL = process.env.COMPANY_LOGO_URL || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png`;
+    const primaryColor = '#1e3a8a';
+    const accentColor = '#f97316';
 
     try {
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
         to: data.hostEmail,
-        subject: `Solicitud de visita - ${data.companyName}`,
+        subject: `Nueva solicitud de visita de ${data.visitorName}`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto;">
-            <div style="text-align:center; padding: 24px 0;">
-              <img src="${COMPANY_LOGO_URL}" alt="Logo ${data.companyName}" style="height: 48px; margin-bottom: 8px;" />
-            </div>
-            <h2 style="color:#111827; text-align: center;">Solicitud de aprobación de visita</h2>
-            <p style="text-align: center;">Tienes una solicitud de visita:</p>
-            <ul style="list-style: none; padding: 0; margin: 0;">
-              <li style="margin-bottom: 8px;"><strong>Nombre:</strong> ${data.visitorName}</li>
-              <li style="margin-bottom: 8px;"><strong>Empresa:</strong> ${data.visitorCompany || 'No especificada'}</li>
-              <li style="margin-bottom: 8px;"><strong>Razón:</strong> ${data.reason}</li>
-              <li style="margin-bottom: 8px;"><strong>Fecha:</strong> ${new Date(data.scheduledDate).toLocaleString('es-ES')}</li>
-            </ul>
-            ${data.visitorPhoto ? `<div style="text-align: center; margin: 16px 0;"><img src="${data.visitorPhoto}" alt="Foto del visitante" style="max-width: 240px; border-radius: 8px;"/></div>` : ''}
-            <div style="display: flex; justify-content: center; gap: 8px; margin: 24px 0;">
-              <a href="${data.approveUrl}" style="background:#10b981;color:white;padding:12px 16px;border-radius:8px;text-decoration:none;">Aprobar</a>
-              <a href="${data.rejectUrl}" style="background:#ef4444;color:white;padding:12px 16px;border-radius:8px;text-decoration:none;">Rechazar</a>
-            </div>
-          </div>
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: Arial, sans-serif;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 20px 0;">
+              <tr>
+                <td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
+                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 60px; margin-bottom: 20px;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Nueva Solicitud de Visita</h1>
+                      </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                      <td style="padding: 40px 30px;">
+                        <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hola, <strong>${data.hostName}</strong></p>
+                        
+                        <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin: 0 0 25px 0;">
+                          <strong>${data.visitorName}</strong> ha solicitado visitarte. Por favor revisa los detalles y responde a la solicitud.
+                        </p>
+                        
+                        <!-- Visitor Details Card -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border-left: 4px solid ${primaryColor}; border-radius: 8px; margin: 25px 0;">
+                          <tr>
+                            <td style="padding: 25px;">
+                              <h3 style="color: ${primaryColor}; margin: 0 0 15px 0; font-size: 18px;">Información del Visitante</h3>
+                              <table width="100%" cellpadding="5" cellspacing="0">
+                                <tr>
+                                  <td style="color: #4b5563; font-size: 14px; padding: 8px 0; width: 40%;"><strong>Nombre:</strong></td>
+                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${data.visitorName}</td>
+                                </tr>
+                                ${data.visitorCompany ? `
+                                <tr>
+                                  <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Empresa:</strong></td>
+                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${data.visitorCompany}</td>
+                                </tr>
+                                ` : ''}
+                                <tr>
+                                  <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Fecha solicitada:</strong></td>
+                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${new Date(data.scheduledDate).toLocaleString('es-ES', { 
+                                    weekday: 'long', 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}</td>
+                                </tr>
+                                <tr>
+                                  <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Motivo:</strong></td>
+                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${data.reason}</td>
+                                </tr>
+                              </table>
+                              ${data.visitorPhoto ? `
+                              <div style="text-align: center; margin-top: 20px;">
+                                <img src="${data.visitorPhoto}" alt="Foto del visitante" style="max-width: 200px; border-radius: 8px; border: 2px solid #e5e7eb;"/>
+                              </div>
+                              ` : ''}
+                            </td>
+                          </tr>
+                        </table>
+                        
+                        <!-- Action Buttons -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="margin: 35px 0;">
+                          <tr>
+                            <td align="center">
+                              <table cellpadding="0" cellspacing="0">
+                                <tr>
+                                  <td style="padding: 0 10px;">
+                                    <a href="${data.approveUrl}" 
+                                       style="background: #10b981; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px; display: inline-block; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);">
+                                      Aprobar Visita
+                                    </a>
+                                  </td>
+                                  <td style="padding: 0 10px;">
+                                    <a href="${data.rejectUrl}" 
+                                       style="background: #ef4444; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px; display: inline-block; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);">
+                                      Rechazar Visita
+                                    </a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                        
+                        <div style="background-color: #fef3c7; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 15px; margin: 25px 0;">
+                          <p style="color: #78350f; margin: 0; font-size: 14px; line-height: 1.6;">
+                            <strong>Recordatorio:</strong> Por favor responde a esta solicitud lo antes posible para que el visitante pueda planificar su visita adecuadamente.
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+                        <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
+                          Este es un mensaje automático del Sistema de Gestión de Visitas<br>
+                          <strong>${data.companyName}</strong>
+                        </p>
+                      </td>
+                    </tr>
+                    
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
         `
       };
 
       const result = await this.transporter.sendMail(mailOptions);
-      console.log('✅ Approval request email sent to host:', data.hostEmail);
+      console.log('Approval request email sent to host:', data.hostEmail);
       return { success: true, messageId: result.messageId };
     } catch (error) {
-      console.error('❌ Error sending approval email:', error);
+      console.error('Error sending approval email:', error);
       return { success: false, error: error.message };
     }
   }
 
   async sendInvitationEmail(invitationData) {
     if (!this.isEnabled()) {
-      console.log('📧 Email service disabled - would send invitation to:', invitationData.email);
+      console.log('Email service disabled - would send invitation to:', invitationData.email);
       return { success: false, error: 'Email service not configured' };
     }
 
-    // Logo de la empresa (puedes usar una variable o URL fija)
-    const COMPANY_LOGO_URL = process.env.COMPANY_LOGO_URL || 'https://securiti.mx/logo.png';
+    const COMPANY_LOGO_URL = process.env.COMPANY_LOGO_URL || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png`;
+    const primaryColor = '#1e3a8a';
+    const accentColor = '#f97316';
 
     try {
       const registrationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register/user?token=${invitationData.token}`;
@@ -316,115 +490,209 @@ class EmailService {
         to: invitationData.email,
         subject: `Invitación para unirte a ${invitationData.companyName} - Visitas SecuriTI`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-              <h1 style="margin: 0; font-size: 28px;">¡Has sido invitado!</h1>
-              <p style="margin: 10px 0 0 0; opacity: 0.9;">Únete al sistema de gestión de visitas</p>
-            </div>
-
-            <div style="background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 12px 12px;">
-              <div style="text-align:center; padding: 16px 0;">
-                <img src="${COMPANY_LOGO_URL}" alt="Logo ${invitationData.companyName}" style="height: 48px;" />
-              </div>
-              <p style="font-size: 18px; color: #1f2937;">Hola,</p>
-
-              <p style="font-size: 16px; line-height: 1.6; color: #4b5563;">
-                Has sido invitado a unirte al sistema de gestión de visitas de <strong>${invitationData.companyName}</strong>.
-                Tu rol asignado será: <strong>${invitationData.role}</strong>.
-              </p>
-
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${registrationUrl}"
-                   style="background: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);">
-                  Completar Registro
-                </a>
-              </div>
-
-              <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                <p style="margin: 0; color: #92400e; font-size: 14px;">
-                  <strong>⚠️ Importante:</strong> Este enlace expirará en 7 días por razones de seguridad.
-                  Si el enlace no funciona, copia y pega esta URL en tu navegador:
-                </p>
-                <p style="margin: 10px 0 0 0; word-break: break-all; color: #92400e; font-family: monospace; font-size: 12px;">
-                  ${registrationUrl}
-                </p>
-              </div>
-
-              <p style="color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
-                Si no esperabas esta invitación, puedes ignorar este email de forma segura.
-              </p>
-
-              <p style="color: #6b7280; font-size: 14px; text-align: center;">
-                Sistema de Gestión de Visitas - SecuriTI
-              </p>
-            </div>
-          </div>
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: Arial, sans-serif;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 20px 0;">
+              <tr>
+                <td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
+                        <img src="${COMPANY_LOGO_URL}" alt="${invitationData.companyName}" style="max-height: 60px; margin-bottom: 20px;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Has sido invitado</h1>
+                        <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Únete al sistema de gestión de visitas</p>
+                      </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                      <td style="padding: 40px 30px;">
+                        <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hola,</p>
+                        
+                        <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin: 0 0 25px 0;">
+                          Has sido invitado a unirte al sistema de gestión de visitas de <strong>${invitationData.companyName}</strong>.
+                        </p>
+                        
+                        <!-- Role Card -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border-left: 4px solid ${primaryColor}; border-radius: 8px; margin: 25px 0;">
+                          <tr>
+                            <td style="padding: 20px;">
+                              <p style="color: #4b5563; font-size: 14px; margin: 0 0 8px 0;"><strong>Tu rol asignado:</strong></p>
+                              <p style="color: ${primaryColor}; font-size: 18px; font-weight: 600; margin: 0;">${invitationData.role}</p>
+                            </td>
+                          </tr>
+                        </table>
+                        
+                        <!-- CTA Button -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="margin: 35px 0;">
+                          <tr>
+                            <td align="center">
+                              <a href="${registrationUrl}" 
+                                 style="background: linear-gradient(135deg, ${accentColor} 0%, #ea580c 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(249, 115, 22, 0.3);">
+                                Completar Registro
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+                        
+                        <!-- Warning Box -->
+                        <div style="background-color: #fef3c7; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                          <p style="color: #92400e; margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Importante:</p>
+                          <p style="color: #78350f; margin: 0; font-size: 14px; line-height: 1.6;">
+                            Este enlace expirará en <strong>7 días</strong> por razones de seguridad.
+                            Si el enlace no funciona, copia y pega esta URL en tu navegador:
+                          </p>
+                          <p style="margin: 12px 0 0 0; word-break: break-all; color: #92400e; font-family: 'Courier New', monospace; font-size: 12px; background-color: #ffffff; padding: 10px; border-radius: 4px;">
+                            ${registrationUrl}
+                          </p>
+                        </div>
+                        
+                        <p style="font-size: 14px; color: #6b7280; line-height: 1.6; border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
+                          Si no esperabas esta invitación, puedes ignorar este email de forma segura.
+                        </p>
+                      </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+                        <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
+                          Sistema de Gestión de Visitas - SecuriTI<br>
+                          <strong>${invitationData.companyName}</strong>
+                        </p>
+                      </td>
+                    </tr>
+                    
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
         `
       };
 
       const result = await this.transporter.sendMail(mailOptions);
-      console.log('✅ Invitation email sent to:', invitationData.email);
-      console.log('📧 Message ID:', result.messageId);
-      console.log('📧 Response:', result.response);
+      console.log('Invitation email sent to:', invitationData.email);
+      console.log('Message ID:', result.messageId);
+      console.log('Response:', result.response);
       return { success: true, messageId: result.messageId, response: result.response };
     } catch (error) {
-      console.error('❌ Error sending invitation email:', error);
+      console.error('Error sending invitation email:', error);
       return { success: false, error: error.message };
     }
   }
 
   async sendAccessCancellationEmail(data) {
     if (!this.isEnabled()) {
-      console.log('📧 Email service disabled - would send cancellation emails');
+      console.log('Email service disabled - would send cancellation emails');
       return { success: false, error: 'Email service not configured' };
     }
 
-    const COMPANY_LOGO_URL = process.env.COMPANY_LOGO_URL || 'https://securiti.mx/logo.png';
+    const COMPANY_LOGO_URL = process.env.COMPANY_LOGO_URL || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png`;
+    const primaryColor = '#1e3a8a';
+    const accentColor = '#f97316';
 
     try {
       // Email para los invitados
       if (data.invitedEmails && data.invitedEmails.length > 0) {
         const inviteeMailOptions = {
           from: process.env.EMAIL_FROM || process.env.SMTP_USER,
-          bcc: data.invitedEmails, // Enviar a todos los invitados en BCC
+          bcc: data.invitedEmails,
           subject: `Acceso cancelado - ${data.title}`,
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto;">
-              <div style="background: #ef4444; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
-                <h1 style="margin: 0; font-size: 24px;">Acceso Cancelado</h1>
-              </div>
-              
-              <div style="background: white; padding: 20px; border: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
-                <div style="text-align:center; padding: 16px 0;">
-                  <img src="${COMPANY_LOGO_URL}" alt="Logo ${data.companyName}" style="height: 48px;" />
-                </div>
-                
-                <p style="font-size: 16px; color: #4b5563;">
-                  Lamentamos informarte que el siguiente acceso/evento ha sido <strong>cancelado</strong>:
-                </p>
-                
-                <div style="background: #fef2f2; border: 1px solid #ef4444; border-radius: 8px; padding: 16px; margin: 20px 0;">
-                  <h3 style="margin-top: 0; color: #991b1b;">Detalles del acceso cancelado:</h3>
-                  <p><strong>Título:</strong> ${data.title}</p>
-                  <p><strong>Razón:</strong> ${data.reason || 'No especificada'}</p>
-                  <p><strong>Fecha programada:</strong> ${new Date(data.startDate).toLocaleDateString('es-ES')} a las ${data.startTime}</p>
-                  ${data.location ? `<p><strong>Lugar:</strong> ${data.location}</p>` : ''}
-                </div>
-                
-                <p style="font-size: 14px; color: #6b7280;">
-                  Si tienes preguntas sobre esta cancelación, por favor contacta a la organización.
-                </p>
-                
-                <div style="color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px; text-align: center;">
-                  Sistema de Gestión de Visitas - ${data.companyName}
-                </div>
-              </div>
-            </div>
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: Arial, sans-serif;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 20px 0;">
+                <tr>
+                  <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                      
+                      <!-- Header -->
+                      <tr>
+                        <td style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 40px 30px; text-align: center;">
+                          <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 60px; margin-bottom: 20px; filter: brightness(0) invert(1);">
+                          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Acceso Cancelado</h1>
+                        </td>
+                      </tr>
+                      
+                      <!-- Content -->
+                      <tr>
+                        <td style="padding: 40px 30px;">
+                          <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin: 0 0 25px 0;">
+                            Lamentamos informarte que el siguiente acceso/evento ha sido <strong>cancelado</strong>:
+                          </p>
+                          
+                          <!-- Event Details Card -->
+                          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef2f2; border-left: 4px solid #ef4444; border-radius: 8px; margin: 25px 0;">
+                            <tr>
+                              <td style="padding: 25px;">
+                                <h3 style="color: #991b1b; margin: 0 0 15px 0; font-size: 18px;">Detalles del acceso cancelado</h3>
+                                <table width="100%" cellpadding="5" cellspacing="0">
+                                  <tr>
+                                    <td style="color: #4b5563; font-size: 14px; padding: 8px 0; width: 40%;"><strong>Título:</strong></td>
+                                    <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${data.title}</td>
+                                  </tr>
+                                  ${data.reason ? `
+                                  <tr>
+                                    <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Razón:</strong></td>
+                                    <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${data.reason}</td>
+                                  </tr>
+                                  ` : ''}
+                                  <tr>
+                                    <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Fecha programada:</strong></td>
+                                    <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${new Date(data.startDate).toLocaleDateString('es-ES')} a las ${data.startTime}</td>
+                                  </tr>
+                                  ${data.location ? `
+                                  <tr>
+                                    <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Lugar:</strong></td>
+                                    <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${data.location}</td>
+                                  </tr>
+                                  ` : ''}
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                          
+                          <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+                            Si tienes preguntas sobre esta cancelación, por favor contacta a la organización.
+                          </p>
+                        </td>
+                      </tr>
+                      
+                      <!-- Footer -->
+                      <tr>
+                        <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+                          <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
+                            Sistema de Gestión de Visitas<br>
+                            <strong>${data.companyName}</strong>
+                          </p>
+                        </td>
+                      </tr>
+                      
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
           `
         };
 
         await this.transporter.sendMail(inviteeMailOptions);
-        console.log(`✅ Cancellation email sent to ${data.invitedEmails.length} invitee(s)`);
+        console.log(`Cancellation email sent to ${data.invitedEmails.length} invitee(s)`);
       }
 
       // Email de confirmación para el creador
@@ -434,53 +702,89 @@ class EmailService {
           to: data.creatorEmail,
           subject: `Confirmación: Acceso cancelado - ${data.title}`,
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto;">
-              <div style="background: #2563eb; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
-                <h1 style="margin: 0; font-size: 24px;">Acceso Cancelado Exitosamente</h1>
-              </div>
-              
-              <div style="background: white; padding: 20px; border: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
-                <div style="text-align:center; padding: 16px 0;">
-                  <img src="${COMPANY_LOGO_URL}" alt="Logo ${data.companyName}" style="height: 48px;" />
-                </div>
-                
-                <p style="font-size: 16px; color: #4b5563;">
-                  El acceso <strong>${data.title}</strong> ha sido cancelado correctamente.
-                </p>
-                
-                <div style="background: #eff6ff; border: 1px solid #2563eb; border-radius: 8px; padding: 16px; margin: 20px 0;">
-                  <p><strong>Acciones realizadas:</strong></p>
-                  <ul style="margin: 8px 0; padding-left: 20px;">
-                    <li>El acceso ya no está disponible para nuevos registros</li>
-                    ${data.invitedEmails && data.invitedEmails.length > 0 ? 
-                      `<li>Se notificó a ${data.invitedEmails.length} invitado(s) sobre la cancelación</li>` : 
-                      '<li>No había invitados para notificar</li>'
-                    }
-                  </ul>
-                </div>
-                
-                <div style="background: #f9fafb; border-radius: 8px; padding: 16px; margin: 20px 0;">
-                  <h4 style="margin-top: 0; color: #374151;">Detalles del acceso:</h4>
-                  <p><strong>Título:</strong> ${data.title}</p>
-                  <p><strong>Fecha:</strong> ${new Date(data.startDate).toLocaleDateString('es-ES')} - ${data.startTime}</p>
-                  ${data.location ? `<p><strong>Lugar:</strong> ${data.location}</p>` : ''}
-                </div>
-                
-                <div style="color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px; text-align: center;">
-                  Sistema de Gestión de Visitas - ${data.companyName}
-                </div>
-              </div>
-            </div>
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: Arial, sans-serif;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 20px 0;">
+                <tr>
+                  <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                      
+                      <!-- Header -->
+                      <tr>
+                        <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
+                          <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 60px; margin-bottom: 20px;">
+                          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Acceso Cancelado Exitosamente</h1>
+                        </td>
+                      </tr>
+                      
+                      <!-- Content -->
+                      <tr>
+                        <td style="padding: 40px 30px;">
+                          <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin: 0 0 25px 0;">
+                            El acceso <strong>${data.title}</strong> ha sido cancelado correctamente.
+                          </p>
+                          
+                          <!-- Actions Card -->
+                          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border-left: 4px solid ${primaryColor}; border-radius: 8px; margin: 25px 0;">
+                            <tr>
+                              <td style="padding: 25px;">
+                                <h3 style="color: ${primaryColor}; margin: 0 0 15px 0; font-size: 18px;">Acciones realizadas</h3>
+                                <ul style="margin: 0; padding-left: 20px; color: #4b5563; font-size: 14px; line-height: 1.8;">
+                                  <li>El acceso ya no está disponible para nuevos registros</li>
+                                  ${data.invitedEmails && data.invitedEmails.length > 0 ? 
+                                    `<li>Se notificó a ${data.invitedEmails.length} invitado(s) sobre la cancelación</li>` : 
+                                    '<li>No había invitados para notificar</li>'
+                                  }
+                                </ul>
+                              </td>
+                            </tr>
+                          </table>
+                          
+                          <!-- Event Details -->
+                          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; margin: 25px 0;">
+                            <tr>
+                              <td style="padding: 20px;">
+                                <h4 style="color: #374151; margin: 0 0 12px 0; font-size: 16px;">Detalles del acceso</h4>
+                                <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Título:</strong> ${data.title}</p>
+                                <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Fecha:</strong> ${new Date(data.startDate).toLocaleDateString('es-ES')} - ${data.startTime}</p>
+                                ${data.location ? `<p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Lugar:</strong> ${data.location}</p>` : ''}
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      
+                      <!-- Footer -->
+                      <tr>
+                        <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+                          <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
+                            Sistema de Gestión de Visitas<br>
+                            <strong>${data.companyName}</strong>
+                          </p>
+                        </td>
+                      </tr>
+                      
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
           `
         };
 
         await this.transporter.sendMail(creatorMailOptions);
-        console.log(`✅ Cancellation confirmation email sent to creator: ${data.creatorEmail}`);
+        console.log(`Cancellation confirmation email sent to creator: ${data.creatorEmail}`);
       }
 
       return { success: true };
     } catch (error) {
-      console.error('❌ Error sending cancellation emails:', error);
+      console.error('Error sending cancellation emails:', error);
       return { success: false, error: error.message };
     }
   }
@@ -500,118 +804,151 @@ class EmailService {
    */
   async sendAccessRegistrationNotification(data) {
     if (!this.checkEnabled()) {
-      console.log('📧 Email service disabled - Would have sent registration notification to creator');
+      console.log('Email service disabled - Would have sent registration notification to creator');
       return { success: false, message: 'Email service not configured' };
     }
 
     try {
-      const COMPANY_LOGO_URL = process.env.COMPANY_LOGO_URL || 'https://via.placeholder.com/150x50?text=Logo';
-
-      const photoSection = data.visitorPhoto 
-        ? `<div style="text-align: center; margin: 20px 0;">
-             <img src="${data.visitorPhoto}" alt="Foto del visitante" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #3b82f6;">
-           </div>`
-        : '';
+      const COMPANY_LOGO_URL = process.env.COMPANY_LOGO_URL || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png`;
+      const primaryColor = '#1e3a8a';
+      const accentColor = '#f97316';
 
       const mailOptions = {
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
         to: data.creatorEmail,
-        subject: `🎉 Nuevo registro para tu evento: ${data.eventTitle}`,
+        subject: `Nuevo registro para tu evento: ${data.eventTitle}`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb;">
-            <!-- Header con gradiente -->
-            <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); padding: 30px; text-align: center;">
-              <img src="${COMPANY_LOGO_URL}" alt="Logo" style="max-width: 150px; margin-bottom: 15px;">
-              <h1 style="color: white; margin: 0; font-size: 24px;">¡Nuevo Registro!</h1>
-            </div>
-
-            <!-- Contenido -->
-            <div style="background-color: white; padding: 30px; border-radius: 0 0 8px 8px;">
-              <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
-                Hola <strong>${data.creatorName}</strong>,
-              </p>
-
-              <p style="font-size: 16px; color: #374151; margin-bottom: 25px;">
-                Te informamos que una persona se ha registrado exitosamente para tu evento programado:
-              </p>
-
-              <!-- Tarjeta del evento -->
-              <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid #3b82f6; padding: 20px; margin-bottom: 25px; border-radius: 6px;">
-                <h2 style="color: #1e40af; margin: 0 0 10px 0; font-size: 18px;">📅 ${data.eventTitle}</h2>
-                <p style="color: #1e3a8a; margin: 5px 0; font-size: 14px;">
-                  <strong>Fecha:</strong> ${new Date(data.eventDate).toLocaleDateString('es-ES', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
-              </div>
-
-              ${photoSection}
-
-              <!-- Información del visitante -->
-              <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
-                <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 16px;">Datos del Visitante</h3>
-                
-                <div style="margin-bottom: 12px;">
-                  <span style="color: #6b7280; font-size: 14px;">Nombre:</span><br>
-                  <span style="color: #111827; font-weight: bold; font-size: 16px;">${data.visitorName}</span>
-                </div>
-
-                <div style="margin-bottom: 12px;">
-                  <span style="color: #6b7280; font-size: 14px;">Email:</span><br>
-                  <span style="color: #111827; font-size: 15px;">${data.visitorEmail}</span>
-                </div>
-
-                ${data.visitorCompany ? `
-                <div style="margin-bottom: 12px;">
-                  <span style="color: #6b7280; font-size: 14px;">Empresa:</span><br>
-                  <span style="color: #111827; font-size: 15px;">${data.visitorCompany}</span>
-                </div>
-                ` : ''}
-
-                ${data.visitorPhone ? `
-                <div style="margin-bottom: 12px;">
-                  <span style="color: #6b7280; font-size: 14px;">Teléfono:</span><br>
-                  <span style="color: #111827; font-size: 15px;">${data.visitorPhone}</span>
-                </div>
-                ` : ''}
-              </div>
-
-              <!-- Estado de pre-aprobación -->
-              <div style="background-color: #fef3c7; border: 1px solid #fbbf24; padding: 15px; border-radius: 6px; margin-bottom: 25px;">
-                <p style="margin: 0; color: #92400e; font-size: 14px;">
-                  ℹ️ <strong>Estado:</strong> Este visitante fue pre-aprobado automáticamente mediante tu código de acceso público.
-                </p>
-              </div>
-
-              <!-- Mensaje de acción -->
-              <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">
-                Puedes ver y gestionar todos los registros para tu evento desde el panel de administración.
-              </p>
-
-              <!-- Divider -->
-              <div style="border-top: 1px solid #e5e7eb; margin: 25px 0;"></div>
-
-              <!-- Footer -->
-              <div style="text-align: center; color: #9ca3af; font-size: 12px;">
-                <p style="margin: 5px 0;">Este es un correo automático, por favor no responder.</p>
-                <p style="margin: 5px 0;">Sistema de Gestión de Visitas - ${data.companyName}</p>
-              </div>
-            </div>
-          </div>
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: Arial, sans-serif;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 20px 0;">
+              <tr>
+                <td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
+                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 60px; margin-bottom: 20px;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Nuevo Registro</h1>
+                        <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Evento: ${data.eventTitle}</p>
+                      </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                      <td style="padding: 40px 30px;">
+                        <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hola, <strong>${data.creatorName}</strong></p>
+                        
+                        <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin: 0 0 25px 0;">
+                          Te informamos que una persona se ha registrado exitosamente para tu evento programado.
+                        </p>
+                        
+                        <!-- Event Card -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid ${primaryColor}; border-radius: 8px; margin: 25px 0;">
+                          <tr>
+                            <td style="padding: 20px;">
+                              <h2 style="color: ${primaryColor}; margin: 0 0 10px 0; font-size: 18px;">${data.eventTitle}</h2>
+                              <p style="color: #1e3a8a; margin: 0; font-size: 14px;">
+                                <strong>Fecha:</strong> ${new Date(data.eventDate).toLocaleDateString('es-ES', { 
+                                  weekday: 'long', 
+                                  year: 'numeric', 
+                                  month: 'long', 
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </td>
+                          </tr>
+                        </table>
+                        
+                        ${data.visitorPhoto ? `
+                        <!-- Visitor Photo -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="margin: 25px 0;">
+                          <tr>
+                            <td align="center">
+                              <img src="${data.visitorPhoto}" alt="Foto del visitante" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid ${accentColor};">
+                            </td>
+                          </tr>
+                        </table>
+                        ` : ''}
+                        
+                        <!-- Visitor Details Card -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; margin: 25px 0;">
+                          <tr>
+                            <td style="padding: 25px;">
+                              <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 16px;">Datos del Visitante</h3>
+                              
+                              <div style="margin-bottom: 15px;">
+                                <p style="color: #6b7280; font-size: 14px; margin: 0 0 5px 0;">Nombre:</p>
+                                <p style="color: #111827; font-weight: bold; font-size: 16px; margin: 0;">${data.visitorName}</p>
+                              </div>
+                              
+                              <div style="margin-bottom: 15px;">
+                                <p style="color: #6b7280; font-size: 14px; margin: 0 0 5px 0;">Email:</p>
+                                <p style="color: #111827; font-size: 15px; margin: 0;">${data.visitorEmail}</p>
+                              </div>
+                              
+                              ${data.visitorCompany ? `
+                              <div style="margin-bottom: 15px;">
+                                <p style="color: #6b7280; font-size: 14px; margin: 0 0 5px 0;">Empresa:</p>
+                                <p style="color: #111827; font-size: 15px; margin: 0;">${data.visitorCompany}</p>
+                              </div>
+                              ` : ''}
+                              
+                              ${data.visitorPhone ? `
+                              <div style="margin-bottom: 15px;">
+                                <p style="color: #6b7280; font-size: 14px; margin: 0 0 5px 0;">Teléfono:</p>
+                                <p style="color: #111827; font-size: 15px; margin: 0;">${data.visitorPhone}</p>
+                              </div>
+                              ` : ''}
+                            </td>
+                          </tr>
+                        </table>
+                        
+                        <!-- Status Notice -->
+                        <div style="background-color: #fef3c7; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 15px; margin: 25px 0;">
+                          <p style="color: #92400e; margin: 0; font-size: 14px; line-height: 1.6;">
+                            <strong>Estado:</strong> Este visitante fue pre-aprobado automáticamente mediante tu código de acceso público.
+                          </p>
+                        </div>
+                        
+                        <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+                          Puedes ver y gestionar todos los registros para tu evento desde el panel de administración.
+                        </p>
+                      </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+                        <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
+                          Este es un correo automático, por favor no responder<br>
+                          Sistema de Gestión de Visitas - <strong>${data.companyName}</strong>
+                        </p>
+                      </td>
+                    </tr>
+                    
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
         `
       };
 
       await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Registration notification email sent to creator: ${data.creatorEmail}`);
+      console.log(`Registration notification email sent to creator: ${data.creatorEmail}`);
 
       return { success: true };
     } catch (error) {
-      console.error('❌ Error sending registration notification email:', error);
+      console.error('Error sending registration notification email:', error);
       return { success: false, error: error.message };
     }
   }

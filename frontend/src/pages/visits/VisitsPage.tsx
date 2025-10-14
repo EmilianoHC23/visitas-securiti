@@ -110,7 +110,6 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
     const [destination, setDestination] = useState('SecurITI');
     const [reason, setReason] = useState('');
     const [hostId, setHostId] = useState('');
-    const [scheduledDate, setScheduledDate] = useState('');
     const [visitorEmail, setVisitorEmail] = useState('');
     const [photo, setPhoto] = useState<string | null>(null);
     const [photoError, setPhotoError] = useState('');
@@ -179,6 +178,8 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
             return;
         }
         try {
+            // Usar fecha/hora actual para visitas espontáneas
+            const scheduledDate = new Date().toISOString();
             await api.createVisit({ visitorName, visitorCompany, reason, hostId, scheduledDate, destination, visitorEmail, visitorPhoto: photo });
             onSave();
             onClose();
@@ -206,7 +207,6 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
                             <option key={host._id} value={host._id}>{host.firstName} {host.lastName}</option>
                         ))}
                     </select>
-                    <input type="datetime-local" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} className="w-full p-2 border rounded" required />
 
                     <div>
                         <label className="block font-medium mb-1">Foto del visitante <span className="text-red-500">*</span></label>

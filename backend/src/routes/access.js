@@ -2,6 +2,7 @@ const express = require('express');
 const Access = require('../models/Access');
 const Visit = require('../models/Visit');
 const { auth, authorize } = require('../middleware/auth');
+const emailService = require('../services/emailService');
 
 const router = express.Router();
 
@@ -264,6 +265,7 @@ router.post('/redeem', async (req, res) => {
       visitorCompany: visitorData.company,
       visitorEmail: visitorData.email,
       visitorPhone: visitorData.phone,
+      visitorPhoto: visitorData.photo,
       host: access.createdBy._id,
       reason: access.title,
       status: access.settings.autoApproval ? 'approved' : 'pending',
@@ -280,6 +282,26 @@ router.post('/redeem', async (req, res) => {
     // Update access usage count
     access.usageCount += 1;
     await access.save();
+
+    // Enviar notificación al creador del evento
+    try {
+      await emailService.sendAccessRegistrationNotification({
+        creatorEmail: access.createdBy.email,
+        creatorName: `${access.createdBy.firstName} ${access.createdBy.lastName}`,
+        eventTitle: access.title,
+        eventDate: access.schedule.startDate,
+        visitorName: visitorData.name,
+        visitorEmail: visitorData.email,
+        visitorCompany: visitorData.company || '',
+        visitorPhone: visitorData.phone || '',
+        visitorPhoto: visitorData.photo || '',
+        companyName: 'Securiti'
+      });
+      console.log('✅ Creator notification email sent successfully');
+    } catch (emailError) {
+      console.error('⚠️  Error sending creator notification email:', emailError);
+      // No bloquear el registro si falla el email
+    }
 
     res.json({
       message: 'Código canjeado exitosamente',
@@ -419,6 +441,23 @@ router.delete('/:id', auth, authorize(['admin', 'reception', 'host']), async (re
     // Verify company ownership
     if (access.companyId !== req.user.companyId) {
       return res.status(403).json({ message: 'No tiene permisos para eliminar este código' });
+    }
+
+    // Enviar emails de cancelación antes de eliminar
+    try {
+      await require('../services/emailService').sendAccessCancellationEmail({
+        title: access.title,
+        reason: access.description,
+        startDate: access.schedule.startDate,
+        startTime: access.schedule.startTime,
+        location: access.location,
+        invitedEmails: access.invitedEmails || [],
+        creatorEmail: req.user.email,
+        companyName: 'SecuriTI'
+      });
+    } catch (emailErr) {
+      console.warn('Error sending cancellation emails:', emailErr?.message);
+      // Continuar con la eliminación aunque falle el email
     }
 
     // Delete the access code

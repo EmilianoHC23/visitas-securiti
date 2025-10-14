@@ -296,6 +296,7 @@ router.put('/:id/status', auth, async (req, res) => {
       const populated = await Visit.findById(updated._id).populate('host', 'firstName lastName');
       try {
         await require('../services/emailService').sendVisitorNotificationEmail({
+          visitId: updated._id.toString(),
           visitorEmail: populated.visitorEmail,
           visitorName: populated.visitorName,
           hostName: `${populated.host.firstName} ${populated.host.lastName}`,
@@ -483,6 +484,7 @@ router.get('/approve/:token', async (req, res) => {
     if (visit.visitorEmail) {
       await visit.populate('host', 'firstName lastName');
       await require('../services/emailService').sendVisitorNotificationEmail({
+        visitId: visit._id.toString(),
         visitorEmail: visit.visitorEmail,
         visitorName: visit.visitorName,
         hostName: `${visit.host.firstName} ${visit.host.lastName}`,

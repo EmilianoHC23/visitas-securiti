@@ -133,6 +133,7 @@ export const createVisit = async (visitData: {
   destination?: string;
   visitorEmail?: string;
   visitorPhone?: string;
+  visitorPhoto?: string;
 }): Promise<Visit> => {
   return apiRequest('/visits', {
     method: 'POST',
@@ -284,6 +285,11 @@ export const updateCompanyConfig = async (config: Partial<Company>): Promise<Com
 
 export const getCompanyQR = async (): Promise<{ qrCode: string; qrUrl: string; publicUrl: string }> => {
   return apiRequest('/company/qr-code');
+};
+
+// Obtener accesos activos públicos (sin autenticación)
+export const getActiveAccesses = async (): Promise<Access[]> => {
+  return apiRequest('/public/access/active');
 };
 
 // --- BLACKLIST MANAGEMENT ---

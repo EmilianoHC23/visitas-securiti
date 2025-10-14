@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-
-=======
 // Asignar recurso (tarjeta/acceso) a una visita
 export const updateVisitAccess = async (visitId, accessId) => {
   return apiRequest(`/visits/${visitId}/access`, {
@@ -16,7 +13,6 @@ export const getAgendaEvents = async () => {
   // const events = await getEvents();
   return { events: accesses };
 };
->>>>>>> 9b9a908 (Implementación completa de Accesos/Eventos, pre-registro público, auto-registro, integración de emails y mejoras de UX. Todo el flujo listo para producción.)
 import { User, Visit, VisitStatus, Company, Blacklist, Access } from '../types';
 
 // Eliminar completamente un usuario (force delete)

@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
             VisitsTableSeeder::class,
             VisitEventsTableSeeder::class,
             InvitationsTableSeeder::class,
+            BlacklistsTableSeeder::class,
+            ApprovalsTableSeeder::class,
         ]);
     }
 }

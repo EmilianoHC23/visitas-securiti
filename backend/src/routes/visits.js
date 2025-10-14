@@ -12,29 +12,51 @@ const router = express.Router();
 // Get all visits
 router.get('/', auth, async (req, res) => {
   try {
-    const { status, date, hostId } = req.query;
+    const { status, date, hostId, visitorName, visitorCompany, q, page = 1, limit = 10 } = req.query;
     const filter = { companyId: req.user.companyId };
 
-    // Apply filters
+    // Filtros avanzados
     if (status) filter.status = status;
     if (hostId) filter.host = hostId;
+    if (visitorName) filter.visitorName = { $regex: visitorName, $options: 'i' };
+    if (visitorCompany) filter.visitorCompany = { $regex: visitorCompany, $options: 'i' };
     if (date) {
       const startDate = new Date(date);
       const endDate = new Date(date);
       endDate.setDate(endDate.getDate() + 1);
       filter.scheduledDate = { $gte: startDate, $lt: endDate };
     }
+    if (q) {
+      filter.$or = [
+        { visitorName: { $regex: q, $options: 'i' } },
+        { visitorCompany: { $regex: q, $options: 'i' } },
+        { reason: { $regex: q, $options: 'i' } },
+      ];
+    }
 
-    // If user is a host, only show their visits
+    // Si el usuario es anfitrión, solo mostrar sus visitas
     if (req.user.role === 'host') {
       filter.host = req.user._id;
     }
 
+    // Paginación
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const total = await Visit.countDocuments(filter);
     const visits = await Visit.find(filter)
       .populate('host', 'firstName lastName email profileImage')
-      .sort({ scheduledDate: -1 });
+      .sort({ scheduledDate: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
 
-    res.json(visits);
+    res.json({
+      visits,
+      meta: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / parseInt(limit)),
+      },
+    });
   } catch (error) {
     console.error('Get visits error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
@@ -46,17 +68,16 @@ router.get('/:id', auth, async (req, res) => {
   try {
     const visit = await Visit.findById(req.params.id)
       .populate('host', 'firstName lastName email profileImage');
-
     if (!visit) {
       return res.status(404).json({ message: 'Visita no encontrada' });
     }
-
     // Check if user has permission to view this visit
     if (req.user.role === 'host' && visit.host._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'No tienes permisos para ver esta visita' });
     }
-
-    res.json(visit);
+    // Obtener eventos de la visita para la línea de tiempo
+    const events = await VisitEvent.find({ visitId: visit._id }).sort({ createdAt: 1 });
+    res.json({ visit, events });
   } catch (error) {
     console.error('Get visit error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
@@ -209,11 +230,11 @@ router.post('/register', async (req, res) => {
 // Update visit status
 router.put('/:id/status', auth, async (req, res) => {
   try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!['pending', 'approved', 'checked-in', 'completed', 'rejected', 'cancelled'].includes(status)) {
-      return res.status(400).json({ message: 'Estado no válido' });
+    const { status, reason } = req.body;
+    const id = req.params.id;
+    const allowedStatuses = ['pending', 'approved', 'checked-in', 'completed', 'rejected', 'cancelled'];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Estado no válido. Estados permitidos: ' + allowedStatuses.join(', ') });
     }
 
     const visit = await Visit.findById(id).populate('host', 'firstName lastName email');
@@ -221,31 +242,104 @@ router.put('/:id/status', auth, async (req, res) => {
       return res.status(404).json({ message: 'Visita no encontrada' });
     }
 
-    // Check permissions
-    if (req.user.role === 'host' && visit.host._id.toString() !== req.user._id.toString()) {
+    // Solo anfitrión o admin pueden modificar el estado
+    if (
+      req.user.role === 'host' && visit.host._id.toString() !== req.user._id.toString()
+    ) {
       return res.status(403).json({ message: 'No tienes permisos para modificar esta visita' });
     }
 
     const previousStatus = visit.status;
 
-    // Update timestamps based on status
-    const updateData = { status };
-    
-    if (status === 'checked-in' && !visit.checkInTime) {
-      updateData.checkInTime = new Date();
-    } else if (status === 'completed' && !visit.checkOutTime) {
-      updateData.checkOutTime = new Date();
+    // Validar transiciones de estado
+    const validTransitions = {
+      'pending': ['approved', 'rejected', 'cancelled'],
+      'approved': ['checked-in', 'cancelled'],
+      'checked-in': ['completed'],
+      'completed': [],
+      'rejected': [],
+      'cancelled': [],
+    };
+    if (!validTransitions[previousStatus].includes(status)) {
+      return res.status(400).json({ message: `Transición de estado no permitida: ${previousStatus} → ${status}` });
     }
 
-    const updatedVisit = await Visit.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    ).populate('host', 'firstName lastName email profileImage');
+    // Actualizar timestamps y qrToken según el estado
+    const updateData = { status };
+    if (status === 'rejected' && reason) {
+      updateData.rejectionReason = reason;
+    }
+    let eventType = null;
+    if (status === 'approved' && !visit.qrToken) {
+      // Generar qrToken único
+      updateData.qrToken = require('crypto').randomBytes(16).toString('hex');
+    }
+    if (status === 'checked-in') {
+      updateData.checkInTime = new Date();
+      eventType = 'check-in';
+    }
+    if (status === 'completed') {
+      updateData.checkOutTime = new Date();
+      updateData.qrToken = null; // invalidar QR tras check-out
+      eventType = 'check-out';
+    }
 
-    res.json(updatedVisit);
+    const updated = await Visit.findByIdAndUpdate(id, updateData, { new: true });
+
+    // Registrar evento si aplica
+    if (eventType) {
+      await new VisitEvent({ visitId: updated._id, type: eventType }).save();
+    }
+
+    // Enviar notificaciones al visitante cuando corresponda
+    if ((status === 'approved' || status === 'rejected') && updated.visitorEmail) {
+      const populated = await Visit.findById(updated._id).populate('host', 'firstName lastName');
+      try {
+        await require('../services/emailService').sendVisitorNotificationEmail({
+          visitId: updated._id.toString(),
+          visitorEmail: populated.visitorEmail,
+          visitorName: populated.visitorName,
+          hostName: `${populated.host.firstName} ${populated.host.lastName}`,
+          companyName: 'SecurITI',
+          status,
+          reason: populated.reason,
+          scheduledDate: populated.scheduledDate,
+          destination: populated.destination
+        });
+      } catch (mailErr) {
+        console.warn('Email notify error:', mailErr?.message || mailErr);
+      }
+    }
+
+  res.json(updated);
   } catch (error) {
     console.error('Update visit status error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Check-out vía QR (fuera del handler de estado)
+router.post('/scan-qr', auth, async (req, res) => {
+  try {
+    const { qrToken } = req.body;
+    if (!qrToken) return res.status(400).json({ message: 'QR no proporcionado' });
+    const visit = await Visit.findOne({ qrToken });
+    if (!visit) return res.status(404).json({ message: 'QR inválido o visita no encontrada' });
+    if (visit.status !== 'checked-in') {
+      return res.status(400).json({ message: 'La visita no está dentro o ya fue finalizada' });
+    }
+    if (!visit.qrToken) {
+      return res.status(400).json({ message: 'El QR ya fue usado para check-out' });
+    }
+    // Realizar check-out
+    visit.status = 'completed';
+    visit.checkOutTime = new Date();
+    visit.qrToken = null;
+    await visit.save();
+    await new VisitEvent({ visitId: visit._id, type: 'check-out-qr' }).save();
+    res.json({ message: 'Check-out realizado correctamente', visit });
+  } catch (e) {
+    console.error('Scan QR error:', e);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
@@ -305,6 +399,40 @@ module.exports = router;
 // Additional endpoints
 
 // Get visit status by id (mapped)
+// Assign/Update access resource for a visit
+router.put('/:id/access', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { accessId } = req.body;
+
+    const visit = await Visit.findById(id);
+    if (!visit) return res.status(404).json({ message: 'Visita no encontrada' });
+
+    // Permissions: host can only edit their own visits; admin/reception allowed
+    if (req.user.role === 'host' && visit.host.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'No tienes permisos para modificar esta visita' });
+    }
+
+    // Optionally validate Access exists
+    if (accessId) {
+      if (!mongoose.Types.ObjectId.isValid(accessId)) {
+        return res.status(400).json({ message: 'accessId inválido' });
+      }
+      // Not strictly required to fetch Access, but we could ensure it belongs to same company
+      // const Access = require('../models/Access');
+      // const access = await Access.findById(accessId);
+      // if (!access) return res.status(404).json({ message: 'Recurso de acceso no encontrado' });
+    }
+
+    visit.accessId = accessId || null;
+    await visit.save();
+    const populated = await Visit.findById(visit._id).populate('host', 'firstName lastName email profileImage');
+    res.json(populated);
+  } catch (error) {
+    console.error('Update visit access error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
 router.get('/status/:id', auth, async (req, res) => {
   try {
     const visit = await Visit.findById(req.params.id);
@@ -343,6 +471,9 @@ router.get('/approve/:token', async (req, res) => {
     if (!visit) return res.status(404).send('Visita no encontrada');
     
     visit.status = 'approved';
+    if (!visit.qrToken) {
+      visit.qrToken = require('crypto').randomBytes(16).toString('hex');
+    }
     await visit.save();
     approval.status = 'decided';
     approval.decision = 'approved';
@@ -353,6 +484,7 @@ router.get('/approve/:token', async (req, res) => {
     if (visit.visitorEmail) {
       await visit.populate('host', 'firstName lastName');
       await require('../services/emailService').sendVisitorNotificationEmail({
+        visitId: visit._id.toString(),
         visitorEmail: visit.visitorEmail,
         visitorName: visit.visitorName,
         hostName: `${visit.host.firstName} ${visit.host.lastName}`,
@@ -414,12 +546,29 @@ router.get('/reject/:token', async (req, res) => {
 // Check-in
 router.post('/checkin/:id', auth, async (req, res) => {
   try {
-    const visit = await Visit.findById(req.params.id);
+    const visit = await Visit.findById(req.params.id).populate('host', 'firstName lastName');
     if (!visit) return res.status(404).json({ message: 'Visita no encontrada' });
     visit.status = 'checked-in';
     visit.checkInTime = new Date();
     await visit.save();
     await new VisitEvent({ visitId: visit._id, type: 'check-in' }).save();
+    // Optional: notify visitor of check-in confirmation
+    if (visit.visitorEmail) {
+      try {
+        await require('../services/emailService').sendVisitorNotificationEmail({
+          visitorEmail: visit.visitorEmail,
+          visitorName: visit.visitorName,
+          hostName: `${visit.host.firstName} ${visit.host.lastName}`,
+          companyName: 'SecurITI',
+          status: 'checked-in',
+          reason: visit.reason,
+          scheduledDate: visit.scheduledDate,
+          destination: visit.destination
+        });
+      } catch (mailErr) {
+        console.warn('Email notify error (check-in):', mailErr?.message || mailErr);
+      }
+    }
     res.json(visit);
   } catch (e) {
     console.error('Check-in error:', e);
@@ -431,7 +580,7 @@ router.post('/checkin/:id', auth, async (req, res) => {
 router.post('/checkout/:id', auth, async (req, res) => {
   try {
     const { photos } = req.body; // array of base64 strings
-    const visit = await Visit.findById(req.params.id);
+    const visit = await Visit.findById(req.params.id).populate('host', 'firstName lastName');
     if (!visit) return res.status(404).json({ message: 'Visita no encontrada' });
     visit.status = 'completed';
     visit.checkOutTime = new Date();
@@ -439,6 +588,23 @@ router.post('/checkout/:id', auth, async (req, res) => {
     const limitedPhotos = Array.isArray(photos) ? photos.slice(0, 5) : [];
     await new VisitEvent({ visitId: visit._id, type: 'check-out', photos: limitedPhotos }).save();
     const elapsedMs = visit.checkInTime ? (visit.checkOutTime - visit.checkInTime) : null;
+    // Optional: notify visitor of checkout summary
+    if (visit.visitorEmail) {
+      try {
+        await require('../services/emailService').sendVisitorNotificationEmail({
+          visitorEmail: visit.visitorEmail,
+          visitorName: visit.visitorName,
+          hostName: `${visit.host.firstName} ${visit.host.lastName}`,
+          companyName: 'SecurITI',
+          status: 'completed',
+          reason: visit.reason,
+          scheduledDate: visit.scheduledDate,
+          destination: visit.destination
+        });
+      } catch (mailErr) {
+        console.warn('Email notify error (check-out):', mailErr?.message || mailErr);
+      }
+    }
     res.json({ visit, elapsedMs });
   } catch (e) {
     console.error('Check-out error:', e);

@@ -11,6 +11,7 @@ import { UserManagementPage } from './pages/users/UserManagementPage';
 import { ReportsPage } from './pages/reports/ReportsPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 import { CompanyConfigPage } from './pages/settings/CompanyConfigPage';
+import { EmailTestPage } from './pages/settings/EmailTestPage';
 import { AccessCodesPage } from './pages/access/AccessCodesPage';
 import { BlacklistPage } from './pages/blacklist/BlacklistPage';
 import { UserRole } from './types';
@@ -18,6 +19,11 @@ import { VisitorRegistrationPage } from './pages/register/VisitorRegistrationPag
 import { UserRegistrationPage } from './pages/register/UserRegistrationPage';
 import { VisitConfirmationPage } from './pages/visits/VisitConfirmationPage';
 import { RedeemPage } from './pages/redeem/RedeemPage';
+import { PublicRegistrationPage } from './pages/public-registration/PublicRegistrationPage';
+import { PublicLandingPage } from './pages/public/PublicLandingPage';
+import { PublicVisitRegistrationPage } from './pages/public/PublicVisitRegistrationPage';
+import { PublicAccessListPage } from './pages/public/PublicAccessListPage';
+import { ToastProvider } from './components/common/Toast';
 
 const PublicRegistrationWrapper: React.FC = () => {
     // qrCode route param is handled inside VisitorRegistrationPage if needed
@@ -41,6 +47,10 @@ const AppRoutes: React.FC = () => {
                 <Route path="/visit-confirmation" element={<VisitConfirmationPage />} />
                 <Route path="/redeem/:accessCode" element={<RedeemPage />} />
                 <Route path="/public/:qrCode" element={<PublicRegistrationWrapper />} />
+                {/* Rutas públicas de auto-registro */}
+                <Route path="/public" element={<PublicLandingPage />} />
+                <Route path="/public/visit-registration" element={<PublicVisitRegistrationPage />} />
+                <Route path="/public/access-list" element={<PublicAccessListPage />} />
                 <Route path="*" element={<Navigate to="/login" />} />
             </Routes>
         );
@@ -56,6 +66,7 @@ const AppRoutes: React.FC = () => {
                 {(user?.role === UserRole.ADMIN || user?.role === UserRole.RECEPTION) && (
                     <>
                         <Route path="/access-codes" element={<AccessCodesPage />} />
+                        <Route path="/public-registration" element={<PublicRegistrationPage />} />
                         <Route path="/blacklist" element={<BlacklistPage />} />
                     </>
                 )}
@@ -66,6 +77,7 @@ const AppRoutes: React.FC = () => {
                         <Route path="/reports" element={<ReportsPage />} />
                         <Route path="/settings" element={<SettingsPage />} />
                         <Route path="/settings/company" element={<CompanyConfigPage />} />
+                        <Route path="/settings/email-test" element={<EmailTestPage />} />
                     </>
                 )}
                 
@@ -80,11 +92,13 @@ const AppRoutes: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-        <BrowserRouter>
-            <AppRoutes />
-        </BrowserRouter>
-    </AuthProvider>
+        <AuthProvider>
+            <ToastProvider>
+                <BrowserRouter>
+                    <AppRoutes />
+                </BrowserRouter>
+            </ToastProvider>
+        </AuthProvider>
   );
 };
 

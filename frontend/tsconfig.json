@@ -34,6 +34,13 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "../pages",
+    "../components", 
+    "../contexts",
+    "../services",
+    "../App.tsx",
+    "../index.tsx",
+    "../types.ts"
   ]
 }

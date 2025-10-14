@@ -77,6 +77,11 @@ const visitSchema = new mongoose.Schema({
   visitorPhone: {
     type: String,
     trim: true
+  },
+  qrToken: {
+    type: String,
+    default: null,
+    index: true
   }
 }, {
   timestamps: true

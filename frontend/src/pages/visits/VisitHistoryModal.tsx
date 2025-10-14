@@ -10,9 +10,9 @@ interface Props {
 
 interface VisitEvent {
   _id: string;
-  type: 'check-in' | 'check-out';
-  photos: string[];
-  timestamp: string;
+  type: 'check-in' | 'check-out' | 'check-out-qr' | string;
+  photos?: string[];
+  createdAt: string;
 }
 
 export const VisitHistoryModal: React.FC<Props> = ({ visitId, isOpen, onClose }) => {
@@ -29,31 +29,9 @@ export const VisitHistoryModal: React.FC<Props> = ({ visitId, isOpen, onClose })
   const fetchVisitDetails = async () => {
     setLoading(true);
     try {
-      // Note: We'd need a new API endpoint to get visit events
-      // For now, we'll simulate this
-      const visitData = await api.getVisits();
-      const foundVisit = visitData.find(v => v._id === visitId);
-      setVisit(foundVisit || null);
-      
-      // Simulate events - in real app, this would be a separate API call
-      const mockEvents: VisitEvent[] = [];
-      if (foundVisit?.checkInTime) {
-        mockEvents.push({
-          _id: '1',
-          type: 'check-in',
-          photos: [],
-          timestamp: foundVisit.checkInTime
-        });
-      }
-      if (foundVisit?.checkOutTime) {
-        mockEvents.push({
-          _id: '2',
-          type: 'check-out',
-          photos: [], // Would contain actual photo URLs
-          timestamp: foundVisit.checkOutTime
-        });
-      }
-      setEvents(mockEvents);
+      const { visit, events } = await api.getVisitDetails(visitId);
+      setVisit(visit);
+      setEvents(events || []);
     } catch (error) {
       console.error('Error fetching visit details:', error);
     } finally {
@@ -88,15 +66,42 @@ export const VisitHistoryModal: React.FC<Props> = ({ visitId, isOpen, onClose })
               {/* Visit Details */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h3 className="font-medium mb-2">Detalles de la Visita</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div><strong>Visitante:</strong> {visit.visitorName}</div>
+                <div className="grid grid-cols-2 gap-4 text-sm items-center">
+                  <div className="flex items-center gap-2">
+                    {visit.visitorPhoto ? (
+                      <img src={visit.visitorPhoto} alt="Foto visitante" className="w-10 h-10 rounded-full object-cover border-2 border-gray-300" />
+                    ) : (
+                      <span className="inline-block w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                        </svg>
+                      </span>
+                    )}
+                    <span><strong>Visitante:</strong> {visit.visitorName}</span>
+                  </div>
                   <div><strong>Empresa:</strong> {visit.visitorCompany || 'No especificada'}</div>
-                  <div><strong>Anfitrión:</strong> {visit.host.firstName} {visit.host.lastName}</div>
+                  <div className="flex items-center gap-2">
+                    {visit.host.profileImage ? (
+                      <img src={visit.host.profileImage} alt="Foto anfitrión" className="w-10 h-10 rounded-full object-cover border-2 border-blue-300" />
+                    ) : (
+                      <span className="inline-block w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                        </svg>
+                      </span>
+                    )}
+                    <span><strong>Anfitrión:</strong> {visit.host.firstName} {visit.host.lastName}</span>
+                  </div>
                   <div><strong>Motivo:</strong> {visit.reason}</div>
                   <div><strong>Estado:</strong> {visit.status}</div>
                   <div><strong>Fecha:</strong> {new Date(visit.scheduledDate).toLocaleString()}</div>
                 </div>
-                
+
+                {/* Asignar recurso si la visita está aprobada */}
+                {visit.status === 'approved' && (
+                  <AssignResourceSection visit={visit} />
+                )}
+
                 {visit.checkInTime && visit.checkOutTime && (
                   <div className="mt-3 p-3 bg-green-50 rounded-md">
                     <div className="text-sm font-medium text-green-800">
@@ -124,11 +129,11 @@ export const VisitHistoryModal: React.FC<Props> = ({ visitId, isOpen, onClose })
                               {event.type === 'check-in' ? 'Entrada' : 'Salida'}
                             </span>
                             <span className="text-sm text-gray-500">
-                              {new Date(event.timestamp).toLocaleString()}
+                              {new Date(event.createdAt).toLocaleString()}
                             </span>
                           </div>
                           
-                          {event.photos.length > 0 && (
+                          {event.photos && event.photos.length > 0 && (
                             <div className="mt-2">
                               <div className="text-sm text-gray-600 mb-2">Fotos adjuntas:</div>
                               <div className="grid grid-cols-4 gap-2">
@@ -159,3 +164,57 @@ export const VisitHistoryModal: React.FC<Props> = ({ visitId, isOpen, onClose })
     </div>
   );
 };
+
+// Componente para asignar recurso (tarjeta de acceso) al visitante aprobado
+function AssignResourceSection({ visit }: { visit: Visit }) {
+  const [accesses, setAccesses] = React.useState<any[]>([]);
+  const [selectedAccessId, setSelectedAccessId] = React.useState<string>(visit.accessId || '');
+  const [saving, setSaving] = React.useState(false);
+  const [success, setSuccess] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  React.useEffect(() => {
+    api.getAccesses().then(setAccesses).catch(() => setAccesses([]));
+  }, []);
+
+  const handleAssign = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      await api.updateVisitAccess(visit._id, selectedAccessId);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 2000);
+    } catch (err) {
+      setError('Error al asignar recurso');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 p-3 bg-blue-50 rounded-md">
+      <div className="font-medium mb-2 text-blue-800">Asignar recurso (tarjeta de acceso)</div>
+      <div className="flex gap-2 items-center">
+        <select
+          className="p-2 border rounded"
+          value={selectedAccessId}
+          onChange={e => setSelectedAccessId(e.target.value)}
+        >
+          <option value="">Selecciona tarjeta/acceso</option>
+          {accesses.map(acc => (
+            <option key={acc._id} value={acc._id}>{acc.title}</option>
+          ))}
+        </select>
+        <button
+          className="px-3 py-1 bg-blue-600 text-white rounded"
+          onClick={handleAssign}
+          disabled={!selectedAccessId || saving}
+        >
+          {saving ? 'Guardando...' : 'Asignar'}
+        </button>
+        {success && <span className="text-green-600 ml-2">¡Asignado!</span>}
+        {error && <span className="text-red-600 ml-2">{error}</span>}
+      </div>
+    </div>
+  );
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import * as api from '../../services/api';
 
@@ -30,6 +30,7 @@ export const RedeemPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   
   const [visitorData, setVisitorData] = useState({
     name: '',
@@ -57,8 +58,45 @@ export const RedeemPage: React.FC = () => {
     }
   };
 
+  const now = useMemo(() => new Date(), []);
+
+  const scheduleInfo = useMemo(() => {
+    if (!accessDetails) return null;
+    const { schedule } = accessDetails;
+    const start = new Date(`${schedule.startDate}T${schedule.startTime}:00`);
+    const end = new Date(`${schedule.endDate}T${schedule.endTime}:00`);
+    return { start, end };
+  }, [accessDetails]);
+
+  const isActive = accessDetails?.status === 'active';
+  const hasCapacity = useMemo(() => {
+    if (!accessDetails) return false;
+    const max = accessDetails.settings?.maxUses;
+    if (!max || max <= 0) return true; // sin límite o no configurado
+    return accessDetails.usageCount < max;
+  }, [accessDetails]);
+
+  const withinSchedule = useMemo(() => {
+    if (!scheduleInfo) return false;
+    return now >= scheduleInfo.start && now <= scheduleInfo.end;
+  }, [scheduleInfo, now]);
+
+  const notAvailableReason = useMemo(() => {
+    if (!accessDetails) return null;
+    if (!isActive) return 'Este evento no está activo.';
+    if (!withinSchedule) return 'Fuera del horario del evento.';
+    if (!hasCapacity) return 'Cupo agotado.';
+    return null;
+  }, [accessDetails, isActive, withinSchedule, hasCapacity]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
+
+    if (notAvailableReason) {
+      setSubmitError(notAvailableReason);
+      return;
+    }
     
     if (!visitorData.name || !visitorData.company || !visitorData.email) {
       alert('Por favor complete todos los campos requeridos');
@@ -72,12 +110,11 @@ export const RedeemPage: React.FC = () => {
       if (result.autoApproved) {
         setSuccess(true);
       } else {
-        alert('Su solicitud ha sido enviada y está pendiente de aprobación');
         setSuccess(true);
       }
     } catch (error: any) {
       console.error('Error redeeming access code:', error);
-      alert(error.message || 'Error al procesar el código de acceso');
+      setSubmitError(error.message || 'Error al procesar el código de acceso');
     } finally {
       setSubmitting(false);
     }
@@ -117,6 +154,11 @@ export const RedeemPage: React.FC = () => {
   }
 
   if (success) {
+    const remainingUses = accessDetails ? 
+      (accessDetails.settings.maxUses && accessDetails.settings.maxUses > 0 ? 
+        Math.max(0, accessDetails.settings.maxUses - accessDetails.usageCount - 1) : null) 
+      : null;
+    
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="max-w-md w-full bg-white p-6 rounded-lg shadow-lg text-center">
@@ -129,13 +171,44 @@ export const RedeemPage: React.FC = () => {
           <p className="text-gray-600 mb-4">
             Su visita ha sido registrada correctamente. 
             {accessDetails?.settings.autoApproval 
-              ? ' Puede proceder al edificio.' 
-              : ' Recibirá una notificación cuando sea aprobada.'
+              ? ' Su acceso está pre-aprobado. Puede proceder al edificio.' 
+              : ' Su solicitud está pendiente de aprobación. Recibirá una notificación por email cuando sea aprobada.'
             }
           </p>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 space-y-1">
             <p><strong>Evento:</strong> {accessDetails?.title}</p>
             <p><strong>Código:</strong> {accessCode}</p>
+            <p><strong>Visitante:</strong> {visitorData.name}</p>
+            <p><strong>Empresa:</strong> {visitorData.company}</p>
+            {remainingUses !== null && (
+              <p><strong>Cupos restantes:</strong> {remainingUses}</p>
+            )}
+          </div>
+          {accessDetails?.settings.autoApproval && (
+            <div className="mt-4 p-3 bg-green-50 rounded-lg">
+              <p className="text-sm text-green-700">
+                Su acceso está pre-aprobado. Presente este código al llegar:
+              </p>
+              <div className="mt-2 font-mono text-lg font-bold text-green-800">
+                {accessCode}
+              </div>
+            </div>
+          )}
+          <div className="mt-6 space-y-2">
+            <button
+              onClick={() => window.location.href = '/'}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Finalizar
+            </button>
+            {accessDetails?.settings.autoApproval && (
+              <button
+                onClick={() => window.print()}
+                className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+              >
+                Imprimir confirmación
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -164,9 +237,22 @@ export const RedeemPage: React.FC = () => {
             {accessDetails.description && (
               <p className="text-blue-700 text-sm mt-1">{accessDetails.description}</p>
             )}
-            <div className="text-xs text-blue-600 mt-2">
-              <p>Usos: {accessDetails.usageCount}/{accessDetails.settings.maxUses}</p>
+            {scheduleInfo && (
+              <div className="text-xs text-blue-700 mt-2">
+                <p><strong>Inicio:</strong> {scheduleInfo.start.toLocaleString()}</p>
+                <p><strong>Fin:</strong> {scheduleInfo.end.toLocaleString()}</p>
+              </div>
+            )}
+            <div className="text-xs text-blue-600 mt-2 flex gap-3 flex-wrap">
+              <span><strong>Usos:</strong> {accessDetails.usageCount}/{accessDetails.settings.maxUses || '∞'}</span>
+              <span><strong>Estatus:</strong> {isActive ? 'Activo' : 'No activo'}</span>
+              <span><strong>Horario:</strong> {withinSchedule ? 'En ventana' : 'Fuera de ventana'}</span>
             </div>
+            {notAvailableReason && (
+              <div className="mt-3 p-2 rounded bg-red-100 text-red-700 text-sm">
+                {notAvailableReason}
+              </div>
+            )}
           </div>
         )}
 
@@ -230,9 +316,15 @@ export const RedeemPage: React.FC = () => {
             />
           </div>
 
+          {submitError && (
+            <div className="p-3 bg-red-50 text-red-700 text-sm rounded">
+              {submitError}
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !!notAvailableReason}
             className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {submitting ? 'Registrando...' : 'Registrar Visita'}

@@ -1,6 +1,5 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const axios = require('axios');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 
@@ -13,51 +12,14 @@ router.post('/login', async (req, res) => {
     console.log('Request body:', req.body);
     console.log('Content-Type:', req.headers['content-type']);
     
-    const { email, password, recaptchaToken } = req.body;
+    const { email, password } = req.body;
     
     console.log('Login attempt for:', email);
     console.log('Password provided:', !!password);
-    console.log('reCAPTCHA token provided:', !!recaptchaToken);
 
     if (!email || !password) {
       console.log('Missing credentials - email:', !!email, 'password:', !!password);
       return res.status(400).json({ message: 'Email y contraseña son requeridos' });
-    }
-
-    // Validar reCAPTCHA (opcional en desarrollo)
-    if (recaptchaToken && process.env.NODE_ENV === 'production') {
-      try {
-        console.log('reCAPTCHA token length:', recaptchaToken.length);
-        console.log('reCAPTCHA token preview:', recaptchaToken.substring(0, 50) + '...');
-        
-        const recaptchaResponse = await axios.post(
-          `https://www.google.com/recaptcha/api/siteverify`,
-          null,
-          {
-            params: {
-              secret: process.env.RECAPTCHA_SECRET_KEY,
-              response: recaptchaToken
-            }
-          }
-        );
-
-        console.log('reCAPTCHA validation result:', recaptchaResponse.data);
-
-        if (!recaptchaResponse.data.success) {
-          console.log('reCAPTCHA validation failed. Error codes:', recaptchaResponse.data['error-codes']);
-          return res.status(400).json({ 
-            message: 'Validación de reCAPTCHA fallida',
-            errors: recaptchaResponse.data['error-codes']
-          });
-        }
-        
-        console.log('reCAPTCHA validation successful');
-      } catch (recaptchaError) {
-        console.error('Error validating reCAPTCHA:', recaptchaError.message);
-        return res.status(500).json({ message: 'Error al validar reCAPTCHA' });
-      }
-    } else {
-      console.log('Warning: reCAPTCHA validation skipped (development mode or no token)');
     }
 
     // Find user and include password for comparison

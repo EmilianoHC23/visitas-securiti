@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import ReCAPTCHA from 'react-google-recaptcha';
 import { useAuth } from '../contexts/AuthContext';
 
 // Fixed emailError undefined issue - all variables properly declared
@@ -11,8 +10,6 @@ export const LoginPage: React.FC = () => {
     const [emailError, setEmailError] = useState<string | null>(null);
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const { login, loading } = useAuth();
-    const [captchaValue, setCaptchaValue] = useState<string | null>(null);
-    const [captchaError, setCaptchaError] = useState<string | null>(null);
     // Eliminado: área de subir imagen
 
     const validateEmail = (email: string): boolean => {
@@ -63,7 +60,6 @@ export const LoginPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-        setCaptchaError(null);
 
         const isEmailValid = validateEmail(email);
         const isPasswordValid = validatePassword(password);
@@ -72,13 +68,8 @@ export const LoginPage: React.FC = () => {
             return;
         }
 
-        if (!captchaValue) {
-            setCaptchaError('Por favor verifica el captcha.');
-            return;
-        }
-
         try {
-            await login(email, password, captchaValue);
+            await login(email, password);
         } catch (err: any) {
             setError('Email o contraseña incorrectos.');
         }
@@ -189,26 +180,10 @@ export const LoginPage: React.FC = () => {
                                 <p className="mt-1 text-sm text-red-600">{passwordError}</p>
                             )}
                         </div>
-                        <div className="flex flex-col items-center">
-                            <ReCAPTCHA
-                                sitekey="6Lc3fesrAAAAABp5sagX6R7q30_eeyWEjmaj_Xid"
-                                onChange={value => {
-                                    setCaptchaValue(value);
-                                    setCaptchaError(null);
-                                }}
-                                onExpired={() => {
-                                    setCaptchaValue(null);
-                                    setCaptchaError('El captcha expiró, por favor verifica de nuevo.');
-                                }}
-                            />
-                            {captchaError && (
-                                <p className="mt-2 text-sm text-red-600">{captchaError}</p>
-                            )}
-                        </div>
                         <button
                             type="submit"
-                            disabled={loading || !!emailError || !!passwordError || !captchaValue}
-                            className="w-full py-3 rounded-lg text-white font-semibold text-base transition-colors bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed mt-2 shadow"
+                            disabled={loading || !!emailError || !!passwordError}
+                            className="w-full py-3 rounded-lg text-white font-semibold text-base transition-colors bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed mt-6 shadow"
                         >
                             {loading ? 'Ingresando...' : 'Iniciar Sesión'}
                         </button>

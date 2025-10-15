@@ -95,12 +95,10 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => { // e
 };
 
 // --- AUTENTICACIÓN ---
-export const login = async (username: string, password: string, recaptchaToken?: string): Promise<{ token: string; user: User }> => {
-  const body: any = { username, password, email: username };
-  if (recaptchaToken) body.recaptchaToken = recaptchaToken;
+export const login = async (username: string, password: string): Promise<{ token: string; user: User }> => {
   return apiRequest('/auth/login', {
     method: 'POST',
-    body: JSON.stringify(body),
+    body: JSON.stringify({ username, password, email: username }),
   });
 };
 

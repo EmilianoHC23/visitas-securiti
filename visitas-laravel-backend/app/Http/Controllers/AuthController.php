@@ -15,6 +15,16 @@ class AuthController extends Controller
     // Login
     public function login(Request $request)
     {
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string|min:6',
+        ], [
+            'email.required' => 'El email es obligatorio.',
+            'email.email' => 'El email debe ser válido.',
+            'password.required' => 'La contraseña es obligatoria.',
+            'password.min' => 'La contraseña debe tener al menos 6 caracteres.'
+        ]);
+
         $credentials = $request->only('email', 'password');
         try {
             if (! $token = JWTAuth::attempt($credentials)) {

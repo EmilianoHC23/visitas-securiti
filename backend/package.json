@@ -12,6 +12,7 @@
     "reset-admin": "node src/reset-admin.js"
   },
   "dependencies": {
+    "axios": "^1.12.2",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.0",
     "cors": "^2.8.5",

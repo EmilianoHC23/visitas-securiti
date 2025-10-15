@@ -191,7 +191,7 @@ export const LoginPage: React.FC = () => {
                         </div>
                         <div className="flex flex-col items-center">
                             <ReCAPTCHA
-                                sitekey="6Le7eeorAAAAAEw7AkVVn8Bl3mbllckIcZBZa-R6"
+                                sitekey="6Lc3fesrAAAAABp5sagX6R7q30_eeyWEjmaj_Xid"
                                 onChange={value => {
                                     setCaptchaValue(value);
                                     setCaptchaError(null);

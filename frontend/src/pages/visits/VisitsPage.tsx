@@ -634,100 +634,198 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
 
 // Agrega el botón de Agenda en el header
     return (
-        <div>
-            <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-                <h1 className="text-2xl font-bold text-securiti-blue-700">Visitas</h1>
-                <div className="flex gap-4 items-center flex-wrap">
-                    {/* Botón Registrar Visita con submenú */}
-                    <div className="relative">
-                        <button
-                            onClick={() => setRegisterMenuOpen(!registerMenuOpen)}
-                            className="px-4 py-2 bg-securiti-blue-600 text-white rounded-md hover:bg-securiti-blue-700 font-semibold flex items-center gap-2"
-                        >
-                            Registrar Visita
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        {registerMenuOpen && (
-                            <div className="absolute top-full left-0 mt-2 bg-white rounded-md shadow-lg border border-gray-200 z-50 min-w-[200px]">
-                                <button
-                                    onClick={() => {
-                                        setIsModalOpen(true);
-                                        setRegisterMenuOpen(false);
-                                    }}
-                                    className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                                >
-                                    <LoginIcon className="w-4 h-4" />
-                                    Entrada de Visitante
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowExitModal(true);
-                                        setRegisterMenuOpen(false);
-                                    }}
-                                    className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2 border-t"
-                                >
-                                    <LogoutIcon className="w-4 h-4" />
-                                    Salida de Visitante
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                    <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={autoApprove} onChange={e => setAutoApprove(e.target.checked)} />
-                        <span className="text-sm">Auto-aprobar visitas</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={autoCheckIn} onChange={e => setAutoCheckIn(e.target.checked)} />
-                        <span className="text-sm">Auto check-in al llegar</span>
-                    </label>
-                    <button
-      className="px-3 py-2 bg-securiti-blue-100 text-securiti-blue-700 rounded shadow hover:bg-securiti-blue-200"
-      onClick={() => navigate('/visits/agenda')}
-    >
-      Ver Agenda
-    </button>
+        <div className="p-6">
+            {/* Header con contador total */}
+            <div className="mb-6">
+                <div className="flex items-baseline gap-3">
+                    <div className="text-6xl font-bold text-securiti-blue-600">{visits.length}</div>
+                    <div className="text-sm text-gray-600">Total de registros hoy</div>
                 </div>
             </div>
+
+            {/* Botones de acción */}
+            <div className="flex justify-end gap-4 items-center mb-6">
+                <button
+                    onClick={() => navigate('/visits/agenda')}
+                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium flex items-center gap-2"
+                >
+                    Ver agenda
+                </button>
+                
+                {/* Botón Registrar con submenú */}
+                <div className="relative">
+                    <button
+                        onClick={() => setRegisterMenuOpen(!registerMenuOpen)}
+                        className="px-4 py-2 bg-cyan-400 text-white rounded-lg hover:bg-cyan-500 font-medium flex items-center gap-2"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Registrar
+                    </button>
+                    {registerMenuOpen && (
+                        <div className="absolute top-full right-0 mt-2 bg-white rounded-md shadow-lg border border-gray-200 z-50 min-w-[200px]">
+                            <button
+                                onClick={() => {
+                                    setIsModalOpen(true);
+                                    setRegisterMenuOpen(false);
+                                }}
+                                className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                            >
+                                <LoginIcon className="w-4 h-4" />
+                                Entrada de Visitante
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowExitModal(true);
+                                    setRegisterMenuOpen(false);
+                                }}
+                                className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2 border-t"
+                            >
+                                <LogoutIcon className="w-4 h-4" />
+                                Salida de Visitante
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             {loading ? (
                 <div className="text-center p-8">Cargando visitas...</div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <h2 className="text-lg font-semibold text-yellow-700 mb-2">En Espera de Respuesta</h2>
-                        <div className="space-y-4">
-                            {pendingVisits.length > 0 ? (
-                                pendingVisits.map(visit => (
-                                    <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
-                                ))
-                            ) : (
-                                <p className="text-gray-400">No hay visitas pendientes.</p>
-                            )}
+                    {/* Columna 1: En espera */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="bg-white p-4 border-b border-gray-200">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                        <ClockIcon className="w-5 h-5 text-orange-600" />
+                                    </div>
+                                    <div className="text-3xl font-bold text-gray-800">{pendingVisits.length}</div>
+                                </div>
+                                <div className="text-xs text-gray-500 font-medium">Total</div>
+                            </div>
+                            <h2 className="text-base font-semibold text-gray-800 mb-3">En espera</h2>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <div className="relative">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={autoApprove} 
+                                        onChange={e => setAutoApprove(e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                                </div>
+                                <span className="text-sm text-gray-700">Auto aprobación</span>
+                            </label>
+                        </div>
+                        <div className="p-4">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar..."
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
+                                />
+                                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <div className="mt-4 space-y-3 max-h-[600px] overflow-y-auto">
+                                {pendingVisits.length > 0 ? (
+                                    pendingVisits.map(visit => (
+                                        <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
+                                    ))
+                                ) : (
+                                    <p className="text-gray-400 text-center py-8">No hay visitas pendientes.</p>
+                                )}
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <h2 className="text-lg font-semibold text-blue-700 mb-2">Respuesta Recibida</h2>
-                        <div className="space-y-4">
-                            {approvedVisits.length > 0 ? (
-                                approvedVisits.map(visit => (
-                                    <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
-                                ))
-                            ) : (
-                                <p className="text-gray-400">No hay visitas aprobadas.</p>
-                            )}
+
+                    {/* Columna 2: Respuesta recibida */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="bg-white p-4 border-b border-gray-200">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                        <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                                    </div>
+                                    <div className="text-3xl font-bold text-gray-800">{approvedVisits.length}</div>
+                                </div>
+                                <div className="text-xs text-gray-500 font-medium">Total</div>
+                            </div>
+                            <h2 className="text-base font-semibold text-gray-800 mb-3">Respuesta recibida</h2>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <div className="relative">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={autoCheckIn} 
+                                        onChange={e => setAutoCheckIn(e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                                </div>
+                                <span className="text-sm text-gray-700">Auto check in</span>
+                            </label>
+                        </div>
+                        <div className="p-4">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar..."
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
+                                />
+                                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <div className="mt-4 space-y-3 max-h-[600px] overflow-y-auto">
+                                {approvedVisits.length > 0 ? (
+                                    approvedVisits.map(visit => (
+                                        <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
+                                    ))
+                                ) : (
+                                    <p className="text-gray-400 text-center py-8">No hay visitas aprobadas.</p>
+                                )}
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <h2 className="text-lg font-semibold text-green-700 mb-2">Visitante Dentro</h2>
-                        <div className="space-y-4">
-                            {checkedInVisits.length > 0 ? (
-                                checkedInVisits.map(visit => (
-                                    <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
-                                ))
-                            ) : (
-                                <p className="text-gray-400">No hay visitantes dentro.</p>
-                            )}
+
+                    {/* Columna 3: Dentro */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="bg-white p-4 border-b border-gray-200">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                        <LoginIcon className="w-5 h-5 text-green-600" />
+                                    </div>
+                                    <div className="text-3xl font-bold text-gray-800">{checkedInVisits.length}</div>
+                                </div>
+                                <div className="text-xs text-gray-500 font-medium">Total</div>
+                            </div>
+                            <h2 className="text-base font-semibold text-gray-800 mb-3">Dentro</h2>
+                        </div>
+                        <div className="p-4">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar..."
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
+                                />
+                                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <div className="mt-4 space-y-3 max-h-[600px] overflow-y-auto">
+                                {checkedInVisits.length > 0 ? (
+                                    checkedInVisits.map(visit => (
+                                        <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
+                                    ))
+                                ) : (
+                                    <p className="text-gray-400 text-center py-8">No hay visitantes dentro.</p>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

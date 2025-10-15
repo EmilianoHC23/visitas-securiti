@@ -5,6 +5,7 @@ import { CheckoutModal } from './CheckoutModal';
 import { VisitHistoryModal } from './VisitHistoryModal';
 import { CheckCircleIcon, LogoutIcon, LoginIcon, ClockIcon } from '../../components/common/icons';
 import { useNavigate } from 'react-router-dom';
+import jsQR from 'jsqr';
 
 // Hook para calcular y actualizar el tiempo de espera en tiempo real
 function useElapsedTime(startDate: string) {
@@ -33,6 +34,7 @@ const VisitCard: React.FC<{ visit: Visit; onApprove: (id: string) => void; onRej
         switch (status) {
             case VisitStatus.PENDING: return <span className="px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-200 rounded-full">Pendiente</span>;
             case VisitStatus.APPROVED: return <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full">Aprobado</span>;
+            case VisitStatus.REJECTED: return <span className="px-2 py-1 text-xs font-semibold text-red-800 bg-red-200 rounded-full">Rechazado</span>;
             case VisitStatus.CHECKED_IN: return <span className="px-2 py-1 text-xs font-semibold text-green-800 bg-green-200 rounded-full">Activo</span>;
             case VisitStatus.COMPLETED: return <span className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">Completado</span>;
         }
@@ -42,8 +44,13 @@ const VisitCard: React.FC<{ visit: Visit; onApprove: (id: string) => void; onRej
     const showElapsed = visit.status === VisitStatus.PENDING || visit.status === VisitStatus.APPROVED;
     const elapsed = showElapsed ? useElapsedTime(visit.scheduledDate) : null;
     
+    // Color del borde según el estado
+    const borderColor = visit.status === VisitStatus.REJECTED 
+        ? 'border-red-500' 
+        : 'border-securiti-blue-500';
+    
     return (
-    <div className="bg-white rounded-lg shadow-md p-3 border-l-4 border-securiti-blue-500 min-h-[180px] flex flex-col justify-between">
+    <div className={`bg-white rounded-lg shadow-md p-3 border-l-4 ${borderColor} min-h-[180px] flex flex-col justify-between`}>
             <div className="flex justify-between items-start gap-2">
                 <div>
                     <p className="text-base font-bold text-gray-800 leading-tight">{visit.visitorName}</p>
@@ -170,9 +177,67 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
                 qrScannerRef.current.play();
             }
             setIsQrScannerOn(true);
+            
+            // Iniciar detección QR con jsQR
+            scanQRCode();
         } catch (error) {
             alert('No se pudo acceder a la cámara para escanear QR. Ingresa el código manualmente.');
         }
+    };
+
+    const scanQRCode = () => {
+        if (!qrScannerRef.current || !isQrScannerOn) return;
+        
+        const canvas = document.createElement('canvas');
+        const video = qrScannerRef.current;
+        
+        const scan = () => {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+                    
+                    if (code) {
+                        try {
+                            const qrData = JSON.parse(code.data);
+                            
+                            // Si es del tipo visitor-info, auto-completar el formulario
+                            if (qrData.type === 'visitor-info') {
+                                setVisitorName(qrData.visitorName || '');
+                                setVisitorCompany(qrData.visitorCompany || '');
+                                setVisitorEmail(qrData.visitorEmail || '');
+                                setHostId(qrData.hostId || '');
+                                setQrCode(code.data);
+                                setHasQrInvitation(false);
+                                stopQrScanner();
+                                alert('✅ Datos cargados desde QR exitosamente');
+                                return;
+                            }
+                            
+                            // Si es otro tipo de QR, solo guardar el código
+                            setQrCode(code.data);
+                            setHasQrInvitation(false);
+                            stopQrScanner();
+                        } catch (e) {
+                            // Si no es JSON válido, guardar como texto plano
+                            setQrCode(code.data);
+                            setHasQrInvitation(false);
+                            stopQrScanner();
+                        }
+                    }
+                }
+            }
+            
+            if (isQrScannerOn) {
+                requestAnimationFrame(scan);
+            }
+        };
+        
+        scan();
     };
 
     const stopQrScanner = () => {
@@ -506,10 +571,46 @@ const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits:
                 qrVideoRef.current.play();
             }
             setIsScanning(true);
+            
+            // Iniciar detección QR con jsQR
+            scanExitQRCode();
         } catch (error) {
             console.error('Error accessing camera:', error);
             alert('No se pudo acceder a la cámara para escanear QR.');
         }
+    };
+
+    const scanExitQRCode = () => {
+        if (!qrVideoRef.current || !isScanning) return;
+        
+        const canvas = document.createElement('canvas');
+        const video = qrVideoRef.current;
+        
+        const scan = () => {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+                    
+                    if (code) {
+                        setQrCode(code.data);
+                        setIsScanning(false);
+                        stopQrScanner();
+                        return;
+                    }
+                }
+            }
+            
+            if (isScanning) {
+                requestAnimationFrame(scan);
+            }
+        };
+        
+        scan();
     };
 
     const stopQrScanner = () => {
@@ -535,15 +636,55 @@ const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits:
         onClose();
     };
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (!qrCode.trim()) {
             alert('Por favor, escanea o ingresa un código QR');
             return;
         }
-        // Aquí se procesaría el QR code para identificar y registrar la salida del visitante
-        // Por ahora, mostramos un mensaje
-        alert(`Procesando salida con QR: ${qrCode}`);
-        handleClose();
+        
+        try {
+            // Intentar parsear el QR como JSON
+            let visitId = '';
+            try {
+                const qrData = JSON.parse(qrCode);
+                // Si el QR contiene visitId directamente
+                if (qrData.visitId) {
+                    visitId = qrData.visitId;
+                } else if (qrData.type === 'visit-checkin' && qrData.visitId) {
+                    visitId = qrData.visitId;
+                }
+            } catch (e) {
+                // Si no es JSON, asumir que es el ID directo
+                visitId = qrCode;
+            }
+            
+            if (!visitId) {
+                alert('Código QR inválido');
+                return;
+            }
+            
+            // Buscar la visita en la lista actual
+            const visit = visits.find(v => v._id === visitId);
+            
+            if (!visit) {
+                alert('No se encontró la visita asociada a este código QR');
+                return;
+            }
+            
+            if (visit.status !== VisitStatus.CHECKED_IN) {
+                alert('Esta visita no está registrada como activa (check-in)');
+                return;
+            }
+            
+            // Procesar el checkout
+            await onCheckout(visit);
+            
+            alert('✅ Salida registrada exitosamente');
+            handleClose();
+        } catch (error) {
+            console.error('Error processing checkout:', error);
+            alert('Error al procesar la salida. Intenta nuevamente.');
+        }
     };
     
     if (!isOpen) return null;
@@ -790,20 +931,19 @@ export const VisitsPage: React.FC = () => {
         }
     };
 
-    // Toggles de auto-aprobación y auto-check-in (simulación frontend)
+    // Toggles de auto-aprobación y auto-check-in
     const [autoApprove, setAutoApprove] = useState(false);
     const [autoCheckIn, setAutoCheckIn] = useState(false);
+    const [companyConfig, setCompanyConfig] = useState<any>(null);
 
-    // Puedes conectar estos toggles con el backend si tienes endpoints para settings de la empresa
-    // y guarda el estado en la base de datos
-
-    // Ejemplo de uso en el efecto de carga de visitas:
+    // Cargar settings de la empresa
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                // const settings = await api.getSettings(); // Supongamos que tienes un endpoint para esto
-                // setAutoApprove(settings.autoApprove);
-                // setAutoCheckIn(settings.autoCheckIn);
+                const config = await api.getCompanyConfig();
+                setCompanyConfig(config);
+                setAutoApprove(config.settings.autoApproval || false);
+                setAutoCheckIn(config.settings.autoCheckIn || false);
             } catch (error) {
                 console.error('Failed to fetch settings:', error);
             }
@@ -812,12 +952,65 @@ export const VisitsPage: React.FC = () => {
         fetchSettings();
     }, []);
 
+    // Actualizar auto-aprobación en el backend
+    const handleAutoApproveToggle = async (checked: boolean) => {
+        setAutoApprove(checked);
+        try {
+            await api.updateCompanyConfig({
+                ...companyConfig,
+                settings: {
+                    ...companyConfig.settings,
+                    autoApproval: checked
+                }
+            });
+        } catch (error) {
+            console.error('Failed to update auto-approval:', error);
+            setAutoApprove(!checked); // Revertir si falla
+        }
+    };
+
+    // Actualizar auto-check-in en el backend
+    const handleAutoCheckInToggle = async (checked: boolean) => {
+        setAutoCheckIn(checked);
+        try {
+            await api.updateCompanyConfig({
+                ...companyConfig,
+                settings: {
+                    ...companyConfig.settings,
+                    autoCheckIn: checked
+                }
+            });
+        } catch (error) {
+            console.error('Failed to update auto-checkin:', error);
+            setAutoCheckIn(!checked); // Revertir si falla
+        }
+    };
+
     const navigate = useNavigate();
 
     // Arrays de visitas por status (asegúrate que estén antes del return)
 const pendingVisits = visits.filter(v => v.status === VisitStatus.PENDING);
 const approvedVisits = visits.filter(v => v.status === VisitStatus.APPROVED);
+const rejectedVisits = visits.filter(v => v.status === VisitStatus.REJECTED);
+const respondedVisits = [...approvedVisits, ...rejectedVisits].sort((a, b) => 
+    new Date(b.updatedAt || b.createdAt || '').getTime() - new Date(a.updatedAt || a.createdAt || '').getTime()
+);
 const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
+
+// Filtrar visitas de hoy
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayVisits = visits.filter(v => {
+        const visitDate = new Date(v.scheduledDate);
+        visitDate.setHours(0, 0, 0, 0);
+        return visitDate.getTime() === today.getTime();
+    });
+
+    const formattedDate = today.toLocaleDateString('es-ES', { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'long' 
+    });
 
 // Agrega el botón de Agenda en el header
     return (
@@ -825,8 +1018,11 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
             {/* Header con contador total */}
             <div className="mb-6">
                 <div className="flex items-baseline gap-3">
-                    <div className="text-6xl font-bold text-securiti-blue-600">{visits.length}</div>
-                    <div className="text-sm text-gray-600">Total de registros hoy</div>
+                    <div className="text-6xl font-bold text-securiti-blue-600">{todayVisits.length}</div>
+                    <div>
+                        <div className="text-sm text-gray-600">Total de registros hoy</div>
+                        <div className="text-xs text-gray-500 capitalize">{formattedDate}</div>
+                    </div>
                 </div>
             </div>
 
@@ -836,6 +1032,9 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                     onClick={() => navigate('/visits/agenda')}
                     className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium flex items-center gap-2"
                 >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
                     Ver agenda
                 </button>
                 
@@ -899,7 +1098,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                     <input 
                                         type="checkbox" 
                                         checked={autoApprove} 
-                                        onChange={e => setAutoApprove(e.target.checked)}
+                                        onChange={e => handleAutoApproveToggle(e.target.checked)}
                                         className="sr-only peer"
                                     />
                                     <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
@@ -938,9 +1137,14 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                     <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
                                         <CheckCircleIcon className="w-5 h-5 text-green-600" />
                                     </div>
-                                    <div className="text-3xl font-bold text-gray-800">{approvedVisits.length}</div>
+                                    <div className="text-3xl font-bold text-gray-800">{respondedVisits.length}</div>
                                 </div>
-                                <div className="text-xs text-gray-500 font-medium">Total</div>
+                                <div className="text-xs text-gray-500 font-medium">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-green-600">✓ {approvedVisits.length} Aprobadas</span>
+                                        <span className="text-red-600">✗ {rejectedVisits.length} Rechazadas</span>
+                                    </div>
+                                </div>
                             </div>
                             <h2 className="text-base font-semibold text-gray-800 mb-3">Respuesta recibida</h2>
                             <label className="flex items-center gap-2 cursor-pointer">
@@ -948,7 +1152,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                     <input 
                                         type="checkbox" 
                                         checked={autoCheckIn} 
-                                        onChange={e => setAutoCheckIn(e.target.checked)}
+                                        onChange={e => handleAutoCheckInToggle(e.target.checked)}
                                         className="sr-only peer"
                                     />
                                     <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
@@ -968,8 +1172,8 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                 </svg>
                             </div>
                             <div className="mt-4 space-y-3 max-h-[600px] overflow-y-auto">
-                                {approvedVisits.length > 0 ? (
-                                    approvedVisits.map(visit => (
+                                {respondedVisits.length > 0 ? (
+                                    respondedVisits.map(visit => (
                                         <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
                                     ))
                                 ) : (

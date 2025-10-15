@@ -56,6 +56,7 @@ export interface Company {
   logo?: string;
   settings: {
     autoApproval: boolean;
+    autoCheckIn: boolean;
     requirePhoto: boolean;
     enableSelfRegister: boolean;
     notificationEmail?: string;

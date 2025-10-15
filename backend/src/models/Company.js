@@ -21,6 +21,10 @@ const companySchema = new mongoose.Schema({
       type: Boolean,
       default: false
     },
+    autoCheckIn: {
+      type: Boolean,
+      default: false
+    },
     requirePhoto: {
       type: Boolean,
       default: true

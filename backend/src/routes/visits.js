@@ -588,21 +588,21 @@ router.post('/checkout/:id', auth, async (req, res) => {
     const limitedPhotos = Array.isArray(photos) ? photos.slice(0, 5) : [];
     await new VisitEvent({ visitId: visit._id, type: 'check-out', photos: limitedPhotos }).save();
     const elapsedMs = visit.checkInTime ? (visit.checkOutTime - visit.checkInTime) : null;
-    // Optional: notify visitor of checkout summary
+    
+    // Enviar email de despedida al visitante
     if (visit.visitorEmail) {
       try {
-        await require('../services/emailService').sendVisitorNotificationEmail({
+        await require('../services/emailService').sendCheckoutEmail({
           visitorEmail: visit.visitorEmail,
           visitorName: visit.visitorName,
+          visitorCompany: visit.visitorCompany || 'N/A',
           hostName: `${visit.host.firstName} ${visit.host.lastName}`,
           companyName: 'SecurITI',
-          status: 'completed',
-          reason: visit.reason,
-          scheduledDate: visit.scheduledDate,
-          destination: visit.destination
+          checkInTime: visit.checkInTime,
+          checkOutTime: visit.checkOutTime
         });
       } catch (mailErr) {
-        console.warn('Email notify error (check-out):', mailErr?.message || mailErr);
+        console.warn('Email checkout error:', mailErr?.message || mailErr);
       }
     }
     res.json({ visit, elapsedMs });

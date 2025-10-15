@@ -17,6 +17,7 @@
     "@mui/material": "^7.3.4",
     "@mui/styled-engine-sc": "^7.3.3",
     "@types/qrcode": "^1.5.5",
+    "@types/react-google-recaptcha": "^2.1.9",
     "bootstrap": "^5.3.8",
     "date-fns": "^4.1.0",
     "qrcode": "^1.5.4",

@@ -71,7 +71,7 @@ export const VisitHistoryModal: React.FC<Props> = ({ visitId, isOpen, onClose })
                     {visit.visitorPhoto ? (
                       <img src={visit.visitorPhoto} alt="Foto visitante" className="w-10 h-10 rounded-full object-cover border-2 border-gray-300" />
                     ) : (
-                      <span className="inline-block w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                      <span className="flex w-10 h-10 rounded-full bg-gray-200 items-center justify-center text-gray-500">
                         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                         </svg>
@@ -84,7 +84,7 @@ export const VisitHistoryModal: React.FC<Props> = ({ visitId, isOpen, onClose })
                     {visit.host.profileImage ? (
                       <img src={visit.host.profileImage} alt="Foto anfitrión" className="w-10 h-10 rounded-full object-cover border-2 border-blue-300" />
                     ) : (
-                      <span className="inline-block w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                      <span className="flex w-10 h-10 rounded-full bg-blue-100 items-center justify-center text-blue-600">
                         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                         </svg>

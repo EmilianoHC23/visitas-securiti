@@ -24,9 +24,12 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Email y contraseña son requeridos' });
     }
 
-    // Validar reCAPTCHA
-    if (recaptchaToken) {
+    // Validar reCAPTCHA (opcional en desarrollo)
+    if (recaptchaToken && process.env.NODE_ENV === 'production') {
       try {
+        console.log('reCAPTCHA token length:', recaptchaToken.length);
+        console.log('reCAPTCHA token preview:', recaptchaToken.substring(0, 50) + '...');
+        
         const recaptchaResponse = await axios.post(
           `https://www.google.com/recaptcha/api/siteverify`,
           null,
@@ -41,13 +44,20 @@ router.post('/login', async (req, res) => {
         console.log('reCAPTCHA validation result:', recaptchaResponse.data);
 
         if (!recaptchaResponse.data.success) {
-          console.log('reCAPTCHA validation failed');
-          return res.status(400).json({ message: 'Validación de reCAPTCHA fallida' });
+          console.log('reCAPTCHA validation failed. Error codes:', recaptchaResponse.data['error-codes']);
+          return res.status(400).json({ 
+            message: 'Validación de reCAPTCHA fallida',
+            errors: recaptchaResponse.data['error-codes']
+          });
         }
+        
+        console.log('reCAPTCHA validation successful');
       } catch (recaptchaError) {
-        console.error('Error validating reCAPTCHA:', recaptchaError);
+        console.error('Error validating reCAPTCHA:', recaptchaError.message);
         return res.status(500).json({ message: 'Error al validar reCAPTCHA' });
       }
+    } else {
+      console.log('Warning: reCAPTCHA validation skipped (development mode or no token)');
     }
 
     // Find user and include password for comparison

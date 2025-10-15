@@ -119,7 +119,12 @@ export const getVisits = async (filters?: {
   const params = new URLSearchParams();
   if (filters?.status) params.append('status', filters.status);
   if (filters?.hostId) params.append('hostId', filters.hostId);
-  
+<<<<<<< HEAD
+  if (filters?.date) params.append('date', filters.date);
+=======
+  if (filters?.limit) params.append('limit', filters.limit.toString());
+  if (filters?.page) params.append('page', filters.page.toString());
+>>>>>>> ef0db9d98d173edacdb6f76c3e808da590df12a8
   const queryString = params.toString();
   return apiRequest(`/visits${queryString ? `?${queryString}` : ''}`);
 };
@@ -134,7 +139,6 @@ export const createVisit = async (visitData: {
   visitorEmail?: string;
   visitorPhone?: string;
   visitorPhoto?: string;
-  qrToken?: string;
 }): Promise<Visit> => {
   return apiRequest('/visits', {
     method: 'POST',

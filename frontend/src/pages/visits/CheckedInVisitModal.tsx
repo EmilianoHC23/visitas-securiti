@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Visit } from '../../types';
 import { formatShortDate, formatTime } from '../../utils/dateUtils';
 
@@ -16,12 +16,20 @@ export const CheckedInVisitModal: React.FC<CheckedInVisitModalProps> = ({
   onCheckout
 }) => {
   const [elapsedTime, setElapsedTime] = useState('');
+  const checkInTimeRef = useRef<string | null>(null);
+
+  // Guardar el checkInTime cuando el modal se abre
+  useEffect(() => {
+    if (visit && isOpen && visit.checkInTime) {
+      checkInTimeRef.current = visit.checkInTime;
+    }
+  }, [visit?._id, isOpen]); // Solo cambiar cuando cambia el ID de la visita o se abre el modal
 
   useEffect(() => {
-    if (!visit || !isOpen || !visit.checkInTime) return;
+    if (!isOpen || !checkInTimeRef.current) return;
 
     const updateElapsedTime = () => {
-      const start = new Date(visit.checkInTime!);
+      const start = new Date(checkInTimeRef.current!);
       const now = new Date();
       const diffMs = now.getTime() - start.getTime();
       const minutes = Math.floor(diffMs / 60000);
@@ -33,7 +41,7 @@ export const CheckedInVisitModal: React.FC<CheckedInVisitModalProps> = ({
     const interval = setInterval(updateElapsedTime, 1000);
 
     return () => clearInterval(interval);
-  }, [visit, isOpen]);
+  }, [isOpen]); // Solo depende de isOpen, no de visit
 
   if (!isOpen || !visit) return null;
 
@@ -69,11 +77,11 @@ export const CheckedInVisitModal: React.FC<CheckedInVisitModalProps> = ({
         <div className="p-6">
           {/* Foto del visitante */}
           <div className="flex flex-col items-center mb-6">
-            <div className="w-32 h-32 rounded-full border-4 border-purple-400 overflow-hidden bg-gray-100 flex items-center justify-center mb-3">
+            <div className="w-32 h-32 rounded-full border-4 border-purple-400 overflow-hidden bg-gray-100 flex items-center justify-center mb-3 flex-shrink-0">
               {visit.visitorPhoto ? (
-                <img src={visit.visitorPhoto} alt={visit.visitorName} className="w-full h-full object-cover" />
+                <img src={visit.visitorPhoto} alt={visit.visitorName} className="w-full h-full object-cover object-center" />
               ) : (
-                <svg className="w-20 h-20 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-16 h-16 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                 </svg>
               )}

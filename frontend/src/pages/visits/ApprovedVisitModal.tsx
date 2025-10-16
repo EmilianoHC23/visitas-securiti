@@ -80,17 +80,17 @@ export const ApprovedVisitModal: React.FC<ApprovedVisitModalProps> = ({
           <div className="flex justify-between items-start mb-6 px-4">
             {/* Foto Visitante */}
             <div className="text-center flex-1">
-              <div className="w-20 h-20 rounded-full border-4 border-green-400 overflow-hidden bg-gray-100 flex items-center justify-center mx-auto mb-2">
+              <div className="w-20 h-20 rounded-full border-4 border-green-400 overflow-hidden bg-gray-100 flex items-center justify-center mx-auto mb-2 flex-shrink-0">
                 {visit.visitorPhoto ? (
-                  <img src={visit.visitorPhoto} alt={visit.visitorName} className="w-full h-full object-cover" />
+                  <img src={visit.visitorPhoto} alt={visit.visitorName} className="w-full h-full object-cover object-center" />
                 ) : (
-                  <svg className="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-10 h-10 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                   </svg>
                 )}
               </div>
-              <p className="font-semibold text-sm text-gray-800 truncate px-1">{visit.visitorName}</p>
-              <p className="text-xs text-gray-500 truncate px-1">{visit.visitorCompany || 'Sin empresa'}</p>
+              <p className="font-semibold text-sm text-gray-800 truncate px-1 max-w-[100px] mx-auto">{visit.visitorName}</p>
+              <p className="text-xs text-gray-500 truncate px-1 max-w-[100px] mx-auto">{visit.visitorCompany || 'Sin empresa'}</p>
             </div>
 
             {/* Ícono de aprobación */}
@@ -104,17 +104,17 @@ export const ApprovedVisitModal: React.FC<ApprovedVisitModalProps> = ({
 
             {/* Foto Host */}
             <div className="text-center flex-1">
-              <div className="w-20 h-20 rounded-full border-4 border-blue-400 overflow-hidden bg-gray-100 flex items-center justify-center mx-auto mb-2">
+              <div className="w-20 h-20 rounded-full border-4 border-blue-400 overflow-hidden bg-gray-100 flex items-center justify-center mx-auto mb-2 flex-shrink-0">
                 {visit.host.profileImage ? (
-                  <img src={visit.host.profileImage} alt={`${visit.host.firstName} ${visit.host.lastName}`} className="w-full h-full object-cover" />
+                  <img src={visit.host.profileImage} alt={`${visit.host.firstName} ${visit.host.lastName}`} className="w-full h-full object-cover object-center" />
                 ) : (
-                  <svg className="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-10 h-10 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                   </svg>
                 )}
               </div>
-              <p className="font-semibold text-sm text-gray-800 truncate px-1">{visit.host.firstName} {visit.host.lastName}</p>
-              <p className="text-xs text-gray-500 truncate px-1">SecurITI</p>
+              <p className="font-semibold text-sm text-gray-800 truncate px-1 max-w-[100px] mx-auto">{visit.host.firstName} {visit.host.lastName}</p>
+              <p className="text-xs text-gray-500 truncate px-1 max-w-[100px] mx-auto">SecurITI</p>
             </div>
           </div>
 

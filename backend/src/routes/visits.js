@@ -151,6 +151,7 @@ router.post('/', auth, async (req, res) => {
     const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
       await require('../services/emailService').sendApprovalRequestEmail({
         hostEmail: host.email,
+        hostName: `${host.firstName} ${host.lastName}`,
         companyName: (company && company.name) || 'SecurITI',
         visitorName,
         visitorCompany,
@@ -210,6 +211,7 @@ router.post('/register', async (req, res) => {
   const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
     await require('../services/emailService').sendApprovalRequestEmail({
       hostEmail: host.email,
+      hostName: `${host.firstName} ${host.lastName}`,
       companyName: 'SecurITI',
       visitorName,
       visitorCompany,
@@ -293,6 +295,7 @@ router.put('/:id/status', auth, async (req, res) => {
 
     // Enviar notificaciones al visitante cuando corresponda
     if ((status === 'approved' || status === 'rejected') && updated.visitorEmail) {
+      console.log(`📧 [EMAIL] Sending ${status} notification to:`, updated.visitorEmail, 'for visit:', updated._id.toString());
       const populated = await Visit.findById(updated._id).populate('host', 'firstName lastName');
       try {
         await require('../services/emailService').sendVisitorNotificationEmail({
@@ -306,8 +309,9 @@ router.put('/:id/status', auth, async (req, res) => {
           scheduledDate: populated.scheduledDate,
           destination: populated.destination
         });
+        console.log(`✅ [EMAIL] Successfully sent ${status} email for visit:`, updated._id.toString());
       } catch (mailErr) {
-        console.warn('Email notify error:', mailErr?.message || mailErr);
+        console.warn('❌ [EMAIL] Error sending email:', mailErr?.message || mailErr);
       }
     }
 

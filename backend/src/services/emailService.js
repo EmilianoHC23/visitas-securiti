@@ -386,7 +386,20 @@ class EmailService {
                         <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border-left: 4px solid ${primaryColor}; border-radius: 8px; margin: 25px 0;">
                           <tr>
                             <td style="padding: 25px;">
-                              <h3 style="color: ${primaryColor}; margin: 0 0 15px 0; font-size: 18px;">Información del Visitante</h3>
+                              <!-- Visitor Photo/Icon -->
+                              <div style="text-align: center; margin-bottom: 20px;">
+                                ${data.visitorPhoto ? `
+                                  <img src="${data.visitorPhoto}" alt="Foto del visitante" style="width: 120px; height: 120px; border-radius: 50%; border: 4px solid ${primaryColor}; object-fit: cover; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"/>
+                                ` : `
+                                  <div style="width: 120px; height: 120px; margin: 0 auto; border-radius: 50%; background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                    <svg width="70" height="70" viewBox="0 0 24 24" fill="#ffffff">
+                                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                    </svg>
+                                  </div>
+                                `}
+                              </div>
+                              
+                              <h3 style="color: ${primaryColor}; margin: 0 0 15px 0; font-size: 18px; text-align: center;">Información del Visitante</h3>
                               <table width="100%" cellpadding="5" cellspacing="0">
                                 <tr>
                                   <td style="color: #4b5563; font-size: 14px; padding: 8px 0; width: 40%;"><strong>Nombre:</strong></td>
@@ -407,11 +420,6 @@ class EmailService {
                                   <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${data.reason}</td>
                                 </tr>
                               </table>
-                              ${data.visitorPhoto ? `
-                              <div style="text-align: center; margin-top: 20px;">
-                                <img src="${data.visitorPhoto}" alt="Foto del visitante" style="max-width: 200px; border-radius: 8px; border: 2px solid #e5e7eb;"/>
-                              </div>
-                              ` : ''}
                             </td>
                           </tr>
                         </table>

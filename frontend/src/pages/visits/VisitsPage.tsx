@@ -134,14 +134,17 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
 
     const startCamera = async () => {
         try {
-            const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } 
+            });
             setStream(mediaStream);
             if (videoRef.current) {
                 videoRef.current.srcObject = mediaStream;
-                videoRef.current.play();
+                await videoRef.current.play().catch(e => console.log('Play interrupted:', e));
             }
             setIsCameraOn(true);
         } catch (error) {
+            console.error('Camera error:', error);
             alert('No se pudo acceder a la cámara. Verifica los permisos.');
         }
     };
@@ -172,18 +175,19 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
     const startQrScanner = async () => {
         try {
             const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'environment' } 
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
             });
             setQrStream(mediaStream);
             if (qrScannerRef.current) {
                 qrScannerRef.current.srcObject = mediaStream;
-                qrScannerRef.current.play();
+                await qrScannerRef.current.play().catch(e => console.log('QR scanner play interrupted:', e));
             }
             setIsQrScannerOn(true);
             
             // Iniciar detección QR con jsQR
             scanQRCode();
         } catch (error) {
+            console.error('QR Scanner error:', error);
             alert('No se pudo acceder a la cámara para escanear QR. Ingresa el código manualmente.');
         }
     };
@@ -205,11 +209,14 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
                     const code = jsQR(imageData.data, imageData.width, imageData.height);
                     
                     if (code) {
+                        console.log('✅ QR detectado en VisitFormModal:', code.data);
                         try {
                             const qrData = JSON.parse(code.data);
+                            console.log('📋 QR Data parsed:', qrData);
                             
                             // Si es del tipo visitor-info, auto-completar el formulario
                             if (qrData.type === 'visitor-info') {
+                                console.log('🔄 Autocompletando formulario con datos del QR');
                                 setVisitorName(qrData.visitorName || '');
                                 setVisitorCompany(qrData.visitorCompany || '');
                                 setVisitorEmail(qrData.visitorEmail || '');
@@ -221,12 +228,24 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
                                 return;
                             }
                             
+                            // Si es del tipo visit-checkin (QR del correo de aprobación)
+                            if (qrData.type === 'visit-checkin') {
+                                console.log('📧 QR de visita aprobada detectado, guardando token');
+                                setQrCode(code.data);
+                                setHasQrInvitation(false);
+                                stopQrScanner();
+                                alert('✅ QR de visita escaneado. Completa los datos restantes.');
+                                return;
+                            }
+                            
                             // Si es otro tipo de QR, solo guardar el código
+                            console.log('📝 QR de tipo desconocido, guardando como texto');
                             setQrCode(code.data);
                             setHasQrInvitation(false);
                             stopQrScanner();
                         } catch (e) {
                             // Si no es JSON válido, guardar como texto plano
+                            console.log('⚠️ QR no es JSON, guardando como texto plano');
                             setQrCode(code.data);
                             setHasQrInvitation(false);
                             stopQrScanner();
@@ -557,7 +576,7 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
 };
 
 // Modal de Salida de Visitante
-const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits: Visit[]; onSelectVisit: (visit: Visit) => void }> = ({ isOpen, onClose, visits, onSelectVisit }) => {
+const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits: Visit[]; onSelectVisit: (visit: Visit) => void; onOpenApprovedModal?: (visit: Visit) => void }> = ({ isOpen, onClose, visits, onSelectVisit, onOpenApprovedModal }) => {
     const [qrCode, setQrCode] = useState('');
     const [isScanning, setIsScanning] = useState(true);
     const qrVideoRef = React.useRef<HTMLVideoElement | null>(null);
@@ -566,19 +585,19 @@ const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits:
     const startQrScanner = async () => {
         try {
             const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'environment' } 
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
             });
             setQrStream(mediaStream);
             if (qrVideoRef.current) {
                 qrVideoRef.current.srcObject = mediaStream;
-                qrVideoRef.current.play();
+                await qrVideoRef.current.play().catch(e => console.log('Exit QR scanner play interrupted:', e));
             }
             setIsScanning(true);
             
             // Iniciar detección QR con jsQR
             scanExitQRCode();
         } catch (error) {
-            console.error('Error accessing camera:', error);
+            console.error('Exit QR Scanner error:', error);
             alert('No se pudo acceder a la cámara para escanear QR.');
         }
     };
@@ -600,9 +619,14 @@ const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits:
                     const code = jsQR(imageData.data, imageData.width, imageData.height);
                     
                     if (code) {
+                        console.log('✅ QR detectado en Exit Modal:', code.data);
                         setQrCode(code.data);
                         setIsScanning(false);
                         stopQrScanner();
+                        // Auto-procesar el QR inmediatamente
+                        setTimeout(() => {
+                            processExitQR(code.data);
+                        }, 100);
                         return;
                     }
                 }
@@ -614,6 +638,65 @@ const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits:
         };
         
         scan();
+    };
+
+    const processExitQR = async (qrData: string) => {
+        try {
+            // Intentar parsear el QR como JSON
+            let visitId = '';
+            let qrToken = '';
+            try {
+                const parsedData = JSON.parse(qrData);
+                // Si el QR contiene visitId directamente
+                if (parsedData.visitId) {
+                    visitId = parsedData.visitId;
+                } else if (parsedData.type === 'visit-checkin' && parsedData.visitId) {
+                    visitId = parsedData.visitId;
+                    qrToken = parsedData.token || '';
+                }
+            } catch (e) {
+                // Si no es JSON, asumir que es el ID directo o token
+                visitId = qrData;
+                qrToken = qrData;
+            }
+            
+            if (!visitId && !qrToken) {
+                alert('Código QR inválido');
+                return;
+            }
+            
+            // Buscar la visita en la lista actual por ID o por qrToken
+            let visit = visits.find(v => v._id === visitId);
+            if (!visit && qrToken) {
+                visit = visits.find(v => v.qrToken === qrToken);
+            }
+            
+            if (!visit) {
+                alert('No se encontró la visita asociada a este código QR');
+                return;
+            }
+            
+            // Si la visita está aprobada pero no checked-in, abrir el modal de approved para hacer check-in
+            if (visit.status === VisitStatus.APPROVED) {
+                handleClose();
+                if (onOpenApprovedModal) {
+                    onOpenApprovedModal(visit);
+                }
+                return;
+            }
+            
+            // Si la visita está checked-in, abrir el modal de checkout
+            if (visit.status === VisitStatus.CHECKED_IN) {
+                handleClose();
+                onSelectVisit(visit);
+                return;
+            }
+            
+            alert(`Esta visita está en estado "${visit.status}" y no puede ser procesada en este momento.`);
+        } catch (error) {
+            console.error('Error processing QR:', error);
+            alert('Error al procesar el código QR.');
+        }
     };
 
     const stopQrScanner = () => {
@@ -645,47 +728,7 @@ const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits:
             return;
         }
         
-        try {
-            // Intentar parsear el QR como JSON
-            let visitId = '';
-            try {
-                const qrData = JSON.parse(qrCode);
-                // Si el QR contiene visitId directamente
-                if (qrData.visitId) {
-                    visitId = qrData.visitId;
-                } else if (qrData.type === 'visit-checkin' && qrData.visitId) {
-                    visitId = qrData.visitId;
-                }
-            } catch (e) {
-                // Si no es JSON, asumir que es el ID directo
-                visitId = qrCode;
-            }
-            
-            if (!visitId) {
-                alert('Código QR inválido');
-                return;
-            }
-            
-            // Buscar la visita en la lista actual
-            const visit = visits.find(v => v._id === visitId);
-            
-            if (!visit) {
-                alert('No se encontró la visita asociada a este código QR');
-                return;
-            }
-            
-            if (visit.status !== VisitStatus.CHECKED_IN) {
-                alert('Esta visita no está registrada como activa (check-in)');
-                return;
-            }
-            
-            // Abrir el modal de detalles de visita checked-in para confirmar checkout
-            handleClose();
-            onSelectVisit(visit);
-        } catch (error) {
-            console.error('Error processing checkout:', error);
-            alert('Error al procesar la salida. Intenta nuevamente.');
-        }
+        processExitQR(qrCode);
     };
     
     if (!isOpen) return null;
@@ -852,12 +895,14 @@ export const VisitsPage: React.FC = () => {
 
     // Handler para aprobar desde el modal
     const handleApproveFromModal = async (visitId: string) => {
+        console.log('🟢 [APPROVE] Starting approval for visit:', visitId);
         try {
             const updatedVisit = await api.approveVisit(visitId);
+            console.log('✅ [APPROVE] Successfully approved visit:', visitId, 'new status:', updatedVisit.status);
             setVisits(visits.map(v => v._id === visitId ? updatedVisit : v));
             setPendingModalVisit(null);
         } catch (error) {
-            console.error('Failed to approve visit:', error);
+            console.error('❌ [APPROVE] Failed to approve visit:', error);
         }
     };
 
@@ -1109,64 +1154,64 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
 // Agrega el botón de Agenda en el header
     return (
         <div className="p-6">
-            {/* Header con contador total */}
-            <div className="mb-6">
-                <div className="flex items-baseline gap-3">
-                    <div className="text-6xl font-bold text-securiti-blue-600">{todayVisits.length}</div>
-                    <div>
-                        <div className="text-sm text-gray-600">Total de registros hoy</div>
+            {/* Header con contador total y botones al mismo nivel */}
+            <div className="mb-6 flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                    <div className="flex flex-col items-center">
+                        <div className="text-5xl font-bold text-securiti-blue-600">{todayVisits.length}</div>
+                        <div className="text-xs text-gray-600 mt-1">Total de registros hoy</div>
                         <div className="text-xs text-gray-500 capitalize">{formattedDate}</div>
                     </div>
                 </div>
-            </div>
 
-            {/* Botones de acción */}
-            <div className="flex justify-end gap-4 items-center mb-6">
-                <button
-                    onClick={() => navigate('/visits/agenda')}
-                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium flex items-center gap-2"
-                >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Ver agenda
-                </button>
-                
-                {/* Botón Registrar con submenú */}
-                <div className="relative">
+                {/* Botones de acción */}
+                <div className="flex gap-3 items-center">
                     <button
-                        onClick={() => setRegisterMenuOpen(!registerMenuOpen)}
-                        className="px-4 py-2 bg-cyan-400 text-white rounded-lg hover:bg-cyan-500 font-medium flex items-center gap-2"
+                        onClick={() => navigate('/visits/agenda')}
+                        className="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium flex items-center gap-2 transition-colors"
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        Registrar
+                        Ver agenda
                     </button>
-                    {registerMenuOpen && (
-                        <div className="absolute top-full right-0 mt-2 bg-white rounded-md shadow-lg border border-gray-200 z-50 min-w-[200px]">
-                            <button
-                                onClick={() => {
-                                    setIsModalOpen(true);
-                                    setRegisterMenuOpen(false);
-                                }}
-                                className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                            >
-                                <LoginIcon className="w-4 h-4" />
-                                Entrada de Visitante
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setShowExitModal(true);
-                                    setRegisterMenuOpen(false);
-                                }}
-                                className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2 border-t"
-                            >
-                                <LogoutIcon className="w-4 h-4" />
-                                Salida de Visitante
-                            </button>
-                        </div>
-                    )}
+                    
+                    {/* Botón Registrar con submenú */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setRegisterMenuOpen(!registerMenuOpen)}
+                            className="px-4 py-2.5 bg-cyan-400 text-white rounded-lg hover:bg-cyan-500 font-medium flex items-center gap-2 transition-colors shadow-sm"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            Registrar
+                        </button>
+                        {registerMenuOpen && (
+                            <div className="absolute top-full right-0 mt-2 bg-white rounded-md shadow-lg border border-gray-200 z-50 min-w-[200px]">
+                                <button
+                                    onClick={() => {
+                                        setIsModalOpen(true);
+                                        setRegisterMenuOpen(false);
+                                    }}
+                                    className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                                >
+                                    <LoginIcon className="w-4 h-4" />
+                                    Entrada de Visitante
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowExitModal(true);
+                                        setRegisterMenuOpen(false);
+                                    }}
+                                    className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2 border-t"
+                                >
+                                    <LogoutIcon className="w-4 h-4" />
+                                    Salida de Visitante
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -1354,6 +1399,10 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                 visits={visits}
                 onSelectVisit={(visit) => {
                     setCheckedInModalVisit(visit);
+                    setShowExitModal(false);
+                }}
+                onOpenApprovedModal={(visit) => {
+                    setApprovedModalVisit(visit);
                     setShowExitModal(false);
                 }}
             />

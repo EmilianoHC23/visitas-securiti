@@ -296,8 +296,9 @@ class EmailService {
                             <tr>
                               <td style="padding: 20px;">
                                 <h3 style="color: #991b1b; margin: 0 0 15px 0; font-size: 18px;">Detalles de la Solicitud</h3>
-                                <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Motivo:</strong> ${data.reason}</p>
+                                <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Motivo de visita:</strong> ${data.reason}</p>
                                 <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Fecha solicitada:</strong> ${new Date(data.scheduledDate).toLocaleString('es-ES')}</p>
+                                ${data.rejectionReason ? `<p style="color: #991b1b; font-size: 14px; margin: 12px 0 0 0; padding-top: 12px; border-top: 1px solid #fecaca;"><strong>Razón de rechazo:</strong> ${data.rejectionReason}</p>` : ''}
                               </td>
                             </tr>
                           </table>

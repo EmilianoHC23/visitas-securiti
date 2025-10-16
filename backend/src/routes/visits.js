@@ -371,6 +371,27 @@ router.put('/:id', auth, async (req, res) => {
       { new: true, runValidators: true }
     ).populate('host', 'firstName lastName email profileImage');
 
+    // Si se está actualizando la razón de rechazo en una visita rechazada, enviar email
+    if (updates.rejectionReason && updatedVisit.status === 'rejected' && updatedVisit.visitorEmail) {
+      try {
+        await require('../services/emailService').sendVisitorNotificationEmail({
+          visitId: updatedVisit._id.toString(),
+          visitorEmail: updatedVisit.visitorEmail,
+          visitorName: updatedVisit.visitorName,
+          hostName: `${updatedVisit.host.firstName} ${updatedVisit.host.lastName}`,
+          companyName: 'SecurITI',
+          status: 'rejected',
+          reason: updatedVisit.reason,
+          scheduledDate: updatedVisit.scheduledDate,
+          destination: updatedVisit.destination || 'SecurITI',
+          rejectionReason: updatedVisit.rejectionReason
+        });
+        console.log('✅ Email de rechazo enviado con razón:', updatedVisit.rejectionReason);
+      } catch (emailError) {
+        console.warn('⚠️ Error enviando email de rechazo:', emailError?.message || emailError);
+      }
+    }
+
     res.json(updatedVisit);
   } catch (error) {
     console.error('Update visit error:', error);

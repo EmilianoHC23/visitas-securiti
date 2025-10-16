@@ -872,8 +872,15 @@ export const VisitsPage: React.FC = () => {
     const handleRejectWithReason = async (reason: string) => {
         if (!rejectionVisit) return;
         try {
-            const updatedVisit = await api.updateVisitStatus(rejectionVisit._id, VisitStatus.REJECTED, reason);
-            setVisits(visits.map(v => v._id === rejectionVisit._id ? updatedVisit : v));
+            // Si la visita ya está rechazada, solo actualizar la razón sin cambiar estado
+            if (rejectionVisit.status === VisitStatus.REJECTED) {
+                const updatedVisit = await api.updateVisit(rejectionVisit._id, { rejectionReason: reason });
+                setVisits(visits.map(v => v._id === rejectionVisit._id ? updatedVisit : v));
+            } else {
+                // Si está en otro estado (pending), rechazar con razón
+                const updatedVisit = await api.updateVisitStatus(rejectionVisit._id, VisitStatus.REJECTED, reason);
+                setVisits(visits.map(v => v._id === rejectionVisit._id ? updatedVisit : v));
+            }
         } catch (error) {
             console.error('Failed to reject visit:', error);
         } finally {

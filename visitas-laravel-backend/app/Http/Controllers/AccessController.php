@@ -21,12 +21,14 @@ class AccessController extends Controller
         if (!$access) {
             return response()->json(['error' => 'Acceso no encontrado'], 404);
         }
+        $this->authorize('view', $access);
         return response()->json($access);
     }
 
     // Crear un nuevo acceso
     public function store(Request $request)
     {
+        $this->authorize('create', Access::class);
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'created_by' => 'required|exists:users,id',
@@ -54,6 +56,7 @@ class AccessController extends Controller
         if (!$access) {
             return response()->json(['error' => 'Acceso no encontrado'], 404);
         }
+        $this->authorize('update', $access);
         $validator = Validator::make($request->all(), [
             'title' => 'sometimes|required|string|max:255',
             'created_by' => 'sometimes|required|exists:users,id',
@@ -81,6 +84,7 @@ class AccessController extends Controller
         if (!$access) {
             return response()->json(['error' => 'Acceso no encontrado'], 404);
         }
+        $this->authorize('delete', $access);
         $access->delete();
         return response()->json(['message' => 'Acceso eliminado correctamente']);
     }

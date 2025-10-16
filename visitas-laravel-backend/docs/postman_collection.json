@@ -1,0 +1,105 @@
+{
+  "info": {
+    "name": "Visitas Securiti - Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"secret\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Guardar token en variable de colección",
+              "var jsonData = pm.response.json();",
+              "if (jsonData.token) {",
+              "  pm.collectionVariables.set('token', jsonData.token);",
+              "  console.log('Token guardado en collection variable token');",
+              "} else {",
+              "  console.log('No se encontró token en la respuesta');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Visit",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"visitor_name\": \"Juan Perez\",\n  \"visit_date\": \"2025-10-20\",\n  \"visit_time\": \"09:00\"\n}"
+        },
+        "url": "{{baseUrl}}/api/visits"
+      }
+    },
+    {
+      "name": "List Visits",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/api/visits"
+      }
+    },
+    {
+      "name": "Report by Company (pending)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/api/reports/visits-by-company?status=pending"
+      }
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Auto-login if token is empty (uses collection variables login_email/login_password)",
+          "if (!pm.collectionVariables.get('token')) {",
+          "  var email = pm.collectionVariables.get('login_email') || pm.variables.get('login_email') || 'admin@example.com';",
+          "  var password = pm.collectionVariables.get('login_password') || pm.variables.get('login_password') || 'secret';",
+          "  pm.sendRequest({",
+          "    url: (pm.collectionVariables.get('baseUrl') || pm.variables.get('baseUrl')) + '/api/auth/login',",
+          "    method: 'POST',",
+          "    header: { 'Content-Type': 'application/json' },",
+          "    body: { mode: 'raw', raw: JSON.stringify({ email: email, password: password }) }",
+          "  }, function (err, res) {",
+          "    if (err) { console.log('Auto-login error', err); return; }",
+          "    try { var json = res.json(); if (json.token) { pm.collectionVariables.set('token', json.token); console.log('Auto-login: token almacenado'); } else { console.log('Auto-login: token no encontrado en la respuesta'); } } catch (e) { console.log('Auto-login parse error', e); }",
+          "  });",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost" },
+    { "key": "token", "value": "" },
+    { "key": "login_email", "value": "admin@example.com" },
+    { "key": "login_password", "value": "secret" }
+  ]
+}

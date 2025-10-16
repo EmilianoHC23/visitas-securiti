@@ -64,3 +64,14 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Resumen del proyecto y documentación de la API
+
+Este repositorio contiene el backend de "Visitas Securiti" (Laravel). La documentación específica de la API en español está en `API_DOCS.md` (archivo en la raíz del proyecto).
+
+En `API_DOCS.md` encontrarás:
+- Endpoints principales (autenticación, visitas, reportes).
+- Formato de fechas/hora y ejemplos de payload.
+- Instrucciones para colas y envío de emails (worker, `MAIL_MAILER=log` para desarrollo).
+- Ejemplos `curl` para login, crear visitas y obtener reportes.
+
+Si quieres que incluya una versión resumida directamente en este `README.md`, dime y la añado.

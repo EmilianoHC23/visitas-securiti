@@ -37,13 +37,17 @@ dist-ssr
 *.lock
 
 # Project specific
-visitas-securiti.zip
+*.zip
+*.tar.gz
 
 # Excluir carpeta visitas-laravel
 visitas-laravel/
 
 # Ignorar backend Laravel local
 visitas-laravel-backend/
+
+# Scripts de mantenimiento temporal
+backend/scripts/*.tmp
 
 # Cache directories
 .cache

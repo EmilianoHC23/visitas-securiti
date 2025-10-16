@@ -557,7 +557,7 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
 };
 
 // Modal de Salida de Visitante
-const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits: Visit[]; onCheckout: (visit: Visit) => void }> = ({ isOpen, onClose, visits, onCheckout }) => {
+const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits: Visit[]; onSelectVisit: (visit: Visit) => void }> = ({ isOpen, onClose, visits, onSelectVisit }) => {
     const [qrCode, setQrCode] = useState('');
     const [isScanning, setIsScanning] = useState(true);
     const qrVideoRef = React.useRef<HTMLVideoElement | null>(null);
@@ -679,11 +679,9 @@ const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits:
                 return;
             }
             
-            // Procesar el checkout
-            await onCheckout(visit);
-            
-            alert('✅ Salida registrada exitosamente');
+            // Abrir el modal de detalles de visita checked-in para confirmar checkout
             handleClose();
+            onSelectVisit(visit);
         } catch (error) {
             console.error('Error processing checkout:', error);
             alert('Error al procesar la salida. Intenta nuevamente.');
@@ -839,6 +837,13 @@ export const VisitsPage: React.FC = () => {
                 break;
             case VisitStatus.CHECKED_IN:
                 setCheckedInModalVisit(visit);
+                break;
+            case VisitStatus.REJECTED:
+                // Si está rechazada pero no tiene razón, abrir modal de razón
+                if (!visit.rejectionReason) {
+                    setRejectionVisit(visit);
+                    setRejectionModalOpen(true);
+                }
                 break;
             default:
                 break;
@@ -1320,7 +1325,10 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                 isOpen={showExitModal}
                 onClose={() => setShowExitModal(false)}
                 visits={visits}
-                onCheckout={openCheckoutModal}
+                onSelectVisit={(visit) => {
+                    setCheckedInModalVisit(visit);
+                    setShowExitModal(false);
+                }}
             />
 
             {/* Modal de motivo de rechazo */}

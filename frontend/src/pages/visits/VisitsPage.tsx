@@ -1084,7 +1084,8 @@ export const VisitsPage: React.FC = () => {
     // Arrays de visitas por status (asegúrate que estén antes del return)
 const pendingVisits = visits.filter(v => v.status === VisitStatus.PENDING);
 const approvedVisits = visits.filter(v => v.status === VisitStatus.APPROVED);
-const rejectedVisits = visits.filter(v => v.status === VisitStatus.REJECTED);
+// Solo visitas rechazadas SIN razón asignada (esperando que se especifique la razón)
+const rejectedVisits = visits.filter(v => v.status === VisitStatus.REJECTED && !v.rejectionReason);
 const respondedVisits = [...approvedVisits, ...rejectedVisits].sort((a, b) => 
     new Date(b.updatedAt || b.createdAt || '').getTime() - new Date(a.updatedAt || a.createdAt || '').getTime()
 );

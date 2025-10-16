@@ -15,8 +15,15 @@ export const ReportsPage: React.FC = () => {
   const loadVisits = async () => {
     setLoading(true);
     try {
-      const response = await api.getVisits({ status: VisitStatus.COMPLETED, limit: 20 });
-      setVisits(response.visits || []);
+      // Obtener todas las visitas y filtrar completadas y rechazadas con razón
+      const response = await api.getVisits({ limit: 100 });
+      const allVisits = response.visits || [];
+      // Mostrar visitas completadas y rechazadas que tengan razón asignada
+      const filteredVisits = allVisits.filter(v => 
+        v.status === VisitStatus.COMPLETED || 
+        (v.status === VisitStatus.REJECTED && v.rejectionReason)
+      );
+      setVisits(filteredVisits);
     } catch (e) {
       setVisits([]);
     }
@@ -52,6 +59,7 @@ export const ReportsPage: React.FC = () => {
               <th>Entrada</th>
               <th>Salida</th>
               <th>Estatus</th>
+              <th>Razón Rechazo</th>
               <th>Correo</th>
               <th>Acciones</th>
             </tr>
@@ -65,7 +73,18 @@ export const ReportsPage: React.FC = () => {
                 <td>{v.host?.firstName} {v.host?.lastName}</td>
                 <td>{v.checkInTime ? new Date(v.checkInTime).toLocaleString() : '-'}</td>
                 <td>{v.checkOutTime ? new Date(v.checkOutTime).toLocaleString() : '-'}</td>
-                <td>{v.status}</td>
+                <td>
+                  <span style={{ 
+                    padding: '4px 8px', 
+                    borderRadius: '4px', 
+                    backgroundColor: v.status === VisitStatus.COMPLETED ? '#10b981' : '#ef4444',
+                    color: 'white',
+                    fontSize: '12px'
+                  }}>
+                    {v.status === VisitStatus.COMPLETED ? 'Completada' : 'Rechazada'}
+                  </span>
+                </td>
+                <td>{v.rejectionReason || '-'}</td>
                 <td>{v.visitorEmail}</td>
                 <td><button onClick={e => { e.stopPropagation(); handleDownloadReport(v); }}>Descargar</button></td>
               </tr>
@@ -82,6 +101,12 @@ export const ReportsPage: React.FC = () => {
           <p><strong>Entrada:</strong> {selectedVisit.checkInTime ? new Date(selectedVisit.checkInTime).toLocaleString() : '-'}</p>
           <p><strong>Salida:</strong> {selectedVisit.checkOutTime ? new Date(selectedVisit.checkOutTime).toLocaleString() : '-'}</p>
           <p><strong>Estatus:</strong> {selectedVisit.status}</p>
+          {selectedVisit.rejectionReason && (
+            <p><strong>Razón de rechazo:</strong> {selectedVisit.rejectionReason}</p>
+          )}
+          {selectedVisit.assignedResource && (
+            <p><strong>Recurso asignado:</strong> {selectedVisit.assignedResource}</p>
+          )}
           <p><strong>Correo:</strong> {selectedVisit.visitorEmail}</p>
           <h4>Línea de tiempo</h4>
           <ul>

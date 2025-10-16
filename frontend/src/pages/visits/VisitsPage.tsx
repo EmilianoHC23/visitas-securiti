@@ -1173,21 +1173,23 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
             {loading ? (
                 <div className="text-center p-8">Cargando visitas...</div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5">
                     {/* Columna 1: En espera */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="bg-white p-4 border-b border-gray-200">
-                            <div className="flex items-center justify-between mb-3">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                        <div className="bg-gradient-to-br from-orange-50 to-white p-5 border-b border-gray-200">
+                            <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                                        <ClockIcon className="w-5 h-5 text-orange-600" />
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg">
+                                        <ClockIcon className="w-6 h-6 text-white" />
                                     </div>
-                                    <div className="text-3xl font-bold text-gray-800">{pendingVisits.length}</div>
+                                    <div>
+                                        <div className="text-3xl font-bold text-gray-800">{pendingVisits.length}</div>
+                                        <div className="text-xs text-gray-500 font-medium">Total</div>
+                                    </div>
                                 </div>
-                                <div className="text-xs text-gray-500 font-medium">Total</div>
                             </div>
-                            <h2 className="text-base font-semibold text-gray-800 mb-3">En espera</h2>
-                            <label className="flex items-center gap-2 cursor-pointer">
+                            <h2 className="text-lg font-bold text-gray-800 mb-3">En espera</h2>
+                            <label className="flex items-center gap-2 cursor-pointer group">
                                 <div className="relative">
                                     <input 
                                         type="checkbox" 
@@ -1195,53 +1197,58 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                         onChange={e => handleAutoApproveToggle(e.target.checked)}
                                         className="sr-only peer"
                                     />
-                                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-100 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-400 peer-checked:to-orange-500"></div>
                                 </div>
-                                <span className="text-sm text-gray-700">Auto aprobación</span>
+                                <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">Auto aprobación</span>
                             </label>
                         </div>
-                        <div className="p-4">
-                            <div className="relative">
+                        <div className="p-4 flex-1 flex flex-col">
+                            <div className="relative mb-3">
                                 <input
                                     type="text"
-                                    placeholder="Buscar..."
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
+                                    placeholder="Buscar visitante..."
+                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all"
                                 />
-                                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
-                            <div className="mt-4 space-y-3 max-h-[600px] overflow-y-auto">
+                            <div className="space-y-2.5 overflow-y-auto flex-1 pr-1" style={{ maxHeight: 'calc(100vh - 380px)' }}>
                                 {pendingVisits.length > 0 ? (
                                     pendingVisits.map(visit => (
                                         <VisitCard key={visit._id} visit={visit} onCardClick={handleCardClick} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
                                     ))
                                 ) : (
-                                    <p className="text-gray-400 text-center py-8">No hay visitas pendientes.</p>
+                                    <div className="text-center py-12">
+                                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
+                                            <ClockIcon className="w-8 h-8 text-gray-400" />
+                                        </div>
+                                        <p className="text-gray-400 text-sm">No hay visitas pendientes.</p>
+                                    </div>
                                 )}
                             </div>
                         </div>
                     </div>
 
                     {/* Columna 2: Respuesta recibida */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="bg-white p-4 border-b border-gray-200">
-                            <div className="flex items-center justify-between mb-3">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                        <div className="bg-gradient-to-br from-green-50 to-white p-5 border-b border-gray-200">
+                            <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                                        <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center shadow-lg">
+                                        <CheckCircleIcon className="w-6 h-6 text-white" />
                                     </div>
-                                    <div className="text-3xl font-bold text-gray-800">{respondedVisits.length}</div>
-                                </div>
-                                <div className="text-xs text-gray-500 font-medium">
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-green-600">✓ {approvedVisits.length} Aprobadas</span>
-                                        <span className="text-red-600">✗ {rejectedVisits.length} Rechazadas</span>
+                                    <div>
+                                        <div className="text-3xl font-bold text-gray-800">{respondedVisits.length}</div>
+                                        <div className="flex gap-3 mt-1">
+                                            <span className="text-xs text-green-600 font-medium">✓ {approvedVisits.length}</span>
+                                            <span className="text-xs text-red-600 font-medium">✗ {rejectedVisits.length}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <h2 className="text-base font-semibold text-gray-800 mb-3">Respuesta recibida</h2>
-                            <label className="flex items-center gap-2 cursor-pointer">
+                            <h2 className="text-lg font-bold text-gray-800 mb-3">Respuesta recibida</h2>
+                            <label className="flex items-center gap-2 cursor-pointer group">
                                 <div className="relative">
                                     <input 
                                         type="checkbox" 
@@ -1249,66 +1256,78 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                         onChange={e => handleAutoCheckInToggle(e.target.checked)}
                                         className="sr-only peer"
                                     />
-                                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-100 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-green-400 peer-checked:to-green-500"></div>
                                 </div>
-                                <span className="text-sm text-gray-700">Auto check in</span>
+                                <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">Auto check in</span>
                             </label>
                         </div>
-                        <div className="p-4">
-                            <div className="relative">
+                        <div className="p-4 flex-1 flex flex-col">
+                            <div className="relative mb-3">
                                 <input
                                     type="text"
-                                    placeholder="Buscar..."
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
+                                    placeholder="Buscar visitante..."
+                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all"
                                 />
-                                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
-                            <div className="mt-4 space-y-3 max-h-[600px] overflow-y-auto">
+                            <div className="space-y-2.5 overflow-y-auto flex-1 pr-1" style={{ maxHeight: 'calc(100vh - 380px)' }}>
                                 {respondedVisits.length > 0 ? (
                                     respondedVisits.map(visit => (
                                         <VisitCard key={visit._id} visit={visit} onCardClick={handleCardClick} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
                                     ))
                                 ) : (
-                                    <p className="text-gray-400 text-center py-8">No hay visitas aprobadas.</p>
+                                    <div className="text-center py-12">
+                                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
+                                            <CheckCircleIcon className="w-8 h-8 text-gray-400" />
+                                        </div>
+                                        <p className="text-gray-400 text-sm">No hay visitas aprobadas.</p>
+                                    </div>
                                 )}
                             </div>
                         </div>
                     </div>
 
                     {/* Columna 3: Dentro */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="bg-white p-4 border-b border-gray-200">
-                            <div className="flex items-center justify-between mb-3">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                        <div className="bg-gradient-to-br from-cyan-50 to-white p-5 border-b border-gray-200">
+                            <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                                        <LoginIcon className="w-5 h-5 text-green-600" />
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-500 flex items-center justify-center shadow-lg">
+                                        <LoginIcon className="w-6 h-6 text-white" />
                                     </div>
-                                    <div className="text-3xl font-bold text-gray-800">{checkedInVisits.length}</div>
+                                    <div>
+                                        <div className="text-3xl font-bold text-gray-800">{checkedInVisits.length}</div>
+                                        <div className="text-xs text-gray-500 font-medium">Total</div>
+                                    </div>
                                 </div>
-                                <div className="text-xs text-gray-500 font-medium">Total</div>
                             </div>
-                            <h2 className="text-base font-semibold text-gray-800 mb-3">Dentro</h2>
+                            <h2 className="text-lg font-bold text-gray-800">Dentro</h2>
                         </div>
-                        <div className="p-4">
-                            <div className="relative">
+                        <div className="p-4 flex-1 flex flex-col">
+                            <div className="relative mb-3">
                                 <input
                                     type="text"
-                                    placeholder="Buscar..."
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
+                                    placeholder="Buscar visitante..."
+                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all"
                                 />
-                                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
-                            <div className="mt-4 space-y-3 max-h-[600px] overflow-y-auto">
+                            <div className="space-y-2.5 overflow-y-auto flex-1 pr-1" style={{ maxHeight: 'calc(100vh - 380px)' }}>
                                 {checkedInVisits.length > 0 ? (
                                     checkedInVisits.map(visit => (
                                         <VisitCard key={visit._id} visit={visit} onCardClick={handleCardClick} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
                                     ))
                                 ) : (
-                                    <p className="text-gray-400 text-center py-8">No hay visitantes dentro.</p>
+                                    <div className="text-center py-12">
+                                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
+                                            <LoginIcon className="w-8 h-8 text-gray-400" />
+                                        </div>
+                                        <p className="text-gray-400 text-sm">No hay visitantes dentro.</p>
+                                    </div>
                                 )}
                             </div>
                         </div>

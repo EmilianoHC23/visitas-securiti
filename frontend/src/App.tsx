@@ -8,7 +8,7 @@ import { Dashboard } from './pages/Dashboard';
 import { VisitsPage } from './pages/visits/VisitsPage';
 import { AgendaPage } from './pages/visits/AgendaPage';
 import { UserManagementPage } from './pages/users/UserManagementPage';
-import { ReportsPage } from './pages/reports/ReportsPage';
+import ReportsPage from './pages/reports/ReportsPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 import { CompanyConfigPage } from './pages/settings/CompanyConfigPage';
 import { EmailTestPage } from './pages/settings/EmailTestPage';

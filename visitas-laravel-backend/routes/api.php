@@ -23,4 +23,11 @@ Route::middleware(['auth:api'])->group(function () {
     Route::get('accesses/{id}', [App\Http\Controllers\AccessController::class, 'show']);
     Route::put('accesses/{id}', [App\Http\Controllers\AccessController::class, 'update']);
     Route::delete('accesses/{id}', [App\Http\Controllers\AccessController::class, 'destroy']);
+
+    // CRUD de visitas
+    Route::get('visits', [App\Http\Controllers\VisitController::class, 'index']);
+    Route::post('visits', [App\Http\Controllers\VisitController::class, 'store']);
+    Route::get('visits/{id}', [App\Http\Controllers\VisitController::class, 'show']);
+    Route::put('visits/{id}', [App\Http\Controllers\VisitController::class, 'update']);
+    Route::delete('visits/{id}', [App\Http\Controllers\VisitController::class, 'destroy']);
 });

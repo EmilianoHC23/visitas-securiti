@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Visit } from '../../types';
+import { formatShortDate, formatTime } from '../../utils/dateUtils';
 
 interface CheckedInVisitModalProps {
   visit: Visit | null;
@@ -37,17 +38,8 @@ export const CheckedInVisitModal: React.FC<CheckedInVisitModalProps> = ({
   if (!isOpen || !visit) return null;
 
   const checkInDate = visit.checkInTime ? new Date(visit.checkInTime) : null;
-  const formattedDate = checkInDate ? checkInDate.toLocaleDateString('es-ES', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  }) : '-';
-
-  const formattedTime = checkInDate ? checkInDate.toLocaleTimeString('es-ES', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
-  }) : '-';
+  const formattedDate = checkInDate ? formatShortDate(checkInDate) : '-';
+  const formattedTime = checkInDate ? formatTime(checkInDate) : '-';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">

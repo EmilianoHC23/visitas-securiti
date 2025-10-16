@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Visit } from '../../types';
+import { formatShortDate, formatTime } from '../../utils/dateUtils';
 
 interface PendingVisitModalProps {
   visit: Visit | null;
@@ -38,17 +39,8 @@ export const PendingVisitModal: React.FC<PendingVisitModalProps> = ({
 
   if (!isOpen || !visit) return null;
 
-  const formattedDate = new Date(visit.scheduledDate).toLocaleDateString('es-ES', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  });
-
-  const formattedTime = new Date(visit.scheduledDate).toLocaleTimeString('es-ES', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
-  });
+  const formattedDate = formatShortDate(visit.scheduledDate);
+  const formattedTime = formatTime(visit.scheduledDate);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">

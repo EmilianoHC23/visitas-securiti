@@ -1,5 +1,6 @@
 // EmailService usando Nodemailer - Backend Email Service
 const nodemailer = require('nodemailer');
+const { formatFullDate, formatDateTime, formatShortDate, formatTime } = require('../utils/dateUtils');
 
 class EmailService {
   constructor() {
@@ -83,7 +84,7 @@ class EmailService {
           <p>Este es un email de prueba del sistema Visitas SecuriTI.</p>
           <p>Si recibes este email, la configuración de Nodemailer está funcionando correctamente.</p>
           <br>
-          <p>Fecha: ${new Date().toLocaleString()}</p>
+          <p>Fecha: ${formatDateTime(new Date())}</p>
         `
       };
 
@@ -122,7 +123,7 @@ class EmailService {
               <h3 style="margin-top: 0; color: #1f2937;">Detalles de la Visita:</h3>
               <p><strong>Anfitrión:</strong> ${visitData.hostName}</p>
               <p><strong>Motivo:</strong> ${visitData.reason}</p>
-              <p><strong>Fecha programada:</strong> ${new Date(visitData.scheduledDate).toLocaleString('es-ES')}</p>
+              <p><strong>Fecha programada:</strong> ${formatDateTime(visitData.scheduledDate)}</p>
               <p><strong>Estado:</strong> ${visitData.status}</p>
             </div>
             <p style="font-size: 15px; color: #222;">Por favor, llega 10 minutos antes de tu hora programada.</p>
@@ -236,14 +237,7 @@ class EmailService {
                                   </tr>
                                   <tr>
                                     <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Fecha:</strong></td>
-                                    <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${new Date(data.scheduledDate).toLocaleString('es-ES', { 
-                                      weekday: 'long', 
-                                      year: 'numeric', 
-                                      month: 'long', 
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}</td>
+                                    <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${formatFullDate(data.scheduledDate)}</td>
                                   </tr>
                                   <tr>
                                     <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Motivo:</strong></td>
@@ -297,7 +291,7 @@ class EmailService {
                               <td style="padding: 20px;">
                                 <h3 style="color: #991b1b; margin: 0 0 15px 0; font-size: 18px;">Detalles de la Solicitud</h3>
                                 <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Motivo de visita:</strong> ${data.reason}</p>
-                                <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Fecha solicitada:</strong> ${new Date(data.scheduledDate).toLocaleString('es-ES')}</p>
+                                <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Fecha solicitada:</strong> ${formatDateTime(data.scheduledDate)}</p>
                                 ${data.rejectionReason ? `<p style="color: #991b1b; font-size: 14px; margin: 12px 0 0 0; padding-top: 12px; border-top: 1px solid #fecaca;"><strong>Razón de rechazo:</strong> ${data.rejectionReason}</p>` : ''}
                               </td>
                             </tr>
@@ -403,14 +397,7 @@ class EmailService {
                                 ` : ''}
                                 <tr>
                                   <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Fecha solicitada:</strong></td>
-                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${new Date(data.scheduledDate).toLocaleString('es-ES', { 
-                                    weekday: 'long', 
-                                    year: 'numeric', 
-                                    month: 'long', 
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}</td>
+                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${formatFullDate(data.scheduledDate)}</td>
                                 </tr>
                                 <tr>
                                   <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Motivo:</strong></td>
@@ -667,7 +654,7 @@ class EmailService {
                                   ` : ''}
                                   <tr>
                                     <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Fecha programada:</strong></td>
-                                    <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${new Date(data.startDate).toLocaleDateString('es-ES')} a las ${data.startTime}</td>
+                                    <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${formatShortDate(data.startDate)} a las ${data.startTime}</td>
                                   </tr>
                                   ${data.location ? `
                                   <tr>
@@ -765,7 +752,7 @@ class EmailService {
                               <td style="padding: 20px;">
                                 <h4 style="color: #374151; margin: 0 0 12px 0; font-size: 16px;">Detalles del acceso</h4>
                                 <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Título:</strong> ${data.title}</p>
-                                <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Fecha:</strong> ${new Date(data.startDate).toLocaleDateString('es-ES')} - ${data.startTime}</p>
+                                <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Fecha:</strong> ${formatShortDate(data.startDate)} - ${data.startTime}</p>
                                 ${data.location ? `<p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Lugar:</strong> ${data.location}</p>` : ''}
                               </td>
                             </tr>
@@ -868,14 +855,7 @@ class EmailService {
                             <td style="padding: 20px;">
                               <h2 style="color: ${primaryColor}; margin: 0 0 10px 0; font-size: 18px;">${data.eventTitle}</h2>
                               <p style="color: #1e3a8a; margin: 0; font-size: 14px;">
-                                <strong>Fecha:</strong> ${new Date(data.eventDate).toLocaleDateString('es-ES', { 
-                                  weekday: 'long', 
-                                  year: 'numeric', 
-                                  month: 'long', 
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
+                                <strong>Fecha:</strong> ${formatFullDate(data.eventDate)}
                               </p>
                             </td>
                           </tr>
@@ -1038,20 +1018,15 @@ class EmailService {
                                 </tr>
                                 <tr>
                                   <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Fecha de visita:</strong></td>
-                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${checkInTime.toLocaleDateString('es-ES', { 
-                                    weekday: 'long', 
-                                    year: 'numeric', 
-                                    month: 'long', 
-                                    day: 'numeric'
-                                  })}</td>
+                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${formatShortDate(checkInTime)}</td>
                                 </tr>
                                 <tr>
                                   <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Hora de entrada:</strong></td>
-                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${checkInTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</td>
+                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${formatTime(checkInTime)}</td>
                                 </tr>
                                 <tr>
                                   <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Hora de salida:</strong></td>
-                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${checkOutTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</td>
+                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${formatTime(checkOutTime)}</td>
                                 </tr>
                                 <tr>
                                   <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Tiempo de permanencia:</strong></td>

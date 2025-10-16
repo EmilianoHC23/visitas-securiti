@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Visit } from '../../types';
+import { formatShortDate, formatTime } from '../../utils/dateUtils';
 
 interface ApprovedVisitModalProps {
   visit: Visit | null;
@@ -41,17 +42,8 @@ export const ApprovedVisitModal: React.FC<ApprovedVisitModalProps> = ({
 
   if (!isOpen || !visit) return null;
 
-  const formattedDate = new Date(visit.scheduledDate).toLocaleDateString('es-ES', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  });
-
-  const formattedTime = new Date(visit.scheduledDate).toLocaleTimeString('es-ES', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
-  });
+  const formattedDate = formatShortDate(visit.scheduledDate);
+  const formattedTime = formatTime(visit.scheduledDate);
 
   const handleCheckIn = () => {
     onCheckIn(visit._id, assignedResource);

@@ -46,6 +46,8 @@ export interface Visit {
   visitType?: 'spontaneous' | 'pre-registered' | 'access-code';
   accessCode?: string;
   accessId?: string;
+  assignedResource?: string;
+  rejectionReason?: string;
   createdAt?: string;
   updatedAt?: string;
 }

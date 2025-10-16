@@ -186,8 +186,11 @@ export const getVisitStatus = async (visitId: string): Promise<{ status: string;
   return apiRequest(`/visits/status/${visitId}`);
 };
 
-export const checkInVisit = async (visitId: string): Promise<Visit> => {
-  return apiRequest(`/visits/checkin/${visitId}`, { method: 'POST' });
+export const checkInVisit = async (visitId: string, assignedResource?: string): Promise<Visit> => {
+  return apiRequest(`/visits/checkin/${visitId}`, { 
+    method: 'POST',
+    body: JSON.stringify({ assignedResource })
+  });
 };
 
 export const checkOutVisit = async (visitId: string, photos: string[] = []): Promise<{ visit: Visit; elapsedMs: number | null }> => {

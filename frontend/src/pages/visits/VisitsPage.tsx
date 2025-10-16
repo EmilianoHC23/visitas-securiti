@@ -3,6 +3,10 @@ import { Visit, VisitStatus, User } from '../../types';
 import * as api from '../../services/api';
 import { CheckoutModal } from './CheckoutModal';
 import { VisitHistoryModal } from './VisitHistoryModal';
+import { PendingVisitModal } from './PendingVisitModal';
+import { ApprovedVisitModal } from './ApprovedVisitModal';
+import { RejectionModal } from './RejectionModal';
+import { CheckedInVisitModal } from './CheckedInVisitModal';
 import { CheckCircleIcon, LogoutIcon, LoginIcon, ClockIcon } from '../../components/common/icons';
 import { useNavigate } from 'react-router-dom';
 import jsQR from 'jsqr';
@@ -26,7 +30,14 @@ function useElapsedTime(startDate: string) {
   return elapsed;
 }
 
-const VisitCard: React.FC<{ visit: Visit; onApprove: (id: string) => void; onReject: (id: string) => void; onCheckIn: (id: string) => void; onCheckout: (visit: Visit) => void }> = ({ visit, onApprove, onReject, onCheckIn, onCheckout }) => {
+const VisitCard: React.FC<{ 
+  visit: Visit; 
+  onCardClick: (visit: Visit) => void; 
+  onApprove: (id: string) => void; 
+  onReject: (id: string) => void; 
+  onCheckIn: (id: string) => void; 
+  onCheckout: (visit: Visit) => void 
+}> = ({ visit, onCardClick, onApprove, onReject, onCheckIn, onCheckout }) => {
     
     const [showHistory, setShowHistory] = useState(false);
     
@@ -49,63 +60,55 @@ const VisitCard: React.FC<{ visit: Visit; onApprove: (id: string) => void; onRej
         ? 'border-red-500' 
         : 'border-securiti-blue-500';
     
+    const formattedDate = new Date(visit.scheduledDate).toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: 'short'
+    });
+
+    const formattedTime = new Date(visit.scheduledDate).toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    });
+    
     return (
-    <div className={`bg-white rounded-lg shadow-md p-3 border-l-4 ${borderColor} min-h-[180px] flex flex-col justify-between`}>
-            <div className="flex justify-between items-start gap-2">
-                <div>
-                    <p className="text-base font-bold text-gray-800 leading-tight">{visit.visitorName}</p>
-                    <p className="text-xs text-gray-500 leading-tight">{visit.visitorCompany}</p>
+    <div 
+        className={`bg-white rounded-lg shadow-md p-3 border-l-4 ${borderColor} min-h-[140px] flex flex-col justify-between hover:shadow-lg transition-shadow cursor-pointer`}
+        onClick={() => onCardClick(visit)}
+    >
+            <div className="flex gap-3">
+                {/* Foto del visitante */}
+                <div className="w-12 h-12 rounded-full border-2 border-gray-200 overflow-hidden bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    {visit.visitorPhoto ? (
+                        <img src={visit.visitorPhoto} alt={visit.visitorName} className="w-full h-full object-cover" />
+                    ) : (
+                        <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                    )}
                 </div>
-                {getStatusBadge(visit.status)}
-            </div>
-            <div className="mt-2 space-y-1 text-xs text-gray-600">
-                <p><strong>Motivo:</strong> {visit.reason}</p>
-                <p><strong>Anfitrión:</strong> {visit.host.firstName} {visit.host.lastName}</p>
-                <p><strong>Fecha:</strong> {new Date(visit.scheduledDate).toLocaleString()}</p>
-                {showElapsed && <p><strong>Tiempo de espera:</strong> {elapsed}</p>}
-                {visit.checkInTime && <p><strong>Check-in:</strong> {visit.checkInTime}</p>}
-                {visit.checkOutTime && <p><strong>Check-out:</strong> {visit.checkOutTime}</p>}
-            </div>
-             <div className="mt-3 pt-3 border-t flex space-x-2">
-                {visit.status === VisitStatus.PENDING && (
-                    <>
-                        <button 
-                            onClick={() => onApprove(visit._id)} 
-                            className="px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 flex items-center gap-1"
-                        >
-                            <CheckCircleIcon className="w-4 h-4" /> Aprobar
-                        </button>
-                        <button 
-                            onClick={() => onReject(visit._id)} 
-                            className="px-3 py-1 text-xs font-semibold text-white bg-red-500 rounded hover:bg-red-600 flex items-center gap-1"
-                        >
-                            <LogoutIcon className="w-4 h-4" /> Rechazar
-                        </button>
-                    </>
-                )}
-                {visit.status === VisitStatus.APPROVED && (
-                    <button 
-                        onClick={() => onCheckIn(visit._id)} 
-                        className="px-3 py-1 text-xs font-semibold text-white bg-blue-500 rounded hover:bg-blue-600 flex items-center gap-1"
-                    >
-                        <LoginIcon className="w-4 h-4" /> Check-in
-                    </button>
-                )}
-                 {visit.status === VisitStatus.CHECKED_IN && (
-                    <button 
-                        onClick={() => onCheckout(visit)} 
-                        className="px-3 py-1 text-xs font-semibold text-white bg-purple-500 rounded hover:bg-purple-600 flex items-center gap-1"
-                    >
-                        <ClockIcon className="w-4 h-4" /> Check-out
-                    </button>
-                )}
+                
+                {/* Info del visitante */}
+                <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start gap-2 mb-1">
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-gray-800 leading-tight truncate">{visit.visitorName}</p>
+                            <p className="text-xs text-gray-500 leading-tight truncate">{visit.visitorCompany || 'Sin empresa'}</p>
+                        </div>
+                        {getStatusBadge(visit.status)}
+                    </div>
+                    <div className="text-xs text-gray-600 mt-2">
+                        <p className="truncate"><span className="font-medium">Fecha:</span> {formattedDate} {formattedTime}</p>
+                        {showElapsed && <p><span className="font-medium">Esperando:</span> {elapsed}</p>}
+                    </div>
+                </div>
             </div>
             
-                <VisitHistoryModal
-                    visitId={visit._id}
-                    isOpen={showHistory}
-                    onClose={() => setShowHistory(false)}
-                />
+            <VisitHistoryModal
+                visitId={visit._id}
+                isOpen={showHistory}
+                onClose={() => setShowHistory(false)}
+            />
         </div>
     );
 };
@@ -817,8 +820,86 @@ export const VisitsPage: React.FC = () => {
     const [registerMenuOpen, setRegisterMenuOpen] = useState(false);
     const [showExitModal, setShowExitModal] = useState(false);
     const [exitVisitorSearch, setExitVisitorSearch] = useState('');
+    
+    // Nuevos modales
+    const [pendingModalVisit, setPendingModalVisit] = useState<Visit | null>(null);
+    const [approvedModalVisit, setApprovedModalVisit] = useState<Visit | null>(null);
+    const [checkedInModalVisit, setCheckedInModalVisit] = useState<Visit | null>(null);
+    const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
+    const [rejectionVisit, setRejectionVisit] = useState<Visit | null>(null);
 
-    // Estados y lógica para el modal de motivo de rechazo
+    // Handler para clicks en las tarjetas
+    const handleCardClick = (visit: Visit) => {
+        switch (visit.status) {
+            case VisitStatus.PENDING:
+                setPendingModalVisit(visit);
+                break;
+            case VisitStatus.APPROVED:
+                setApprovedModalVisit(visit);
+                break;
+            case VisitStatus.CHECKED_IN:
+                setCheckedInModalVisit(visit);
+                break;
+            default:
+                break;
+        }
+    };
+
+    // Handler para aprobar desde el modal
+    const handleApproveFromModal = async (visitId: string) => {
+        try {
+            const updatedVisit = await api.approveVisit(visitId);
+            setVisits(visits.map(v => v._id === visitId ? updatedVisit : v));
+            setPendingModalVisit(null);
+        } catch (error) {
+            console.error('Failed to approve visit:', error);
+        }
+    };
+
+    // Handler para rechazar (abre modal de razón)
+    const handleRejectFromModal = (visit: Visit) => {
+        setRejectionVisit(visit);
+        setRejectionModalOpen(true);
+        setPendingModalVisit(null);
+    };
+
+    // Handler para confirmar rechazo con razón
+    const handleRejectWithReason = async (reason: string) => {
+        if (!rejectionVisit) return;
+        try {
+            const updatedVisit = await api.updateVisitStatus(rejectionVisit._id, VisitStatus.REJECTED, reason);
+            setVisits(visits.map(v => v._id === rejectionVisit._id ? updatedVisit : v));
+        } catch (error) {
+            console.error('Failed to reject visit:', error);
+        } finally {
+            setRejectionModalOpen(false);
+            setRejectionVisit(null);
+        }
+    };
+
+    // Handler para check-in con recurso asignado
+    const handleCheckInWithResource = async (visitId: string, assignedResource?: string) => {
+        try {
+            const updatedVisit = await api.checkInVisit(visitId, assignedResource);
+            setVisits(visits.map(v => v._id === visitId ? updatedVisit : v));
+            setApprovedModalVisit(null);
+        } catch (error) {
+            console.error('Failed to check in:', error);
+        }
+    };
+
+    // Handler para checkout desde el modal
+    const handleCheckoutFromModal = async (visitId: string) => {
+        try {
+            const result = await api.checkOutVisit(visitId, []);
+            setVisits(visits.map(v => v._id === visitId ? result.visit : v));
+            setCheckedInModalVisit(null);
+        } catch (error) {
+            console.error('Failed to check out:', error);
+        }
+    };
+
+    // Estados y lógica para el modal de motivo de rechazo (antigua lógica)
     const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
     const [rejectVisitId, setRejectVisitId] = useState<string | null>(null);
 
@@ -1120,7 +1201,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                             <div className="mt-4 space-y-3 max-h-[600px] overflow-y-auto">
                                 {pendingVisits.length > 0 ? (
                                     pendingVisits.map(visit => (
-                                        <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
+                                        <VisitCard key={visit._id} visit={visit} onCardClick={handleCardClick} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
                                     ))
                                 ) : (
                                     <p className="text-gray-400 text-center py-8">No hay visitas pendientes.</p>
@@ -1174,7 +1255,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                             <div className="mt-4 space-y-3 max-h-[600px] overflow-y-auto">
                                 {respondedVisits.length > 0 ? (
                                     respondedVisits.map(visit => (
-                                        <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
+                                        <VisitCard key={visit._id} visit={visit} onCardClick={handleCardClick} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
                                     ))
                                 ) : (
                                     <p className="text-gray-400 text-center py-8">No hay visitas aprobadas.</p>
@@ -1211,7 +1292,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                             <div className="mt-4 space-y-3 max-h-[600px] overflow-y-auto">
                                 {checkedInVisits.length > 0 ? (
                                     checkedInVisits.map(visit => (
-                                        <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
+                                        <VisitCard key={visit._id} visit={visit} onCardClick={handleCardClick} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
                                     ))
                                 ) : (
                                     <p className="text-gray-400 text-center py-8">No hay visitantes dentro.</p>
@@ -1288,6 +1369,44 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
     </div>
   </div>
 )}
+
+            {/* Nuevos modales del flujo */}
+            <PendingVisitModal
+                visit={pendingModalVisit}
+                isOpen={!!pendingModalVisit}
+                onClose={() => setPendingModalVisit(null)}
+                onApprove={handleApproveFromModal}
+                onReject={(visitId) => {
+                    const visit = visits.find(v => v._id === visitId);
+                    if (visit) handleRejectFromModal(visit);
+                }}
+            />
+
+            <ApprovedVisitModal
+                visit={approvedModalVisit}
+                isOpen={!!approvedModalVisit}
+                onClose={() => setApprovedModalVisit(null)}
+                onCheckIn={handleCheckInWithResource}
+            />
+
+            {rejectionVisit && (
+                <RejectionModal
+                    isOpen={rejectionModalOpen}
+                    onClose={() => {
+                        setRejectionModalOpen(false);
+                        setRejectionVisit(null);
+                    }}
+                    onConfirm={handleRejectWithReason}
+                    visitorName={rejectionVisit.visitorName}
+                />
+            )}
+
+            <CheckedInVisitModal
+                visit={checkedInModalVisit}
+                isOpen={!!checkedInModalVisit}
+                onClose={() => setCheckedInModalVisit(null)}
+                onCheckout={handleCheckoutFromModal}
+            />
         </div>
     );
 };

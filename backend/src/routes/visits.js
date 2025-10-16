@@ -546,10 +546,14 @@ router.get('/reject/:token', async (req, res) => {
 // Check-in
 router.post('/checkin/:id', auth, async (req, res) => {
   try {
+    const { assignedResource } = req.body;
     const visit = await Visit.findById(req.params.id).populate('host', 'firstName lastName');
     if (!visit) return res.status(404).json({ message: 'Visita no encontrada' });
     visit.status = 'checked-in';
     visit.checkInTime = new Date();
+    if (assignedResource) {
+      visit.assignedResource = assignedResource;
+    }
     await visit.save();
     await new VisitEvent({ visitId: visit._id, type: 'check-in' }).save();
     // Optional: notify visitor of check-in confirmation

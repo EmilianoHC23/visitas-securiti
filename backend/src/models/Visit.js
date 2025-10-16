@@ -82,6 +82,16 @@ const visitSchema = new mongoose.Schema({
     type: String,
     default: null,
     index: true
+  },
+  assignedResource: {
+    type: String,
+    trim: true,
+    default: null
+  },
+  rejectionReason: {
+    type: String,
+    trim: true,
+    default: null
   }
 }, {
   timestamps: true

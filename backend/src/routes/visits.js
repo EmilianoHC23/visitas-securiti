@@ -262,9 +262,14 @@ router.put('/:id/status', auth, async (req, res) => {
       'rejected': [],
       'cancelled': [],
     };
-    if (!validTransitions[previousStatus].includes(status)) {
-      return res.status(400).json({ message: `Transición de estado no permitida: ${previousStatus} → ${status}` });
-    }
+
+      // No permitir cambiar de 'approved' a 'rejected'
+      if (previousStatus === 'approved' && status === 'rejected') {
+        return res.status(400).json({ message: `No se puede rechazar una visita que ya fue aprobada.` });
+      }
+      if (!validTransitions[previousStatus].includes(status)) {
+        return res.status(400).json({ message: `Transición de estado no permitida: ${previousStatus} → ${status}` });
+      }
 
     // Actualizar timestamps y qrToken según el estado
     const updateData = { status };

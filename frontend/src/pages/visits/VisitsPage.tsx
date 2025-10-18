@@ -922,7 +922,7 @@ export const VisitsPage: React.FC = () => {
         try {
             const updatedVisit = await api.approveVisit(visitId);
             console.log('✅ [APPROVE] Successfully approved visit:', visitId, 'new status:', updatedVisit.status);
-            setVisits(visits.map(v => v._id === visitId ? updatedVisit : v));
+            setVisits(prevVisits => prevVisits.map(v => v._id === visitId ? updatedVisit : v));
             setPendingModalVisit(null);
         } catch (error) {
             console.error('❌ [APPROVE] Failed to approve visit:', error);
@@ -943,7 +943,7 @@ export const VisitsPage: React.FC = () => {
             // Si la visita ya está rechazada, solo actualizar la razón sin cambiar estado
             if (rejectionVisit.status === VisitStatus.REJECTED) {
                 const updatedVisit = await api.updateVisit(rejectionVisit._id, { rejectionReason: reason });
-                setVisits(visits.map(v => v._id === rejectionVisit._id ? updatedVisit : v));
+                setVisits(prevVisits => prevVisits.map(v => v._id === rejectionVisit._id ? updatedVisit : v));
             } else if (rejectionVisit.status === VisitStatus.APPROVED) {
                 // No permitir rechazar si ya está aprobada
                 alert('No se puede rechazar una visita que ya fue aprobada.');
@@ -951,7 +951,7 @@ export const VisitsPage: React.FC = () => {
                 // Si está en otro estado (pending), rechazar con razón
                 try {
                     const updatedVisit = await api.updateVisitStatus(rejectionVisit._id, VisitStatus.REJECTED, reason);
-                    setVisits(visits.map(v => v._id === rejectionVisit._id ? updatedVisit : v));
+                    setVisits(prevVisits => prevVisits.map(v => v._id === rejectionVisit._id ? updatedVisit : v));
                 } catch (error: any) {
                     // Mostrar error del backend si la transición no es permitida
                     alert(error?.response?.data?.message || 'No se pudo rechazar la visita.');
@@ -970,7 +970,7 @@ export const VisitsPage: React.FC = () => {
     const handleCheckInWithResource = async (visitId: string, assignedResource?: string) => {
         try {
             const updatedVisit = await api.checkInVisit(visitId, assignedResource);
-            setVisits(visits.map(v => v._id === visitId ? updatedVisit : v));
+            setVisits(prevVisits => prevVisits.map(v => v._id === visitId ? updatedVisit : v));
             setApprovedModalVisit(null);
         } catch (error) {
             console.error('Failed to check in:', error);
@@ -981,7 +981,7 @@ export const VisitsPage: React.FC = () => {
     const handleCheckoutFromModal = async (visitId: string) => {
         try {
             const result = await api.checkOutVisit(visitId, []);
-            setVisits(visits.map(v => v._id === visitId ? result.visit : v));
+            setVisits(prevVisits => prevVisits.map(v => v._id === visitId ? result.visit : v));
             setCheckedInModalVisit(null);
         } catch (error) {
             console.error('Failed to check out:', error);
@@ -1026,7 +1026,7 @@ export const VisitsPage: React.FC = () => {
       let reason = rejectReason === 'Otro' ? otherReason : rejectReason;
       try {
         const updatedVisit = await api.updateVisitStatus(rejectVisitId, VisitStatus.REJECTED, reason);
-        setVisits(visits.map(v => v._id === rejectVisitId ? updatedVisit : v));
+        setVisits(prevVisits => prevVisits.map(v => v._id === rejectVisitId ? updatedVisit : v));
       } catch (error) {
         console.error('Failed to reject visit:', error);
       } finally {
@@ -1059,7 +1059,7 @@ export const VisitsPage: React.FC = () => {
     const updateVisitStatus = async (id: string, status: VisitStatus) => {
         try {
             const updatedVisit = await api.updateVisitStatus(id, status);
-            setVisits(visits.map(v => v._id === id ? updatedVisit : v));
+            setVisits(prevVisits => prevVisits.map(v => v._id === id ? updatedVisit : v));
         } catch (error) {
             console.error("Failed to update visit status:", error);
         }
@@ -1068,7 +1068,7 @@ export const VisitsPage: React.FC = () => {
     const handleApprove = async (id: string) => {
         try {
             const updatedVisit = await api.approveVisit(id);
-            setVisits(visits.map(v => v._id === id ? updatedVisit : v));
+            setVisits(prevVisits => prevVisits.map(v => v._id === id ? updatedVisit : v));
         } catch (error) {
             console.error('Failed to approve visit:', error);
         }
@@ -1077,7 +1077,7 @@ export const VisitsPage: React.FC = () => {
     const handleCheckIn = async (id: string) => {
         try {
             const updatedVisit = await api.checkInVisit(id);
-            setVisits(visits.map(v => v._id === id ? updatedVisit : v));
+            setVisits(prevVisits => prevVisits.map(v => v._id === id ? updatedVisit : v));
         } catch (error) {
             console.error('Failed to check in:', error);
         }
@@ -1092,7 +1092,7 @@ export const VisitsPage: React.FC = () => {
         try {
             if (!checkoutVisit) return;
             const result = await api.checkOutVisit(checkoutVisit._id, photos);
-            setVisits(visits.map(v => v._id === checkoutVisit._id ? result.visit : v));
+            setVisits(prevVisits => prevVisits.map(v => v._id === checkoutVisit._id ? result.visit : v));
         } catch (error) {
             console.error('Failed to check out:', error);
         } finally {

@@ -616,6 +616,10 @@ router.post('/checkout/:id', auth, async (req, res) => {
     const { photos } = req.body; // array of base64 strings
     const visit = await Visit.findById(req.params.id).populate('host', 'firstName lastName');
     if (!visit) return res.status(404).json({ message: 'Visita no encontrada' });
+    // Validar que la visita esté dentro antes de poder registrar la salida
+    if (visit.status !== 'checked-in') {
+      return res.status(400).json({ message: 'La visita no está dentro o ya fue finalizada' });
+    }
     visit.status = 'completed';
     visit.checkOutTime = new Date();
     await visit.save();

@@ -131,11 +131,12 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
     const [isQrScannerOn, setIsQrScannerOn] = useState(false);
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [qrStream, setQrStream] = useState<MediaStream | null>(null);
+    const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
 
     const startCamera = async () => {
         try {
             const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } 
+                video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } } 
             });
             setStream(mediaStream);
             if (videoRef.current) {
@@ -147,6 +148,17 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
             console.error('Camera error:', error);
             alert('No se pudo acceder a la cámara. Verifica los permisos.');
         }
+    };
+
+    // Cambiar entre cámara frontal y trasera
+    const toggleFacingMode = () => {
+        setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'));
+        setTimeout(() => {
+            stopCamera();
+            setTimeout(() => {
+                startCamera();
+            }, 200);
+        }, 100);
     };
 
     const stopCamera = () => {
@@ -271,11 +283,15 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
     };
 
     React.useEffect(() => {
+        // Auto-iniciar cámara al abrir modal
+        if (isOpen && !photo) {
+            startCamera();
+        }
         return () => {
             stopCamera();
             stopQrScanner();
         };
-    }, []);
+    }, [isOpen, photo, facingMode]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -335,11 +351,11 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
 
                 <div className="px-6 py-6 space-y-6">
                     {/* Sección de foto del visitante */}
-                    <div className="flex flex-col items-center py-4 border-b border-gray-200">
+                    <div className="flex flex-col items-center py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
                         <p className="text-sm text-gray-600 mb-4">Toma la fotografía de tu visitante</p>
                         
                         {!photo ? (
-                            <div className="relative mb-4">
+                            <div className="relative mb-4 flex flex-col items-center">
                                 <button
                                     type="button"
                                     onClick={isCameraOn ? stopCamera : startCamera}
@@ -349,6 +365,13 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={toggleFacingMode}
+                                    className="mt-2 px-3 py-1 bg-cyan-500 text-white rounded-lg text-xs hover:bg-cyan-600 transition-colors"
+                                >
+                                    Cambiar cámara
                                 </button>
                             </div>
                         ) : (
@@ -368,7 +391,7 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
 
                         {/* Cámara activa */}
                         {isCameraOn && !photo && (
-                            <div className="w-full max-w-sm mb-4">
+                            <div className="w-full max-w-sm mb-4 sticky top-24 z-20">
                                 <div className="relative bg-black rounded-lg overflow-hidden">
                                     <video ref={videoRef} autoPlay className="w-full h-64 object-cover" />
                                     <canvas ref={canvasRef} className="hidden" />
@@ -921,12 +944,21 @@ export const VisitsPage: React.FC = () => {
             if (rejectionVisit.status === VisitStatus.REJECTED) {
                 const updatedVisit = await api.updateVisit(rejectionVisit._id, { rejectionReason: reason });
                 setVisits(visits.map(v => v._id === rejectionVisit._id ? updatedVisit : v));
+            } else if (rejectionVisit.status === VisitStatus.APPROVED) {
+                // No permitir rechazar si ya está aprobada
+                alert('No se puede rechazar una visita que ya fue aprobada.');
             } else {
                 // Si está en otro estado (pending), rechazar con razón
-                const updatedVisit = await api.updateVisitStatus(rejectionVisit._id, VisitStatus.REJECTED, reason);
-                setVisits(visits.map(v => v._id === rejectionVisit._id ? updatedVisit : v));
+                try {
+                    const updatedVisit = await api.updateVisitStatus(rejectionVisit._id, VisitStatus.REJECTED, reason);
+                    setVisits(visits.map(v => v._id === rejectionVisit._id ? updatedVisit : v));
+                } catch (error: any) {
+                    // Mostrar error del backend si la transición no es permitida
+                    alert(error?.response?.data?.message || 'No se pudo rechazar la visita.');
+                }
             }
         } catch (error) {
+            alert('No se pudo rechazar la visita.');
             console.error('Failed to reject visit:', error);
         } finally {
             setRejectionModalOpen(false);

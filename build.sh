@@ -3,7 +3,7 @@ set -e
 
 echo "📦 Installing frontend dependencies..."
 cd frontend
-npm install
+npm install --include=dev
 
 echo "🏗️ Building frontend..."
 npx vite build

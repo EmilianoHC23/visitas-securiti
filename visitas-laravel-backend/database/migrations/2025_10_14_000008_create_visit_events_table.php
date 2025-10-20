@@ -10,8 +10,9 @@ return new class extends Migration
     {
         Schema::create('visit_events', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('visit_id')->constrained('visits');
-            $table->enum('type', ['check-in', 'check-out']);
+            $table->foreignId('visit_id')->constrained('visits')->onDelete('cascade');
+            // use string for type to be flexible across DB drivers and tests
+            $table->string('type');
             $table->json('photos')->nullable();
             $table->dateTime('timestamp')->nullable();
             $table->timestamps();

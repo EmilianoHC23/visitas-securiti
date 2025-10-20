@@ -39,9 +39,18 @@ Route::middleware(['auth:api'])->group(function () {
     // CRUD de visitas
     Route::get('visits', [App\Http\Controllers\VisitController::class, 'index']);
     Route::post('visits', [App\Http\Controllers\VisitController::class, 'store']);
-    Route::get('visits/{id}', [App\Http\Controllers\VisitController::class, 'show']);
-    Route::put('visits/{id}', [App\Http\Controllers\VisitController::class, 'update']);
-    Route::delete('visits/{id}', [App\Http\Controllers\VisitController::class, 'destroy']);
+    Route::get('visits/{visit}', [App\Http\Controllers\VisitController::class, 'show']);
+    Route::put('visits/{visit}', [App\Http\Controllers\VisitController::class, 'update']);
+    Route::delete('visits/{visit}', [App\Http\Controllers\VisitController::class, 'destroy']);
+
+    // Visit actions
+    Route::post('visits/{visit}/checkin', [App\Http\Controllers\VisitController::class, 'checkin']);
+    Route::post('visits/{visit}/checkout', [App\Http\Controllers\VisitController::class, 'checkout']);
+    Route::post('visits/{visit}/cancel', [App\Http\Controllers\VisitController::class, 'cancel']);
+
+    // Nested visit events
+    Route::get('visits/{visit}/events', [App\Http\Controllers\VisitEventController::class, 'index']);
+    Route::post('visits/{visit}/events', [App\Http\Controllers\VisitEventController::class, 'store']);
 
     // CRUD de empresas
     Route::get('companies', [App\Http\Controllers\CompanyController::class, 'index']);

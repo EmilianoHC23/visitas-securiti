@@ -5,13 +5,7 @@ const app = require('../backend/src/index');
 
 // Export the Express app as a serverless function
 module.exports = (req, res) => {
-  // Remove /api prefix from the URL
-  req.url = req.url.replace(/^\/api/, '');
-  
-  // If url becomes empty, set it to /
-  if (!req.url || req.url === '') {
-    req.url = '/';
-  }
-  
+  // Do NOT strip the /api prefix because Express mounts routes under /api/*
+  // Forward the request as-is so paths like /api/auth/login match correctly
   return app(req, res);
 };

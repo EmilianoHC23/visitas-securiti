@@ -75,3 +75,27 @@ En `API_DOCS.md` encontrarás:
 - Ejemplos `curl` para login, crear visitas y obtener reportes.
 
 Si quieres que incluya una versión resumida directamente en este `README.md`, dime y la añado.
+
+## CI: dónde encontrar reportes y cómo ejecutar localmente
+
+Los reportes generados por la GitHub Action `API - Newman collection` se publican como artifacts del job.
+
+- Ve a Actions → selecciona la ejecución del workflow → abre el job correspondiente → descarga los artifacts (por ejemplo `phpunit-report` y `newman-reports`).
+
+Comandos útiles para ejecutar localmente:
+
+```powershell
+# Levantar servicios necesarios (MySQL, Redis, MailHog)
+docker compose -f docker-compose.ci.yml up -d --build
+
+# Ejecutar migraciones y tests PHPUnit
+php artisan migrate
+mkdir -p reports
+php artisan test --no-coverage --log-junit=reports/phpunit.xml
+
+# Ejecutar Newman y generar reportes JSON/HTML
+npm install -g newman newman-reporter-html
+newman run docs/postman_collection.json --env-var "baseUrl=http://127.0.0.1:8000" --env-var "login_email=admin@example.com" --env-var "login_password=secret" --reporters cli,json,html --reporter-json-export reports/newman-report.json --reporter-html-export reports/newman-report.html
+```
+
+Recuerda no guardar credenciales reales en el repositorio. Usa variables de entorno o secrets en CI.

@@ -6,6 +6,10 @@ use App\Http\Controllers\AuthController;
 
 Route::post('login', [AuthController::class, 'login']);
 
+// Public token endpoints (invitation accept, approval decision)
+Route::post('invitations/{token}/accept', [App\Http\Controllers\InvitationController::class, 'accept']);
+Route::post('approvals/{token}/decision', [App\Http\Controllers\ApprovalController::class, 'decision']);
+
 Route::middleware(['auth:api'])->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::post('refresh', [AuthController::class, 'refresh']);
@@ -56,4 +60,14 @@ Route::middleware(['auth:api'])->group(function () {
         Route::get('reports/visits-by-company', [App\Http\Controllers\ReportController::class, 'visitsByCompany']);
         Route::get('reports/visits-by-status', [App\Http\Controllers\ReportController::class, 'visitsByStatus']);
     });
+
+    // Invitations (protected CRUD)
+    Route::get('invitations', [App\Http\Controllers\InvitationController::class, 'index']);
+    Route::post('invitations', [App\Http\Controllers\InvitationController::class, 'store']);
+    Route::get('invitations/{invitation}', [App\Http\Controllers\InvitationController::class, 'show']);
+    Route::delete('invitations/{invitation}', [App\Http\Controllers\InvitationController::class, 'destroy']);
+
+    // Approvals (protected listing)
+    Route::get('approvals', [App\Http\Controllers\ApprovalController::class, 'index']);
+    Route::get('approvals/{approval}', [App\Http\Controllers\ApprovalController::class, 'show']);
 });

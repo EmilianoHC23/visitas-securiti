@@ -307,12 +307,16 @@ router.put('/:id/status', auth, async (req, res) => {
           visitId: updated._id.toString(),
           visitorEmail: populated.visitorEmail,
           visitorName: populated.visitorName,
+          visitorCompany: populated.visitorCompany,
           hostName: `${populated.host.firstName} ${populated.host.lastName}`,
+          hostId: populated.host._id.toString(),
           companyName: 'SecurITI',
           status,
           reason: populated.reason,
           scheduledDate: populated.scheduledDate,
-          destination: populated.destination
+          destination: populated.destination,
+          qrToken: populated.qrToken,
+          rejectionReason: populated.rejectionReason
         });
         console.log(`✅ [EMAIL] Successfully sent ${status} email for visit:`, updated._id.toString());
       } catch (mailErr) {

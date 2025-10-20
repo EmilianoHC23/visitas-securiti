@@ -193,6 +193,15 @@ class EmailService {
         hostId: data.hostId
       });
 
+      // QR específico para esta visita (check-in/check-out)
+      const qrDataForThisVisit = JSON.stringify({
+        type: 'visit-checkin',
+        visitId: data.visitId,
+        visitorName: data.visitorName,
+        visitorEmail: data.visitorEmail,
+        qrToken: data.qrToken
+      });
+
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
         to: data.visitorEmail,
@@ -255,22 +264,59 @@ class EmailService {
                             </tr>
                           </table>
                           
-                          <!-- QR Code Card -->
+                          <!-- QR Codes Section -->
                           <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border: 2px solid ${primaryColor}; border-radius: 8px; margin: 25px 0;">
                             <tr>
-                              <td style="padding: 30px; text-align: center;">
-                                <h3 style="color: ${primaryColor}; margin: 0 0 15px 0; font-size: 20px;">Tu Código QR Personal</h3>
-                                <p style="font-size: 14px; color: #4b5563; margin: 0 0 20px 0;">Usa este código en tus próximas visitas para un registro más rápido</p>
-                                <div style="background-color: #ffffff; padding: 15px; display: inline-block; border-radius: 8px;">
-                                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrDataForFutureVisits)}" 
-                                       alt="Código QR de visitante" 
-                                       style="width: 200px; height: 200px; display: block;" />
+                              <td style="padding: 30px;">
+                                <h3 style="color: ${primaryColor}; margin: 0 0 20px 0; font-size: 20px; text-align: center;">Tus Códigos QR</h3>
+                                
+                                <!-- QR for this visit -->
+                                <table width="100%" cellpadding="10" cellspacing="0">
+                                  <tr>
+                                    <td width="50%" style="text-align: center; vertical-align: top; padding: 10px;">
+                                      <div style="background-color: #dcfce7; border: 2px dashed #10b981; border-radius: 8px; padding: 15px;">
+                                        <h4 style="color: #065f46; margin: 0 0 10px 0; font-size: 16px;">QR para Esta Visita</h4>
+                                        <p style="font-size: 12px; color: #064e3b; margin: 0 0 15px 0;">Úsalo hoy para entrada/salida</p>
+                                        <div style="background-color: #ffffff; padding: 10px; display: inline-block; border-radius: 8px;">
+                                          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrDataForThisVisit)}" 
+                                               alt="QR de esta visita" 
+                                               style="width: 150px; height: 150px; display: block;" />
+                                        </div>
+                                        <p style="font-size: 11px; color: #065f46; margin: 10px 0 0 0; font-weight: 600;">✓ Válido solo para hoy</p>
+                                      </div>
+                                    </td>
+                                    
+                                    <td width="50%" style="text-align: center; vertical-align: top; padding: 10px;">
+                                      <div style="background-color: #dbeafe; border: 2px dashed #3b82f6; border-radius: 8px; padding: 15px;">
+                                        <h4 style="color: #1e40af; margin: 0 0 10px 0; font-size: 16px;">QR Reutilizable</h4>
+                                        <p style="font-size: 12px; color: #1e3a8a; margin: 0 0 15px 0;">Para futuras visitas</p>
+                                        <div style="background-color: #ffffff; padding: 10px; display: inline-block; border-radius: 8px;">
+                                          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrDataForFutureVisits)}" 
+                                               alt="QR reutilizable" 
+                                               style="width: 150px; height: 150px; display: block;" />
+                                        </div>
+                                        <p style="font-size: 11px; color: #1e40af; margin: 10px 0 0 0; font-weight: 600;">♾️ Válido siempre</p>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                </table>
+                                
+                                <!-- Instructions for QR -->
+                                <div style="background-color: #ffffff; border-radius: 8px; padding: 15px; margin-top: 20px; border: 1px solid #dbeafe;">
+                                  <p style="font-size: 13px; color: #1e40af; margin: 0 0 10px 0; font-weight: 600; text-align: center;">📱 Cómo usar tus QR:</p>
+                                  <table width="100%" cellpadding="5" cellspacing="0">
+                                    <tr>
+                                      <td style="font-size: 12px; color: #4b5563; line-height: 1.6; padding: 5px 0;">
+                                        <strong style="color: #10b981;">• QR Verde:</strong> Muéstralo hoy en recepción para registrar tu entrada y salida rápidamente.
+                                      </td>
+                                    </tr>
+                                    <tr>
+                                      <td style="font-size: 12px; color: #4b5563; line-height: 1.6; padding: 5px 0;">
+                                        <strong style="color: #3b82f6;">• QR Azul:</strong> Guárdalo para tus próximas visitas. Autocompletará tus datos en futuros registros.
+                                      </td>
+                                    </tr>
+                                  </table>
                                 </div>
-                                <p style="font-size: 13px; color: #4b5563; margin: 15px 0 5px 0; font-weight: 600;">En tu próxima visita:</p>
-                                <p style="font-size: 12px; color: #6b7280; margin: 5px 0 0 0; line-height: 1.6;">
-                                  Tan solo escanea este código QR y tu información se completará automáticamente,<br>
-                                  haciendo tu ingreso mucho más sencillo y rápido.
-                                </p>
                               </td>
                             </tr>
                           </table>
@@ -281,7 +327,8 @@ class EmailService {
                             <ul style="color: #78350f; margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.8;">
                               <li>Llega 10 minutos antes de tu hora programada</li>
                               <li>Trae una identificación oficial vigente</li>
-                              <li>Guarda este código QR para futuras visitas</li>
+                              <li>Muestra el QR verde al llegar a recepción</li>
+                              <li>Guarda el QR azul para futuras visitas</li>
                             </ul>
                           </div>
                         ` : `

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Visit, VisitStatus } from '../../types';
 import * as api from '../../services/api';
 import { formatDateTime, formatLongDate } from '../../utils/dateUtils';
+import { VisitTimelineModal } from './VisitTimelineModal';
 
 export default function ReportsPage() {
   const [visits, setVisits] = useState<Visit[]>([]);
@@ -12,6 +13,7 @@ export default function ReportsPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showTimelineModal, setShowTimelineModal] = useState(false);
 
   useEffect(() => {
     loadVisits();
@@ -55,6 +57,7 @@ export default function ReportsPage() {
       filtered = filtered.filter(v => 
         v.visitorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         v.visitorCompany?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v.visitorEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         v.host?.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         v.host?.lastName.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -71,6 +74,7 @@ export default function ReportsPage() {
     } catch (e) {
       setVisitEvents([]);
     }
+    setShowTimelineModal(true);
   };
 
   const handleDownloadReport = () => {
@@ -197,9 +201,7 @@ export default function ReportsPage() {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Entrada</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Salida</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Estatus</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Razón Rechazo</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Correo</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -249,21 +251,9 @@ export default function ReportsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-600">{v.rejectionReason || '-'}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-600">{v.visitorEmail}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDownloadReport();
-                          }}
-                          className="text-cyan-600 hover:text-cyan-800 text-sm font-medium"
-                        >
-                          Descargar
-                        </button>
+                        <div className="text-sm text-gray-600 max-w-xs truncate">
+                          {v.visitorEmail || '-'}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -273,89 +263,16 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {/* Modal de detalles */}
-        {selectedVisit && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <div className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-4 rounded-t-2xl flex justify-between items-center sticky top-0">
-                <h3 className="text-xl font-bold">Detalles de la visita</h3>
-                <button 
-                  onClick={() => setSelectedVisit(null)}
-                  className="text-white hover:text-gray-200"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Visitante</p>
-                    <p className="text-base font-semibold text-gray-900">{selectedVisit.visitorName}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Empresa</p>
-                    <p className="text-base font-semibold text-gray-900">{selectedVisit.visitorCompany || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Anfitrión</p>
-                    <p className="text-base font-semibold text-gray-900">
-                      {selectedVisit.host?.firstName} {selectedVisit.host?.lastName}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Correo</p>
-                    <p className="text-base font-semibold text-gray-900">{selectedVisit.visitorEmail}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Entrada</p>
-                    <p className="text-base font-semibold text-gray-900">
-                      {selectedVisit.checkInTime ? formatDateTime(selectedVisit.checkInTime) : '-'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Salida</p>
-                    <p className="text-base font-semibold text-gray-900">
-                      {selectedVisit.checkOutTime ? formatDateTime(selectedVisit.checkOutTime) : '-'}
-                    </p>
-                  </div>
-                </div>
-
-                {selectedVisit.rejectionReason && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <p className="text-sm text-red-600 font-medium mb-1">Razón de rechazo</p>
-                    <p className="text-base text-red-900">{selectedVisit.rejectionReason}</p>
-                  </div>
-                )}
-
-                {selectedVisit.assignedResource && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm text-blue-600 font-medium mb-1">Recurso asignado</p>
-                    <p className="text-base text-blue-900">{selectedVisit.assignedResource}</p>
-                  </div>
-                )}
-
-                {visitEvents.length > 0 && (
-                  <div className="mt-6">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-3">Línea de tiempo</h4>
-                    <div className="space-y-2">
-                      {visitEvents.map(ev => (
-                        <div key={ev._id} className="flex items-start gap-3 text-sm">
-                          <div className="w-2 h-2 mt-1.5 rounded-full bg-cyan-500"></div>
-                          <div>
-                            <p className="text-gray-900 font-medium">{ev.type}</p>
-                            <p className="text-gray-500">{formatDateTime(ev.createdAt)}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Timeline Modal */}
+        <VisitTimelineModal
+          visit={selectedVisit}
+          isOpen={showTimelineModal}
+          onClose={() => {
+            setShowTimelineModal(false);
+            setSelectedVisit(null);
+          }}
+          events={visitEvents}
+        />
       </div>
     </div>
   );

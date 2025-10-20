@@ -152,4 +152,27 @@ class VisitController extends Controller
         VisitEvent::create(['visit_id' => $visit->id, 'type' => 'cancel', 'timestamp' => now()]);
         return response()->json($visit);
     }
+
+    // Scan QR token to find a visit or company public data (frontend expects this)
+    public function scanQr(Request $request)
+    {
+        $token = $request->input('qrToken');
+        if (! $token) {
+            return response()->json(['message' => 'qrToken required'], 422);
+        }
+
+        // Try to find visit by qr_token
+        $visit = Visit::where('qr_token', $token)->first();
+        if ($visit) {
+            return response()->json(['message' => 'visit found', 'visit' => $visit]);
+        }
+
+        // Optionally, look for a company by qr_code
+        $company = \App\Models\Company::where('qr_code', $token)->first();
+        if ($company) {
+            return response()->json(['message' => 'company found', 'company' => $company]);
+        }
+
+        return response()->json(['message' => 'Not found'], 404);
+    }
 }

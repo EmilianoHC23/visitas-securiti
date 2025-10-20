@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Visit;
 use App\Models\VisitEvent;
+use App\Http\Requests\StoreVisitEventRequest;
 use Illuminate\Http\Request;
 
 class VisitEventController extends Controller
@@ -15,14 +16,9 @@ class VisitEventController extends Controller
     }
 
     // Create an event for a visit (e.g., photos upload, note)
-    public function store(Request $request, Visit $visit)
+    public function store(StoreVisitEventRequest $request, Visit $visit)
     {
-        $data = $request->validate([
-            'type' => 'required|string|max:100',
-            'photos' => 'nullable|array',
-            'photos.*' => 'string',
-            'timestamp' => 'nullable|date',
-        ]);
+        $data = $request->validated();
 
         $event = $visit->events()->create([
             'type' => $data['type'],

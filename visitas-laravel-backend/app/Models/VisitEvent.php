@@ -13,6 +13,11 @@ class VisitEvent extends Model
         'visit_id', 'type', 'photos', 'timestamp'
     ];
 
+    protected $casts = [
+        'photos' => 'array',
+        'timestamp' => 'datetime',
+    ];
+
     public function visit()
     {
         return $this->belongsTo(Visit::class);

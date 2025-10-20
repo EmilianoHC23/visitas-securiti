@@ -5,15 +5,23 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 
 Route::post('login', [AuthController::class, 'login']);
+// Aliases to match frontend expectations
+Route::post('auth/login', [AuthController::class, 'login']);
 
 // Public token endpoints (invitation accept, approval decision)
 Route::post('invitations/{token}/accept', [App\Http\Controllers\InvitationController::class, 'accept']);
+// Frontend-friendly invitation endpoints
+Route::get('invitations/verify/{token}', [App\Http\Controllers\InvitationController::class, 'verify']);
+Route::post('invitations/complete', [App\Http\Controllers\InvitationController::class, 'complete']);
 Route::post('approvals/{token}/decision', [App\Http\Controllers\ApprovalController::class, 'decision']);
 
 Route::middleware(['auth:api'])->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
+    Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::post('refresh', [AuthController::class, 'refresh']);
+    Route::post('auth/refresh', [AuthController::class, 'refresh']);
     Route::get('me', [AuthController::class, 'me']);
+    Route::get('auth/me', [AuthController::class, 'me']);
 
     // CRUD de usuarios
     Route::get('users', [App\Http\Controllers\UserController::class, 'index']);
@@ -39,22 +47,38 @@ Route::middleware(['auth:api'])->group(function () {
     // CRUD de visitas
     Route::get('visits', [App\Http\Controllers\VisitController::class, 'index']);
     Route::post('visits', [App\Http\Controllers\VisitController::class, 'store']);
+    // Frontend expects a public/self-register route
+    Route::post('visits/register', [App\Http\Controllers\VisitController::class, 'store']);
     Route::get('visits/{visit}', [App\Http\Controllers\VisitController::class, 'show']);
     Route::put('visits/{visit}', [App\Http\Controllers\VisitController::class, 'update']);
+    // Frontend expects an explicit status path
+    Route::put('visits/{visit}/status', [App\Http\Controllers\VisitController::class, 'update']);
     Route::delete('visits/{visit}', [App\Http\Controllers\VisitController::class, 'destroy']);
 
-    // Visit actions
+    // Visit actions (primary)
     Route::post('visits/{visit}/checkin', [App\Http\Controllers\VisitController::class, 'checkin']);
     Route::post('visits/{visit}/checkout', [App\Http\Controllers\VisitController::class, 'checkout']);
     Route::post('visits/{visit}/cancel', [App\Http\Controllers\VisitController::class, 'cancel']);
+    // Frontend-friendly action routes (id-based)
+    Route::post('visits/checkin/{id}', function ($id) { return App\Http\Controllers\VisitController::checkin(\App\Models\Visit::findOrFail($id)); });
+    Route::post('visits/checkout/{id}', function ($id) { return App\Http\Controllers\VisitController::checkout(\App\Models\Visit::findOrFail($id)); });
+    Route::post('visits/cancel/{id}', function ($id) { return App\Http\Controllers\VisitController::cancel(\App\Models\Visit::findOrFail($id)); });
+    // QR scan endpoint expected by frontend
+    Route::post('visits/scan-qr', [App\Http\Controllers\VisitController::class, 'scanQr']);
 
     // Nested visit events
     Route::get('visits/{visit}/events', [App\Http\Controllers\VisitEventController::class, 'index']);
     Route::post('visits/{visit}/events', [App\Http\Controllers\VisitEventController::class, 'store']);
 
+    // Agenda / public-like convenience endpoints used by frontend
+    Route::get('visits/agenda', [App\Http\Controllers\VisitController::class, 'index']);
+
     // CRUD de empresas
     Route::get('companies', [App\Http\Controllers\CompanyController::class, 'index']);
     Route::get('companies/{id}', [App\Http\Controllers\CompanyController::class, 'show']);
+    // Company convenience endpoints
+    Route::get('company/config', [App\Http\Controllers\CompanyController::class, 'show']);
+    Route::get('company/qr-code', [App\Http\Controllers\CompanyController::class, 'qrCode']);
 
     // Rutas protegidas: solo admin puede crear/actualizar/eliminar empresas
     Route::middleware(['role:admin'])->group(function () {
@@ -75,6 +99,9 @@ Route::middleware(['auth:api'])->group(function () {
     Route::post('invitations', [App\Http\Controllers\InvitationController::class, 'store']);
     Route::get('invitations/{invitation}', [App\Http\Controllers\InvitationController::class, 'show']);
     Route::delete('invitations/{invitation}', [App\Http\Controllers\InvitationController::class, 'destroy']);
+    // Invitation utilities expected by frontend
+    Route::post('invitations/resend/{userId}', [App\Http\Controllers\InvitationController::class, 'resend']);
+    Route::get('invitations/test-smtp', [App\Http\Controllers\InvitationController::class, 'testSmtp']);
 
     // Approvals (protected listing)
     Route::get('approvals', [App\Http\Controllers\ApprovalController::class, 'index']);

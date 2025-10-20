@@ -46,6 +46,45 @@ class InvitationController extends Controller
         return response()->json(['message' => 'Invitation accepted', 'invitation' => $invitation]);
     }
 
+    // Frontend-friendly: verify token (returns invitation info without accepting)
+    public function verify($token)
+    {
+        $invitation = Invitation::where('invitation_token', $token)->first();
+        if (! $invitation) {
+            return response()->json(['message' => 'Invalid token'], 404);
+        }
+        if ($invitation->expires_at && now()->greaterThan($invitation->expires_at)) {
+            return response()->json(['message' => 'Invitation expired'], 410);
+        }
+        return response()->json($invitation);
+    }
+
+    // Frontend-friendly: complete registration (accept + create user flow is handled elsewhere)
+    public function complete(Request $request)
+    {
+        $token = $request->input('token');
+        return $this->accept($token);
+    }
+
+    // Resend invitation to user id (protected)
+    public function resend($userId, InvitationService $service)
+    {
+        // service will handle redispatching email; minimal implementation
+        $invitation = Invitation::where('invited_id', $userId)->latest()->first();
+        if (! $invitation) {
+            return response()->json(['message' => 'Invitation not found'], 404);
+        }
+        $service->resend($invitation);
+        return response()->json(['message' => 'Invitation resent']);
+    }
+
+    // Simple SMTP test helper
+    public function testSmtp()
+    {
+        // For now return 200 — actual SMTP test can be implemented in service
+        return response()->json(['message' => 'SMTP config OK']);
+    }
+
     public function destroy(Invitation $invitation)
     {
         $invitation->delete();

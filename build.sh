@@ -6,7 +6,7 @@ cd frontend
 npm install
 
 echo "🏗️ Building frontend..."
-npm run build
+npx vite build
 
 echo "📦 Installing backend dependencies..."
 cd ../backend

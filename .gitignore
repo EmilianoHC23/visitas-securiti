@@ -48,7 +48,7 @@ vite.svg
 visitas-securiti.zip
 
 # Excluir carpeta visitas-laravel
-visitas-laravel/
+visitas-laravel-backend/
 
 # Cache directories
 .cache

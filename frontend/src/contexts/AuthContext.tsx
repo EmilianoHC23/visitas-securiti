@@ -5,11 +5,7 @@ import * as api from '../services/api';
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-<<<<<<< HEAD
   login: (username: string, password: string, recaptchaToken?: string) => Promise<void>;
-=======
-  login: (email: string, password: string) => Promise<void>;
->>>>>>> ef0db9d98d173edacdb6f76c3e808da590df12a8
   logout: () => void;
   loading: boolean;
 }
@@ -39,24 +35,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     checkUser();
   }, []);
 
-<<<<<<< HEAD
+
   const login = useCallback(async (username: string, password: string, recaptchaToken?: string) => {
     setLoading(true);
     try {
       const { token, user: loggedInUser } = await api.login(username, password, recaptchaToken);
-
-  const login = useCallback(async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      const { token, user: loggedInUser } = await api.login(email, password);
->>>>>>> ef0db9d98d173edacdb6f76c3e808da590df12a8
       localStorage.setItem('securitiToken', token);
       setUser(loggedInUser);
     } catch (error) {
-        console.error("Login failed:", error);
-        throw error; // Re-throw to be caught in the component
+      console.error("Login failed:", error);
+      throw error; // Re-throw to be caught in the component
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   }, []);
 

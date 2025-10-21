@@ -90,6 +90,15 @@ router.post('/', auth, async (req, res) => {
     console.log('📝 Creating visit - User:', req.user?.email, 'Company:', req.user?.companyId);
     const { visitorName, visitorCompany, reason, hostId, scheduledDate, visitorEmail, visitorPhone } = req.body;
     console.log('📝 Visit data:', { visitorName, visitorCompany, reason, hostId, scheduledDate });
+    if (typeof req.body.visitorPhoto === 'string') {
+      console.log('🖼️ visitorPhoto received:', {
+        present: true,
+        length: req.body.visitorPhoto?.length,
+        prefix: req.body.visitorPhoto?.slice(0, 30)
+      });
+    } else {
+      console.log('🖼️ visitorPhoto received:', { present: false, type: typeof req.body.visitorPhoto });
+    }
 
     // Validate required fields
     if (!visitorName || !reason || !hostId || !scheduledDate) {
@@ -302,7 +311,9 @@ router.put('/:id/status', auth, async (req, res) => {
     }
 
     // Enviar notificaciones al visitante cuando corresponda
-    if ((status === 'approved' || status === 'rejected') && updated.visitorEmail) {
+    // Aprobada: siempre envía. Rechazada: solo si viene con razón (para cumplir flujo de "respuesta recibida").
+    const hasRejectReasonNow = Boolean(reason || updated.rejectionReason);
+    if (((status === 'approved') || (status === 'rejected' && hasRejectReasonNow)) && updated.visitorEmail) {
       console.log(`📧 [UPDATE-STATUS] Sending ${status} notification to:`, updated.visitorEmail, 'for visit:', updated._id.toString());
       const populated = await Visit.findById(updated._id).populate('host', 'firstName lastName');
       try {
@@ -381,8 +392,9 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(403).json({ message: 'No tienes permisos para modificar esta visita' });
     }
 
-    // Guardar el estado anterior para verificar si hubo cambio
-    const previousStatus = visit.status;
+  // Guardar el estado anterior para verificar si hubo cambio
+  const previousStatus = visit.status;
+  const previousRejectionReason = visit.rejectionReason;
 
     const updatedVisit = await Visit.findByIdAndUpdate(
       id,
@@ -390,9 +402,15 @@ router.put('/:id', auth, async (req, res) => {
       { new: true, runValidators: true }
     ).populate('host', 'firstName lastName email profileImage');
 
-    // Solo enviar email si la visita acaba de ser rechazada (no estaba rechazada antes)
-    // Evita enviar emails duplicados cuando solo se actualiza rejectionReason
-    if (updates.rejectionReason && updatedVisit.status === 'rejected' && previousStatus !== 'rejected' && updatedVisit.visitorEmail) {
+    // Enviar email de rechazo cuando se asigna una razón por primera vez
+    // Caso 1: Se cambia a rechazado con razón (previousStatus puede ser 'pending')
+    // Caso 2: Ya estaba rechazado (por token), y ahora se agrega la razón (previousRejectionReason era null)
+    if (
+      updates.rejectionReason &&
+      updatedVisit.status === 'rejected' &&
+      !previousRejectionReason &&
+      updatedVisit.visitorEmail
+    ) {
       try {
         await require('../services/emailService').sendVisitorNotificationEmail({
           visitId: updatedVisit._id.toString(),
@@ -571,32 +589,7 @@ router.get('/reject/:token', async (req, res) => {
     approval.decision = 'rejected';
     approval.decidedAt = new Date();
     await approval.save();
-    
-      // Send notification to visitor if email exists
-      console.log('🔴 [REJECT-TOKEN] Sending rejection email for visit:', visit._id.toString());
-      if (visit.visitorEmail) {
-        await visit.populate('host', 'firstName lastName');
-        try {
-          await require('../services/emailService').sendVisitorNotificationEmail({
-            visitId: visit._id.toString(),
-            visitorEmail: visit.visitorEmail,
-            visitorName: visit.visitorName,
-            visitorCompany: visit.visitorCompany,
-            hostName: `${visit.host.firstName} ${visit.host.lastName}`,
-            hostId: visit.host._id.toString(),
-            companyName: 'SecurITI',
-            status: 'rejected',
-            reason: visit.reason,
-            scheduledDate: visit.scheduledDate,
-            destination: visit.destination,
-            rejectionReason: visit.rejectionReason
-          });
-          console.log('✅ [REJECT-TOKEN] Email sent successfully');
-        } catch (mailErr) {
-          console.error('❌ [REJECT-TOKEN] Email error:', mailErr?.message);
-        }
-      }
-    
+    // No enviar correo aquí. El correo de rechazo se enviará cuando se asigne una razón desde el panel.
     const redirect = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/visit-confirmation?result=rejected`;
     res.redirect(302, redirect);
   } catch (e) {

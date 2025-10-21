@@ -8,47 +8,45 @@ const router = express.Router();
 // Login
 router.post('/login', async (req, res) => {
   try {
-    console.log('🔐 Login request received');
-    console.log('📦 Request body:', req.body);
-    console.log('📡 Content-Type:', req.headers['content-type']);
+    console.log('Login request received');
+    console.log('Request body:', req.body);
+    console.log('Content-Type:', req.headers['content-type']);
     
     const { email, password } = req.body;
     
-    console.log('🔐 Login attempt for:', email);
-    console.log('� Password provided:', !!password);
-    console.log('�📊 Environment:', process.env.NODE_ENV);
-    console.log('🔑 JWT_SECRET exists:', !!process.env.JWT_SECRET);
+    console.log('Login attempt for:', email);
+    console.log('Password provided:', !!password);
 
     if (!email || !password) {
-      console.log('❌ Missing credentials - email:', !!email, 'password:', !!password);
+      console.log('Missing credentials - email:', !!email, 'password:', !!password);
       return res.status(400).json({ message: 'Email y contraseña son requeridos' });
     }
 
     // Find user and include password for comparison
     const user = await User.findOne({ email });
-    console.log('👤 User found:', !!user);
+    console.log('User found:', !!user);
     
     if (!user) {
-      console.log('❌ User not found for email:', email);
+      console.log('User not found for email:', email);
       return res.status(401).json({ message: 'Credenciales incorrectas' });
     }
 
     if (!user.isActive) {
-      console.log('❌ User is inactive:', email);
+      console.log('User is inactive:', email);
       return res.status(401).json({ message: 'Usuario desactivado' });
     }
 
     // Check password
     const isMatch = await user.comparePassword(password);
-    console.log('🔍 Password match:', isMatch);
+    console.log('Password match:', isMatch);
     
     if (!isMatch) {
-      console.log('❌ Password mismatch for:', email);
+      console.log('Password mismatch for:', email);
       return res.status(401).json({ message: 'Credenciales incorrectas' });
     }
 
     if (!process.env.JWT_SECRET) {
-      console.error('❌ JWT_SECRET not configured');
+      console.error('JWT_SECRET not configured');
       return res.status(500).json({ message: 'Error de configuración del servidor' });
     }
 
@@ -63,7 +61,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    console.log('✅ Login successful for:', email);
+    console.log('Login successful for:', email);
 
     // Return user without password
     const userResponse = user.toJSON();
@@ -73,7 +71,7 @@ router.post('/login', async (req, res) => {
       user: userResponse
     });
   } catch (error) {
-    console.error('❌ Login error:', error);
+    console.error('Login error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

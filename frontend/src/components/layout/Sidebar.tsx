@@ -3,7 +3,17 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { UserRole } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
-import { DashboardIcon, VisitsIcon, UsersIcon, ReportsIcon, SettingsIcon, AgendaIcon, QrIcon, BlacklistIcon, CompanyIcon } from '../common/icons';
+import { 
+    LayoutDashboard, 
+    Users, 
+    ClipboardList, 
+    Calendar, 
+    Key, 
+    UserPlus, 
+    UserX, 
+    BarChart3, 
+    Settings 
+} from 'lucide-react';
 
 type NavItemProps = { to: string; icon: React.ReactNode; label: string; collapsed: boolean };
 const NavItem: React.FC<NavItemProps> = ({ to, icon, label, collapsed }) => {
@@ -34,17 +44,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
     const { user } = useAuth();
 
     const navLinks = [
-        { to: "/", label: "Dashboard", icon: <DashboardIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
-        { to: "/visits", label: "Visitas", icon: <VisitsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
-    { to: "/agenda", label: "Agenda", icon: <AgendaIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
-        { to: "/users", label: "Usuarios", icon: <UsersIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
-        { to: "/access-codes", label: "Accesos/Eventos", icon: <SettingsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
-        { to: "/public-registration", label: "Auto-registro", icon: <VisitsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
-        { to: "/blacklist", label: "Lista Negra", icon: <UsersIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
-        { to: "/reports", label: "Reportes", icon: <ReportsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
-        { to: "/settings", label: "Configuración", icon: <SettingsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
-        { to: "/settings/company", label: "Config. Empresa", icon: <SettingsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
-        { to: "/settings/email-test", label: "Prueba Email", icon: <SettingsIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
+        { to: "/", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
+        { to: "/visits", label: "Visitas", icon: <ClipboardList className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
+        { to: "/agenda", label: "Agenda", icon: <Calendar className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
+        { to: "/users", label: "Usuarios", icon: <Users className="w-5 h-5" />, roles: [UserRole.ADMIN] },
+        { to: "/access-codes", label: "Accesos/Eventos", icon: <Key className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
+        { to: "/public-registration", label: "Auto-registro", icon: <UserPlus className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
+        { to: "/blacklist", label: "Lista Negra", icon: <UserX className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
+        { to: "/reports", label: "Reportes", icon: <BarChart3 className="w-5 h-5" />, roles: [UserRole.ADMIN] },
+        { to: "/settings", label: "Configuración", icon: <Settings className="w-5 h-5" />, roles: [UserRole.ADMIN] },
     ];
 
     return (

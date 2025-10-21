@@ -46,6 +46,10 @@ export interface Visit {
   visitType?: 'spontaneous' | 'pre-registered' | 'access-code';
   accessCode?: string;
   accessId?: string;
+  assignedResource?: string;
+  rejectionReason?: string;
+  qrToken?: string;
+  destination?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -56,6 +60,7 @@ export interface Company {
   logo?: string;
   settings: {
     autoApproval: boolean;
+    autoCheckIn: boolean;
     requirePhoto: boolean;
     enableSelfRegister: boolean;
     notificationEmail?: string;

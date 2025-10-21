@@ -20,6 +20,7 @@ router.get('/config', auth, async (req, res) => {
         name: 'Mi Empresa',
         settings: {
           autoApproval: false,
+          autoCheckIn: false,
           requirePhoto: true,
           enableSelfRegister: true,
           notificationEmail: null
@@ -48,6 +49,7 @@ router.put('/config', auth, authorize('admin'), async (req, res) => {
         logo,
         settings: {
           autoApproval: settings?.autoApproval || false,
+          autoCheckIn: settings?.autoCheckIn || false,
           requirePhoto: settings?.requirePhoto || true,
           enableSelfRegister: settings?.enableSelfRegister || true,
           notificationEmail: settings?.notificationEmail || null
@@ -78,6 +80,7 @@ router.get('/qr-code', auth, async (req, res) => {
         name: 'Mi Empresa',
         settings: {
           autoApproval: false,
+          autoCheckIn: false,
           requirePhoto: true,
           enableSelfRegister: true,
           notificationEmail: null

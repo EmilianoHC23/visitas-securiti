@@ -29,6 +29,51 @@ type AccessItem = {
 };
 
 export const AccessCodesPage: React.FC = () => {
+  // Helpers to safely build ISO strings from possibly-varied backend values
+  const getDatePart = (dateLike: any): string | null => {
+    if (!dateLike) return null;
+    try {
+      if (typeof dateLike === 'string') {
+        // If it's already an ISO string (contains 'T'), only take the date component
+        const onlyDate = dateLike.includes('T') ? dateLike.split('T')[0] : dateLike;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(onlyDate)) return onlyDate;
+        const d = new Date(dateLike);
+        if (isFinite(d.getTime())) return d.toISOString().slice(0, 10);
+        return null;
+      }
+      const d = new Date(dateLike);
+      if (isFinite(d.getTime())) return d.toISOString().slice(0, 10);
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const getTimePart = (timeLike: any): string => {
+    if (!timeLike || typeof timeLike !== 'string') return '00:00:00';
+    const m = timeLike.match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
+    if (m) return `${m[1]}:${m[2]}:${m[3] ?? '00'}`;
+    return '00:00:00';
+  };
+
+  const combineToISO = (dateLike: any, timeLike: any): string | null => {
+    const datePart = getDatePart(dateLike);
+    if (!datePart) return null;
+    const timePart = getTimePart(timeLike);
+    const d = new Date(`${datePart}T${timePart}Z`);
+    return isFinite(d.getTime()) ? d.toISOString() : null;
+  };
+
+  // Safe conversion to ISO with fallback to "now" when invalid
+  const toISOOrNow = (dateLike: any): string => {
+    try {
+      const d = new Date(dateLike);
+      return isFinite(d.getTime()) ? d.toISOString() : new Date().toISOString();
+    } catch {
+      return new Date().toISOString();
+    }
+  };
+
   const [tab, setTab] = useState<'activos' | 'finalizados'>('activos');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -74,12 +119,9 @@ export const AccessCodesPage: React.FC = () => {
         const data = await getAccesses();
         // Mapear a nuestro modelo local
         const mapped: AccessItem[] = (data || []).map((a: any) => {
-          const start = a?.schedule?.startDate && a?.schedule?.startTime
-            ? new Date(`${a.schedule.startDate}T${a.schedule.startTime}:00`).toISOString()
-            : a?.createdAt || new Date().toISOString();
-          const end = a?.schedule?.endDate && a?.schedule?.endTime
-            ? new Date(`${a.schedule.endDate}T${a.schedule.endTime}:00`).toISOString()
-            : null;
+          const start = combineToISO(a?.schedule?.startDate, a?.schedule?.startTime)
+            || (a?.createdAt ? toISOOrNow(a.createdAt) : new Date().toISOString());
+          const end = combineToISO(a?.schedule?.endDate, a?.schedule?.endTime);
           const status: AccessItem['status'] = a?.status === 'active' ? 'activo' : 'finalizado';
           const preRegLink = a?.accessCode ? `${window.location.origin}/redeem/${a.accessCode}` : null;
           const invitedEmails = Array.isArray(a?.invitedEmails) ? a.invitedEmails.map((ie: any) => ie?.email || '').filter(Boolean) : undefined;
@@ -100,7 +142,7 @@ export const AccessCodesPage: React.FC = () => {
             preApprove: !!a?.settings?.autoApproval,
             sendAccess: true,
             status,
-            createdAt: a?.createdAt ? new Date(a.createdAt).toISOString() : new Date().toISOString(),
+            createdAt: a?.createdAt ? toISOOrNow(a.createdAt) : new Date().toISOString(),
           } as AccessItem;
         });
         setItems(mapped);
@@ -144,10 +186,20 @@ export const AccessCodesPage: React.FC = () => {
       return;
     }
 
-    const startISO = new Date(`${startDate}T${startTime}:00`).toISOString();
+    const startISO = combineToISO(startDate, `${startTime}:00`);
+    if (!startISO) {
+      setToast('Fecha/hora de inicio inválida.');
+      setTimeout(() => setToast(null), 2500);
+      return;
+    }
     let endISO: string | null = null;
     if (!noExpiry && endDate && endTime) {
-      endISO = new Date(`${endDate}T${endTime}:00`).toISOString();
+      endISO = combineToISO(endDate, `${endTime}:00`);
+      if (!endISO) {
+        setToast('Fecha/hora de fin inválida.');
+        setTimeout(() => setToast(null), 2500);
+        return;
+      }
     }
     try {
       // Preparar payload para API
@@ -178,12 +230,8 @@ export const AccessCodesPage: React.FC = () => {
         const updated = await apiUpdateAccess(editingId, updates);
         // Mapear respuesta a item local
         const preRegLink = updated?.accessCode ? `${window.location.origin}/redeem/${updated.accessCode}` : null;
-        const start = updated?.schedule?.startDate && updated?.schedule?.startTime
-          ? new Date(`${updated.schedule.startDate}T${updated.schedule.startTime}:00`).toISOString()
-          : startISO;
-        const end = updated?.schedule?.endDate && updated?.schedule?.endTime
-          ? new Date(`${updated.schedule.endDate}T${updated.schedule.endTime}:00`).toISOString()
-          : endISO;
+        const start = combineToISO(updated?.schedule?.startDate, updated?.schedule?.startTime) || startISO;
+        const end = combineToISO(updated?.schedule?.endDate, updated?.schedule?.endTime) || endISO;
         setItems(prev => prev.map(it => it.id === editingId ? {
           ...it,
           reason: updated?.description || reason,
@@ -212,12 +260,8 @@ export const AccessCodesPage: React.FC = () => {
           invitedEmails,
         } as any);
         const preRegLink = created?.accessCode && createLink ? `${window.location.origin}/redeem/${created.accessCode}` : null;
-        const start = created?.schedule?.startDate && created?.schedule?.startTime
-          ? new Date(`${created.schedule.startDate}T${created.schedule.startTime}:00`).toISOString()
-          : startISO;
-        const end = created?.schedule?.endDate && created?.schedule?.endTime
-          ? new Date(`${created.schedule.endDate}T${created.schedule.endTime}:00`).toISOString()
-          : (endISO ?? null);
+        const start = combineToISO(created?.schedule?.startDate, created?.schedule?.startTime) || startISO;
+        const end = combineToISO(created?.schedule?.endDate, created?.schedule?.endTime) || (endISO ?? null);
         const newItem: AccessItem = {
           id: created?._id || makeId(),
           reason: created?.description || reason,

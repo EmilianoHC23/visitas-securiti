@@ -95,12 +95,10 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => { // e
 };
 
 // --- AUTENTICACIÓN ---
-export const login = async (username: string, password: string, recaptchaToken?: string): Promise<{ token: string; user: User }> => {
-  const body: any = { username, password, email: username };
-  if (recaptchaToken) body.recaptchaToken = recaptchaToken;
+export const login = async (username: string, password: string): Promise<{ token: string; user: User }> => {
   return apiRequest('/auth/login', {
     method: 'POST',
-    body: JSON.stringify(body),
+    body: JSON.stringify({ username, password, email: username }),
   });
 };
 
@@ -192,8 +190,11 @@ export const getVisitStatus = async (visitId: string): Promise<{ status: string;
   return apiRequest(`/visits/status/${visitId}`);
 };
 
-export const checkInVisit = async (visitId: string): Promise<Visit> => {
-  return apiRequest(`/visits/checkin/${visitId}`, { method: 'POST' });
+export const checkInVisit = async (visitId: string, assignedResource?: string): Promise<Visit> => {
+  return apiRequest(`/visits/checkin/${visitId}`, { 
+    method: 'POST',
+    body: JSON.stringify({ assignedResource })
+  });
 };
 
 export const checkOutVisit = async (visitId: string, photos: string[] = []): Promise<{ visit: Visit; elapsedMs: number | null }> => {

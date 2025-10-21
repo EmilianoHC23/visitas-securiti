@@ -151,6 +151,7 @@ router.post('/', auth, async (req, res) => {
     const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
       await require('../services/emailService').sendApprovalRequestEmail({
         hostEmail: host.email,
+        hostName: `${host.firstName} ${host.lastName}`,
         companyName: (company && company.name) || 'SecurITI',
         visitorName,
         visitorCompany,
@@ -210,6 +211,7 @@ router.post('/register', async (req, res) => {
   const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
     await require('../services/emailService').sendApprovalRequestEmail({
       hostEmail: host.email,
+      hostName: `${host.firstName} ${host.lastName}`,
       companyName: 'SecurITI',
       visitorName,
       visitorCompany,
@@ -260,9 +262,14 @@ router.put('/:id/status', auth, async (req, res) => {
       'rejected': [],
       'cancelled': [],
     };
-    if (!validTransitions[previousStatus].includes(status)) {
-      return res.status(400).json({ message: `Transición de estado no permitida: ${previousStatus} → ${status}` });
-    }
+
+      // No permitir cambiar de 'approved' a 'rejected'
+      if (previousStatus === 'approved' && status === 'rejected') {
+        return res.status(400).json({ message: `No se puede rechazar una visita que ya fue aprobada.` });
+      }
+      if (!validTransitions[previousStatus].includes(status)) {
+        return res.status(400).json({ message: `Transición de estado no permitida: ${previousStatus} → ${status}` });
+      }
 
     // Actualizar timestamps y qrToken según el estado
     const updateData = { status };
@@ -293,21 +300,27 @@ router.put('/:id/status', auth, async (req, res) => {
 
     // Enviar notificaciones al visitante cuando corresponda
     if ((status === 'approved' || status === 'rejected') && updated.visitorEmail) {
+      console.log(`📧 [EMAIL] Sending ${status} notification to:`, updated.visitorEmail, 'for visit:', updated._id.toString());
       const populated = await Visit.findById(updated._id).populate('host', 'firstName lastName');
       try {
         await require('../services/emailService').sendVisitorNotificationEmail({
           visitId: updated._id.toString(),
           visitorEmail: populated.visitorEmail,
           visitorName: populated.visitorName,
+          visitorCompany: populated.visitorCompany,
           hostName: `${populated.host.firstName} ${populated.host.lastName}`,
+          hostId: populated.host._id.toString(),
           companyName: 'SecurITI',
           status,
           reason: populated.reason,
           scheduledDate: populated.scheduledDate,
-          destination: populated.destination
+          destination: populated.destination,
+          qrToken: populated.qrToken,
+          rejectionReason: populated.rejectionReason
         });
+        console.log(`✅ [EMAIL] Successfully sent ${status} email for visit:`, updated._id.toString());
       } catch (mailErr) {
-        console.warn('Email notify error:', mailErr?.message || mailErr);
+        console.warn('❌ [EMAIL] Error sending email:', mailErr?.message || mailErr);
       }
     }
 
@@ -370,6 +383,27 @@ router.put('/:id', auth, async (req, res) => {
       updates,
       { new: true, runValidators: true }
     ).populate('host', 'firstName lastName email profileImage');
+
+    // Si se está actualizando la razón de rechazo en una visita rechazada, enviar email
+    if (updates.rejectionReason && updatedVisit.status === 'rejected' && updatedVisit.visitorEmail) {
+      try {
+        await require('../services/emailService').sendVisitorNotificationEmail({
+          visitId: updatedVisit._id.toString(),
+          visitorEmail: updatedVisit.visitorEmail,
+          visitorName: updatedVisit.visitorName,
+          hostName: `${updatedVisit.host.firstName} ${updatedVisit.host.lastName}`,
+          companyName: 'SecurITI',
+          status: 'rejected',
+          reason: updatedVisit.reason,
+          scheduledDate: updatedVisit.scheduledDate,
+          destination: updatedVisit.destination || 'SecurITI',
+          rejectionReason: updatedVisit.rejectionReason
+        });
+        console.log('✅ Email de rechazo enviado con razón:', updatedVisit.rejectionReason);
+      } catch (emailError) {
+        console.warn('⚠️ Error enviando email de rechazo:', emailError?.message || emailError);
+      }
+    }
 
     res.json(updatedVisit);
   } catch (error) {
@@ -546,10 +580,14 @@ router.get('/reject/:token', async (req, res) => {
 // Check-in
 router.post('/checkin/:id', auth, async (req, res) => {
   try {
+    const { assignedResource } = req.body;
     const visit = await Visit.findById(req.params.id).populate('host', 'firstName lastName');
     if (!visit) return res.status(404).json({ message: 'Visita no encontrada' });
     visit.status = 'checked-in';
     visit.checkInTime = new Date();
+    if (assignedResource) {
+      visit.assignedResource = assignedResource;
+    }
     await visit.save();
     await new VisitEvent({ visitId: visit._id, type: 'check-in' }).save();
     // Optional: notify visitor of check-in confirmation
@@ -582,27 +620,31 @@ router.post('/checkout/:id', auth, async (req, res) => {
     const { photos } = req.body; // array of base64 strings
     const visit = await Visit.findById(req.params.id).populate('host', 'firstName lastName');
     if (!visit) return res.status(404).json({ message: 'Visita no encontrada' });
+    // Validar que la visita esté dentro antes de poder registrar la salida
+    if (visit.status !== 'checked-in') {
+      return res.status(400).json({ message: 'La visita no está dentro o ya fue finalizada' });
+    }
     visit.status = 'completed';
     visit.checkOutTime = new Date();
     await visit.save();
     const limitedPhotos = Array.isArray(photos) ? photos.slice(0, 5) : [];
     await new VisitEvent({ visitId: visit._id, type: 'check-out', photos: limitedPhotos }).save();
     const elapsedMs = visit.checkInTime ? (visit.checkOutTime - visit.checkInTime) : null;
-    // Optional: notify visitor of checkout summary
+    
+    // Enviar email de despedida al visitante
     if (visit.visitorEmail) {
       try {
-        await require('../services/emailService').sendVisitorNotificationEmail({
+        await require('../services/emailService').sendCheckoutEmail({
           visitorEmail: visit.visitorEmail,
           visitorName: visit.visitorName,
+          visitorCompany: visit.visitorCompany || 'N/A',
           hostName: `${visit.host.firstName} ${visit.host.lastName}`,
           companyName: 'SecurITI',
-          status: 'completed',
-          reason: visit.reason,
-          scheduledDate: visit.scheduledDate,
-          destination: visit.destination
+          checkInTime: visit.checkInTime,
+          checkOutTime: visit.checkOutTime
         });
       } catch (mailErr) {
-        console.warn('Email notify error (check-out):', mailErr?.message || mailErr);
+        console.warn('Email checkout error:', mailErr?.message || mailErr);
       }
     }
     res.json({ visit, elapsedMs });

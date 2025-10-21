@@ -1,5 +1,6 @@
 // EmailService usando Nodemailer - Backend Email Service
 const nodemailer = require('nodemailer');
+const { formatFullDate, formatDateTime, formatShortDate, formatTime } = require('../utils/dateUtils');
 
 class EmailService {
   constructor() {
@@ -25,11 +26,14 @@ class EmailService {
       // Configuración SMTP
       const smtpConfig = {
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: process.env.SMTP_PORT || 587,
-        secure: false,
+        port: parseInt(process.env.SMTP_PORT) || 587,
+        secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_PORT === '465', // true para 465, false para otros puertos
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
+        },
+        tls: {
+          rejectUnauthorized: false // Permite certificados autofirmados
         }
       };
 
@@ -83,7 +87,7 @@ class EmailService {
           <p>Este es un email de prueba del sistema Visitas SecuriTI.</p>
           <p>Si recibes este email, la configuración de Nodemailer está funcionando correctamente.</p>
           <br>
-          <p>Fecha: ${new Date().toLocaleString()}</p>
+          <p>Fecha: ${formatDateTime(new Date())}</p>
         `
       };
 
@@ -122,7 +126,7 @@ class EmailService {
               <h3 style="margin-top: 0; color: #1f2937;">Detalles de la Visita:</h3>
               <p><strong>Anfitrión:</strong> ${visitData.hostName}</p>
               <p><strong>Motivo:</strong> ${visitData.reason}</p>
-              <p><strong>Fecha programada:</strong> ${new Date(visitData.scheduledDate).toLocaleString('es-ES')}</p>
+              <p><strong>Fecha programada:</strong> ${formatDateTime(visitData.scheduledDate)}</p>
               <p><strong>Estado:</strong> ${visitData.status}</p>
             </div>
             <p style="font-size: 15px; color: #222;">Por favor, llega 10 minutos antes de tu hora programada.</p>
@@ -171,7 +175,7 @@ class EmailService {
       return { success: false, error: 'No visitor email' };
     }
 
-    const COMPANY_LOGO_URL = process.env.COMPANY_LOGO_URL || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png`;
+    const COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
 
     try {
       const isApproved = data.status === 'approved';
@@ -179,6 +183,24 @@ class EmailService {
       const primaryColor = '#1e3a8a'; // Azul oscuro SecuriTI
       const accentColor = '#f97316'; // Naranja SecuriTI
       const statusColor = isApproved ? '#10b981' : '#ef4444';
+
+      // QR para futuras visitas - incluye datos del visitante
+      const qrDataForFutureVisits = JSON.stringify({
+        type: 'visitor-info',
+        visitorName: data.visitorName,
+        visitorCompany: data.visitorCompany || '',
+        visitorEmail: data.visitorEmail,
+        hostId: data.hostId
+      });
+
+      // QR específico para esta visita (check-in/check-out)
+      const qrDataForThisVisit = JSON.stringify({
+        type: 'visit-checkin',
+        visitId: data.visitId,
+        visitorName: data.visitorName,
+        visitorEmail: data.visitorEmail,
+        qrToken: data.qrToken
+      });
 
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
@@ -227,14 +249,7 @@ class EmailService {
                                   </tr>
                                   <tr>
                                     <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Fecha:</strong></td>
-                                    <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${new Date(data.scheduledDate).toLocaleString('es-ES', { 
-                                      weekday: 'long', 
-                                      year: 'numeric', 
-                                      month: 'long', 
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}</td>
+                                    <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${formatFullDate(data.scheduledDate)}</td>
                                   </tr>
                                   <tr>
                                     <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Motivo:</strong></td>
@@ -249,18 +264,59 @@ class EmailService {
                             </tr>
                           </table>
                           
-                          <!-- QR Code Card -->
+                          <!-- QR Codes Section -->
                           <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border: 2px solid ${primaryColor}; border-radius: 8px; margin: 25px 0;">
                             <tr>
-                              <td style="padding: 30px; text-align: center;">
-                                <h3 style="color: ${primaryColor}; margin: 0 0 15px 0; font-size: 20px;">Tu Pase de Visita</h3>
-                                <p style="font-size: 14px; color: #4b5563; margin: 0 0 20px 0;">Presenta este código QR en recepción</p>
-                                <div style="background-color: #ffffff; padding: 15px; display: inline-block; border-radius: 8px;">
-                                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(JSON.stringify({ visitId: data.visitId, type: 'visit-checkin' }))}" 
-                                       alt="Código QR de visita" 
-                                       style="width: 200px; height: 200px; display: block;" />
+                              <td style="padding: 30px;">
+                                <h3 style="color: ${primaryColor}; margin: 0 0 20px 0; font-size: 20px; text-align: center;">Tus Códigos QR</h3>
+                                
+                                <!-- QR for this visit -->
+                                <table width="100%" cellpadding="10" cellspacing="0">
+                                  <tr>
+                                    <td width="50%" style="text-align: center; vertical-align: top; padding: 10px;">
+                                      <div style="background-color: #dcfce7; border: 2px dashed #10b981; border-radius: 8px; padding: 15px;">
+                                        <h4 style="color: #065f46; margin: 0 0 10px 0; font-size: 16px;">QR para Esta Visita</h4>
+                                        <p style="font-size: 12px; color: #064e3b; margin: 0 0 15px 0;">Úsalo hoy para entrada/salida</p>
+                                        <div style="background-color: #ffffff; padding: 10px; display: inline-block; border-radius: 8px;">
+                                          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrDataForThisVisit)}" 
+                                               alt="QR de esta visita" 
+                                               style="width: 150px; height: 150px; display: block;" />
+                                        </div>
+                                        <p style="font-size: 11px; color: #065f46; margin: 10px 0 0 0; font-weight: 600;">✓ Válido solo para hoy</p>
+                                      </div>
+                                    </td>
+                                    
+                                    <td width="50%" style="text-align: center; vertical-align: top; padding: 10px;">
+                                      <div style="background-color: #dbeafe; border: 2px dashed #3b82f6; border-radius: 8px; padding: 15px;">
+                                        <h4 style="color: #1e40af; margin: 0 0 10px 0; font-size: 16px;">QR Reutilizable</h4>
+                                        <p style="font-size: 12px; color: #1e3a8a; margin: 0 0 15px 0;">Para futuras visitas</p>
+                                        <div style="background-color: #ffffff; padding: 10px; display: inline-block; border-radius: 8px;">
+                                          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrDataForFutureVisits)}" 
+                                               alt="QR reutilizable" 
+                                               style="width: 150px; height: 150px; display: block;" />
+                                        </div>
+                                        <p style="font-size: 11px; color: #1e40af; margin: 10px 0 0 0; font-weight: 600;">♾️ Válido siempre</p>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                </table>
+                                
+                                <!-- Instructions for QR -->
+                                <div style="background-color: #ffffff; border-radius: 8px; padding: 15px; margin-top: 20px; border: 1px solid #dbeafe;">
+                                  <p style="font-size: 13px; color: #1e40af; margin: 0 0 10px 0; font-weight: 600; text-align: center;">📱 Cómo usar tus QR:</p>
+                                  <table width="100%" cellpadding="5" cellspacing="0">
+                                    <tr>
+                                      <td style="font-size: 12px; color: #4b5563; line-height: 1.6; padding: 5px 0;">
+                                        <strong style="color: #10b981;">• QR Verde:</strong> Muéstralo hoy en recepción para registrar tu entrada y salida rápidamente.
+                                      </td>
+                                    </tr>
+                                    <tr>
+                                      <td style="font-size: 12px; color: #4b5563; line-height: 1.6; padding: 5px 0;">
+                                        <strong style="color: #3b82f6;">• QR Azul:</strong> Guárdalo para tus próximas visitas. Autocompletará tus datos en futuros registros.
+                                      </td>
+                                    </tr>
+                                  </table>
                                 </div>
-                                <p style="font-size: 12px; color: #6b7280; margin: 15px 0 0 0;">ID: ${data.visitId}</p>
                               </td>
                             </tr>
                           </table>
@@ -271,7 +327,8 @@ class EmailService {
                             <ul style="color: #78350f; margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.8;">
                               <li>Llega 10 minutos antes de tu hora programada</li>
                               <li>Trae una identificación oficial vigente</li>
-                              <li>Presenta tu código QR en recepción para check-in rápido</li>
+                              <li>Muestra el QR verde al llegar a recepción</li>
+                              <li>Guarda el QR azul para futuras visitas</li>
                             </ul>
                           </div>
                         ` : `
@@ -283,8 +340,9 @@ class EmailService {
                             <tr>
                               <td style="padding: 20px;">
                                 <h3 style="color: #991b1b; margin: 0 0 15px 0; font-size: 18px;">Detalles de la Solicitud</h3>
-                                <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Motivo:</strong> ${data.reason}</p>
-                                <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Fecha solicitada:</strong> ${new Date(data.scheduledDate).toLocaleString('es-ES')}</p>
+                                <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Motivo de visita:</strong> ${data.reason}</p>
+                                <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Fecha solicitada:</strong> ${formatDateTime(data.scheduledDate)}</p>
+                                ${data.rejectionReason ? `<p style="color: #991b1b; font-size: 14px; margin: 12px 0 0 0; padding-top: 12px; border-top: 1px solid #fecaca;"><strong>Razón de rechazo:</strong> ${data.rejectionReason}</p>` : ''}
                               </td>
                             </tr>
                           </table>
@@ -332,7 +390,7 @@ class EmailService {
       return { success: false, error: 'Email service not configured' };
     }
 
-    const COMPANY_LOGO_URL = process.env.COMPANY_LOGO_URL || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png`;
+    const COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
     const primaryColor = '#1e3a8a';
     const accentColor = '#f97316';
 
@@ -375,7 +433,20 @@ class EmailService {
                         <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border-left: 4px solid ${primaryColor}; border-radius: 8px; margin: 25px 0;">
                           <tr>
                             <td style="padding: 25px;">
-                              <h3 style="color: ${primaryColor}; margin: 0 0 15px 0; font-size: 18px;">Información del Visitante</h3>
+                              <!-- Visitor Photo/Icon -->
+                              <div style="text-align: center; margin-bottom: 20px;">
+                                ${data.visitorPhoto ? `
+                                  <img src="${data.visitorPhoto}" alt="Foto del visitante" style="width: 120px; height: 120px; border-radius: 50%; border: 4px solid ${primaryColor}; object-fit: cover; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"/>
+                                ` : `
+                                  <div style="width: 120px; height: 120px; margin: 0 auto; border-radius: 50%; background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                    <svg width="70" height="70" viewBox="0 0 24 24" fill="#ffffff">
+                                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                    </svg>
+                                  </div>
+                                `}
+                              </div>
+                              
+                              <h3 style="color: ${primaryColor}; margin: 0 0 15px 0; font-size: 18px; text-align: center;">Información del Visitante</h3>
                               <table width="100%" cellpadding="5" cellspacing="0">
                                 <tr>
                                   <td style="color: #4b5563; font-size: 14px; padding: 8px 0; width: 40%;"><strong>Nombre:</strong></td>
@@ -389,25 +460,13 @@ class EmailService {
                                 ` : ''}
                                 <tr>
                                   <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Fecha solicitada:</strong></td>
-                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${new Date(data.scheduledDate).toLocaleString('es-ES', { 
-                                    weekday: 'long', 
-                                    year: 'numeric', 
-                                    month: 'long', 
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}</td>
+                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${formatFullDate(data.scheduledDate)}</td>
                                 </tr>
                                 <tr>
                                   <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Motivo:</strong></td>
                                   <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${data.reason}</td>
                                 </tr>
                               </table>
-                              ${data.visitorPhoto ? `
-                              <div style="text-align: center; margin-top: 20px;">
-                                <img src="${data.visitorPhoto}" alt="Foto del visitante" style="max-width: 200px; border-radius: 8px; border: 2px solid #e5e7eb;"/>
-                              </div>
-                              ` : ''}
                             </td>
                           </tr>
                         </table>
@@ -478,7 +537,7 @@ class EmailService {
       return { success: false, error: 'Email service not configured' };
     }
 
-    const COMPANY_LOGO_URL = process.env.COMPANY_LOGO_URL || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png`;
+    const COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
     const primaryColor = '#1e3a8a';
     const accentColor = '#f97316';
 
@@ -596,7 +655,7 @@ class EmailService {
       return { success: false, error: 'Email service not configured' };
     }
 
-    const COMPANY_LOGO_URL = process.env.COMPANY_LOGO_URL || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png`;
+    const COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
     const primaryColor = '#1e3a8a';
     const accentColor = '#f97316';
 
@@ -653,7 +712,7 @@ class EmailService {
                                   ` : ''}
                                   <tr>
                                     <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Fecha programada:</strong></td>
-                                    <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${new Date(data.startDate).toLocaleDateString('es-ES')} a las ${data.startTime}</td>
+                                    <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${formatShortDate(data.startDate)} a las ${data.startTime}</td>
                                   </tr>
                                   ${data.location ? `
                                   <tr>
@@ -751,7 +810,7 @@ class EmailService {
                               <td style="padding: 20px;">
                                 <h4 style="color: #374151; margin: 0 0 12px 0; font-size: 16px;">Detalles del acceso</h4>
                                 <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Título:</strong> ${data.title}</p>
-                                <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Fecha:</strong> ${new Date(data.startDate).toLocaleDateString('es-ES')} - ${data.startTime}</p>
+                                <p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Fecha:</strong> ${formatShortDate(data.startDate)} - ${data.startTime}</p>
                                 ${data.location ? `<p style="color: #4b5563; font-size: 14px; margin: 8px 0;"><strong>Lugar:</strong> ${data.location}</p>` : ''}
                               </td>
                             </tr>
@@ -854,14 +913,7 @@ class EmailService {
                             <td style="padding: 20px;">
                               <h2 style="color: ${primaryColor}; margin: 0 0 10px 0; font-size: 18px;">${data.eventTitle}</h2>
                               <p style="color: #1e3a8a; margin: 0; font-size: 14px;">
-                                <strong>Fecha:</strong> ${new Date(data.eventDate).toLocaleDateString('es-ES', { 
-                                  weekday: 'long', 
-                                  year: 'numeric', 
-                                  month: 'long', 
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
+                                <strong>Fecha:</strong> ${formatFullDate(data.eventDate)}
                               </p>
                             </td>
                           </tr>
@@ -949,6 +1001,139 @@ class EmailService {
       return { success: true };
     } catch (error) {
       console.error('Error sending registration notification email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async sendCheckoutEmail(data) {
+    if (!this.isEnabled()) {
+      console.log('Email service disabled - would send checkout email to:', data.visitorEmail);
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    if (!data.visitorEmail) {
+      console.log('No visitor email provided, skipping checkout email');
+      return { success: false, error: 'No visitor email' };
+    }
+
+    const COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+    const primaryColor = '#1e3a8a';
+    const accentColor = '#f97316';
+
+    // Calcular tiempo de permanencia
+    const checkInTime = new Date(data.checkInTime);
+    const checkOutTime = new Date(data.checkOutTime);
+    const diffMs = checkOutTime.getTime() - checkInTime.getTime();
+    const hours = Math.floor(diffMs / 3600000);
+    const minutes = Math.floor((diffMs % 3600000) / 60000);
+    const timeStayed = hours > 0 ? `${hours}h ${minutes}min` : `${minutes} minutos`;
+
+    try {
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: data.visitorEmail,
+        subject: `Gracias por tu visita - ${data.companyName}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: Arial, sans-serif;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 20px 0;">
+              <tr>
+                <td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
+                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 60px; margin-bottom: 20px;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">¡Hasta pronto!</h1>
+                        <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Gracias por tu visita</p>
+                      </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                      <td style="padding: 40px 30px;">
+                        <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hola, <strong>${data.visitorName}</strong></p>
+                        
+                        <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin: 0 0 25px 0;">
+                          Queremos agradecerte por visitar <strong>${data.companyName}</strong>. Esperamos que tu visita haya sido productiva y satisfactoria.
+                        </p>
+                        
+                        <!-- Visit Summary Card -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border-left: 4px solid ${primaryColor}; border-radius: 8px; margin: 25px 0;">
+                          <tr>
+                            <td style="padding: 25px;">
+                              <h3 style="color: ${primaryColor}; margin: 0 0 15px 0; font-size: 18px;">Resumen de tu Visita</h3>
+                              <table width="100%" cellpadding="5" cellspacing="0">
+                                <tr>
+                                  <td style="color: #4b5563; font-size: 14px; padding: 8px 0; width: 45%;"><strong>Anfitrión:</strong></td>
+                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${data.hostName}</td>
+                                </tr>
+                                <tr>
+                                  <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Fecha de visita:</strong></td>
+                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${formatShortDate(checkInTime)}</td>
+                                </tr>
+                                <tr>
+                                  <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Hora de entrada:</strong></td>
+                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${formatTime(checkInTime)}</td>
+                                </tr>
+                                <tr>
+                                  <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Hora de salida:</strong></td>
+                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${formatTime(checkOutTime)}</td>
+                                </tr>
+                                <tr>
+                                  <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Tiempo de permanencia:</strong></td>
+                                  <td style="color: #10b981; font-size: 14px; padding: 8px 0; font-weight: 600;">${timeStayed}</td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                        
+                        <!-- Thank You Message -->
+                        <div style="background-color: #fef3c7; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                          <p style="color: #78350f; margin: 0; font-size: 15px; line-height: 1.8; text-align: center;">
+                            <strong>¡Esperamos verte pronto!</strong><br>
+                            Siempre serás bienvenido en <strong>${data.companyName}</strong>
+                          </p>
+                        </div>
+                        
+                        <p style="font-size: 14px; color: #6b7280; line-height: 1.6; text-align: center;">
+                          Si tienes algún comentario o sugerencia sobre tu visita,<br>
+                          no dudes en contactarnos.
+                        </p>
+                      </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+                        <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
+                          Este es un mensaje automático del Sistema de Gestión de Visitas<br>
+                          <strong>${data.companyName}</strong>
+                        </p>
+                      </td>
+                    </tr>
+                    
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log(`Checkout email sent to: ${data.visitorEmail}`);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('Error sending checkout email:', error);
       return { success: false, error: error.message };
     }
   }

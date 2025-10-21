@@ -45,10 +45,14 @@ vite.svg
 *.lock
 
 # Project specific
-visitas-securiti.zip
+*.zip
+*.tar.gz
 
 # Excluir carpeta visitas-laravel
 visitas-laravel-backend/
+
+# Scripts de mantenimiento temporal
+backend/scripts/*.tmp
 
 # Cache directories
 .cache

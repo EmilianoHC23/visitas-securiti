@@ -3,8 +3,15 @@ import { Visit, VisitStatus, User } from '../../types';
 import * as api from '../../services/api';
 import { CheckoutModal } from './CheckoutModal';
 import { VisitHistoryModal } from './VisitHistoryModal';
+import { PendingVisitModal } from './PendingVisitModal';
+import { ApprovedVisitModal } from './ApprovedVisitModal';
+import { RejectionModal } from './RejectionModal';
+import { CheckedInVisitModal } from './CheckedInVisitModal';
+import { VisitRegistrationSidePanel } from './VisitRegistrationSidePanel';
+import { ExitRegistrationSidePanel } from './ExitRegistrationSidePanel';
 import { CheckCircleIcon, LogoutIcon, LoginIcon, ClockIcon } from '../../components/common/icons';
 import { useNavigate } from 'react-router-dom';
+import jsQR from 'jsqr';
 
 // Hook para calcular y actualizar el tiempo de espera en tiempo real
 function useElapsedTime(startDate: string) {
@@ -25,81 +32,118 @@ function useElapsedTime(startDate: string) {
   return elapsed;
 }
 
-const VisitCard: React.FC<{ visit: Visit; onApprove: (id: string) => void; onReject: (id: string) => void; onCheckIn: (id: string) => void; onCheckout: (visit: Visit) => void }> = ({ visit, onApprove, onReject, onCheckIn, onCheckout }) => {
+const VisitCard: React.FC<{ 
+  visit: Visit; 
+  onCardClick: (visit: Visit) => void; 
+  onApprove: (id: string) => void; 
+  onReject: (id: string) => void; 
+  onCheckIn: (id: string) => void; 
+  onCheckout: (visit: Visit) => void 
+}> = ({ visit, onCardClick, onApprove, onReject, onCheckIn, onCheckout }) => {
     
     const [showHistory, setShowHistory] = useState(false);
     
     const getStatusBadge = (status: VisitStatus) => {
         switch (status) {
-            case VisitStatus.PENDING: return <span className="px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-200 rounded-full">Pendiente</span>;
-            case VisitStatus.APPROVED: return <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-200 rounded-full">Aprobado</span>;
-            case VisitStatus.CHECKED_IN: return <span className="px-2 py-1 text-xs font-semibold text-green-800 bg-green-200 rounded-full">Activo</span>;
-            case VisitStatus.COMPLETED: return <span className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full">Completado</span>;
+            case VisitStatus.PENDING: 
+                return <span className="px-3 py-1 text-xs font-medium text-amber-700 bg-amber-100 rounded-full">En espera</span>;
+            case VisitStatus.APPROVED: 
+                return <span className="px-3 py-1 text-xs font-medium text-cyan-700 bg-cyan-100 rounded-full">Aprobado</span>;
+            case VisitStatus.REJECTED: 
+                return <span className="px-3 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">Rechazado</span>;
+            case VisitStatus.CHECKED_IN: 
+                return <span className="px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">Dentro</span>;
+            case VisitStatus.COMPLETED: 
+                return <span className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded-full">Completado</span>;
         }
     };
     
     // Tiempo de espera en tiempo real
-    const showElapsed = visit.status === VisitStatus.PENDING || visit.status === VisitStatus.APPROVED;
-    const elapsed = showElapsed ? useElapsedTime(visit.scheduledDate) : null;
+    const showElapsed = visit.status === VisitStatus.PENDING || visit.status === VisitStatus.APPROVED || visit.status === VisitStatus.CHECKED_IN;
+    const elapsed = showElapsed ? useElapsedTime(visit.checkInTime || visit.scheduledDate) : null;
+    
+    const formattedDate = new Date(visit.scheduledDate).toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    });
+
+    const formattedTime = new Date(visit.scheduledDate).toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
     
     return (
-    <div className="bg-white rounded-lg shadow-md p-3 border-l-4 border-securiti-blue-500 min-h-[180px] flex flex-col justify-between">
-            <div className="flex justify-between items-start gap-2">
-                <div>
-                    <p className="text-base font-bold text-gray-800 leading-tight">{visit.visitorName}</p>
-                    <p className="text-xs text-gray-500 leading-tight">{visit.visitorCompany}</p>
+        <>
+            <div 
+                className="bg-white rounded-xl shadow-sm hover:shadow-md p-4 border border-gray-100 transition-all cursor-pointer hover:border-cyan-300"
+                onClick={() => onCardClick(visit)}
+            >
+                <div className="flex gap-3">
+                    {/* Foto circular del visitante */}
+                    <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-cyan-100 to-blue-100 flex items-center justify-center flex-shrink-0 ring-2 ring-gray-100">
+                        {visit.visitorPhoto ? (
+                            <img src={visit.visitorPhoto} alt={visit.visitorName} className="w-full h-full object-cover" />
+                        ) : (
+                            <svg className="w-8 h-8 text-cyan-600" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                        )}
+                    </div>
+                    
+                    {/* Info del visitante */}
+                    <div className="flex-1 min-w-0">
+                        {/* Nombre y badge */}
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-sm font-semibold text-gray-900 truncate">{visit.visitorName}</h3>
+                                {visit.visitorEmail && (
+                                    <p className="text-xs text-gray-500 truncate">{visit.visitorEmail}</p>
+                                )}
+                            </div>
+                            {getStatusBadge(visit.status)}
+                        </div>
+                        
+                        {/* Empresa */}
+                        {visit.visitorCompany && (
+                            <p className="text-xs text-gray-600 mb-2 truncate">
+                                <span className="inline-flex items-center gap-1">
+                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" />
+                                    </svg>
+                                    {visit.visitorCompany}
+                                </span>
+                            </p>
+                        )}
+                        
+                        {/* Fecha/Hora y tiempo transcurrido */}
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span className="flex items-center gap-1">
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                                </svg>
+                                {formattedDate} {formattedTime}
+                            </span>
+                            {showElapsed && (
+                                <span className="flex items-center gap-1 text-cyan-600 font-medium">
+                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                    </svg>
+                                    {elapsed}
+                                </span>
+                            )}
+                        </div>
+                    </div>
                 </div>
-                {getStatusBadge(visit.status)}
-            </div>
-            <div className="mt-2 space-y-1 text-xs text-gray-600">
-                <p><strong>Motivo:</strong> {visit.reason}</p>
-                <p><strong>Anfitrión:</strong> {visit.host.firstName} {visit.host.lastName}</p>
-                <p><strong>Fecha:</strong> {new Date(visit.scheduledDate).toLocaleString()}</p>
-                {showElapsed && <p><strong>Tiempo de espera:</strong> {elapsed}</p>}
-                {visit.checkInTime && <p><strong>Check-in:</strong> {visit.checkInTime}</p>}
-                {visit.checkOutTime && <p><strong>Check-out:</strong> {visit.checkOutTime}</p>}
-            </div>
-             <div className="mt-3 pt-3 border-t flex space-x-2">
-                {visit.status === VisitStatus.PENDING && (
-                    <>
-                        <button 
-                            onClick={() => onApprove(visit._id)} 
-                            className="px-3 py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 flex items-center gap-1"
-                        >
-                            <CheckCircleIcon className="w-4 h-4" /> Aprobar
-                        </button>
-                        <button 
-                            onClick={() => onReject(visit._id)} 
-                            className="px-3 py-1 text-xs font-semibold text-white bg-red-500 rounded hover:bg-red-600 flex items-center gap-1"
-                        >
-                            <LogoutIcon className="w-4 h-4" /> Rechazar
-                        </button>
-                    </>
-                )}
-                {visit.status === VisitStatus.APPROVED && (
-                    <button 
-                        onClick={() => onCheckIn(visit._id)} 
-                        className="px-3 py-1 text-xs font-semibold text-white bg-blue-500 rounded hover:bg-blue-600 flex items-center gap-1"
-                    >
-                        <LoginIcon className="w-4 h-4" /> Check-in
-                    </button>
-                )}
-                 {visit.status === VisitStatus.CHECKED_IN && (
-                    <button 
-                        onClick={() => onCheckout(visit)} 
-                        className="px-3 py-1 text-xs font-semibold text-white bg-purple-500 rounded hover:bg-purple-600 flex items-center gap-1"
-                    >
-                        <ClockIcon className="w-4 h-4" /> Check-out
-                    </button>
-                )}
             </div>
             
-                <VisitHistoryModal
-                    visitId={visit._id}
-                    isOpen={showHistory}
-                    onClose={() => setShowHistory(false)}
-                />
-        </div>
+            <VisitHistoryModal
+                visitId={visit._id}
+                isOpen={showHistory}
+                onClose={() => setShowHistory(false)}
+            />
+        </>
     );
 };
 
@@ -121,19 +165,34 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
     const [isQrScannerOn, setIsQrScannerOn] = useState(false);
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [qrStream, setQrStream] = useState<MediaStream | null>(null);
+    const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
 
     const startCamera = async () => {
         try {
-            const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } } 
+            });
             setStream(mediaStream);
             if (videoRef.current) {
                 videoRef.current.srcObject = mediaStream;
-                videoRef.current.play();
+                await videoRef.current.play().catch(e => console.log('Play interrupted:', e));
             }
             setIsCameraOn(true);
         } catch (error) {
+            console.error('Camera error:', error);
             alert('No se pudo acceder a la cámara. Verifica los permisos.');
         }
+    };
+
+    // Cambiar entre cámara frontal y trasera
+    const toggleFacingMode = () => {
+        setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'));
+        setTimeout(() => {
+            stopCamera();
+            setTimeout(() => {
+                startCamera();
+            }, 200);
+        }, 100);
     };
 
     const stopCamera = () => {
@@ -162,17 +221,91 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
     const startQrScanner = async () => {
         try {
             const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'environment' } 
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
             });
             setQrStream(mediaStream);
             if (qrScannerRef.current) {
                 qrScannerRef.current.srcObject = mediaStream;
-                qrScannerRef.current.play();
+                await qrScannerRef.current.play().catch(e => console.log('QR scanner play interrupted:', e));
             }
             setIsQrScannerOn(true);
+            
+            // Iniciar detección QR con jsQR
+            scanQRCode();
         } catch (error) {
+            console.error('QR Scanner error:', error);
             alert('No se pudo acceder a la cámara para escanear QR. Ingresa el código manualmente.');
         }
+    };
+
+    const scanQRCode = () => {
+        if (!qrScannerRef.current || !isQrScannerOn) return;
+        
+        const canvas = document.createElement('canvas');
+        const video = qrScannerRef.current;
+        
+        const scan = () => {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+                    
+                    if (code) {
+                        console.log('✅ QR detectado en VisitFormModal:', code.data);
+                        try {
+                            const qrData = JSON.parse(code.data);
+                            console.log('📋 QR Data parsed:', qrData);
+                            
+                            // Si es del tipo visitor-info, auto-completar el formulario
+                            if (qrData.type === 'visitor-info') {
+                                console.log('🔄 Autocompletando formulario con datos del QR');
+                                setVisitorName(qrData.visitorName || '');
+                                setVisitorCompany(qrData.visitorCompany || '');
+                                setVisitorEmail(qrData.visitorEmail || '');
+                                setHostId(qrData.hostId || '');
+                                setQrCode(code.data);
+                                setHasQrInvitation(false);
+                                stopQrScanner();
+                                alert('✅ Datos cargados desde QR exitosamente');
+                                return;
+                            }
+                            
+                            // Si es del tipo visit-checkin (QR del correo de aprobación)
+                            if (qrData.type === 'visit-checkin') {
+                                console.log('📧 QR de visita aprobada detectado, guardando token');
+                                setQrCode(code.data);
+                                setHasQrInvitation(false);
+                                stopQrScanner();
+                                alert('✅ QR de visita escaneado. Completa los datos restantes.');
+                                return;
+                            }
+                            
+                            // Si es otro tipo de QR, solo guardar el código
+                            console.log('📝 QR de tipo desconocido, guardando como texto');
+                            setQrCode(code.data);
+                            setHasQrInvitation(false);
+                            stopQrScanner();
+                        } catch (e) {
+                            // Si no es JSON válido, guardar como texto plano
+                            console.log('⚠️ QR no es JSON, guardando como texto plano');
+                            setQrCode(code.data);
+                            setHasQrInvitation(false);
+                            stopQrScanner();
+                        }
+                    }
+                }
+            }
+            
+            if (isQrScannerOn) {
+                requestAnimationFrame(scan);
+            }
+        };
+        
+        scan();
     };
 
     const stopQrScanner = () => {
@@ -184,11 +317,15 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
     };
 
     React.useEffect(() => {
+        // Auto-iniciar cámara al abrir modal
+        if (isOpen && !photo) {
+            startCamera();
+        }
         return () => {
             stopCamera();
             stopQrScanner();
         };
-    }, []);
+    }, [isOpen, photo, facingMode]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -228,249 +365,541 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-            <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-                <h2 className="text-xl font-bold mb-6">Registrar Nueva Visita</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    
-                    {/* Opción: ¿Tiene QR de invitación? */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input 
-                                type="checkbox" 
-                                checked={hasQrInvitation}
-                                onChange={(e) => {
-                                    setHasQrInvitation(e.target.checked);
-                                    if (!e.target.checked) {
-                                        setQrCode('');
-                                        stopQrScanner();
-                                    }
-                                }}
-                                className="w-4 h-4"
-                            />
-                            <span className="text-sm font-medium text-gray-700">El visitante tiene QR de invitación</span>
-                        </label>
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+                {/* Header */}
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-2xl font-bold text-[#1e3a8a]">Registrar visita</h2>
+                        <button 
+                            type="button"
+                            onClick={onClose}
+                            className="text-gray-400 hover:text-gray-600"
+                        >
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     </div>
+                </div>
 
-                    {/* Campo QR (solo si tiene invitación) */}
-                    {hasQrInvitation && (
-                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                            <label className="block font-medium mb-2 text-sm">Código QR de Invitación</label>
-                            <div className="space-y-2">
-                                <input 
-                                    type="text" 
-                                    placeholder="Ingresa el código QR manualmente" 
-                                    value={qrCode}
-                                    onChange={e => setQrCode(e.target.value)}
-                                    className="w-full p-2 border rounded text-sm"
-                                />
+                <div className="px-6 py-6 space-y-6">
+                    {/* Sección de foto del visitante */}
+                    <div className="flex flex-col items-center py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+                        <p className="text-sm text-gray-600 mb-4">Toma la fotografía de tu visitante</p>
+                        
+                        {!photo ? (
+                            <div className="relative mb-4 flex flex-col items-center">
+                                <button
+                                    type="button"
+                                    onClick={isCameraOn ? stopCamera : startCamera}
+                                    className="w-32 h-32 rounded-full border-4 border-[#1e3a8a] flex items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors"
+                                >
+                                    <svg className="w-16 h-16 text-[#1e3a8a]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={toggleFacingMode}
+                                    className="mt-2 px-3 py-1 bg-cyan-500 text-white rounded-lg text-xs hover:bg-cyan-600 transition-colors"
+                                >
+                                    Cambiar cámara
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="relative mb-4">
+                                <img src={photo} alt="Foto visitante" className="w-32 h-32 rounded-full object-cover border-4 border-green-500" />
+                                <button
+                                    type="button"
+                                    onClick={() => setPhoto(null)}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                >
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Cámara activa */}
+                        {isCameraOn && !photo && (
+                            <div className="w-full max-w-sm mb-4 sticky top-24 z-20">
+                                <div className="relative bg-black rounded-lg overflow-hidden">
+                                    <video ref={videoRef} autoPlay className="w-full h-64 object-cover" />
+                                    <canvas ref={canvasRef} className="hidden" />
+                                </div>
                                 <button 
                                     type="button" 
-                                    onClick={isQrScannerOn ? stopQrScanner : startQrScanner}
-                                    className={`w-full px-3 py-2 rounded text-sm font-medium ${
-                                        isQrScannerOn 
-                                            ? 'bg-red-600 hover:bg-red-700 text-white' 
-                                            : 'bg-blue-600 hover:bg-blue-700 text-white'
-                                    }`}
+                                    className="w-full mt-3 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                                    onClick={capturePhoto}
                                 >
-                                    {isQrScannerOn ? '✕ Cerrar escáner QR' : '📷 Escanear código QR'}
+                                    Capturar foto
                                 </button>
-                                {isQrScannerOn && (
-                                    <div className="mt-2">
-                                        <video ref={qrScannerRef} width="100%" autoPlay className="rounded border" />
-                                        <p className="text-xs text-gray-500 mt-1">Enfoca el código QR para escanearlo</p>
-                                    </div>
-                                )}
                             </div>
+                        )}
+
+                        {/* Botón de escanear QR */}
+                        <p className="text-sm text-gray-500 mb-3">Si tu visita cuenta con invitación QR</p>
+                        <button 
+                            type="button" 
+                            onClick={() => {
+                                setHasQrInvitation(!hasQrInvitation);
+                                if (!hasQrInvitation) {
+                                    setIsQrScannerOn(true);
+                                    startQrScanner();
+                                } else {
+                                    setIsQrScannerOn(false);
+                                    stopQrScanner();
+                                    setQrCode('');
+                                }
+                            }}
+                            className="text-cyan-500 hover:text-cyan-600 font-medium text-sm flex items-center gap-1 transition-colors"
+                        >
+                            {hasQrInvitation ? 'cerrar escáner' : 'escanea aquí'}
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v3h-3v-3zm0 5h3v3h-3v-3z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    {/* Escáner QR */}
+                    {hasQrInvitation && (
+                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <div className="flex justify-between items-center mb-3">
+                                <h3 className="font-semibold text-gray-700">Escanear código QR</h3>
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        setHasQrInvitation(false);
+                                        stopQrScanner();
+                                        setQrCode('');
+                                    }}
+                                    className="text-gray-400 hover:text-gray-600"
+                                >
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            
+                            {isQrScannerOn && (
+                                <div className="relative aspect-square bg-black rounded-lg overflow-hidden mb-3">
+                                    <video 
+                                        ref={qrScannerRef} 
+                                        autoPlay 
+                                        playsInline 
+                                        muted 
+                                        className="w-full h-full object-cover"
+                                    />
+                                    {/* Overlay de esquinas para el escáner */}
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="relative w-64 h-64">
+                                            <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-cyan-400"></div>
+                                            <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-cyan-400"></div>
+                                            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-cyan-400"></div>
+                                            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-cyan-400"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            <input 
+                                type="text" 
+                                placeholder="O ingresa el código manualmente" 
+                                value={qrCode}
+                                onChange={e => setQrCode(e.target.value)}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-sm"
+                            />
+                            <p className="text-xs text-center text-gray-500 mt-2">
+                                Coloca el código QR dentro del marco
+                            </p>
                         </div>
                     )}
 
-                    {/* Foto del visitante (OPCIONAL - primero en el formulario) */}
-                    <div>
-                        <label className="block font-medium mb-2 text-sm">Foto del visitante (opcional)</label>
-                        <div className="space-y-2">
+                    {/* Formulario de registro */}
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div className="text-center pb-3 border-b border-gray-200">
+                            <h3 className="text-lg font-semibold text-gray-800">Formulario de registro</h3>
+                        </div>
+                        
+                        <div>
+                            <label htmlFor="modal-visitorEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                                Correo electrónico
+                            </label>
+                            <input 
+                                id="modal-visitorEmail"
+                                type="email" 
+                                placeholder="Ingresa el correo electrónico (Opcional)" 
+                                value={visitorEmail} 
+                                onChange={e => setVisitorEmail(e.target.value)} 
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all" 
+                            />
+                        </div>
+
+                        <div>
+                            <label htmlFor="modal-visitorName" className="block text-sm font-medium text-gray-700 mb-1">
+                                Nombre del visitante<span className="text-red-500">*</span>
+                            </label>
+                            <input 
+                                id="modal-visitorName"
+                                type="text" 
+                                placeholder="Ingresa el nombre completo" 
+                                value={visitorName} 
+                                onChange={e => setVisitorName(e.target.value)} 
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all" 
+                                required 
+                            />
+                        </div>
+                        
+                        <div>
+                            <label htmlFor="modal-visitorCompany" className="block text-sm font-medium text-gray-700 mb-1">
+                                Empresa
+                            </label>
+                            <input 
+                                id="modal-visitorCompany"
+                                type="text" 
+                                placeholder="Empresa (Opcional)" 
+                                value={visitorCompany} 
+                                onChange={e => setVisitorCompany(e.target.value)} 
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all" 
+                            />
+                        </div>
+
+                        <div>
+                            <label htmlFor="modal-hostId" className="block text-sm font-medium text-gray-700 mb-1">
+                                ¿A quién visitas?<span className="text-red-500">*</span>
+                            </label>
+                            <select 
+                                id="modal-hostId"
+                                value={hostId} 
+                                onChange={e => setHostId(e.target.value)} 
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all" 
+                                required
+                            >
+                                <option value="" disabled>Selecciona un anfitrión</option>
+                                {hosts.map(host => <option key={host._id} value={host._id}>{host.firstName} {host.lastName}</option>)}
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label htmlFor="modal-reason" className="block text-sm font-medium text-gray-700 mb-1">
+                                Motivo de la visita<span className="text-red-500">*</span>
+                            </label>
+                            <textarea 
+                                id="modal-reason"
+                                placeholder="Describe el motivo de tu visita" 
+                                value={reason} 
+                                onChange={e => setReason(e.target.value)} 
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all resize-none" 
+                                rows={3}
+                                required 
+                            />
+                        </div>
+                        
+                        <div className="flex gap-3 pt-4">
                             <button 
                                 type="button" 
-                                className={`w-full px-3 py-2 rounded text-sm font-medium ${
-                                    isCameraOn 
-                                        ? 'bg-red-600 hover:bg-red-700 text-white' 
-                                        : 'bg-securiti-blue-600 hover:bg-securiti-blue-700 text-white'
-                                }`}
-                                onClick={isCameraOn ? stopCamera : startCamera}
+                                onClick={() => {
+                                    onClose();
+                                    setPhoto(null);
+                                    setQrCode('');
+                                    setHasQrInvitation(false);
+                                    setVisitorName('');
+                                    setVisitorCompany('');
+                                    setVisitorEmail('');
+                                    setReason('');
+                                    setHostId('');
+                                    stopCamera();
+                                    stopQrScanner();
+                                }}
+                                className="flex-1 py-3 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
                             >
-                                {isCameraOn ? '✕ Cerrar cámara' : '📷 Tomar foto'}
+                                Cancelar
                             </button>
-                            
-                            {isCameraOn && (
-                                <div className="border rounded-lg p-3 bg-gray-50">
-                                    <video ref={videoRef} width="100%" autoPlay className="rounded mb-2" />
-                                    <canvas ref={canvasRef} style={{ display: 'none' }} />
-                                    <button 
-                                        type="button" 
-                                        className="w-full px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
-                                        onClick={capturePhoto}
-                                    >
-                                        ✓ Capturar foto
-                                    </button>
-                                </div>
-                            )}
-                            
-                            {photo && !isCameraOn && (
-                                <div className="border rounded-lg p-3 bg-gray-50">
-                                    <img src={photo} alt="Foto visitante" className="w-full h-48 object-cover rounded mb-2" />
-                                    <button 
-                                        type="button" 
-                                        className="w-full px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                                        onClick={() => setPhoto(null)}
-                                    >
-                                        🗑 Eliminar foto
-                                    </button>
-                                </div>
-                            )}
+                            <button 
+                                type="submit" 
+                                className="flex-1 py-3 bg-cyan-500 text-white font-semibold rounded-lg hover:bg-cyan-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
+                            >
+                                Confirmar
+                            </button>
                         </div>
-                    </div>
-
-                    {/* Campos del formulario */}
-                    <input 
-                        type="text" 
-                        placeholder="Nombre del Visitante *" 
-                        value={visitorName} 
-                        onChange={e => setVisitorName(e.target.value)} 
-                        className="w-full p-2 border rounded" 
-                        required 
-                    />
-                    
-                    <input 
-                        type="text" 
-                        placeholder="Empresa del Visitante (opcional)" 
-                        value={visitorCompany} 
-                        onChange={e => setVisitorCompany(e.target.value)} 
-                        className="w-full p-2 border rounded" 
-                    />
-                    
-                    <input 
-                        type="email" 
-                        placeholder="Email del Visitante *" 
-                        value={visitorEmail} 
-                        onChange={e => setVisitorEmail(e.target.value)} 
-                        className="w-full p-2 border rounded" 
-                        required 
-                    />
-                    
-                    <input 
-                        type="text" 
-                        placeholder="Destino (opcional)" 
-                        value={destination} 
-                        onChange={e => setDestination(e.target.value)} 
-                        className="w-full p-2 border rounded" 
-                    />
-                    
-                    <textarea 
-                        placeholder="Motivo de la visita *" 
-                        value={reason} 
-                        onChange={e => setReason(e.target.value)} 
-                        className="w-full p-2 border rounded" 
-                        rows={3}
-                        required 
-                    />
-                    
-                    <select 
-                        value={hostId} 
-                        onChange={e => setHostId(e.target.value)} 
-                        className="w-full p-2 border rounded bg-white" 
-                        required
-                    >
-                        <option value="" disabled>Seleccionar Anfitrión *</option>
-                        {hosts.map(host => (
-                            <option key={host._id} value={host._id}>{host.firstName} {host.lastName}</option>
-                        ))}
-                    </select>
-
-                    <div className="flex justify-end space-x-4 pt-4 border-t">
-                        <button 
-                            type="button" 
-                            onClick={onClose} 
-                            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                        >
-                            Cancelar
-                        </button>
-                        <button 
-                            type="submit" 
-                            className="px-4 py-2 bg-securiti-blue-600 text-white rounded hover:bg-securiti-blue-700"
-                        >
-                            Guardar
-                        </button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
     );
 };
 
 // Modal de Salida de Visitante
-const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits: Visit[]; onCheckout: (visit: Visit) => void }> = ({ isOpen, onClose, visits, onCheckout }) => {
-    const [search, setSearch] = useState('');
+const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits: Visit[]; onSelectVisit: (visit: Visit) => void; onOpenApprovedModal?: (visit: Visit) => void }> = ({ isOpen, onClose, visits, onSelectVisit, onOpenApprovedModal }) => {
+    const [qrCode, setQrCode] = useState('');
+    const [isScanning, setIsScanning] = useState(true);
+    const qrVideoRef = React.useRef<HTMLVideoElement | null>(null);
+    const [qrStream, setQrStream] = React.useState<MediaStream | null>(null);
+
+    const startQrScanner = async () => {
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
+            });
+            setQrStream(mediaStream);
+            if (qrVideoRef.current) {
+                qrVideoRef.current.srcObject = mediaStream;
+                await qrVideoRef.current.play().catch(e => console.log('Exit QR scanner play interrupted:', e));
+            }
+            setIsScanning(true);
+            
+            // Iniciar detección QR con jsQR
+            scanExitQRCode();
+        } catch (error) {
+            console.error('Exit QR Scanner error:', error);
+            alert('No se pudo acceder a la cámara para escanear QR.');
+        }
+    };
+
+    const scanExitQRCode = () => {
+        if (!qrVideoRef.current || !isScanning) return;
+        
+        const canvas = document.createElement('canvas');
+        const video = qrVideoRef.current;
+        
+        const scan = () => {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+                    
+                    if (code) {
+                        console.log('✅ QR detectado en Exit Modal:', code.data);
+                        setQrCode(code.data);
+                        setIsScanning(false);
+                        stopQrScanner();
+                        // Auto-procesar el QR inmediatamente
+                        setTimeout(() => {
+                            processExitQR(code.data);
+                        }, 100);
+                        return;
+                    }
+                }
+            }
+            
+            if (isScanning) {
+                requestAnimationFrame(scan);
+            }
+        };
+        
+        scan();
+    };
+
+    const processExitQR = async (qrData: string) => {
+        try {
+            // Intentar parsear el QR como JSON
+            let visitId = '';
+            let qrToken = '';
+            try {
+                const parsedData = JSON.parse(qrData);
+                // Si el QR contiene visitId directamente
+                if (parsedData.visitId) {
+                    visitId = parsedData.visitId;
+                } else if (parsedData.type === 'visit-checkin' && parsedData.visitId) {
+                    visitId = parsedData.visitId;
+                    qrToken = parsedData.token || '';
+                }
+            } catch (e) {
+                // Si no es JSON, asumir que es el ID directo o token
+                visitId = qrData;
+                qrToken = qrData;
+            }
+            
+            if (!visitId && !qrToken) {
+                alert('Código QR inválido');
+                return;
+            }
+            
+            // Buscar la visita en la lista actual por ID o por qrToken
+            let visit = visits.find(v => v._id === visitId);
+            if (!visit && qrToken) {
+                visit = visits.find(v => v.qrToken === qrToken);
+            }
+            
+            if (!visit) {
+                alert('No se encontró la visita asociada a este código QR');
+                return;
+            }
+            
+            // Si la visita está aprobada pero no checked-in, abrir el modal de approved para hacer check-in
+            if (visit.status === VisitStatus.APPROVED) {
+                handleClose();
+                if (onOpenApprovedModal) {
+                    onOpenApprovedModal(visit);
+                }
+                return;
+            }
+            
+            // Si la visita está checked-in, abrir el modal de checkout
+            if (visit.status === VisitStatus.CHECKED_IN) {
+                handleClose();
+                onSelectVisit(visit);
+                return;
+            }
+            
+            alert(`Esta visita está en estado "${visit.status}" y no puede ser procesada en este momento.`);
+        } catch (error) {
+            console.error('Error processing QR:', error);
+            alert('Error al procesar el código QR.');
+        }
+    };
+
+    const stopQrScanner = () => {
+        if (qrStream) {
+            qrStream.getTracks().forEach(track => track.stop());
+            setQrStream(null);
+        }
+        setIsScanning(false);
+    };
+
+    React.useEffect(() => {
+        if (isOpen) {
+            startQrScanner();
+        } else {
+            stopQrScanner();
+        }
+        return () => stopQrScanner();
+    }, [isOpen]);
+
+    const handleClose = () => {
+        stopQrScanner();
+        setQrCode('');
+        onClose();
+    };
+
+    const handleConfirm = async () => {
+        if (!qrCode.trim()) {
+            alert('Por favor, escanea o ingresa un código QR');
+            return;
+        }
+        
+        processExitQR(qrCode);
+    };
     
     if (!isOpen) return null;
     
-    const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
-    const filteredVisits = checkedInVisits.filter(v => 
-        v.visitorName.toLowerCase().includes(search.toLowerCase()) ||
-        (v.visitorCompany && v.visitorCompany.toLowerCase().includes(search.toLowerCase()))
-    );
-    
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-                <h2 className="text-xl font-bold mb-4">Salida de Visitante</h2>
-                <p className="text-sm text-gray-600 mb-4">Selecciona el visitante que va a salir</p>
-                
-                <input
-                    type="text"
-                    placeholder="Buscar por nombre o empresa..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    className="w-full p-2 border rounded mb-4"
-                />
-                
-                {filteredVisits.length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">
-                        {checkedInVisits.length === 0 ? 'No hay visitantes dentro actualmente.' : 'No se encontraron visitantes.'}
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+                {/* Header */}
+                <div className="bg-green-600 text-white px-6 py-4 rounded-t-xl flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-white rounded-full p-2">
+                            <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                        </div>
+                        <h2 className="text-xl font-bold">Registrar salida del edificio</h2>
                     </div>
-                ) : (
-                    <div className="space-y-2">
-                        {filteredVisits.map(visit => (
-                            <div key={visit._id} className="border rounded p-3 flex justify-between items-center hover:bg-gray-50">
-                                <div>
-                                    <p className="font-semibold">{visit.visitorName}</p>
-                                    <p className="text-sm text-gray-600">{visit.visitorCompany}</p>
-                                    <p className="text-xs text-gray-500">Anfitrión: {visit.host.firstName} {visit.host.lastName}</p>
-                                    {visit.checkInTime && (
-                                        <p className="text-xs text-gray-500">Entrada: {visit.checkInTime}</p>
-                                    )}
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        onCheckout(visit);
-                                        onClose();
-                                    }}
-                                    className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 flex items-center gap-2"
-                                >
-                                    <LogoutIcon className="w-4 h-4" />
-                                    Registrar Salida
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                )}
-                
-                <div className="flex justify-end mt-4">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                    <button 
+                        type="button"
+                        onClick={handleClose}
+                        className="text-white hover:text-gray-200"
                     >
-                        Cancelar
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
+                </div>
+
+                <div className="px-6 py-8 space-y-6">
+                    {/* Instrucción */}
+                    <div className="text-center">
+                        <p className="text-gray-700 font-medium">Escanea el código QR de tu visitante</p>
+                    </div>
+
+                    {/* Icono de cámara circular */}
+                    <div className="flex justify-center">
+                        <div className="w-40 h-40 rounded-full border-4 border-[#1e3a8a] flex items-center justify-center bg-gray-50">
+                            <svg className="w-20 h-20 text-[#1e3a8a]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    {/* Texto de invitación QR */}
+                    <div className="text-center">
+                        <p className="text-sm text-gray-500 mb-3">Si tu visita cuenta con invitación QR</p>
+                        <button 
+                            type="button" 
+                            onClick={() => setIsScanning(!isScanning)}
+                            className="text-cyan-500 hover:text-cyan-600 font-medium text-sm flex items-center gap-1 mx-auto transition-colors"
+                        >
+                            {isScanning ? 'cerrar escáner' : 'escanea aquí'}
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v3h-3v-3zm0 5h3v3h-3v-3z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    {/* Escáner QR */}
+                    {isScanning && (
+                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <div className="relative aspect-square bg-black rounded-lg overflow-hidden mb-3">
+                                <video 
+                                    ref={qrVideoRef} 
+                                    autoPlay 
+                                    playsInline 
+                                    muted 
+                                    className="w-full h-full object-cover"
+                                />
+                                {/* Overlay de esquinas para el escáner */}
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="relative w-64 h-64">
+                                        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-cyan-400"></div>
+                                        <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-cyan-400"></div>
+                                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-cyan-400"></div>
+                                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-cyan-400"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <p className="text-xs text-center text-gray-500">
+                                Coloca el código QR dentro del marco
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Input manual del código QR (opcional, oculto por defecto) */}
+                    <div className="hidden">
+                        <input 
+                            type="text" 
+                            placeholder="O ingresa el código manualmente" 
+                            value={qrCode}
+                            onChange={e => setQrCode(e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400"
+                        />
+                    </div>
+
+                    {/* Botones */}
+                    <div className="flex gap-3 pt-4">
+                        <button 
+                            type="button" 
+                            onClick={handleClose}
+                            className="flex-1 py-3 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button 
+                            type="button" 
+                            onClick={handleConfirm}
+                            className="flex-1 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors"
+                        >
+                            Confirmar salida
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -489,8 +918,111 @@ export const VisitsPage: React.FC = () => {
     const [registerMenuOpen, setRegisterMenuOpen] = useState(false);
     const [showExitModal, setShowExitModal] = useState(false);
     const [exitVisitorSearch, setExitVisitorSearch] = useState('');
+    
+    // Nuevos modales
+    const [pendingModalVisit, setPendingModalVisit] = useState<Visit | null>(null);
+    const [approvedModalVisit, setApprovedModalVisit] = useState<Visit | null>(null);
+    const [checkedInModalVisit, setCheckedInModalVisit] = useState<Visit | null>(null);
+    const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
+    const [rejectionVisit, setRejectionVisit] = useState<Visit | null>(null);
 
-    // Estados y lógica para el modal de motivo de rechazo
+    // Handler para clicks en las tarjetas
+    const handleCardClick = (visit: Visit) => {
+        switch (visit.status) {
+            case VisitStatus.PENDING:
+                setPendingModalVisit(visit);
+                break;
+            case VisitStatus.APPROVED:
+                setApprovedModalVisit(visit);
+                break;
+            case VisitStatus.CHECKED_IN:
+                setCheckedInModalVisit(visit);
+                break;
+            case VisitStatus.REJECTED:
+                // Si está rechazada pero no tiene razón, abrir modal de razón
+                if (!visit.rejectionReason) {
+                    setRejectionVisit(visit);
+                    setRejectionModalOpen(true);
+                }
+                break;
+            default:
+                break;
+        }
+    };
+
+    // Handler para aprobar desde el modal
+    const handleApproveFromModal = async (visitId: string) => {
+        console.log('🟢 [APPROVE] Starting approval for visit:', visitId);
+        try {
+            const updatedVisit = await api.approveVisit(visitId);
+            console.log('✅ [APPROVE] Successfully approved visit:', visitId, 'new status:', updatedVisit.status);
+            setVisits(prevVisits => prevVisits.map(v => v._id === visitId ? updatedVisit : v));
+            setPendingModalVisit(null);
+        } catch (error) {
+            console.error('❌ [APPROVE] Failed to approve visit:', error);
+        }
+    };
+
+    // Handler para rechazar (abre modal de razón)
+    const handleRejectFromModal = (visit: Visit) => {
+        setRejectionVisit(visit);
+        setRejectionModalOpen(true);
+        setPendingModalVisit(null);
+    };
+
+    // Handler para confirmar rechazo con razón
+    const handleRejectWithReason = async (reason: string) => {
+        if (!rejectionVisit) return;
+        try {
+            // Si la visita ya está rechazada, solo actualizar la razón sin cambiar estado
+            if (rejectionVisit.status === VisitStatus.REJECTED) {
+                const updatedVisit = await api.updateVisit(rejectionVisit._id, { rejectionReason: reason });
+                setVisits(prevVisits => prevVisits.map(v => v._id === rejectionVisit._id ? updatedVisit : v));
+            } else if (rejectionVisit.status === VisitStatus.APPROVED) {
+                // No permitir rechazar si ya está aprobada
+                alert('No se puede rechazar una visita que ya fue aprobada.');
+            } else {
+                // Si está en otro estado (pending), rechazar con razón
+                try {
+                    const updatedVisit = await api.updateVisitStatus(rejectionVisit._id, VisitStatus.REJECTED, reason);
+                    setVisits(prevVisits => prevVisits.map(v => v._id === rejectionVisit._id ? updatedVisit : v));
+                } catch (error: any) {
+                    // Mostrar error del backend si la transición no es permitida
+                    alert(error?.response?.data?.message || 'No se pudo rechazar la visita.');
+                }
+            }
+        } catch (error) {
+            alert('No se pudo rechazar la visita.');
+            console.error('Failed to reject visit:', error);
+        } finally {
+            setRejectionModalOpen(false);
+            setRejectionVisit(null);
+        }
+    };
+
+    // Handler para check-in con recurso asignado
+    const handleCheckInWithResource = async (visitId: string, assignedResource?: string) => {
+        try {
+            const updatedVisit = await api.checkInVisit(visitId, assignedResource);
+            setVisits(prevVisits => prevVisits.map(v => v._id === visitId ? updatedVisit : v));
+            setApprovedModalVisit(null);
+        } catch (error) {
+            console.error('Failed to check in:', error);
+        }
+    };
+
+    // Handler para checkout desde el modal
+    const handleCheckoutFromModal = async (visitId: string) => {
+        try {
+            const result = await api.checkOutVisit(visitId, []);
+            setVisits(prevVisits => prevVisits.map(v => v._id === visitId ? result.visit : v));
+            setCheckedInModalVisit(null);
+        } catch (error) {
+            console.error('Failed to check out:', error);
+        }
+    };
+
+    // Estados y lógica para el modal de motivo de rechazo (antigua lógica)
     const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
     const [rejectVisitId, setRejectVisitId] = useState<string | null>(null);
 
@@ -528,7 +1060,7 @@ export const VisitsPage: React.FC = () => {
       let reason = rejectReason === 'Otro' ? otherReason : rejectReason;
       try {
         const updatedVisit = await api.updateVisitStatus(rejectVisitId, VisitStatus.REJECTED, reason);
-        setVisits(visits.map(v => v._id === rejectVisitId ? updatedVisit : v));
+        setVisits(prevVisits => prevVisits.map(v => v._id === rejectVisitId ? updatedVisit : v));
       } catch (error) {
         console.error('Failed to reject visit:', error);
       } finally {
@@ -551,6 +1083,27 @@ export const VisitsPage: React.FC = () => {
         }
     }, []);
 
+    // Handler para el side panel de registro
+    const handleVisitRegistration = async (visitData: any) => {
+        try {
+            const scheduledDate = new Date().toISOString();
+            await api.createVisit({
+                visitorName: visitData.visitorName,
+                visitorCompany: visitData.visitorCompany,
+                reason: visitData.reason,
+                hostId: visitData.host,
+                scheduledDate,
+                destination: visitData.destination || '',
+                visitorEmail: visitData.visitorEmail,
+                visitorPhoto: visitData.visitorPhoto || undefined,
+            });
+            fetchVisits();
+        } catch (error) {
+            console.error('Failed to create visit:', error);
+            alert('Error al registrar la visita. Por favor intenta de nuevo.');
+        }
+    };
+
     useEffect(() => {
         fetchVisits();
         api.getHosts()
@@ -561,7 +1114,7 @@ export const VisitsPage: React.FC = () => {
     const updateVisitStatus = async (id: string, status: VisitStatus) => {
         try {
             const updatedVisit = await api.updateVisitStatus(id, status);
-            setVisits(visits.map(v => v._id === id ? updatedVisit : v));
+            setVisits(prevVisits => prevVisits.map(v => v._id === id ? updatedVisit : v));
         } catch (error) {
             console.error("Failed to update visit status:", error);
         }
@@ -570,7 +1123,7 @@ export const VisitsPage: React.FC = () => {
     const handleApprove = async (id: string) => {
         try {
             const updatedVisit = await api.approveVisit(id);
-            setVisits(visits.map(v => v._id === id ? updatedVisit : v));
+            setVisits(prevVisits => prevVisits.map(v => v._id === id ? updatedVisit : v));
         } catch (error) {
             console.error('Failed to approve visit:', error);
         }
@@ -579,7 +1132,7 @@ export const VisitsPage: React.FC = () => {
     const handleCheckIn = async (id: string) => {
         try {
             const updatedVisit = await api.checkInVisit(id);
-            setVisits(visits.map(v => v._id === id ? updatedVisit : v));
+            setVisits(prevVisits => prevVisits.map(v => v._id === id ? updatedVisit : v));
         } catch (error) {
             console.error('Failed to check in:', error);
         }
@@ -594,7 +1147,7 @@ export const VisitsPage: React.FC = () => {
         try {
             if (!checkoutVisit) return;
             const result = await api.checkOutVisit(checkoutVisit._id, photos);
-            setVisits(visits.map(v => v._id === checkoutVisit._id ? result.visit : v));
+            setVisits(prevVisits => prevVisits.map(v => v._id === checkoutVisit._id ? result.visit : v));
         } catch (error) {
             console.error('Failed to check out:', error);
         } finally {
@@ -603,20 +1156,19 @@ export const VisitsPage: React.FC = () => {
         }
     };
 
-    // Toggles de auto-aprobación y auto-check-in (simulación frontend)
+    // Toggles de auto-aprobación y auto-check-in
     const [autoApprove, setAutoApprove] = useState(false);
     const [autoCheckIn, setAutoCheckIn] = useState(false);
+    const [companyConfig, setCompanyConfig] = useState<any>(null);
 
-    // Puedes conectar estos toggles con el backend si tienes endpoints para settings de la empresa
-    // y guarda el estado en la base de datos
-
-    // Ejemplo de uso en el efecto de carga de visitas:
+    // Cargar settings de la empresa
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                // const settings = await api.getSettings(); // Supongamos que tienes un endpoint para esto
-                // setAutoApprove(settings.autoApprove);
-                // setAutoCheckIn(settings.autoCheckIn);
+                const config = await api.getCompanyConfig();
+                setCompanyConfig(config);
+                setAutoApprove(config.settings.autoApproval || false);
+                setAutoCheckIn(config.settings.autoCheckIn || false);
             } catch (error) {
                 console.error('Failed to fetch settings:', error);
             }
@@ -625,32 +1177,105 @@ export const VisitsPage: React.FC = () => {
         fetchSettings();
     }, []);
 
+    // Actualizar auto-aprobación en el backend
+    const handleAutoApproveToggle = async (checked: boolean) => {
+        setAutoApprove(checked);
+        try {
+            await api.updateCompanyConfig({
+                ...companyConfig,
+                settings: {
+                    ...companyConfig.settings,
+                    autoApproval: checked
+                }
+            });
+        } catch (error) {
+            console.error('Failed to update auto-approval:', error);
+            setAutoApprove(!checked); // Revertir si falla
+        }
+    };
+
+    // Actualizar auto-check-in en el backend
+    const handleAutoCheckInToggle = async (checked: boolean) => {
+        setAutoCheckIn(checked);
+        try {
+            await api.updateCompanyConfig({
+                ...companyConfig,
+                settings: {
+                    ...companyConfig.settings,
+                    autoCheckIn: checked
+                }
+            });
+        } catch (error) {
+            console.error('Failed to update auto-checkin:', error);
+            setAutoCheckIn(!checked); // Revertir si falla
+        }
+    };
+
     const navigate = useNavigate();
 
     // Arrays de visitas por status (asegúrate que estén antes del return)
 const pendingVisits = visits.filter(v => v.status === VisitStatus.PENDING);
 const approvedVisits = visits.filter(v => v.status === VisitStatus.APPROVED);
+// Solo visitas rechazadas SIN razón asignada (esperando que se especifique la razón)
+const rejectedVisits = visits.filter(v => v.status === VisitStatus.REJECTED && !v.rejectionReason);
+const respondedVisits = [...approvedVisits, ...rejectedVisits].sort((a, b) => 
+    new Date(b.updatedAt || b.createdAt || '').getTime() - new Date(a.updatedAt || a.createdAt || '').getTime()
+);
 const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
+
+// Filtrar visitas de hoy
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayVisits = visits.filter(v => {
+        const visitDate = new Date(v.scheduledDate);
+        visitDate.setHours(0, 0, 0, 0);
+        return visitDate.getTime() === today.getTime();
+    });
+
+    const formattedDate = today.toLocaleDateString('es-ES', { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'long' 
+    });
 
 // Agrega el botón de Agenda en el header
     return (
-        <div>
-            <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-                <h1 className="text-2xl font-bold text-securiti-blue-700">Visitas</h1>
-                <div className="flex gap-4 items-center flex-wrap">
-                    {/* Botón Registrar Visita con submenú */}
+        <div className="p-6">
+            {/* Header con contador total y botones al mismo nivel */}
+            <div className="mb-6 flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                    <div className="flex flex-col items-center">
+                        <div className="text-5xl font-bold text-securiti-blue-600">{todayVisits.length}</div>
+                        <div className="text-xs text-gray-600 mt-1">Total de registros hoy</div>
+                        <div className="text-xs text-gray-500 capitalize">{formattedDate}</div>
+                    </div>
+                </div>
+
+                {/* Botones de acción */}
+                <div className="flex gap-3 items-center">
+                    <button
+                        onClick={() => navigate('/visits/agenda')}
+                        className="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium flex items-center gap-2 transition-colors"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Ver agenda
+                    </button>
+                    
+                    {/* Botón Registrar con submenú */}
                     <div className="relative">
                         <button
                             onClick={() => setRegisterMenuOpen(!registerMenuOpen)}
-                            className="px-4 py-2 bg-securiti-blue-600 text-white rounded-md hover:bg-securiti-blue-700 font-semibold flex items-center gap-2"
+                            className="px-4 py-2.5 bg-cyan-400 text-white rounded-lg hover:bg-cyan-500 font-medium flex items-center gap-2 transition-colors shadow-sm"
                         >
-                            Registrar Visita
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                             </svg>
+                            Registrar
                         </button>
                         {registerMenuOpen && (
-                            <div className="absolute top-full left-0 mt-2 bg-white rounded-md shadow-lg border border-gray-200 z-50 min-w-[200px]">
+                            <div className="absolute top-full right-0 mt-2 bg-white rounded-md shadow-lg border border-gray-200 z-50 min-w-[200px]">
                                 <button
                                     onClick={() => {
                                         setIsModalOpen(true);
@@ -674,69 +1299,178 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                             </div>
                         )}
                     </div>
-                    <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={autoApprove} onChange={e => setAutoApprove(e.target.checked)} />
-                        <span className="text-sm">Auto-aprobar visitas</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={autoCheckIn} onChange={e => setAutoCheckIn(e.target.checked)} />
-                        <span className="text-sm">Auto check-in al llegar</span>
-                    </label>
-                    <button
-      className="px-3 py-2 bg-securiti-blue-100 text-securiti-blue-700 rounded shadow hover:bg-securiti-blue-200"
-      onClick={() => navigate('/visits/agenda')}
-    >
-      Ver Agenda
-    </button>
                 </div>
             </div>
+
             {loading ? (
                 <div className="text-center p-8">Cargando visitas...</div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <h2 className="text-lg font-semibold text-yellow-700 mb-2">En Espera de Respuesta</h2>
-                        <div className="space-y-4">
-                            {pendingVisits.length > 0 ? (
-                                pendingVisits.map(visit => (
-                                    <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
-                                ))
-                            ) : (
-                                <p className="text-gray-400">No hay visitas pendientes.</p>
-                            )}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5">
+                    {/* Columna 1: En espera */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                        <div className="bg-gradient-to-br from-orange-50 to-white p-5 border-b border-gray-200">
+                            <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg">
+                                        <ClockIcon className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <div className="text-3xl font-bold text-gray-800">{pendingVisits.length}</div>
+                                        <div className="text-xs text-gray-500 font-medium">Total</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <h2 className="text-lg font-bold text-gray-800 mb-3">En espera</h2>
+                            <label className="flex items-center gap-2 cursor-pointer group">
+                                <div className="relative">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={autoApprove} 
+                                        onChange={e => handleAutoApproveToggle(e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-100 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-400 peer-checked:to-orange-500"></div>
+                                </div>
+                                <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">Auto aprobación</span>
+                            </label>
+                        </div>
+                        <div className="p-4 flex-1 flex flex-col">
+                            <div className="relative mb-3">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar visitante..."
+                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all"
+                                />
+                                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <div className="space-y-2.5 overflow-y-auto flex-1 pr-1" style={{ maxHeight: 'calc(100vh - 380px)' }}>
+                                {pendingVisits.length > 0 ? (
+                                    pendingVisits.map(visit => (
+                                        <VisitCard key={visit._id} visit={visit} onCardClick={handleCardClick} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
+                                    ))
+                                ) : (
+                                    <div className="text-center py-12">
+                                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
+                                            <ClockIcon className="w-8 h-8 text-gray-400" />
+                                        </div>
+                                        <p className="text-gray-400 text-sm">No hay visitas pendientes.</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <h2 className="text-lg font-semibold text-blue-700 mb-2">Respuesta Recibida</h2>
-                        <div className="space-y-4">
-                            {approvedVisits.length > 0 ? (
-                                approvedVisits.map(visit => (
-                                    <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
-                                ))
-                            ) : (
-                                <p className="text-gray-400">No hay visitas aprobadas.</p>
-                            )}
+
+                    {/* Columna 2: Respuesta recibida */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                        <div className="bg-gradient-to-br from-green-50 to-white p-5 border-b border-gray-200">
+                            <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center shadow-lg">
+                                        <CheckCircleIcon className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <div className="text-3xl font-bold text-gray-800">{respondedVisits.length}</div>
+                                        <div className="flex gap-3 mt-1">
+                                            <span className="text-xs text-green-600 font-medium">✓ {approvedVisits.length}</span>
+                                            <span className="text-xs text-red-600 font-medium">✗ {rejectedVisits.length}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <h2 className="text-lg font-bold text-gray-800 mb-3">Respuesta recibida</h2>
+                            <label className="flex items-center gap-2 cursor-pointer group">
+                                <div className="relative">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={autoCheckIn} 
+                                        onChange={e => handleAutoCheckInToggle(e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-100 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-green-400 peer-checked:to-green-500"></div>
+                                </div>
+                                <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">Auto check in</span>
+                            </label>
+                        </div>
+                        <div className="p-4 flex-1 flex flex-col">
+                            <div className="relative mb-3">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar visitante..."
+                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all"
+                                />
+                                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <div className="space-y-2.5 overflow-y-auto flex-1 pr-1" style={{ maxHeight: 'calc(100vh - 380px)' }}>
+                                {respondedVisits.length > 0 ? (
+                                    respondedVisits.map(visit => (
+                                        <VisitCard key={visit._id} visit={visit} onCardClick={handleCardClick} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
+                                    ))
+                                ) : (
+                                    <div className="text-center py-12">
+                                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
+                                            <CheckCircleIcon className="w-8 h-8 text-gray-400" />
+                                        </div>
+                                        <p className="text-gray-400 text-sm">No hay visitas aprobadas.</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <h2 className="text-lg font-semibold text-green-700 mb-2">Visitante Dentro</h2>
-                        <div className="space-y-4">
-                            {checkedInVisits.length > 0 ? (
-                                checkedInVisits.map(visit => (
-                                    <VisitCard key={visit._id} visit={visit} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
-                                ))
-                            ) : (
-                                <p className="text-gray-400">No hay visitantes dentro.</p>
-                            )}
+
+                    {/* Columna 3: Dentro */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                        <div className="bg-gradient-to-br from-cyan-50 to-white p-5 border-b border-gray-200">
+                            <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-500 flex items-center justify-center shadow-lg">
+                                        <LoginIcon className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <div className="text-3xl font-bold text-gray-800">{checkedInVisits.length}</div>
+                                        <div className="text-xs text-gray-500 font-medium">Total</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <h2 className="text-lg font-bold text-gray-800">Dentro</h2>
+                        </div>
+                        <div className="p-4 flex-1 flex flex-col">
+                            <div className="relative mb-3">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar visitante..."
+                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all"
+                                />
+                                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <div className="space-y-2.5 overflow-y-auto flex-1 pr-1" style={{ maxHeight: 'calc(100vh - 380px)' }}>
+                                {checkedInVisits.length > 0 ? (
+                                    checkedInVisits.map(visit => (
+                                        <VisitCard key={visit._id} visit={visit} onCardClick={handleCardClick} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
+                                    ))
+                                ) : (
+                                    <div className="text-center py-12">
+                                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
+                                            <LoginIcon className="w-8 h-8 text-gray-400" />
+                                        </div>
+                                        <p className="text-gray-400 text-sm">No hay visitantes dentro.</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            <VisitFormModal 
+            <VisitRegistrationSidePanel
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onSave={fetchVisits}
+                onSubmit={handleVisitRegistration}
                 hosts={hosts}
             />
 
@@ -746,11 +1480,24 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                 onConfirm={handleCheckoutConfirm}
             />
 
-            <ExitVisitorModal
+            <ExitRegistrationSidePanel
                 isOpen={showExitModal}
                 onClose={() => setShowExitModal(false)}
                 visits={visits}
-                onCheckout={openCheckoutModal}
+                onSelectVisit={(visit) => {
+                    setCheckedInModalVisit(visit);
+                    setShowExitModal(false);
+                }}
+                onConfirmExit={async (visitId, photos) => {
+                    try {
+                        await api.checkOutVisit(visitId, photos);
+                        fetchVisits();
+                        setShowExitModal(false);
+                    } catch (error) {
+                        console.error('Failed to checkout:', error);
+                        alert('Error al registrar la salida');
+                    }
+                }}
             />
 
             {/* Modal de motivo de rechazo */}
@@ -799,6 +1546,44 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
     </div>
   </div>
 )}
+
+            {/* Nuevos modales del flujo */}
+            <PendingVisitModal
+                visit={pendingModalVisit}
+                isOpen={!!pendingModalVisit}
+                onClose={() => setPendingModalVisit(null)}
+                onApprove={handleApproveFromModal}
+                onReject={(visitId) => {
+                    const visit = visits.find(v => v._id === visitId);
+                    if (visit) handleRejectFromModal(visit);
+                }}
+            />
+
+            <ApprovedVisitModal
+                visit={approvedModalVisit}
+                isOpen={!!approvedModalVisit}
+                onClose={() => setApprovedModalVisit(null)}
+                onCheckIn={handleCheckInWithResource}
+            />
+
+            {rejectionVisit && (
+                <RejectionModal
+                    isOpen={rejectionModalOpen}
+                    onClose={() => {
+                        setRejectionModalOpen(false);
+                        setRejectionVisit(null);
+                    }}
+                    onConfirm={handleRejectWithReason}
+                    visitorName={rejectionVisit.visitorName}
+                />
+            )}
+
+            <CheckedInVisitModal
+                visit={checkedInModalVisit}
+                isOpen={!!checkedInModalVisit}
+                onClose={() => setCheckedInModalVisit(null)}
+                onCheckout={handleCheckoutFromModal}
+            />
         </div>
     );
 };

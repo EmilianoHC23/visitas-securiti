@@ -24,6 +24,12 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
+// Debug: log incoming requests (helps diagnose 404s in serverless)
+app.use((req, res, next) => {
+  console.log(`➡️  ${req.method} ${req.url}`);
+  next();
+});
+
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
         ? ['https://visitas-securiti.vercel.app', 'https://visitas-securiti-git-main-emilianohc23.vercel.app']
@@ -36,6 +42,12 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // MongoDB connection
 const connectDB = async () => {
   try {
+    // En Vercel, evitar reconectar si ya está conectado
+    if (mongoose.connection.readyState === 1) {
+      console.log('✅ MongoDB already connected');
+      return;
+    }
+    
     const mongoURI = process.env.DATABASE_URL || 'mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti';
     await mongoose.connect(mongoURI);
     console.log('✅ MongoDB Atlas connected successfully');
@@ -52,8 +64,16 @@ const connectDB = async () => {
   }
 };
 
-// Initialize database
+// Initialize database connection
 connectDB();
+
+// Para Vercel serverless, asegurar conexión en cada request
+app.use(async (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    await connectDB();
+  }
+  next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);

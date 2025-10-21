@@ -17,11 +17,17 @@ export const CheckedInVisitModal: React.FC<CheckedInVisitModalProps> = ({
 }) => {
   const [elapsedTime, setElapsedTime] = useState('');
   const checkInTimeRef = useRef<string | null>(null);
+  const createdAtRef = useRef<string | null>(null);
 
-  // Guardar el checkInTime cuando el modal se abre
+  // Guardar checkInTime y createdAt cuando el modal se abre
   useEffect(() => {
-    if (visit && isOpen && visit.checkInTime) {
-      checkInTimeRef.current = visit.checkInTime;
+    if (visit && isOpen) {
+      if (visit.checkInTime) {
+        checkInTimeRef.current = visit.checkInTime;
+      }
+      if (visit.createdAt) {
+        createdAtRef.current = visit.createdAt;
+      }
     }
   }, [visit?._id, isOpen]); // Solo cambiar cuando cambia el ID de la visita o se abre el modal
 
@@ -45,9 +51,10 @@ export const CheckedInVisitModal: React.FC<CheckedInVisitModalProps> = ({
 
   if (!isOpen || !visit) return null;
 
-  const checkInDate = checkInTimeRef.current ? new Date(checkInTimeRef.current) : null;
-  const formattedDate = checkInDate ? formatShortDate(checkInDate) : '-';
-  const formattedTime = checkInDate ? formatTime(checkInDate) : '-';
+  // Usar createdAt para "Fecha y hora de llegada" (cuando se registró)
+  const registrationDate = createdAtRef.current ? new Date(createdAtRef.current) : null;
+  const formattedDate = registrationDate ? formatShortDate(registrationDate) : '-';
+  const formattedTime = registrationDate ? formatTime(registrationDate) : '-';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">

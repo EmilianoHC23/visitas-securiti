@@ -664,8 +664,9 @@ router.post('/checkout/:id', auth, async (req, res) => {
           visitorCompany: visit.visitorCompany || 'N/A',
           hostName: `${visit.host.firstName} ${visit.host.lastName}`,
           companyName: 'SecurITI',
-          checkInTime: visit.checkInTime,
-          checkOutTime: visit.checkOutTime
+          registrationTime: visit.createdAt, // Hora de registro
+          checkInTime: visit.checkInTime, // Hora de entrada física
+          checkOutTime: visit.checkOutTime // Hora de salida
         });
       } catch (mailErr) {
         console.warn('Email checkout error:', mailErr?.message || mailErr);

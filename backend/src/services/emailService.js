@@ -1020,9 +1020,10 @@ class EmailService {
     const primaryColor = '#1e3a8a';
     const accentColor = '#f97316';
 
-    // Calcular tiempo de permanencia
+    // Calcular tiempo de permanencia (desde entrada física hasta salida)
     const checkInTime = new Date(data.checkInTime);
     const checkOutTime = new Date(data.checkOutTime);
+    const registrationTime = new Date(data.registrationTime); // Hora de registro
     const diffMs = checkOutTime.getTime() - checkInTime.getTime();
     const hours = Math.floor(diffMs / 3600000);
     const minutes = Math.floor((diffMs % 3600000) / 60000);
@@ -1076,7 +1077,11 @@ class EmailService {
                                 </tr>
                                 <tr>
                                   <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Fecha de visita:</strong></td>
-                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${formatShortDate(checkInTime)}</td>
+                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${formatShortDate(registrationTime)}</td>
+                                </tr>
+                                <tr>
+                                  <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Hora de llegada:</strong></td>
+                                  <td style="color: #1f2937; font-size: 14px; padding: 8px 0;">${formatTime(registrationTime)}</td>
                                 </tr>
                                 <tr>
                                   <td style="color: #4b5563; font-size: 14px; padding: 8px 0;"><strong>Hora de entrada:</strong></td>

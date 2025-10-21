@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import * as api from '../../services/api';
 
 export const PublicVisitRegistrationPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [hosts, setHosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -26,6 +27,8 @@ export const PublicVisitRegistrationPage: React.FC = () => {
 
   useEffect(() => {
     loadHosts();
+    // Pre-llenar datos desde QR code si existen
+    prefillFromQR();
   }, []);
 
   const loadHosts = async () => {
@@ -34,6 +37,28 @@ export const PublicVisitRegistrationPage: React.FC = () => {
       setHosts(data);
     } catch (err) {
       console.error('Error loading hosts:', err);
+    }
+  };
+
+  const prefillFromQR = () => {
+    try {
+      // Intentar obtener datos del QR desde los parámetros de la URL
+      const qrData = searchParams.get('data');
+      if (qrData) {
+        const parsedData = JSON.parse(decodeURIComponent(qrData));
+        
+        // Pre-llenar los campos si existen en el QR
+        if (parsedData.visitorName) setVisitorName(parsedData.visitorName);
+        if (parsedData.visitorEmail) setVisitorEmail(parsedData.visitorEmail);
+        if (parsedData.visitorCompany) setVisitorCompany(parsedData.visitorCompany);
+        if (parsedData.hostId) setHostId(parsedData.hostId);
+        if (parsedData.visitorPhoto) setPhoto(parsedData.visitorPhoto);
+        
+        console.log('✅ Datos pre-llenados desde QR:', parsedData);
+      }
+    } catch (err) {
+      console.warn('Error al parsear datos del QR:', err);
+      // No mostrar error al usuario, simplemente no pre-llenar
     }
   };
 

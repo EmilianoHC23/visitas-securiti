@@ -184,14 +184,15 @@ class EmailService {
       const accentColor = '#f97316'; // Naranja SecuriTI
       const statusColor = isApproved ? '#10b981' : '#ef4444';
 
-      // QR para futuras visitas - incluye datos del visitante
+      // QR para futuras visitas - incluye URL con parámetros para pre-llenar el formulario
       const qrDataForFutureVisits = JSON.stringify({
-        type: 'visitor-info',
         visitorName: data.visitorName,
         visitorCompany: data.visitorCompany || '',
         visitorEmail: data.visitorEmail,
-        hostId: data.hostId
+        hostId: data.hostId,
+        visitorPhoto: data.visitorPhoto || ''
       });
+      const futureVisitsUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/public/register?data=${encodeURIComponent(qrDataForFutureVisits)}`;
 
       // QR específico para esta visita (check-in/check-out)
       const qrDataForThisVisit = JSON.stringify({
@@ -291,7 +292,7 @@ class EmailService {
                                         <h4 style="color: #1e40af; margin: 0 0 10px 0; font-size: 16px;">QR Reutilizable</h4>
                                         <p style="font-size: 12px; color: #1e3a8a; margin: 0 0 15px 0;">Para futuras visitas</p>
                                         <div style="background-color: #ffffff; padding: 10px; display: inline-block; border-radius: 8px;">
-                                          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrDataForFutureVisits)}" 
+                                          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(futureVisitsUrl)}" 
                                                alt="QR reutilizable" 
                                                style="width: 150px; height: 150px; display: block;" />
                                         </div>

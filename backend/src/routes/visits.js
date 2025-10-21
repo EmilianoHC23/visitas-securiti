@@ -381,14 +381,18 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(403).json({ message: 'No tienes permisos para modificar esta visita' });
     }
 
+    // Guardar el estado anterior para verificar si hubo cambio
+    const previousStatus = visit.status;
+
     const updatedVisit = await Visit.findByIdAndUpdate(
       id,
       updates,
       { new: true, runValidators: true }
     ).populate('host', 'firstName lastName email profileImage');
 
-    // Si se está actualizando la razón de rechazo en una visita rechazada, enviar email
-    if (updates.rejectionReason && updatedVisit.status === 'rejected' && updatedVisit.visitorEmail) {
+    // Solo enviar email si la visita acaba de ser rechazada (no estaba rechazada antes)
+    // Evita enviar emails duplicados cuando solo se actualiza rejectionReason
+    if (updates.rejectionReason && updatedVisit.status === 'rejected' && previousStatus !== 'rejected' && updatedVisit.visitorEmail) {
       try {
         await require('../services/emailService').sendVisitorNotificationEmail({
           visitId: updatedVisit._id.toString(),

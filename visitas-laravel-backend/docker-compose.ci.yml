@@ -1,0 +1,44 @@
+version: '3.8'
+
+# Archivo pensado para CI: define dependencias (DB, Redis, MailHog) que el workflow
+# puede levantar con `docker compose -f docker-compose.ci.yml up -d` antes de iniciar la app.
+# No construye la imagen de la aplicación; la app puede iniciarse desde el runner con
+# `php artisan serve` o mediante una imagen/app separada.
+
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: testing
+      MYSQL_USER: test
+      MYSQL_PASSWORD: secret
+    ports:
+      - '3306:3306'
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - db_data:/var/lib/mysql
+
+  redis:
+    image: redis:6
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - '1025:1025'   # SMTP
+      - '8025:8025'   # Web UI
+
+volumes:
+  db_data:

@@ -1,0 +1,393 @@
+openapi: 3.0.0
+info:
+  title: Visitas Securiti API
+  version: '1.0.0'
+  description: API para gestionar visitas, empresas y reportes.
+servers:
+  - url: http://localhost
+security:
+  - bearerAuth: []
+paths:
+  /api/auth/login:
+    post:
+      summary: Obtener token JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      security: []
+      responses:
+        '200':
+          description: Token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+
+  /api/visits:
+    get:
+      summary: Listar visitas
+      parameters:
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: status
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de visitas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Visit'
+              examples:
+                sampleVisits:
+                  summary: Ejemplo de lista de visitas
+                  value:
+                    - id: 1
+                      visitor_name: "Juan Perez"
+                      visitor_email: "juan.perez@example.com"
+                      scheduled_date: "2025-10-20 09:00:00"
+                      status: "pending"
+                      company_id: 10
+                      company:
+                        id: 10
+                        name: "ACME S.A."
+                        qr_code: "ABC123"
+                    - id: 2
+                      visitor_name: "María López"
+                      visitor_email: "maria.lopez@example.com"
+                      scheduled_date: "2025-10-21 11:30:00"
+                      status: "approved"
+                      company_id: 11
+                      company:
+                        id: 11
+                        name: "Globex"
+                        qr_code: "XYZ789"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      summary: Crear visita
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisitCreate'
+      responses:
+        '201':
+          description: Visita creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+              examples:
+                createdVisit:
+                  summary: Ejemplo de visita creada
+                  value:
+                    id: 123
+                    visitor_name: "Juan Perez"
+                    visitor_email: "juan.perez@example.com"
+                    scheduled_date: "2025-10-20 09:00:00"
+                    status: "pending"
+                    company_id: 10
+                    company:
+                      id: 10
+                      name: "ACME S.A."
+                      qr_code: "ABC123"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/visits/{id}:
+    put:
+      summary: Actualizar visita
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisitUpdate'
+      responses:
+        '200':
+          description: Visita actualizada
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/reports/visits-by-company:
+    get:
+      summary: Reporte visitas por empresa
+      parameters:
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: status
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Conteos por empresa
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    company_id:
+                      type: integer
+                    company_name:
+                      type: string
+                    total:
+                      type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/users:
+    get:
+      summary: Listar usuarios
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de usuarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/companies:
+    get:
+      summary: Listar empresas
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de empresas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Company'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      summary: Crear empresa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyCreate'
+      responses:
+        '201':
+          description: Empresa creada
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/accesses:
+    get:
+      summary: Listar accesos
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de accesos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Access'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+
+components:
+  schemas:
+    AuthRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+
+    Company:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        qr_code:
+          type: string
+
+    Visit:
+      type: object
+      properties:
+        id:
+          type: integer
+        visitor_name:
+          type: string
+        visitor_email:
+          type: string
+        scheduled_date:
+          type: string
+          format: date-time
+        status:
+          type: string
+        company_id:
+          type: integer
+        company:
+          $ref: '#/components/schemas/Company'
+
+    VisitCreate:
+      type: object
+      required: [visitor_name]
+      properties:
+        visitor_name:
+          type: string
+        visitor_email:
+          type: string
+        visit_date:
+          type: string
+          format: date
+        visit_time:
+          type: string
+
+    VisitUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+        notes:
+          type: string
+    CompanyCreate:
+      type: object
+      required: [name, qr_code]
+      properties:
+        name:
+          type: string
+        qr_code:
+          type: string
+        notification_email:
+          type: string
+
+    Access:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Unauthorized:
+      description: Unauthorized - falta o token no válido
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+    Forbidden:
+      description: Forbidden - no tiene permisos
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+    ValidationError:
+      description: Error de validación (422)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              errors:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string

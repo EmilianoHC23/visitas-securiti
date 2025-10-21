@@ -95,10 +95,14 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => { // e
 };
 
 // --- AUTENTICACIÓN ---
-export const login = async (username: string, password: string): Promise<{ token: string; user: User }> => {
+export const login = async (username: string, password: string, recaptchaToken?: string): Promise<{ token: string; user: User }> => {
+  const body: any = { username, password, email: username };
+  if (recaptchaToken) {
+    body.recaptchaToken = recaptchaToken;
+  }
   return apiRequest('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username, password, email: username }),
+    body: JSON.stringify(body),
   });
 };
 
@@ -117,7 +121,9 @@ export const getVisits = async (filters?: {
   const params = new URLSearchParams();
   if (filters?.status) params.append('status', filters.status);
   if (filters?.hostId) params.append('hostId', filters.hostId);
-  
+  if (filters?.date) params.append('date', filters.date);
+  if (filters?.limit) params.append('limit', filters.limit.toString());
+  if (filters?.page) params.append('page', filters.page.toString());
   const queryString = params.toString();
   return apiRequest(`/visits${queryString ? `?${queryString}` : ''}`);
 };
@@ -132,7 +138,6 @@ export const createVisit = async (visitData: {
   visitorEmail?: string;
   visitorPhone?: string;
   visitorPhoto?: string;
-  qrToken?: string;
 }): Promise<Visit> => {
   return apiRequest('/visits', {
     method: 'POST',

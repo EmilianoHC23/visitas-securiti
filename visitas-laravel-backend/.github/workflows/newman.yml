@@ -1,0 +1,146 @@
+name: API - Newman collection
+
+on:
+  push:
+    branches: [ main, feature/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  run-newman:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: testing
+      DB_USERNAME: root
+      DB_PASSWORD: secret
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP (for running artisan if needed)
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: Install Composer dependencies
+        run: |
+          composer install --no-progress --no-suggest --prefer-dist
+        env:
+          COMPOSER_ALLOW_SUPERUSER: 1
+
+      - name: Copy example env and prepare app
+        run: |
+          if [ -f .env ]; then echo ".env exists"; else cp .env.example .env || true; fi
+          php artisan key:generate --ansi || true
+          php artisan config:clear || true
+
+      - name: Run migrations
+        run: |
+          php artisan migrate --force || true
+
+      - name: Run PHPUnit tests
+        run: |
+          echo "Running PHPUnit tests (php artisan test)"
+          # Ejecuta la suite completa; ajusta con --filter o --testsuite si deseas limitar
+          mkdir -p reports
+          # Generar reporte JUnit compatible
+          php artisan test --no-coverage --stop-on-failure --log-junit=reports/phpunit.xml || exit 1
+
+      - name: Upload PHPUnit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpunit-report
+          path: reports/phpunit.xml
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Newman
+        run: npm install -g newman newman-reporter-html
+
+      - name: Install OpenAPI validator
+        run: |
+          # Usamos redocly/openapi-cli para validación; alterna swagger-cli si prefieres
+          npm install -g @redocly/openapi-cli
+
+      - name: Validate OpenAPI spec
+        run: |
+          if [ -f public/openapi.yaml ]; then
+            echo "Validating public/openapi.yaml"
+            openapi lint public/openapi.yaml || (echo "OpenAPI validation failed" && exit 1)
+          else
+            echo "No public/openapi.yaml found, skipping OpenAPI validation"
+          fi
+
+      - name: Start application (prefer docker-compose.ci.yml)
+        run: |
+          if [ -f docker-compose.ci.yml ]; then
+            echo "Found docker-compose.ci.yml, starting services with docker compose..."
+            docker compose -f docker-compose.ci.yml up -d --build --remove-orphans
+            sleep 8
+          elif [ -f docker-compose.yml ] || [ -f docker-compose.yaml ]; then
+            echo "Found docker-compose.yml, starting services with docker compose..."
+            docker compose up -d --build --remove-orphans
+            sleep 8
+          else
+            echo "No docker-compose files found; starting php built-in server and relying on job services"
+            php artisan serve --host 127.0.0.1 --port 8000 > /dev/null 2>&1 &
+            # wait until the app responds or timeout
+            baseUrl=${{ secrets.API_BASE_URL }}
+            if [ -z "$baseUrl" ]; then baseUrl="http://127.0.0.1:8000"; fi
+            echo "Waiting for $baseUrl to be available..."
+            for i in {1..30}; do
+              if curl --silent --fail $baseUrl >/dev/null 2>&1; then
+                echo "App is up"; break
+              fi
+              sleep 2
+            done
+          fi
+
+      - name: Run Newman collection
+        env:
+          BASE_URL: ${{ secrets.API_BASE_URL }}
+          LOGIN_EMAIL: ${{ secrets.API_LOGIN_EMAIL }}
+          LOGIN_PASSWORD: ${{ secrets.API_LOGIN_PASSWORD }}
+        run: |
+          mkdir -p reports
+          # Fallback base URL when secret not set (useful for self-hosted app started here)
+          if [ -z "$BASE_URL" ]; then BASE_URL="http://127.0.0.1:8000"; fi
+          echo "Running Newman against $BASE_URL"
+          newman run docs/postman_collection.json \
+            --env-var "baseUrl=$BASE_URL" \
+            --env-var "login_email=$LOGIN_EMAIL" \
+            --env-var "login_password=$LOGIN_PASSWORD" \
+            --reporters cli,json,html \
+            --reporter-json-export reports/newman-report.json \
+            --reporter-html-export reports/newman-report.html \
+            --bail
+        - name: Upload Newman reports
+          uses: actions/upload-artifact@v4
+          with:
+            name: newman-reports
+            path: |
+              reports/newman-report.json
+              reports/newman-report.html

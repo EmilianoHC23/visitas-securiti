@@ -49,6 +49,7 @@ export interface Visit {
   assignedResource?: string;
   rejectionReason?: string;
   qrToken?: string;
+  destination?: string;
   createdAt?: string;
   updatedAt?: string;
 }

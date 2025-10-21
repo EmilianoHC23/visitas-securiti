@@ -54,6 +54,14 @@ const UserPreviewModal: React.FC<{
                                 <div><span className="font-semibold">Apellido</span><br />{user.lastName}</div>
                                 <div><span className="font-semibold">Correo electrónico</span><br />{user.email}</div>
                                 <div><span className="font-semibold">Rol de usuario</span><br /><RoleBadge role={user.role} /></div>
+                                <div className="md:col-span-2 mt-4">
+                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Permisos</h4>
+                                    <div className="flex flex-wrap">
+                                        {ROLE_PERMISSIONS[user.role]?.map(p => (
+                                            <PermissionBadge key={p} permission={p} />
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         {/* Aquí puedes agregar más secciones como permisos, etc. */}
@@ -91,6 +99,42 @@ const RoleBadge: React.FC<{ role: UserRole }> = ({ role }) => {
     return <span className={`px-2 py-1 text-xs font-medium rounded-full ${roleStyles[role]}`}>{role.charAt(0).toUpperCase() + role.slice(1)}</span>
 };
 
+const formatPermissionLabel = (perm: string) => {
+    // Expected format: Resource:action e.g. "Usuarios:ver"
+    const parts = perm.split(':');
+    if (parts.length !== 2) return perm;
+    const [resource, action] = parts;
+
+    // Map action -> human verb phrase
+    const actionMap: Record<string, string> = {
+        ver: 'ver',
+        editar: 'editar',
+        registrar: 'registrar',
+        acceder: 'acceder',
+        enviar: 'enviar'
+    };
+
+    const verb = actionMap[action] || action;
+
+    // Lowercase resource for natural reading
+    const resourceLabel = resource.toLowerCase();
+
+    return `Puede ${verb} ${resourceLabel}`;
+};
+
+const PermissionBadge: React.FC<{ permission: string }> = ({ permission }) => (
+    <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-800 mr-2 mb-1">
+        {formatPermissionLabel(permission)}
+    </span>
+);
+
+// Map role -> permissions (example granular permissions; adapt to real backend permissions later)
+const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
+    [UserRole.ADMIN]: ['Usuarios:ver', 'Usuarios:editar', 'Visitas:ver', 'Configuración:acceder'],
+    [UserRole.RECEPTION]: ['Visitas:ver', 'Visitas:registrar', 'Invitaciones:enviar'],
+    [UserRole.HOST]: ['Visitas:ver', 'Invitaciones:ver']
+};
+
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
     const statusStyles: Record<string, string> = {
         'registered': 'bg-green-100 text-green-800',
@@ -124,9 +168,10 @@ const InviteUserModal: React.FC<{
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const value = e.target.value;
         setFormData(prev => ({
             ...prev,
-            [e.target.name]: e.target.value
+            [e.target.name]: e.target.name === 'role' ? (value as unknown as UserRole) : value
         }));
     };
 

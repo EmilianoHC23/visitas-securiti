@@ -23,7 +23,8 @@ export const PendingVisitModal: React.FC<PendingVisitModalProps> = ({
     if (!visit || !isOpen) return;
 
     const updateElapsedTime = () => {
-      const start = new Date(visit.scheduledDate);
+      // Usar createdAt para medir desde que se registró la visita
+      const start = new Date(visit.createdAt || visit.scheduledDate);
       const now = new Date();
       const diffMs = now.getTime() - start.getTime();
       const minutes = Math.floor(diffMs / 60000);

@@ -45,7 +45,7 @@ export const CheckedInVisitModal: React.FC<CheckedInVisitModalProps> = ({
 
   if (!isOpen || !visit) return null;
 
-  const checkInDate = visit.checkInTime ? new Date(visit.checkInTime) : null;
+  const checkInDate = checkInTimeRef.current ? new Date(checkInTimeRef.current) : null;
   const formattedDate = checkInDate ? formatShortDate(checkInDate) : '-';
   const formattedTime = checkInDate ? formatTime(checkInDate) : '-';
 

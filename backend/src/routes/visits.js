@@ -303,7 +303,7 @@ router.put('/:id/status', auth, async (req, res) => {
 
     // Enviar notificaciones al visitante cuando corresponda
     if ((status === 'approved' || status === 'rejected') && updated.visitorEmail) {
-      console.log(`📧 [EMAIL] Sending ${status} notification to:`, updated.visitorEmail, 'for visit:', updated._id.toString());
+      console.log(`📧 [UPDATE-STATUS] Sending ${status} notification to:`, updated.visitorEmail, 'for visit:', updated._id.toString());
       const populated = await Visit.findById(updated._id).populate('host', 'firstName lastName');
       try {
         await require('../services/emailService').sendVisitorNotificationEmail({
@@ -321,9 +321,9 @@ router.put('/:id/status', auth, async (req, res) => {
           qrToken: populated.qrToken,
           rejectionReason: populated.rejectionReason
         });
-        console.log(`✅ [EMAIL] Successfully sent ${status} email for visit:`, updated._id.toString());
+        console.log(`✅ [UPDATE-STATUS] Successfully sent ${status} email for visit:`, updated._id.toString());
       } catch (mailErr) {
-        console.warn('❌ [EMAIL] Error sending email:', mailErr?.message || mailErr);
+        console.warn('❌ [UPDATE-STATUS] Error sending email:', mailErr?.message || mailErr);
       }
     }
 
@@ -519,22 +519,28 @@ router.get('/approve/:token', async (req, res) => {
     await approval.save();
     
     // Send notification to visitor if email exists
+    console.log('🔵 [APPROVE-TOKEN] Sending approval email for visit:', visit._id.toString());
     if (visit.visitorEmail) {
       await visit.populate('host', 'firstName lastName');
-      await require('../services/emailService').sendVisitorNotificationEmail({
-        visitId: visit._id.toString(),
-        visitorEmail: visit.visitorEmail,
-        visitorName: visit.visitorName,
-        visitorCompany: visit.visitorCompany,
-        hostName: `${visit.host.firstName} ${visit.host.lastName}`,
-        hostId: visit.host._id.toString(),
-        companyName: 'SecurITI',
-        status: 'approved',
-        reason: visit.reason,
-        scheduledDate: visit.scheduledDate,
-        destination: visit.destination,
-        qrToken: visit.qrToken
-      });
+      try {
+        await require('../services/emailService').sendVisitorNotificationEmail({
+          visitId: visit._id.toString(),
+          visitorEmail: visit.visitorEmail,
+          visitorName: visit.visitorName,
+          visitorCompany: visit.visitorCompany,
+          hostName: `${visit.host.firstName} ${visit.host.lastName}`,
+          hostId: visit.host._id.toString(),
+          companyName: 'SecurITI',
+          status: 'approved',
+          reason: visit.reason,
+          scheduledDate: visit.scheduledDate,
+          destination: visit.destination,
+          qrToken: visit.qrToken
+        });
+        console.log('✅ [APPROVE-TOKEN] Email sent successfully');
+      } catch (mailErr) {
+        console.error('❌ [APPROVE-TOKEN] Email error:', mailErr?.message);
+      }
     }
     
     const redirect = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/visit-confirmation?result=approved`;
@@ -563,22 +569,28 @@ router.get('/reject/:token', async (req, res) => {
     await approval.save();
     
       // Send notification to visitor if email exists
+      console.log('🔴 [REJECT-TOKEN] Sending rejection email for visit:', visit._id.toString());
       if (visit.visitorEmail) {
         await visit.populate('host', 'firstName lastName');
-        await require('../services/emailService').sendVisitorNotificationEmail({
-          visitId: visit._id.toString(),
-          visitorEmail: visit.visitorEmail,
-          visitorName: visit.visitorName,
-          visitorCompany: visit.visitorCompany,
-          hostName: `${visit.host.firstName} ${visit.host.lastName}`,
-          hostId: visit.host._id.toString(),
-          companyName: 'SecurITI',
-          status: 'rejected',
-          reason: visit.reason,
-          scheduledDate: visit.scheduledDate,
-          destination: visit.destination,
-          rejectionReason: visit.rejectionReason
-        });
+        try {
+          await require('../services/emailService').sendVisitorNotificationEmail({
+            visitId: visit._id.toString(),
+            visitorEmail: visit.visitorEmail,
+            visitorName: visit.visitorName,
+            visitorCompany: visit.visitorCompany,
+            hostName: `${visit.host.firstName} ${visit.host.lastName}`,
+            hostId: visit.host._id.toString(),
+            companyName: 'SecurITI',
+            status: 'rejected',
+            reason: visit.reason,
+            scheduledDate: visit.scheduledDate,
+            destination: visit.destination,
+            rejectionReason: visit.rejectionReason
+          });
+          console.log('✅ [REJECT-TOKEN] Email sent successfully');
+        } catch (mailErr) {
+          console.error('❌ [REJECT-TOKEN] Email error:', mailErr?.message);
+        }
       }
     
     const redirect = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/visit-confirmation?result=rejected`;

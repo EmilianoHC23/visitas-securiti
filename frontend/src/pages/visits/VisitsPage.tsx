@@ -58,9 +58,18 @@ const VisitCard: React.FC<{
         }
     };
     
-    // Tiempo de espera en tiempo real
+    // Tiempo de espera/transcurrido en tiempo real según el estado
+    let timeReference = visit.scheduledDate;
+    if (visit.status === VisitStatus.PENDING) {
+        timeReference = visit.createdAt || visit.scheduledDate;
+    } else if (visit.status === VisitStatus.APPROVED) {
+        timeReference = visit.approvedAt || visit.updatedAt || visit.scheduledDate;
+    } else if (visit.status === VisitStatus.CHECKED_IN) {
+        timeReference = visit.checkInTime || visit.scheduledDate;
+    }
+    
     const showElapsed = visit.status === VisitStatus.PENDING || visit.status === VisitStatus.APPROVED || visit.status === VisitStatus.CHECKED_IN;
-    const elapsed = showElapsed ? useElapsedTime(visit.checkInTime || visit.scheduledDate) : null;
+    const elapsed = showElapsed ? useElapsedTime(timeReference) : null;
     
     const formattedDate = new Date(visit.scheduledDate).toLocaleDateString('es-ES', {
         day: '2-digit',

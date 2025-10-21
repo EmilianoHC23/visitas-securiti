@@ -25,8 +25,8 @@ export const ApprovedVisitModal: React.FC<ApprovedVisitModalProps> = ({
     setAssignedResource(visit.assignedResource || '');
 
     const updateElapsedTime = () => {
-      // Calcular tiempo de espera desde el registro original (NO reiniciar al aprobar)
-      const start = new Date(visit.scheduledDate);
+      // Calcular tiempo transcurrido desde que se aprobó la visita
+      const start = new Date(visit.approvedAt || visit.updatedAt || visit.scheduledDate);
       const now = new Date();
       const diffMs = now.getTime() - start.getTime();
       const minutes = Math.floor(diffMs / 60000);

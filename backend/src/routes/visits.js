@@ -618,23 +618,7 @@ router.post('/checkin/:id', auth, async (req, res) => {
     }
     await visit.save();
     await new VisitEvent({ visitId: visit._id, type: 'check-in' }).save();
-    // Optional: notify visitor of check-in confirmation
-    if (visit.visitorEmail) {
-      try {
-        await require('../services/emailService').sendVisitorNotificationEmail({
-          visitorEmail: visit.visitorEmail,
-          visitorName: visit.visitorName,
-          hostName: `${visit.host.firstName} ${visit.host.lastName}`,
-          companyName: 'SecurITI',
-          status: 'checked-in',
-          reason: visit.reason,
-          scheduledDate: visit.scheduledDate,
-          destination: visit.destination
-        });
-      } catch (mailErr) {
-        console.warn('Email notify error (check-in):', mailErr?.message || mailErr);
-      }
-    }
+    // Ya no enviar email al visitante en check-in para evitar confusiones o estados erróneos
     res.json(visit);
   } catch (e) {
     console.error('Check-in error:', e);

@@ -184,15 +184,15 @@ class EmailService {
       const accentColor = '#f97316'; // Naranja SecuriTI
       const statusColor = isApproved ? '#10b981' : '#ef4444';
 
-      // QR para futuras visitas - incluye URL con parámetros para pre-llenar el formulario
+      // QR para futuras visitas - JSON compatible con el escáner del panel (VisitRegistrationSidePanel)
+      // Solo debe prellenar: foto (si hay), nombre, email, empresa. El anfitrión y la razón se llenan manualmente.
       const qrDataForFutureVisits = JSON.stringify({
-        visitorName: data.visitorName,
-        visitorCompany: data.visitorCompany || '',
-        visitorEmail: data.visitorEmail,
-        hostId: data.hostId,
-        visitorPhoto: data.visitorPhoto || ''
+        type: 'visitor-info',
+        email: data.visitorEmail,
+        name: data.visitorName,
+        company: data.visitorCompany || '',
+        photo: data.visitorPhoto || ''
       });
-      const futureVisitsUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/public/register?data=${encodeURIComponent(qrDataForFutureVisits)}`;
 
       // QR específico para esta visita (check-in/check-out)
       const qrDataForThisVisit = JSON.stringify({
@@ -292,7 +292,7 @@ class EmailService {
                                         <h4 style="color: #1e40af; margin: 0 0 10px 0; font-size: 16px;">QR Reutilizable</h4>
                                         <p style="font-size: 12px; color: #1e3a8a; margin: 0 0 15px 0;">Para futuras visitas</p>
                                         <div style="background-color: #ffffff; padding: 10px; display: inline-block; border-radius: 8px;">
-                                          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(futureVisitsUrl)}" 
+                                          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrDataForFutureVisits)}" 
                                                alt="QR reutilizable" 
                                                style="width: 150px; height: 150px; display: block;" />
                                         </div>

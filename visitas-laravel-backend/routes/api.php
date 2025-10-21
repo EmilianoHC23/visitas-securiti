@@ -13,6 +13,8 @@ Route::post('invitations/{token}/accept', [App\Http\Controllers\InvitationContro
 // Frontend-friendly invitation endpoints
 Route::get('invitations/verify/{token}', [App\Http\Controllers\InvitationController::class, 'verify']);
 Route::post('invitations/complete', [App\Http\Controllers\InvitationController::class, 'complete']);
+// Public visit registration expected by frontend
+Route::post('public/visit', [App\Http\Controllers\VisitController::class, 'storePublic']);
 Route::post('approvals/{token}/decision', [App\Http\Controllers\ApprovalController::class, 'decision']);
 
 Route::middleware(['auth:api'])->group(function () {
@@ -44,6 +46,13 @@ Route::middleware(['auth:api'])->group(function () {
         Route::delete('accesses/{id}', [App\Http\Controllers\AccessController::class, 'destroy']);
     });
 
+    // Singular aliases expected by frontend: /access
+    Route::get('access', [App\Http\Controllers\AccessController::class, 'index']);
+    Route::get('access/{id}', [App\Http\Controllers\AccessController::class, 'show']);
+    Route::post('access', [App\Http\Controllers\AccessController::class, 'store']);
+    Route::put('access/{id}', [App\Http\Controllers\AccessController::class, 'update']);
+    Route::delete('access/{id}', [App\Http\Controllers\AccessController::class, 'destroy']);
+
     // CRUD de visitas
     Route::get('visits', [App\Http\Controllers\VisitController::class, 'index']);
     Route::post('visits', [App\Http\Controllers\VisitController::class, 'store']);
@@ -60,9 +69,21 @@ Route::middleware(['auth:api'])->group(function () {
     Route::post('visits/{visit}/checkout', [App\Http\Controllers\VisitController::class, 'checkout']);
     Route::post('visits/{visit}/cancel', [App\Http\Controllers\VisitController::class, 'cancel']);
     // Frontend-friendly action routes (id-based)
-    Route::post('visits/checkin/{id}', function ($id) { return App\Http\Controllers\VisitController::checkin(\App\Models\Visit::findOrFail($id)); });
-    Route::post('visits/checkout/{id}', function ($id) { return App\Http\Controllers\VisitController::checkout(\App\Models\Visit::findOrFail($id)); });
-    Route::post('visits/cancel/{id}', function ($id) { return App\Http\Controllers\VisitController::cancel(\App\Models\Visit::findOrFail($id)); });
+    Route::post('visits/checkin/{id}', function ($id) {
+        $visit = \App\Models\Visit::findOrFail($id);
+        $controller = app()->make(App\Http\Controllers\VisitController::class);
+        return $controller->checkin($visit);
+    });
+    Route::post('visits/checkout/{id}', function ($id) {
+        $visit = \App\Models\Visit::findOrFail($id);
+        $controller = app()->make(App\Http\Controllers\VisitController::class);
+        return $controller->checkout($visit);
+    });
+    Route::post('visits/cancel/{id}', function ($id) {
+        $visit = \App\Models\Visit::findOrFail($id);
+        $controller = app()->make(App\Http\Controllers\VisitController::class);
+        return $controller->cancel($visit);
+    });
     // QR scan endpoint expected by frontend
     Route::post('visits/scan-qr', [App\Http\Controllers\VisitController::class, 'scanQr']);
 
@@ -102,6 +123,17 @@ Route::middleware(['auth:api'])->group(function () {
     // Invitation utilities expected by frontend
     Route::post('invitations/resend/{userId}', [App\Http\Controllers\InvitationController::class, 'resend']);
     Route::get('invitations/test-smtp', [App\Http\Controllers\InvitationController::class, 'testSmtp']);
+
+    // BLACKLIST MANAGEMENT (frontend expects /blacklist)
+    if (class_exists(\App\Http\Controllers\BlacklistController::class)) {
+        Route::get('blacklist', [App\Http\Controllers\BlacklistController::class, 'index']);
+        Route::post('blacklist', [App\Http\Controllers\BlacklistController::class, 'store']);
+        Route::delete('blacklist/{id}', [App\Http\Controllers\BlacklistController::class, 'destroy']);
+    } else {
+        Route::get('blacklist', function () { return response()->json(['message' => 'Not implemented'], 404); });
+        Route::post('blacklist', function () { return response()->json(['message' => 'Not implemented'], 404); });
+        Route::delete('blacklist/{id}', function () { return response()->json(['message' => 'Not implemented'], 404); });
+    }
 
     // Approvals (protected listing)
     Route::get('approvals', [App\Http\Controllers\ApprovalController::class, 'index']);

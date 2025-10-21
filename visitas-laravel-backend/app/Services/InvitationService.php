@@ -21,6 +21,11 @@ class InvitationService
         }
         $data['status'] = $data['status'] ?? 'pending';
 
+        // Ensure invited_by is set (use the authenticated user if available)
+        if (! isset($data['invited_by']) || empty($data['invited_by'])) {
+            $data['invited_by'] = auth()->id() ?? null;
+        }
+
         $invitation = Invitation::create($data);
 
         // Dispatch job to send email

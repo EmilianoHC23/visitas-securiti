@@ -80,7 +80,6 @@ Si quieres que incluya una versión resumida directamente en este `README.md`, d
 
 Los reportes generados por la GitHub Action `API - Newman collection` se publican como artifacts del job.
 
-- Ve a Actions → selecciona la ejecución del workflow → abre el job correspondiente → descarga los artifacts (por ejemplo `phpunit-report` y `newman-reports`).
 
 Comandos útiles para ejecutar localmente:
 
@@ -99,3 +98,45 @@ newman run docs/postman_collection.json --env-var "baseUrl=http://127.0.0.1:8000
 ```
 
 Recuerda no guardar credenciales reales en el repositorio. Usa variables de entorno o secrets en CI.
+
+## Notas rápidas para integración con el frontend
+
+He añadido varias rutas alias para facilitar la integración sin cambios en el frontend. Resumen:
+
+- Auth: `POST /auth/login` (alias a `/login`), `GET /auth/me` (alias a `/me`), `auth/logout`, `auth/refresh`.
+- Visits:
+	- `GET /visits`, `POST /visits` (crear visita protegida)
+	- `POST /visits/register` (alias público/self-register)
+	- `PUT /visits/{id}/status` (alias a update)
+	- Action aliases: `POST /visits/checkin/{id}`, `POST /visits/checkout/{id}`, `POST /visits/cancel/{id}` (delegan a los controladores existentes)
+	- `POST /visits/scan-qr` (busca por `visit.qr_token` o `company.qr_code` y devuelve info)
+	- `GET /visits/agenda` (alias a index)
+- Visit events: `GET /visits/{visit}/events`, `POST /visits/{visit}/events` (ahora validado por `StoreVisitEventRequest`).
+- Invitations: `GET /invitations/verify/{token}`, `POST /invitations/complete`, `POST /invitations/resend/{userId}`, `GET /invitations/test-smtp` (wrappers mínimos).
+- Company: `GET /company/config`, `GET /company/qr-code`.
+- Access: añadidos aliases singulares `/access` que delegan a `AccessController` (además de las rutas existentes `accesses`).
+- Blacklist: añadida ruta `/blacklist` (placeholder que devuelve 404 si no existe `BlacklistController`).
+
+Consejos rápidos de smoke-test (PowerShell):
+
+```powershell
+# 1) Login
+Invoke-RestMethod -Method Post -Uri 'http://localhost:3001/api/auth/login' -Body (@{username='admin@example.com'; password='secret'} | ConvertTo-Json) -ContentType 'application/json'
+
+# 2) Crear visita (con token)
+#$token = '<TOKEN_AQUI>'
+Invoke-RestMethod -Method Post -Uri 'http://localhost:3001/api/visits' -Headers @{ Authorization = "Bearer $token" } -Body (@{
+	visitorName = 'Prueba';
+	reason = 'Reunión';
+	hostId = 1;
+	scheduledDate = '2025-10-21T10:00:00';
+} | ConvertTo-Json) -ContentType 'application/json'
+
+# 3) Check-in (alias)
+Invoke-RestMethod -Method Post -Uri 'http://localhost:3001/api/visits/checkin/123' -Headers @{ Authorization = "Bearer $token" }
+
+# 4) Scan QR
+Invoke-RestMethod -Method Post -Uri 'http://localhost:3001/api/visits/scan-qr' -Body (@{ qrToken = 'abc123' } | ConvertTo-Json) -ContentType 'application/json'
+```
+
+Si quieres que añada aliases adicionales (p. ej. `/access/public/*` o endpoints faltantes en `dashboard`/`reports`) los agrego rápidamente.

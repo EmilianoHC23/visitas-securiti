@@ -10,6 +10,7 @@ use App\Models\Access;
 use App\Policies\VisitPolicy;
 use App\Policies\CompanyPolicy;
 use App\Policies\AccessPolicy;
+use App\Policies\InvitationPolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -22,6 +23,7 @@ class AuthServiceProvider extends ServiceProvider
         Visit::class => VisitPolicy::class,
         Company::class => CompanyPolicy::class,
         Access::class => AccessPolicy::class,
+        \App\Models\Invitation::class => InvitationPolicy::class,
     ];
 
     /**

@@ -8,8 +8,15 @@ class UpdateVisitRequest extends FormRequest
 {
     public function authorize()
     {
-        // TODO: implement proper authorization (policies)
-        return true;
+        $visit = $this->route('visit');
+        if (! $visit) {
+            return false;
+        }
+        $user = $this->user();
+        if (! $user) {
+            return false;
+        }
+        return $user->can('update', $visit);
     }
 
     public function rules()

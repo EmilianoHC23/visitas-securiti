@@ -156,7 +156,8 @@ class VisitController extends Controller
     // Scan QR token to find a visit or company public data (frontend expects this)
     public function scanQr(Request $request)
     {
-        $token = $request->input('qrToken');
+        // Accept either 'qrToken' or a more generic 'code' field used by frontend
+        $token = $request->input('qrToken') ?? $request->input('code');
         if (! $token) {
             return response()->json(['message' => 'qrToken required'], 422);
         }
@@ -174,5 +175,36 @@ class VisitController extends Controller
         }
 
         return response()->json(['message' => 'Not found'], 404);
+    }
+
+    // Public visit registration (no auth required)
+    public function storePublic(Request $request)
+    {
+        // Reuse validation rules from StoreVisitRequest
+        $validator = \Validator::make($request->all(), (new StoreVisitRequest())->rules());
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $data = $validator->validated();
+
+        // Map visit_date + visit_time to scheduled_date if needed
+        if (empty($data['scheduled_date']) && !empty($data['visit_date'])) {
+            $time = $data['visit_time'] ?? '00:00:00';
+            $data['scheduled_date'] = \Illuminate\Support\Carbon::parse($data['visit_date'].' '.$time)->toDateTimeString();
+        }
+
+        // Deduce company_id from host if provided
+        if (empty($data['company_id']) && !empty($data['host_id'])) {
+            $host = \App\Models\User::find($data['host_id']);
+            if ($host && !empty($host->company_id)) {
+                $data['company_id'] = $host->company_id;
+            }
+        }
+
+        $visit = Visit::create($data);
+        VisitEvent::create(['visit_id' => $visit->id, 'type' => 'created', 'timestamp' => now()]);
+
+        return response()->json($visit, 201);
     }
 }

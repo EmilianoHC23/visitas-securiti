@@ -8,8 +8,18 @@ class StoreVisitEventRequest extends FormRequest
 {
     public function authorize()
     {
-        // Allow and let controller/policy handle stricter rules if needed
-        return true;
+        // Allow only users who can update the related Visit (host, reception, admin)
+        $visit = $this->route('visit');
+        if (! $visit) {
+            return true;
+        }
+
+        $user = $this->user();
+        if (! $user) {
+            return false;
+        }
+
+        return $user->can('update', $visit);
     }
 
     public function rules()

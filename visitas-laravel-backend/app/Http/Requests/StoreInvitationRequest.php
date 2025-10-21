@@ -3,13 +3,15 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Models\Invitation;
 
 class StoreInvitationRequest extends FormRequest
 {
     public function authorize()
     {
-        // TODO: implement authorization logic (company admin)
-        return true;
+        $user = $this->user();
+        if (! $user) return false;
+        return $user->can('create', Invitation::class);
     }
 
     public function rules()

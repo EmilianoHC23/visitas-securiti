@@ -8,8 +8,11 @@ class StoreVisitRequest extends FormRequest
 {
     public function authorize()
     {
-        // TODO: implement proper authorization (policies)
-        return true;
+        $user = $this->user();
+        if (! $user) {
+            return false;
+        }
+        return $user->can('create', \App\Models\Visit::class);
     }
 
     public function rules()

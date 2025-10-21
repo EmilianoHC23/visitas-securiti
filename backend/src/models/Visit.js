@@ -92,6 +92,14 @@ const visitSchema = new mongoose.Schema({
     type: String,
     trim: true,
     default: null
+  },
+  approvedAt: {
+    type: Date,
+    default: null
+  },
+  rejectedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true

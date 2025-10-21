@@ -50,6 +50,8 @@ export interface Visit {
   rejectionReason?: string;
   qrToken?: string;
   destination?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }

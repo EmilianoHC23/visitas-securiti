@@ -36,7 +36,7 @@ export const VisitTimelineModal: React.FC<VisitTimelineModalProps> = ({
       type: 'approved',
       title: 'Visita aprobada',
       description: `Por ${visit.host.firstName} ${visit.host.lastName}`,
-      timestamp: visit.updatedAt || visit.scheduledDate,
+      timestamp: visit.approvedAt || visit.updatedAt || visit.scheduledDate,
       icon: CheckCircle,
       color: 'green'
     });
@@ -45,7 +45,7 @@ export const VisitTimelineModal: React.FC<VisitTimelineModalProps> = ({
       type: 'rejected',
       title: 'Visita rechazada',
       description: visit.rejectionReason || 'Sin motivo especificado',
-      timestamp: visit.updatedAt || visit.scheduledDate,
+      timestamp: visit.rejectedAt || visit.updatedAt || visit.scheduledDate,
       icon: XCircle,
       color: 'red'
     });

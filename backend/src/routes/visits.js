@@ -128,6 +128,7 @@ router.post('/', auth, async (req, res) => {
     const visit = new Visit({
       visitorName,
       visitorCompany: visitorCompany || '',
+      visitorPhoto: req.body.visitorPhoto,
       reason,
       destination: req.body.destination || 'SecurITI',
       host: hostId,
@@ -275,11 +276,13 @@ router.put('/:id/status', auth, async (req, res) => {
     const updateData = { status };
     if (status === 'rejected' && reason) {
       updateData.rejectionReason = reason;
+      updateData.rejectedAt = new Date();
     }
     let eventType = null;
     if (status === 'approved' && !visit.qrToken) {
       // Generar qrToken único
       updateData.qrToken = require('crypto').randomBytes(16).toString('hex');
+      updateData.approvedAt = new Date();
     }
     if (status === 'checked-in') {
       updateData.checkInTime = new Date();
@@ -505,6 +508,7 @@ router.get('/approve/:token', async (req, res) => {
     if (!visit) return res.status(404).send('Visita no encontrada');
     
     visit.status = 'approved';
+    visit.approvedAt = new Date();
     if (!visit.qrToken) {
       visit.qrToken = require('crypto').randomBytes(16).toString('hex');
     }
@@ -521,12 +525,15 @@ router.get('/approve/:token', async (req, res) => {
         visitId: visit._id.toString(),
         visitorEmail: visit.visitorEmail,
         visitorName: visit.visitorName,
+        visitorCompany: visit.visitorCompany,
         hostName: `${visit.host.firstName} ${visit.host.lastName}`,
+        hostId: visit.host._id.toString(),
         companyName: 'SecurITI',
         status: 'approved',
         reason: visit.reason,
         scheduledDate: visit.scheduledDate,
-        destination: visit.destination
+        destination: visit.destination,
+        qrToken: visit.qrToken
       });
     }
     
@@ -548,6 +555,7 @@ router.get('/reject/:token', async (req, res) => {
     if (!visit) return res.status(404).send('Visita no encontrada');
     
     visit.status = 'rejected';
+    visit.rejectedAt = new Date();
     await visit.save();
     approval.status = 'decided';
     approval.decision = 'rejected';
@@ -558,14 +566,18 @@ router.get('/reject/:token', async (req, res) => {
       if (visit.visitorEmail) {
         await visit.populate('host', 'firstName lastName');
         await require('../services/emailService').sendVisitorNotificationEmail({
+          visitId: visit._id.toString(),
           visitorEmail: visit.visitorEmail,
           visitorName: visit.visitorName,
+          visitorCompany: visit.visitorCompany,
           hostName: `${visit.host.firstName} ${visit.host.lastName}`,
+          hostId: visit.host._id.toString(),
           companyName: 'SecurITI',
           status: 'rejected',
           reason: visit.reason,
           scheduledDate: visit.scheduledDate,
-          destination: visit.destination
+          destination: visit.destination,
+          rejectionReason: visit.rejectionReason
         });
       }
     

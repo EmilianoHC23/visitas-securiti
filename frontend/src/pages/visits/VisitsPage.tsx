@@ -61,10 +61,13 @@ const VisitCard: React.FC<{
     // Tiempo de espera/transcurrido en tiempo real según el estado
     let timeReference = visit.scheduledDate;
     if (visit.status === VisitStatus.PENDING) {
+        // Tiempo desde que se registró
         timeReference = visit.createdAt || visit.scheduledDate;
     } else if (visit.status === VisitStatus.APPROVED) {
-        timeReference = visit.approvedAt || visit.updatedAt || visit.scheduledDate;
+        // CONTINUAR contando desde el registro, NO reiniciar
+        timeReference = visit.createdAt || visit.scheduledDate;
     } else if (visit.status === VisitStatus.CHECKED_IN) {
+        // REINICIAR tiempo desde que entró
         timeReference = visit.checkInTime || visit.scheduledDate;
     }
     

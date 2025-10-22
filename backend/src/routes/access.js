@@ -1,12 +1,14 @@
 const express = require('express');
 const Access = require('../models/Access');
 const Visit = require('../models/Visit');
+const Company = require('../models/Company');
 const { auth, authorize } = require('../middleware/auth');
 const emailService = require('../services/emailService');
+const { generateAccessInvitationQR } = require('../utils/qrGenerator');
 
 const router = express.Router();
 
-// Get all access codes
+// ==================== GET ALL ACCESS CODES ====================
 router.get('/', auth, authorize(['admin', 'reception', 'host']), async (req, res) => {
   try {
     const { status } = req.query;
@@ -18,12 +20,12 @@ router.get('/', auth, authorize(['admin', 'reception', 'host']), async (req, res
 
     // If user is host, only show their access codes
     if (req.user.role === 'host') {
-      filter.createdBy = req.user._id;
+      filter.creatorId = req.user._id;
     }
-    // Reception can see all access codes (read-only)
 
     const accesses = await Access.find(filter)
-      .populate('createdBy', 'firstName lastName email')
+      .populate('creatorId', 'firstName lastName email')
+      .populate('notifyUsers', 'firstName lastName email')
       .sort({ createdAt: -1 });
 
     res.json(accesses);
@@ -33,441 +35,527 @@ router.get('/', auth, authorize(['admin', 'reception', 'host']), async (req, res
   }
 });
 
-// Create new access code
-router.post('/', auth, authorize(['admin', 'reception', 'host']), async (req, res) => {
+// ==================== GET ACCESS FOR AGENDA/CALENDAR ====================
+router.get('/agenda', auth, authorize(['admin', 'reception', 'host']), async (req, res) => {
   try {
-    console.log('=== CREATE ACCESS CODE DEBUG ===');
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
-    console.log('User:', JSON.stringify(req.user, null, 2));
-
-    const { 
-      title, 
-      description, 
-      schedule, 
-      settings,
-      invitedEmails
-    } = req.body;
-
-    console.log('Extracted values:', {
-      title,
-      description,
-      schedule,
-      settings,
-      invitedEmails
-    });
-
-    if (!title || (!schedule?.date && !schedule?.startDate)) {
-      console.log('Validation failed: missing title or schedule date');
-      return res.status(400).json({ message: 'Título y fecha son requeridos' });
-    }
-
-    // Handle both old format (date) and new format (startDate/endDate)
-    let startDate, endDate;
+    const { start, end } = req.query;
     
-    if (schedule.startDate && schedule.endDate) {
-      // New format: direct startDate and endDate
-      startDate = new Date(schedule.startDate);
-      endDate = new Date(schedule.endDate);
-    } else {
-      // Old format: convert date + time to startDate/endDate
-      console.log('Creating start date from:', schedule.date);
-      startDate = new Date(schedule.date);
-      if (schedule.startTime) {
-        const [hours, minutes] = schedule.startTime.split(':');
-        startDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      } else {
-        startDate.setHours(9, 0, 0, 0); // Default 9:00 AM
-      }
-
-      console.log('Creating end date from:', schedule.date);
-      endDate = new Date(schedule.date);
-      if (schedule.endTime) {
-        const [hours, minutes] = schedule.endTime.split(':');
-        endDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      } else {
-        endDate.setHours(17, 0, 0, 0); // Default 5:00 PM
-      }
-    }
-
-    // If end time is before start time, assume it's next day
-    if (endDate <= startDate) {
-      endDate.setDate(endDate.getDate() + 1);
-    }
-
-    console.log('Computed dates:', {
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString()
-    });
-
-    const accessData = {
-      title,
-      description,
-      createdBy: req.user._id,
+    const filter = { 
       companyId: req.user.companyId,
-      settings: {
-        autoApproval: settings?.autoApproval || true,
-        maxUses: settings?.maxUses || 1,
-        allowGuests: settings?.allowGuests || false,
-        requireApproval: settings?.requireApproval || false
-      },
-      schedule: {
-        startDate,
-        endDate,
-        startTime: schedule.startTime || '09:00',
-        endTime: schedule.endTime || '17:00',
-        recurrence: schedule.recurrence || 'none'
-      },
-      invitedEmails: invitedEmails?.map(email => ({
-        email,
-        sentAt: new Date(),
-        status: 'sent'
-      })) || []
+      status: { $in: ['active', 'finalized'] }
     };
 
-    console.log('Access data to save:', JSON.stringify(accessData, null, 2));
+    // Filter by date range if provided
+    if (start && end) {
+      filter.$or = [
+        { startDate: { $gte: new Date(start), $lte: new Date(end) } },
+        { endDate: { $gte: new Date(start), $lte: new Date(end) } }
+      ];
+    }
 
-    const access = new Access(accessData);
-    console.log('Access model created, attempting to save...');
-    
-    await access.save();
-    console.log('Access saved successfully');
-    
-    await access.populate('createdBy', 'firstName lastName email');
-    console.log('Access populated successfully');
+    // If user is host, only show their access codes
+    if (req.user.role === 'host') {
+      filter.creatorId = req.user._id;
+    }
 
-    res.status(201).json(access);
+    const accesses = await Access.find(filter)
+      .populate('creatorId', 'firstName lastName email')
+      .sort({ startDate: 1 });
+
+    res.json(accesses);
   } catch (error) {
-    console.error('Create access error:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ message: 'Error interno del servidor', error: error.message });
-  }
-});
-
-// Redeem access code (public endpoint)
-router.post('/redeem', async (req, res) => {
-  try {
-    console.log('🎫 === REDEEM ACCESS CODE START ===');
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
-    console.log('Request headers:', JSON.stringify(req.headers, null, 2));
-    console.log('Request URL:', req.url);
-    console.log('Request method:', req.method);
-    
-    const { accessCode, visitorData } = req.body;
-
-    if (!accessCode || !visitorData) {
-      console.log('❌ Missing required data:', { accessCode: !!accessCode, visitorData: !!visitorData });
-      return res.status(400).json({ message: 'Código de acceso y datos del visitante son requeridos' });
-    }
-
-    console.log('🔍 Looking for access code:', accessCode);
-    
-    const access = await Access.findOne({ 
-      accessCode, 
-      status: 'active' 
-    }).populate('createdBy', 'firstName lastName email');
-
-    if (!access) {
-      console.log('❌ Access code not found or inactive');
-      // Let's also check if the code exists but is inactive
-      const inactiveAccess = await Access.findOne({ accessCode });
-      if (inactiveAccess) {
-        console.log('📋 Found inactive access:', {
-          id: inactiveAccess._id,
-          status: inactiveAccess.status,
-          title: inactiveAccess.title
-        });
-      } else {
-        console.log('📋 No access code found with this code at all');
-      }
-      return res.status(404).json({ message: 'Código de acceso no válido o expirado' });
-    }
-
-    console.log('✅ Access code found:', {
-      id: access._id,
-      title: access.title,
-      status: access.status,
-      usageCount: access.usageCount,
-      maxUses: access.settings.maxUses
-    });
-
-    // Check if access is within valid date range with flexible validation
-    const now = new Date();
-    const startDate = new Date(access.schedule.startDate);
-    const endDate = new Date(access.schedule.endDate);
-    
-    // Extract just the date parts for comparison (ignore time completely)
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-    const currentDay = now.getDate();
-    
-    const startYear = startDate.getFullYear();
-    const startMonth = startDate.getMonth();
-    const startDay = startDate.getDate();
-    
-    const endYear = endDate.getFullYear();
-    const endMonth = endDate.getMonth();
-    const endDay = endDate.getDate();
-    
-    // Create simple date numbers for comparison (YYYYMMDD format)
-    const currentDateNum = currentYear * 10000 + currentMonth * 100 + currentDay;
-    const startDateNum = startYear * 10000 + startMonth * 100 + startDay;
-    const endDateNum = endYear * 10000 + endMonth * 100 + endDay;
-    
-    console.log('🕐 Date validation debug:');
-    console.log('Access code:', accessCode);
-    console.log('Access title:', access.title);
-    console.log('Current date components:', { year: currentYear, month: currentMonth, day: currentDay });
-    console.log('Start date components:', { year: startYear, month: startMonth, day: startDay });
-    console.log('End date components:', { year: endYear, month: endMonth, day: endDay });
-    console.log('Date numbers for comparison:');
-    console.log('  - Current:', currentDateNum);
-    console.log('  - Start:', startDateNum);
-    console.log('  - End:', endDateNum);
-    console.log('Validation checks:');
-    console.log('  - Is after start?', currentDateNum >= startDateNum);
-    console.log('  - Is before end?', currentDateNum <= endDateNum);
-    
-    // Simple numeric comparison avoids all timezone issues
-    const isWithinDateRange = currentDateNum >= startDateNum && currentDateNum <= endDateNum;
-    
-    if (!isWithinDateRange) {
-      console.log('❌ Access code date validation failed');
-      console.log('📅 Detailed info:');
-      console.log('  - Current date string:', now.toDateString());
-      console.log('  - Start date string:', startDate.toDateString());
-      console.log('  - End date string:', endDate.toDateString());
-      console.log('  - Schedule object:', JSON.stringify(access.schedule, null, 2));
-      
-      return res.status(400).json({ 
-        message: 'Código de acceso fuera del período válido',
-        debug: {
-          currentDate: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`,
-          validFrom: `${startYear}-${String(startMonth + 1).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`,
-          validUntil: `${endYear}-${String(endMonth + 1).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`,
-          accessTitle: access.title,
-          currentDateNum,
-          startDateNum,
-          endDateNum
-        }
-      });
-    }
-    
-    console.log('✅ Date validation passed');
-
-    // Check usage limits
-    if (access.usageCount >= access.settings.maxUses) {
-      return res.status(400).json({ message: 'Código de acceso ha alcanzado el límite de usos' });
-    }
-
-    // Create visit from access code
-    const visit = new Visit({
-      visitorName: visitorData.name,
-      visitorCompany: visitorData.company,
-      visitorEmail: visitorData.email,
-      visitorPhone: visitorData.phone,
-      visitorPhoto: visitorData.photo,
-      host: access.createdBy._id,
-      reason: access.title,
-      status: access.settings.autoApproval ? 'approved' : 'pending',
-      visitType: 'access-code',
-      accessCode: accessCode,
-      accessId: access._id,
-      scheduledDate: new Date(),
-      companyId: access.companyId
-    });
-
-    await visit.save();
-    await visit.populate('host', 'firstName lastName email');
-
-    // Update access usage count
-    access.usageCount += 1;
-    await access.save();
-
-    // Enviar notificación al creador del evento
-    try {
-      await emailService.sendAccessRegistrationNotification({
-        creatorEmail: access.createdBy.email,
-        creatorName: `${access.createdBy.firstName} ${access.createdBy.lastName}`,
-        eventTitle: access.title,
-        eventDate: access.schedule.startDate,
-        visitorName: visitorData.name,
-        visitorEmail: visitorData.email,
-        visitorCompany: visitorData.company || '',
-        visitorPhone: visitorData.phone || '',
-        visitorPhoto: visitorData.photo || '',
-        companyName: 'Securiti'
-      });
-      console.log('✅ Creator notification email sent successfully');
-    } catch (emailError) {
-      console.error('⚠️  Error sending creator notification email:', emailError);
-      // No bloquear el registro si falla el email
-    }
-
-    res.json({
-      message: 'Código canjeado exitosamente',
-      visit,
-      autoApproved: access.settings.autoApproval
-    });
-  } catch (error) {
-    console.error('Redeem access error:', error);
+    console.error('Get agenda accesses error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
 
-// Get access details by code (public)
-router.get('/public/:accessCode', async (req, res) => {
+// ==================== GET SINGLE ACCESS ====================
+router.get('/:id', auth, authorize(['admin', 'reception', 'host']), async (req, res) => {
   try {
-    const { accessCode } = req.params;
-
-    const access = await Access.findOne({ 
-      accessCode, 
-      status: 'active' 
-    }).populate('createdBy', 'firstName lastName');
-
-    if (!access) {
-      return res.status(404).json({ message: 'Código de acceso no encontrado' });
-    }
-
-    // Return only necessary public information
-    res.json({
-      title: access.title,
-      description: access.description,
-      host: access.createdBy,
-      schedule: access.schedule,
-      settings: {
-        requireApproval: access.settings.requireApproval,
-        allowGuests: access.settings.allowGuests
-      },
-      usageCount: access.usageCount,
-      maxUses: access.settings.maxUses
-    });
-  } catch (error) {
-    console.error('Get public access error:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
-  }
-});
-
-// Update access status
-router.put('/:id/status', auth, authorize(['admin', 'reception', 'host']), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    // Reception can only update status, not edit access details
-    // Host can only update their own access codes
-    const access = await Access.findOneAndUpdate(
-      { 
-        _id: id, 
-        companyId: req.user.companyId,
-        ...(req.user.role === 'host' ? { createdBy: req.user._id } : {})
-      },
-      { status },
-      { new: true }
-    ).populate('createdBy', 'firstName lastName email');
+    const access = await Access.findById(req.params.id)
+      .populate('creatorId', 'firstName lastName email')
+      .populate('notifyUsers', 'firstName lastName email');
 
     if (!access) {
       return res.status(404).json({ message: 'Acceso no encontrado' });
     }
 
+    // Check permissions
+    if (req.user.role === 'host' && access.creatorId._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'No tienes permiso para ver este acceso' });
+    }
+
     res.json(access);
   } catch (error) {
-    console.error('Update access status error:', error);
+    console.error('Get access error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
 
-// Update access code
-router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
+// ==================== CREATE NEW ACCESS ====================
+router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
   try {
-    const { id } = req.params;
-    const updates = req.body;
+    const { 
+      eventName,
+      type,
+      startDate,
+      endDate,
+      location,
+      eventImage,
+      invitedUsers,
+      notifyUsers,
+      settings,
+      additionalInfo
+    } = req.body;
 
-    console.log('=== UPDATE ACCESS CODE DEBUG ===');
-    console.log('Access ID:', id);
-    console.log('Updates:', JSON.stringify(updates, null, 2));
-
-    // Find the access code
-    const access = await Access.findById(id);
-    if (!access) {
-      return res.status(404).json({ message: 'Código de acceso no encontrado' });
+    // Validations
+    if (!eventName || !type || !startDate || !endDate) {
+      return res.status(400).json({ 
+        message: 'Nombre del evento, tipo, fecha de inicio y fecha de fin son requeridos' 
+      });
     }
 
-    // Check if user has permission to update this access
-    if (req.user.role === 'host' && access.createdBy.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'No tiene permisos para actualizar este código' });
+    if (invitedUsers && !Array.isArray(invitedUsers)) {
+      return res.status(400).json({ message: 'invitedUsers debe ser un array' });
     }
 
-    // Verify company ownership
-    if (access.companyId !== req.user.companyId) {
-      return res.status(403).json({ message: 'No tiene permisos para actualizar este código' });
+    // Get company info for emails
+    const company = await Company.findById(req.user.companyId);
+    if (!company) {
+      return res.status(404).json({ message: 'Empresa no encontrada' });
     }
 
-    // Update the access code
-    const updatedAccess = await Access.findByIdAndUpdate(
-      id,
-      updates,
-      { new: true, runValidators: true }
-    ).populate('createdBy', 'firstName lastName email');
+    // Create access
+    const access = new Access({
+      eventName,
+      type,
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      location: location || '',
+      eventImage: eventImage || '',
+      creatorId: req.user._id,
+      companyId: req.user.companyId,
+      invitedUsers: invitedUsers ? invitedUsers.map(user => ({
+        name: user.name,
+        email: user.email || '',
+        phone: user.phone || '',
+        company: user.company || '',
+        attendanceStatus: 'pendiente'
+      })) : [],
+      notifyUsers: notifyUsers || [],
+      settings: {
+        sendAccessByEmail: settings?.sendAccessByEmail !== false,
+        language: settings?.language || 'es',
+        noExpiration: settings?.noExpiration || false
+      },
+      additionalInfo: additionalInfo || '',
+      status: 'active'
+    });
 
-    console.log('Access updated successfully');
-    res.json(updatedAccess);
+    await access.save();
+    await access.populate('creatorId', 'firstName lastName email');
+
+    // Send emails if enabled
+    if (access.settings.sendAccessByEmail) {
+      // Send confirmation email to creator
+      try {
+        await emailService.sendAccessCreatedEmail(
+          req.user.email,
+          {
+            creatorName: `${req.user.firstName} ${req.user.lastName}`,
+            eventName: access.eventName,
+            eventType: access.type,
+            startDate: access.startDate,
+            endDate: access.endDate,
+            location: access.location,
+            accessCode: access.accessCode,
+            invitedCount: access.invitedUsers.length
+          },
+          company
+        );
+      } catch (emailError) {
+        console.error('Error sending creator email:', emailError);
+      }
+
+      // Send invitation emails to guests
+      for (const guest of access.invitedUsers) {
+        if (guest.email) {
+          try {
+            // Generate QR code for guest
+            const qrCode = await generateAccessInvitationQR(access, guest);
+
+            await emailService.sendAccessInvitationEmail(
+              guest.email,
+              {
+                guestName: guest.name,
+                creatorName: `${req.user.firstName} ${req.user.lastName}`,
+                eventName: access.eventName,
+                eventType: access.type,
+                startDate: access.startDate,
+                endDate: access.endDate,
+                location: access.location,
+                accessCode: access.accessCode,
+                qrCode: qrCode
+              },
+              company
+            );
+          } catch (emailError) {
+            console.error(`Error sending invitation to ${guest.email}:`, emailError);
+          }
+        }
+      }
+    }
+
+    res.status(201).json(access);
   } catch (error) {
-    console.error('Update access error:', error);
+    console.error('Create access error:', error);
     res.status(500).json({ message: 'Error interno del servidor', error: error.message });
   }
 });
 
-// Delete access code
-router.delete('/:id', auth, authorize(['admin', 'reception', 'host']), async (req, res) => {
+// ==================== UPDATE ACCESS (LIMITED FIELDS) ====================
+router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
   try {
-    const { id } = req.params;
+    const access = await Access.findById(req.params.id)
+      .populate('creatorId', 'firstName lastName email');
 
-    console.log('=== DELETE ACCESS CODE DEBUG ===');
-    console.log('Access ID:', id);
-    console.log('User:', req.user.email);
-
-    // Find the access code
-    const access = await Access.findById(id);
     if (!access) {
-      return res.status(404).json({ message: 'Código de acceso no encontrado' });
+      return res.status(404).json({ message: 'Acceso no encontrado' });
     }
 
-    // Check if user has permission to delete this access
-    // Host can only delete their own codes, reception and admin can delete any
-    if (req.user.role === 'host' && access.createdBy.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'No tiene permisos para eliminar este código' });
+    // Check permissions
+    if (req.user.role === 'host' && access.creatorId._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'No tienes permiso para editar este acceso' });
     }
 
-    // Verify company ownership
-    if (access.companyId !== req.user.companyId) {
-      return res.status(403).json({ message: 'No tiene permisos para eliminar este código' });
+    // Only allow editing certain fields
+    const { endDate, eventImage, invitedUsers, additionalInfo } = req.body;
+
+    let modified = false;
+    const oldData = { ...access.toObject() };
+
+    // Update endDate (can only extend, not reduce)
+    if (endDate) {
+      const newEndDate = new Date(endDate);
+      if (newEndDate > access.endDate) {
+        access.endDate = newEndDate;
+        modified = true;
+      }
     }
 
-    // Enviar emails de cancelación antes de eliminar
-    try {
-      await require('../services/emailService').sendAccessCancellationEmail({
-        title: access.title,
-        reason: access.description,
-        startDate: access.schedule.startDate,
-        startTime: access.schedule.startTime,
-        location: access.location,
-        invitedEmails: access.invitedEmails || [],
-        creatorEmail: req.user.email,
-        companyName: 'SecuriTI'
-      });
-    } catch (emailErr) {
-      console.warn('Error sending cancellation emails:', emailErr?.message);
-      // Continuar con la eliminación aunque falle el email
+    // Update image
+    if (eventImage !== undefined) {
+      access.eventImage = eventImage;
+      modified = true;
     }
 
-    // Delete the access code
-    await Access.findByIdAndDelete(id);
+    // Update additional info
+    if (additionalInfo !== undefined) {
+      access.additionalInfo = additionalInfo;
+      modified = true;
+    }
 
-    console.log('Access deleted successfully');
-    res.json({ message: 'Código de acceso eliminado exitosamente' });
+    // Add new invited users (cannot remove existing)
+    if (invitedUsers && Array.isArray(invitedUsers)) {
+      const newGuests = [];
+      for (const user of invitedUsers) {
+        // Check if user already exists
+        const exists = access.invitedUsers.some(
+          existing => existing.email === user.email || existing.phone === user.phone
+        );
+        
+        if (!exists) {
+          access.invitedUsers.push({
+            name: user.name,
+            email: user.email || '',
+            phone: user.phone || '',
+            company: user.company || '',
+            attendanceStatus: 'pendiente'
+          });
+          newGuests.push(user);
+          modified = true;
+        }
+      }
+
+      // Send invitation emails to new guests
+      if (newGuests.length > 0 && access.settings.sendAccessByEmail) {
+        const company = await Company.findById(access.companyId);
+        
+        for (const guest of newGuests) {
+          if (guest.email) {
+            try {
+              const qrCode = await generateAccessInvitationQR(access, guest);
+              await emailService.sendAccessInvitationEmail(
+                guest.email,
+                {
+                  guestName: guest.name,
+                  creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+                  eventName: access.eventName,
+                  eventType: access.type,
+                  startDate: access.startDate,
+                  endDate: access.endDate,
+                  location: access.location,
+                  accessCode: access.accessCode,
+                  qrCode: qrCode
+                },
+                company
+              );
+            } catch (emailError) {
+              console.error(`Error sending invitation to ${guest.email}:`, emailError);
+            }
+          }
+        }
+      }
+    }
+
+    if (!modified) {
+      return res.json(access);
+    }
+
+    await access.save();
+
+    // Send modification email to creator
+    if (access.settings.sendAccessByEmail) {
+      try {
+        const company = await Company.findById(access.companyId);
+        await emailService.sendAccessModifiedToCreatorEmail(
+          access.creatorId.email,
+          {
+            creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+            eventName: access.eventName,
+            eventType: access.type,
+            startDate: access.startDate,
+            endDate: access.endDate,
+            location: access.location,
+            changes: []
+          },
+          company
+        );
+      } catch (emailError) {
+        console.error('Error sending modification email to creator:', emailError);
+      }
+
+      // Send modification email to all guests
+      for (const guest of access.invitedUsers) {
+        if (guest.email) {
+          try {
+            const company = await Company.findById(access.companyId);
+            const qrCode = await generateAccessInvitationQR(access, guest);
+            
+            await emailService.sendAccessModifiedToGuestEmail(
+              guest.email,
+              {
+                guestName: guest.name,
+                creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+                eventName: access.eventName,
+                eventType: access.type,
+                startDate: access.startDate,
+                endDate: access.endDate,
+                location: access.location,
+                accessCode: access.accessCode,
+                qrCode: qrCode
+              },
+              company
+            );
+          } catch (emailError) {
+            console.error(`Error sending modification email to ${guest.email}:`, emailError);
+          }
+        }
+      }
+    }
+
+    res.json(access);
   } catch (error) {
-    console.error('Delete access error:', error);
-    res.status(500).json({ message: 'Error interno del servidor', error: error.message });
+    console.error('Update access error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// ==================== CANCEL ACCESS ====================
+router.delete('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
+  try {
+    const access = await Access.findById(req.params.id)
+      .populate('creatorId', 'firstName lastName email');
+
+    if (!access) {
+      return res.status(404).json({ message: 'Acceso no encontrado' });
+    }
+
+    // Check permissions
+    if (req.user.role === 'host' && access.creatorId._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'No tienes permiso para cancelar este acceso' });
+    }
+
+    // Update status to cancelled
+    access.status = 'cancelled';
+    await access.save();
+
+    // Send cancellation emails
+    if (access.settings.sendAccessByEmail) {
+      const company = await Company.findById(access.companyId);
+
+      // Send to creator
+      try {
+        await emailService.sendAccessCancelledEmail(
+          access.creatorId.email,
+          {
+            recipientName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+            eventName: access.eventName,
+            eventType: access.type,
+            startDate: access.startDate,
+            endDate: access.endDate,
+            location: access.location
+          },
+          company
+        );
+      } catch (emailError) {
+        console.error('Error sending cancellation email to creator:', emailError);
+      }
+
+      // Send to all guests
+      for (const guest of access.invitedUsers) {
+        if (guest.email) {
+          try {
+            await emailService.sendAccessCancelledEmail(
+              guest.email,
+              {
+                recipientName: guest.name,
+                eventName: access.eventName,
+                eventType: access.type,
+                startDate: access.startDate,
+                endDate: access.endDate,
+                location: access.location
+              },
+              company
+            );
+          } catch (emailError) {
+            console.error(`Error sending cancellation email to ${guest.email}:`, emailError);
+          }
+        }
+      }
+    }
+
+    res.json({ message: 'Acceso cancelado exitosamente', access });
+  } catch (error) {
+    console.error('Cancel access error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// ==================== CHECK-IN GUEST ====================
+router.post('/check-in/:accessCode', async (req, res) => {
+  try {
+    const { accessCode } = req.params;
+    const { guestEmail, guestPhone, guestName } = req.body;
+
+    if (!guestEmail && !guestPhone) {
+      return res.status(400).json({ 
+        message: 'Email o teléfono del invitado es requerido' 
+      });
+    }
+
+    const access = await Access.findOne({ 
+      accessCode,
+      status: 'active'
+    }).populate('creatorId', 'firstName lastName email');
+
+    if (!access) {
+      return res.status(404).json({ message: 'Código de acceso no válido o expirado' });
+    }
+
+    // Find the invited user
+    let guestIndex = -1;
+    if (guestEmail) {
+      guestIndex = access.invitedUsers.findIndex(u => u.email === guestEmail);
+    }
+    if (guestIndex === -1 && guestPhone) {
+      guestIndex = access.invitedUsers.findIndex(u => u.phone === guestPhone);
+    }
+
+    if (guestIndex === -1) {
+      return res.status(404).json({ message: 'Invitado no encontrado en este acceso' });
+    }
+
+    const guest = access.invitedUsers[guestIndex];
+
+    // Update attendance status
+    if (guest.attendanceStatus === 'pendiente') {
+      guest.attendanceStatus = 'asistio';
+      guest.checkInTime = new Date();
+      await access.save();
+
+      // Send notification email to creator
+      if (access.settings.sendAccessByEmail) {
+        try {
+          const company = await Company.findById(access.companyId);
+          await emailService.sendGuestCheckedInEmail(
+            access.creatorId.email,
+            {
+              creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+              guestName: guest.name,
+              eventName: access.eventName,
+              checkInTime: guest.checkInTime,
+              location: access.location
+            },
+            company
+          );
+        } catch (emailError) {
+          console.error('Error sending check-in notification:', emailError);
+        }
+      }
+    }
+
+    res.json({ 
+      message: 'Check-in registrado exitosamente',
+      access,
+      guest 
+    });
+  } catch (error) {
+    console.error('Check-in error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// ==================== REDEEM ACCESS CODE (LEGACY - For compatibility) ====================
+router.post('/redeem', async (req, res) => {
+  try {
+    const { accessCode, visitorData } = req.body;
+
+    if (!accessCode || !visitorData) {
+      return res.status(400).json({ 
+        message: 'Código de acceso y datos del visitante son requeridos' 
+      });
+    }
+
+    const access = await Access.findOne({ 
+      accessCode, 
+      status: 'active' 
+    }).populate('creatorId', 'firstName lastName email');
+
+    if (!access) {
+      return res.status(404).json({ message: 'Código de acceso no válido o expirado' });
+    }
+
+    // Check date validity
+    const now = new Date();
+    if (now < access.startDate || now > access.endDate) {
+      return res.status(400).json({ message: 'Código de acceso fuera del rango de fechas válido' });
+    }
+
+    res.json({ 
+      valid: true, 
+      access: {
+        eventName: access.eventName,
+        type: access.type,
+        location: access.location,
+        creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+        startDate: access.startDate,
+        endDate: access.endDate
+      }
+    });
+  } catch (error) {
+    console.error('Redeem access error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
 

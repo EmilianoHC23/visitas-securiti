@@ -7,6 +7,9 @@ require('dotenv').config();
 // Import database initialization
 const { initializeDatabase } = require('./init-db');
 
+// Import scheduler
+const { startScheduler } = require('./jobs/accessScheduler');
+
 // Import routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -130,6 +133,9 @@ if (!process.env.VERCEL) {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🌐 Server listening on http://localhost:${PORT}`);
+    
+    // Start scheduler jobs (only in local development, not in Vercel)
+    startScheduler();
   });
 }
 

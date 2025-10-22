@@ -1,21 +1,18 @@
 const mongoose = require('mongoose');
 
 const accessSchema = new mongoose.Schema({
-  title: {
+  eventName: {
     type: String,
     required: true,
-    trim: true
-  },
-  description: {
-    type: String,
     trim: true
   },
   type: {
     type: String,
     enum: ['reunion', 'proyecto', 'evento', 'visita', 'otro'],
-    default: 'reunion'
+    default: 'reunion',
+    required: true
   },
-  createdBy: {
+  creatorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
@@ -28,9 +25,13 @@ const accessSchema = new mongoose.Schema({
     type: String,
     unique: true
   },
-  qrCode: {
-    type: String,
-    unique: true
+  startDate: {
+    type: Date,
+    required: true
+  },
+  endDate: {
+    type: Date,
+    required: true
   },
   eventImage: {
     type: String, // Base64 o URL
@@ -41,22 +42,6 @@ const accessSchema = new mongoose.Schema({
     default: ''
   },
   settings: {
-    autoApproval: {
-      type: Boolean,
-      default: true
-    },
-    maxUses: {
-      type: Number,
-      default: 0 // 0 = ilimitado
-    },
-    allowGuests: {
-      type: Boolean,
-      default: false
-    },
-    requireApproval: {
-      type: Boolean,
-      default: false
-    },
     sendAccessByEmail: {
       type: Boolean,
       default: true
@@ -71,65 +56,44 @@ const accessSchema = new mongoose.Schema({
       default: false
     }
   },
-  schedule: {
-    startDate: {
-      type: Date,
-      required: true
-    },
-    endDate: {
-      type: Date,
-      required: true
-    },
-    startTime: {
-      type: String,
-      required: true
-    },
-    endTime: {
-      type: String,
-      required: true
-    },
-    recurrence: {
-      type: String,
-      enum: ['none', 'daily', 'weekly', 'monthly'],
-      default: 'none'
-    }
-  },
   status: {
     type: String,
     enum: ['active', 'expired', 'cancelled', 'finalized'],
     default: 'active'
   },
-  usageCount: {
-    type: Number,
-    default: 0
+  reminderSent: {
+    type: Boolean,
+    default: false
   },
   notifyUsers: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
   invitedUsers: [{
-    email: {
-      type: String,
-      required: true
-    },
     name: {
       type: String,
       required: true
     },
-    invitedAt: {
-      type: Date,
-      default: Date.now
+    email: {
+      type: String,
+      default: ''
     },
-    attendance: {
+    phone: {
+      type: String,
+      default: ''
+    },
+    company: {
+      type: String,
+      default: ''
+    },
+    attendanceStatus: {
       type: String,
       enum: ['pendiente', 'asistio', 'no-asistio'],
       default: 'pendiente'
     },
-    visitId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Visit'
-    },
-    qrScannedAt: Date
+    checkInTime: {
+      type: Date
+    }
   }],
   additionalInfo: {
     type: String,
@@ -142,10 +106,7 @@ const accessSchema = new mongoose.Schema({
 // Generar código único antes de guardar
 accessSchema.pre('save', function(next) {
   if (!this.accessCode) {
-    this.accessCode = `ACC_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-  }
-  if (!this.qrCode) {
-    this.qrCode = `QR_${this.accessCode}`;
+    this.accessCode = `ACC-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   }
   next();
 });

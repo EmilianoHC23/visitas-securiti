@@ -35,9 +35,7 @@ const userSchema = new mongoose.Schema({
   },
   profileImage: {
     type: String,
-    default: function() {
-      return `https://i.pravatar.cc/150?u=${this.email}`;
-    }
+    default: ''
   },
   isActive: {
     type: Boolean,

@@ -434,6 +434,7 @@ export const sendInvitation = async (invitationData: {
   firstName: string;
   lastName: string;
   role: string;
+  profileImage?: string;
 }) => {
   return apiRequest('/invitations', {
     method: 'POST',

@@ -41,7 +41,7 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
     console.log('📧 Request body:', JSON.stringify(req.body, null, 2));
     console.log('📧 User from token:', req.user ? req.user.email : 'No user');
     
-    const { firstName, lastName, email, role } = req.body;
+    const { firstName, lastName, email, role, profileImage } = req.body;
 
     // Validar datos
     if (!firstName || !lastName || !email || !role) {
@@ -62,6 +62,7 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
       existingUser.firstName = firstName;
       existingUser.lastName = lastName;
       existingUser.role = role;
+      if (profileImage) existingUser.profileImage = profileImage;
       existingUser.invitationStatus = 'pending';
       existingUser.isActive = false; // Desactivar hasta que complete el registro
       
@@ -71,6 +72,11 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
     // Si existe un usuario pendiente, usar ese
     else if (existingUser && existingUser.invitationStatus === 'pending') {
       console.log('✅ Using existing pending user:', existingUser._id);
+      // Actualizar datos si se proporciona nueva imagen
+      if (profileImage) {
+        existingUser.profileImage = profileImage;
+        await existingUser.save();
+      }
       user = existingUser;
     }
     // Si no existe, crear uno nuevo
@@ -83,6 +89,7 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
         lastName,
         role,
         companyId: req.user.companyId,
+        profileImage: profileImage || '',
         invitationStatus: 'pending',
         isActive: false // Usuario inactivo hasta completar registro
       });

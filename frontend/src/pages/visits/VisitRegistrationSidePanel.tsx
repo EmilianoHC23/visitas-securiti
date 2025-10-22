@@ -122,14 +122,40 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
     }, 300);
   };
 
-  const handleQrDetected = (qrData: string) => {
+  const handleQrDetected = async (qrData: string) => {
     stopCamera();
     
     try {
       const data = JSON.parse(qrData);
       
+      // Si es un QR de invitación de acceso
+      if (data.type === 'access-invitation') {
+        console.log('✅ QR de invitación de acceso detectado:', data);
+        
+        // Auto-completar formulario con datos del invitado
+        setFormData(prev => ({
+          ...prev,
+          visitorEmail: data.guestEmail || '',
+          visitorName: data.guestName || '',
+          visitorCompany: '',
+          visitorPhone: data.guestPhone || '',
+          destination: data.location || '',
+          reason: `${data.eventName} (${data.accessCode})`
+        }));
+        
+        // Guardar datos del acceso para el check-in posterior
+        (window as any).__pendingAccessCheckIn = {
+          accessCode: data.accessCode,
+          guestEmail: data.guestEmail,
+          guestPhone: data.guestPhone,
+          guestName: data.guestName
+        };
+        
+        setMode('manual');
+        alert(`QR de acceso detectado: ${data.eventName}\nPor favor completa el registro.`);
+      }
       // Si es un QR de visitante, autocompletar formulario
-      if (data.type === 'visitor-info') {
+      else if (data.type === 'visitor-info') {
         setFormData(prev => ({
           ...prev,
           visitorEmail: data.email || '',
@@ -167,12 +193,32 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.visitorEmail || !formData.visitorName || !formData.host || !formData.reason) {
       alert('Por favor completa todos los campos obligatorios');
       return;
+    }
+
+    // Si hay un acceso pendiente, registrar el check-in
+    const pendingAccess = (window as any).__pendingAccessCheckIn;
+    if (pendingAccess) {
+      try {
+        const { checkInAccess } = await import('../../services/api');
+        await checkInAccess(pendingAccess.accessCode, {
+          guestEmail: pendingAccess.guestEmail,
+          guestPhone: pendingAccess.guestPhone,
+          guestName: pendingAccess.guestName
+        });
+        console.log('✅ Check-in de acceso registrado exitosamente');
+        
+        // Limpiar el acceso pendiente
+        delete (window as any).__pendingAccessCheckIn;
+      } catch (error) {
+        console.error('Error al registrar check-in de acceso:', error);
+        // No bloqueamos el registro de visita si falla el check-in
+      }
     }
 
     onSubmit(formData);

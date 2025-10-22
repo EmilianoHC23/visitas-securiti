@@ -175,13 +175,14 @@ class EmailService {
       return { success: false, error: 'No visitor email' };
     }
 
-    const COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+    // Usar logo dinámico de la empresa o fallback
+    const COMPANY_LOGO_URL = data.companyLogo || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
 
     try {
       const isApproved = data.status === 'approved';
       const statusText = isApproved ? 'APROBADA' : 'RECHAZADA';
-      const primaryColor = '#1e3a8a'; // Azul oscuro SecuriTI
-      const accentColor = '#f97316'; // Naranja SecuriTI
+      const primaryColor = '#000000'; // Negro moderno
+      const secondaryColor = '#ffffff'; // Blanco
       const statusColor = isApproved ? '#10b981' : '#ef4444';
 
       // QR para futuras visitas - JSON compatible con el escáner del panel (VisitRegistrationSidePanel)
@@ -222,9 +223,9 @@ class EmailService {
                     
                     <!-- Header -->
                     <tr>
-                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
-                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 60px; margin-bottom: 20px;">
-                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Visita ${statusText}</h1>
+                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1f2937 100%); padding: 40px 30px; text-align: center;">
+                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 70px; margin-bottom: 20px;">
+                        <h1 style="color: ${secondaryColor}; margin: 0; font-size: 28px; font-weight: 600;">Visita ${statusText}</h1>
                       </td>
                     </tr>
                     
@@ -391,9 +392,11 @@ class EmailService {
       return { success: false, error: 'Email service not configured' };
     }
 
-    const COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-    const primaryColor = '#1e3a8a';
-    const accentColor = '#f97316';
+    // Usar logo dinámico de la empresa o fallback
+    const COMPANY_LOGO_URL = data.companyLogo || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+    const primaryColor = '#000000'; // Negro moderno
+    const secondaryColor = '#ffffff'; // Blanco
+    const accentColor = '#4b5563'; // Gris medio
 
     try {
       const mailOptions = {
@@ -415,9 +418,9 @@ class EmailService {
                     
                     <!-- Header -->
                     <tr>
-                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
-                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 60px; margin-bottom: 20px;">
-                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Nueva Solicitud de Visita</h1>
+                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1f2937 100%); padding: 40px 30px; text-align: center;">
+                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 70px; margin-bottom: 20px;">
+                        <h1 style="color: ${secondaryColor}; margin: 0; font-size: 28px; font-weight: 600;">Nueva Solicitud de Visita</h1>
                       </td>
                     </tr>
                     
@@ -1017,9 +1020,10 @@ class EmailService {
       return { success: false, error: 'No visitor email' };
     }
 
-    const COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-    const primaryColor = '#1e3a8a';
-    const accentColor = '#f97316';
+    // Usar logo dinámico de la empresa o fallback
+    const COMPANY_LOGO_URL = data.companyLogo || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+    const primaryColor = '#000000'; // Negro moderno
+    const secondaryColor = '#ffffff'; // Blanco
 
     // Calcular tiempo de permanencia (desde entrada física hasta salida)
     const checkInTime = new Date(data.checkInTime);
@@ -1050,10 +1054,10 @@ class EmailService {
                     
                     <!-- Header -->
                     <tr>
-                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
-                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 60px; margin-bottom: 20px;">
-                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">¡Hasta pronto!</h1>
-                        <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Gracias por tu visita</p>
+                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1f2937 100%); padding: 40px 30px; text-align: center;">
+                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 70px; margin-bottom: 20px;">
+                        <h1 style="color: ${secondaryColor}; margin: 0; font-size: 28px; font-weight: 600;">¡Hasta pronto!</h1>
+                        <p style="color: #d1d5db; margin: 10px 0 0 0; font-size: 16px;">Gracias por tu visita</p>
                       </td>
                     </tr>
                     

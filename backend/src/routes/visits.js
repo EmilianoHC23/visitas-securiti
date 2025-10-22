@@ -187,6 +187,7 @@ router.post('/', auth, async (req, res) => {
         hostEmail: host.email,
         hostName: `${host.firstName} ${host.lastName}`,
         companyName: (company && company.name) || 'SecurITI',
+        companyLogo: company?.logo || null,
         visitorName,
         visitorCompany,
         visitorPhoto: req.body.visitorPhoto,
@@ -286,7 +287,8 @@ router.post('/register', async (req, res) => {
       await require('../services/emailService').sendApprovalRequestEmail({
         hostEmail: host.email,
         hostName: `${host.firstName} ${host.lastName}`,
-        companyName: 'SecurITI',
+        companyName: company?.name || 'SecurITI',
+        companyLogo: company?.logo || null,
         visitorName,
         visitorCompany,
         visitorPhoto,
@@ -317,6 +319,16 @@ router.put('/:id/status', auth, async (req, res) => {
     const visit = await Visit.findById(id).populate('host', 'firstName lastName email');
     if (!visit) {
       return res.status(404).json({ message: 'Visita no encontrada' });
+    }
+
+    // Get company settings for logo
+    let company = null;
+    try {
+      if (req.user.companyId) {
+        company = await Company.findOne({ companyId: req.user.companyId });
+      }
+    } catch (error) {
+      console.log('⚠️ Error fetching company for email:', error.message);
     }
 
     // Solo anfitrión o admin pueden modificar el estado
@@ -406,7 +418,8 @@ router.put('/:id/status', auth, async (req, res) => {
           visitorCompany: populated.visitorCompany,
           hostName: `${populated.host.firstName} ${populated.host.lastName}`,
           hostId: populated.host._id.toString(),
-          companyName: 'SecurITI',
+          companyName: company?.name || 'SecurITI',
+          companyLogo: company?.logo || null,
           status,
           reason: populated.reason,
           scheduledDate: populated.scheduledDate,
@@ -469,6 +482,16 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Visita no encontrada' });
     }
 
+    // Get company settings for logo
+    let company = null;
+    try {
+      if (req.user.companyId) {
+        company = await Company.findOne({ companyId: req.user.companyId });
+      }
+    } catch (error) {
+      console.log('⚠️ Error fetching company for email:', error.message);
+    }
+
     // Check permissions
     if (req.user.role === 'host' && visit.host.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'No tienes permisos para modificar esta visita' });
@@ -499,7 +522,8 @@ router.put('/:id', auth, async (req, res) => {
           visitorEmail: updatedVisit.visitorEmail,
           visitorName: updatedVisit.visitorName,
           hostName: `${updatedVisit.host.firstName} ${updatedVisit.host.lastName}`,
-          companyName: 'SecurITI',
+          companyName: company?.name || 'SecurITI',
+          companyLogo: company?.logo || null,
           status: 'rejected',
           reason: updatedVisit.reason,
           scheduledDate: updatedVisit.scheduledDate,
@@ -618,10 +642,11 @@ router.get('/approve/:token', async (req, res) => {
     }
     
     // Verificar si auto check-in está habilitado
+    let companySettings = null;
     try {
       const hostUser = await User.findById(visit.host._id);
       if (hostUser && hostUser.companyId) {
-        const companySettings = await Company.findOne({ companyId: hostUser.companyId });
+        companySettings = await Company.findOne({ companyId: hostUser.companyId });
         if (companySettings?.settings?.autoCheckIn) {
           console.log('🔄 [APPROVE-TOKEN] Auto check-in enabled, checking in visit automatically');
           visit.status = 'checked-in';
@@ -651,7 +676,8 @@ router.get('/approve/:token', async (req, res) => {
           visitorCompany: visit.visitorCompany,
           hostName: `${visit.host.firstName} ${visit.host.lastName}`,
           hostId: visit.host._id.toString(),
-          companyName: 'SecurITI',
+          companyName: companySettings?.name || 'SecurITI',
+          companyLogo: companySettings?.logo || null,
           status: 'approved',
           reason: visit.reason,
           scheduledDate: visit.scheduledDate,
@@ -728,6 +754,17 @@ router.post('/checkout/:id', auth, async (req, res) => {
     if (visit.status !== 'checked-in') {
       return res.status(400).json({ message: 'La visita no está dentro o ya fue finalizada' });
     }
+
+    // Get company settings for logo
+    let company = null;
+    try {
+      if (req.user.companyId) {
+        company = await Company.findOne({ companyId: req.user.companyId });
+      }
+    } catch (error) {
+      console.log('⚠️ Error fetching company for email:', error.message);
+    }
+
     visit.status = 'completed';
     visit.checkOutTime = new Date();
     await visit.save();
@@ -743,7 +780,8 @@ router.post('/checkout/:id', auth, async (req, res) => {
           visitorName: visit.visitorName,
           visitorCompany: visit.visitorCompany || 'N/A',
           hostName: `${visit.host.firstName} ${visit.host.lastName}`,
-          companyName: 'SecurITI',
+          companyName: company?.name || 'SecurITI',
+          companyLogo: company?.logo || null,
           registrationTime: visit.createdAt, // Hora de registro
           checkInTime: visit.checkInTime, // Hora de entrada física
           checkOutTime: visit.checkOutTime // Hora de salida

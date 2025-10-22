@@ -304,24 +304,24 @@ interface CreateAccessModalProps {
 
 const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [formData, setFormData] = useState({
     eventName: '',
     type: 'reunion' as 'reunion' | 'proyecto' | 'evento' | 'visita' | 'otro',
     startDate: '',
-    startTime: '09:00',
+    startTime: '14:15',
     endDate: '',
-    endTime: '17:00',
+    endTime: '15:15',
     location: '',
     eventImage: '',
     additionalInfo: '',
     sendEmail: true,
+    preApproveAccess: false,
   });
   const [invitedUsers, setInvitedUsers] = useState<Array<{
     name: string;
     email: string;
-    phone: string;
-    company: string;
-  }>>([{ name: '', email: '', phone: '', company: '' }]);
+  }>>([{ name: '', email: '' }]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -335,11 +335,13 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
   };
 
   const addInvitedUser = () => {
-    setInvitedUsers([...invitedUsers, { name: '', email: '', phone: '', company: '' }]);
+    setInvitedUsers([...invitedUsers, { name: '', email: '' }]);
   };
 
   const removeInvitedUser = (index: number) => {
-    setInvitedUsers(invitedUsers.filter((_, i) => i !== index));
+    if (invitedUsers.length > 1) {
+      setInvitedUsers(invitedUsers.filter((_, i) => i !== index));
+    }
   };
 
   const updateInvitedUser = (index: number, field: string, value: string) => {
@@ -361,6 +363,14 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
       const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
       const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
 
+      // Prepare invited users with name from email if not provided
+      const validInvitedUsers = invitedUsers
+        .filter(u => u.email)
+        .map(u => ({
+          name: u.name || u.email.split('@')[0], // Use email username as name if not provided
+          email: u.email
+        }));
+
       await createAccess({
         eventName: formData.eventName,
         type: formData.type,
@@ -368,10 +378,9 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
         endDate: endDateTime,
         location: formData.location,
         eventImage: formData.eventImage,
-        invitedUsers: invitedUsers.filter(u => u.name && (u.email || u.phone)),
+        invitedUsers: validInvitedUsers,
         settings: {
           sendAccessByEmail: formData.sendEmail,
-          language: 'es',
           noExpiration: false
         },
         additionalInfo: formData.additionalInfo
@@ -388,245 +397,346 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Crear Nuevo Acceso</h2>
+          {/* Header */}
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Crear accesos</h2>
+              <p className="text-sm text-gray-600 mt-1">Crea uno o varios accesos para tus visitantes.</p>
+            </div>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
               <X className="w-6 h-6" />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Nombre del evento */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre del evento *
-              </label>
-              <input
-                type="text"
-                value={formData.eventName}
-                onChange={(e) => setFormData({ ...formData, eventName: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
+          {/* Alert Banner */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6 flex items-start">
+            <div className="text-yellow-600 mr-3">⚠️</div>
+            <div className="flex-1">
+              <p className="text-sm text-gray-700">
+                <span className="font-medium">Limitado a 10 invitados por WhatsApp por acceso.</span> Para más, utiliza su e-mail.
+              </p>
             </div>
+            <button className="text-gray-400 hover:text-gray-600">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
-            {/* Tipo */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tipo de acceso *
-              </label>
-              <select
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="reunion">Reunión</option>
-                <option value="proyecto">Proyecto</option>
-                <option value="evento">Evento</option>
-                <option value="visita">Visita</option>
-                <option value="otro">Otro</option>
-              </select>
-            </div>
-
-            {/* Fechas */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Razón del acceso y Título */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha inicio *
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Razón del acceso <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  required
+                >
+                  <option value="reunion">Reunión</option>
+                  <option value="proyecto">Proyecto</option>
+                  <option value="evento">Evento</option>
+                  <option value="visita">Visita</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Título <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  type="text"
+                  value={formData.eventName}
+                  onChange={(e) => setFormData({ ...formData, eventName: e.target.value })}
+                  placeholder="Título de tu acceso"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hora inicio
-                </label>
-                <input
-                  type="time"
-                  value={formData.startTime}
-                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
             </div>
 
+            {/* Fechas y Horas */}
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha fin *
-                </label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Inicia <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="date"
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">&nbsp;</label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="time"
+                      value={formData.startTime}
+                      onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                      className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Finaliza <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="date"
+                      value={formData.endDate}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">&nbsp;</label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="time"
+                      value={formData.endTime}
+                      onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                      className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Toggle: Crear un enlace para pre-registro */}
+            <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+              <div className="flex items-center">
+                <span className="text-sm text-gray-700 mr-2">Crear un enlace para pre-registro</span>
+                <button type="button" className="text-gray-400 hover:text-gray-600">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
                 <input
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
+                  type="checkbox"
+                  checked={formData.preApproveAccess}
+                  onChange={(e) => setFormData({ ...formData, preApproveAccess: e.target.checked })}
+                  className="sr-only peer"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hora fin
-                </label>
-                <input
-                  type="time"
-                  value={formData.endTime}
-                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* Ubicación */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ubicación
+                <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Sala de juntas, Edificio A, etc."
-              />
             </div>
 
-            {/* Imagen */}
+            {/* Agregar visitantes */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Imagen del evento
-              </label>
-              <div className="flex items-center space-x-3">
-                <label className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 cursor-pointer">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Subir imagen
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
-                {formData.eventImage && (
-                  <img src={formData.eventImage} alt="Preview" className="h-12 w-12 object-cover rounded" />
-                )}
-              </div>
-            </div>
-
-            {/* Invitados */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
+              <div className="flex justify-between items-center mb-3">
                 <label className="block text-sm font-medium text-gray-700">
-                  Invitados
+                  Agregar visitantes
                 </label>
+                <div className="flex items-center">
+                  <span className="text-sm text-gray-600 mr-3">
+                    Ingresa el correo electrónico de tus visitantes
+                  </span>
+                  <button
+                    type="button"
+                    onClick={addInvitedUser}
+                    className="px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                  >
+                    Importar invitados
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {invitedUsers.map((user, index) => (
+                  <div key={index} className="flex items-center space-x-3">
+                    {/* Icon dropdown (email by default) */}
+                    <div className="relative w-12">
+                      <button
+                        type="button"
+                        className="w-full h-11 flex items-center justify-center border border-gray-300 rounded-lg bg-white hover:bg-gray-50"
+                      >
+                        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* Email input */}
+                    <input
+                      type="email"
+                      placeholder="Correo electrónico del visitante"
+                      value={user.email}
+                      onChange={(e) => updateInvitedUser(index, 'email', e.target.value)}
+                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+
+                    {/* Remove button */}
+                    {invitedUsers.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeInvitedUser(index)}
+                        className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                {/* Add more button */}
                 <button
                   type="button"
                   onClick={addInvitedUser}
-                  className="text-sm text-blue-600 hover:text-blue-700"
+                  className="w-full py-2.5 text-sm text-gray-600 border border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:text-blue-600 transition-colors"
                 >
-                  + Agregar invitado
+                  + Agregar otro visitante
                 </button>
               </div>
-              <div className="space-y-3">
-                {invitedUsers.map((user, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-3">
-                    <div className="grid grid-cols-2 gap-2 mb-2">
-                      <input
-                        type="text"
-                        placeholder="Nombre *"
-                        value={user.name}
-                        onChange={(e) => updateInvitedUser(index, 'name', e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <input
-                        type="email"
-                        placeholder="Email"
-                        value={user.email}
-                        onChange={(e) => updateInvitedUser(index, 'email', e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="tel"
-                        placeholder="Teléfono"
-                        value={user.phone}
-                        onChange={(e) => updateInvitedUser(index, 'phone', e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <div className="flex space-x-2">
-                        <input
-                          type="text"
-                          placeholder="Empresa"
-                          value={user.company}
-                          onChange={(e) => updateInvitedUser(index, 'company', e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        {invitedUsers.length > 1 && (
+            </div>
+
+            {/* Opciones avanzadas */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                className="flex items-center text-sm text-blue-600 hover:text-blue-700"
+              >
+                <svg className={`w-4 h-4 mr-1 transition-transform ${showAdvancedOptions ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                Opciones avanzadas
+              </button>
+
+              {showAdvancedOptions && (
+                <div className="mt-4 space-y-4 pl-5 border-l-2 border-gray-200">
+                  {/* Imagen del evento */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Agrega una imagen a tu acceso
+                    </label>
+                    <div className="flex items-center space-x-3">
+                      {formData.eventImage ? (
+                        <div className="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-gray-200">
+                          <img src={formData.eventImage} alt="Preview" className="w-full h-full object-cover" />
                           <button
                             type="button"
-                            onClick={() => removeInvitedUser(index)}
-                            className="px-2 text-red-600 hover:text-red-700"
+                            onClick={() => setFormData({ ...formData, eventImage: '' })}
+                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
                           >
-                            <X className="w-5 h-5" />
+                            <X className="w-3 h-3" />
                           </button>
-                        )}
+                        </div>
+                      ) : (
+                        <label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
+                          <Upload className="w-6 h-6 text-gray-400 mb-1" />
+                          <span className="text-xs text-gray-500">Subir</span>
+                          <input
+                            type="file"
+                            accept="image/png, image/jpeg"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                      <div className="text-xs text-gray-500">
+                        <p>Formatos permitidos: PNG y JPEG</p>
+                        <p>Tamaño máximo: 2MB</p>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+
+                  {/* Anfitrión */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Anfitrión
+                    </label>
+                    <select className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                      <option>Emiliano Hernandez</option>
+                    </select>
+                  </div>
+
+                  {/* Notificar a alguien más */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Notificar a alguien más
+                    </label>
+                    <select className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                      <option>Selecciona los usuarios a notificar</option>
+                    </select>
+                  </div>
+
+                  {/* Lugar */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Lugar
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.location}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      placeholder="Ej. Sala de juntas, Piso 3, Salón, etc."
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Información adicional */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Información adicional
+                    </label>
+                    <textarea
+                      value={formData.additionalInfo}
+                      onChange={(e) => setFormData({ ...formData, additionalInfo: e.target.value })}
+                      rows={3}
+                      placeholder="Ingresa alguna nota adicional del acceso"
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Información adicional */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Información adicional
-              </label>
-              <textarea
-                value={formData.additionalInfo}
-                onChange={(e) => setFormData({ ...formData, additionalInfo: e.target.value })}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Notas, instrucciones, etc."
-              />
-            </div>
-
-            {/* Enviar por email */}
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="sendEmail"
-                checked={formData.sendEmail}
-                onChange={(e) => setFormData({ ...formData, sendEmail: e.target.checked })}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label htmlFor="sendEmail" className="ml-2 text-sm text-gray-700">
-                Enviar invitaciones por email
-              </label>
-            </div>
-
-            {/* Botones */}
-            <div className="flex justify-end space-x-3 pt-4">
+            {/* Botones de acción */}
+            <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
               >
-                {loading ? 'Creando...' : 'Crear Acceso'}
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creando...
+                  </>
+                ) : (
+                  'Enviar'
+                )}
               </button>
             </div>
           </form>

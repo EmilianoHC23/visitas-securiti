@@ -120,7 +120,7 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
     }
 
     // Get company info for emails
-    const company = await Company.findById(req.user.companyId);
+    const company = await Company.findOne({ companyId: req.user.companyId });
     if (!company) {
       return res.status(404).json({ message: 'Empresa no encontrada' });
     }
@@ -279,7 +279,7 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
 
       // Send invitation emails to new guests
       if (newGuests.length > 0 && access.settings.sendAccessByEmail) {
-        const company = await Company.findById(access.companyId);
+        const company = await Company.findOne({ companyId: access.companyId });
         
         for (const guest of newGuests) {
           if (guest.email) {
@@ -317,7 +317,7 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
     // Send modification email to creator
     if (access.settings.sendAccessByEmail) {
       try {
-        const company = await Company.findById(access.companyId);
+        const company = await Company.findOne({ companyId: access.companyId });
         await emailService.sendAccessModifiedToCreatorEmail(
           access.creatorId.email,
           {
@@ -339,7 +339,7 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
       for (const guest of access.invitedUsers) {
         if (guest.email) {
           try {
-            const company = await Company.findById(access.companyId);
+            const company = await Company.findOne({ companyId: access.companyId });
             const qrCode = await generateAccessInvitationQR(access, guest);
             
             await emailService.sendAccessModifiedToGuestEmail(
@@ -392,7 +392,7 @@ router.delete('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
 
     // Send cancellation emails
     if (access.settings.sendAccessByEmail) {
-      const company = await Company.findById(access.companyId);
+      const company = await Company.findOne({ companyId: access.companyId });
 
       // Send to creator
       try {
@@ -487,7 +487,7 @@ router.post('/check-in/:accessCode', async (req, res) => {
       // Send notification email to creator
       if (access.settings.sendAccessByEmail) {
         try {
-          const company = await Company.findById(access.companyId);
+          const company = await Company.findOne({ companyId: access.companyId });
           await emailService.sendGuestCheckedInEmail(
             access.creatorId.email,
             {

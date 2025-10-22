@@ -177,6 +177,22 @@ class EmailService {
 
     // Usar logo dinámico de la empresa o fallback
     const COMPANY_LOGO_URL = data.companyLogo || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+    
+    // Log para debugging - verificar si el logo está en Base64
+    if (data.companyLogo) {
+      const isBase64 = data.companyLogo.startsWith('data:image');
+      console.log('📧 Logo recibido:', {
+        existe: !!data.companyLogo,
+        esBase64: isBase64,
+        longitudBase64: isBase64 ? data.companyLogo.length : 'N/A',
+        primeros50caracteres: data.companyLogo.substring(0, 50) + '...'
+      });
+      
+      if (isBase64) {
+        console.warn('⚠️  ADVERTENCIA: El logo está en formato Base64. Muchos clientes de email (Gmail, Outlook) bloquean imágenes Base64 por seguridad.');
+        console.warn('   Solución recomendada: Subir el logo a un servidor público (Cloudinary, AWS S3, etc.) y guardar la URL.');
+      }
+    }
 
     try {
       const isApproved = data.status === 'approved';
@@ -394,6 +410,13 @@ class EmailService {
 
     // Usar logo dinámico de la empresa o fallback
     const COMPANY_LOGO_URL = data.companyLogo || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+    
+    // Log para debugging
+    if (data.companyLogo) {
+      const isBase64 = data.companyLogo.startsWith('data:image');
+      console.log('📧 [Approval Request] Logo recibido:', isBase64 ? 'Base64 (bloqueado por email)' : 'URL pública');
+    }
+    
     const primaryColor = '#000000'; // Negro moderno
     const secondaryColor = '#ffffff'; // Blanco
     const accentColor = '#4b5563'; // Gris medio
@@ -1022,6 +1045,13 @@ class EmailService {
 
     // Usar logo dinámico de la empresa o fallback
     const COMPANY_LOGO_URL = data.companyLogo || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+    
+    // Log para debugging
+    if (data.companyLogo) {
+      const isBase64 = data.companyLogo.startsWith('data:image');
+      console.log('📧 [Checkout] Logo recibido:', isBase64 ? 'Base64 (bloqueado por email)' : 'URL pública');
+    }
+    
     const primaryColor = '#000000'; // Negro moderno
     const secondaryColor = '#ffffff'; // Blanco
 

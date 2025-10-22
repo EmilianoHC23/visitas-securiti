@@ -5,6 +5,7 @@ const Company = require('../models/Company');
 const { auth, authorize } = require('../middleware/auth');
 const emailService = require('../services/emailService');
 const { generateAccessInvitationQR } = require('../utils/qrGenerator');
+const { formatTime } = require('../utils/dateUtils');
 
 const router = express.Router();
 
@@ -159,22 +160,23 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
     if (access.settings.sendAccessByEmail) {
       // Send confirmation email to creator
       try {
-        await emailService.sendAccessCreatedEmail(
-          req.user.email,
-          {
-            creatorName: `${req.user.firstName} ${req.user.lastName}`,
-            eventName: access.eventName,
-            eventType: access.type,
-            startDate: access.startDate,
-            endDate: access.endDate,
-            location: access.location,
-            accessCode: access.accessCode,
-            invitedCount: access.invitedUsers.length
-          },
-          company
-        );
+        await emailService.sendAccessCreatedEmail({
+          creatorEmail: req.user.email,
+          creatorName: `${req.user.firstName} ${req.user.lastName}`,
+          accessTitle: access.eventName,
+          accessType: access.type,
+          startDate: access.startDate,
+          endDate: access.endDate,
+          startTime: formatTime(access.startDate),
+          endTime: formatTime(access.endDate),
+          location: access.location,
+          accessCode: access.accessCode,
+          invitedCount: access.invitedUsers.length,
+          companyName: company.name,
+          companyLogo: company.logo
+        });
       } catch (emailError) {
-        console.error('Error sending creator email:', emailError);
+        console.error('Error sending access created email:', emailError);
       }
 
       // Send invitation emails to guests
@@ -184,21 +186,22 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
             // Generate QR code for guest
             const qrCode = await generateAccessInvitationQR(access, guest);
 
-            await emailService.sendAccessInvitationEmail(
-              guest.email,
-              {
-                guestName: guest.name,
-                creatorName: `${req.user.firstName} ${req.user.lastName}`,
-                eventName: access.eventName,
-                eventType: access.type,
-                startDate: access.startDate,
-                endDate: access.endDate,
-                location: access.location,
-                accessCode: access.accessCode,
-                qrCode: qrCode
-              },
-              company
-            );
+            await emailService.sendAccessInvitationEmail({
+              invitedEmail: guest.email,
+              invitedName: guest.name,
+              creatorName: `${req.user.firstName} ${req.user.lastName}`,
+              accessTitle: access.eventName,
+              accessType: access.type,
+              startDate: access.startDate,
+              endDate: access.endDate,
+              startTime: formatTime(access.startDate),
+              endTime: formatTime(access.endDate),
+              location: access.location,
+              accessCode: access.accessCode,
+              qrCode: qrCode,
+              companyName: company.name,
+              companyLogo: company.logo
+            });
           } catch (emailError) {
             console.error(`Error sending invitation to ${guest.email}:`, emailError);
           }
@@ -285,21 +288,22 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
           if (guest.email) {
             try {
               const qrCode = await generateAccessInvitationQR(access, guest);
-              await emailService.sendAccessInvitationEmail(
-                guest.email,
-                {
-                  guestName: guest.name,
-                  creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-                  eventName: access.eventName,
-                  eventType: access.type,
-                  startDate: access.startDate,
-                  endDate: access.endDate,
-                  location: access.location,
-                  accessCode: access.accessCode,
-                  qrCode: qrCode
-                },
-                company
-              );
+              await emailService.sendAccessInvitationEmail({
+                invitedEmail: guest.email,
+                invitedName: guest.name,
+                creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+                accessTitle: access.eventName,
+                accessType: access.type,
+                startDate: access.startDate,
+                endDate: access.endDate,
+                startTime: formatTime(access.startDate),
+                endTime: formatTime(access.endDate),
+                location: access.location,
+                accessCode: access.accessCode,
+                qrCode: qrCode,
+                companyName: company.name,
+                companyLogo: company.logo
+              });
             } catch (emailError) {
               console.error(`Error sending invitation to ${guest.email}:`, emailError);
             }
@@ -318,19 +322,20 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
     if (access.settings.sendAccessByEmail) {
       try {
         const company = await Company.findOne({ companyId: access.companyId });
-        await emailService.sendAccessModifiedToCreatorEmail(
-          access.creatorId.email,
-          {
-            creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-            eventName: access.eventName,
-            eventType: access.type,
-            startDate: access.startDate,
-            endDate: access.endDate,
-            location: access.location,
-            changes: []
-          },
-          company
-        );
+        await emailService.sendAccessModifiedToCreatorEmail({
+          creatorEmail: access.creatorId.email,
+          creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+          accessTitle: access.eventName,
+          accessType: access.type,
+          startDate: access.startDate,
+          endDate: access.endDate,
+          startTime: formatTime(access.startDate),
+          endTime: formatTime(access.endDate),
+          location: access.location,
+          changes: [],
+          companyName: company.name,
+          companyLogo: company.logo
+        });
       } catch (emailError) {
         console.error('Error sending modification email to creator:', emailError);
       }
@@ -342,21 +347,22 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
             const company = await Company.findOne({ companyId: access.companyId });
             const qrCode = await generateAccessInvitationQR(access, guest);
             
-            await emailService.sendAccessModifiedToGuestEmail(
-              guest.email,
-              {
-                guestName: guest.name,
-                creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-                eventName: access.eventName,
-                eventType: access.type,
-                startDate: access.startDate,
-                endDate: access.endDate,
-                location: access.location,
-                accessCode: access.accessCode,
-                qrCode: qrCode
-              },
-              company
-            );
+            await emailService.sendAccessModifiedToGuestEmail({
+              invitedEmail: guest.email,
+              invitedName: guest.name,
+              creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+              accessTitle: access.eventName,
+              accessType: access.type,
+              startDate: access.startDate,
+              endDate: access.endDate,
+              startTime: formatTime(access.startDate),
+              endTime: formatTime(access.endDate),
+              location: access.location,
+              accessCode: access.accessCode,
+              qrCode: qrCode,
+              companyName: company.name,
+              companyLogo: company.logo
+            });
           } catch (emailError) {
             console.error(`Error sending modification email to ${guest.email}:`, emailError);
           }
@@ -396,18 +402,19 @@ router.delete('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
 
       // Send to creator
       try {
-        await emailService.sendAccessCancelledEmail(
-          access.creatorId.email,
-          {
-            recipientName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-            eventName: access.eventName,
-            eventType: access.type,
-            startDate: access.startDate,
-            endDate: access.endDate,
-            location: access.location
-          },
-          company
-        );
+        await emailService.sendAccessCancelledEmail({
+          recipientEmail: access.creatorId.email,
+          recipientName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+          accessTitle: access.eventName,
+          accessType: access.type,
+          startDate: access.startDate,
+          endDate: access.endDate,
+          startTime: formatTime(access.startDate),
+          endTime: formatTime(access.endDate),
+          location: access.location,
+          companyName: company.name,
+          companyLogo: company.logo
+        });
       } catch (emailError) {
         console.error('Error sending cancellation email to creator:', emailError);
       }
@@ -416,18 +423,19 @@ router.delete('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
       for (const guest of access.invitedUsers) {
         if (guest.email) {
           try {
-            await emailService.sendAccessCancelledEmail(
-              guest.email,
-              {
-                recipientName: guest.name,
-                eventName: access.eventName,
-                eventType: access.type,
-                startDate: access.startDate,
-                endDate: access.endDate,
-                location: access.location
-              },
-              company
-            );
+            await emailService.sendAccessCancelledEmail({
+              recipientEmail: guest.email,
+              recipientName: guest.name,
+              accessTitle: access.eventName,
+              accessType: access.type,
+              startDate: access.startDate,
+              endDate: access.endDate,
+              startTime: formatTime(access.startDate),
+              endTime: formatTime(access.endDate),
+              location: access.location,
+              companyName: company.name,
+              companyLogo: company.logo
+            });
           } catch (emailError) {
             console.error(`Error sending cancellation email to ${guest.email}:`, emailError);
           }
@@ -488,17 +496,16 @@ router.post('/check-in/:accessCode', async (req, res) => {
       if (access.settings.sendAccessByEmail) {
         try {
           const company = await Company.findOne({ companyId: access.companyId });
-          await emailService.sendGuestCheckedInEmail(
-            access.creatorId.email,
-            {
-              creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-              guestName: guest.name,
-              eventName: access.eventName,
-              checkInTime: guest.checkInTime,
-              location: access.location
-            },
-            company
-          );
+          await emailService.sendGuestCheckedInEmail({
+            creatorEmail: access.creatorId.email,
+            creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+            guestName: guest.name,
+            accessTitle: access.eventName,
+            checkInTime: guest.checkInTime,
+            location: access.location,
+            companyName: company.name,
+            companyLogo: company.logo
+          });
         } catch (emailError) {
           console.error('Error sending check-in notification:', emailError);
         }

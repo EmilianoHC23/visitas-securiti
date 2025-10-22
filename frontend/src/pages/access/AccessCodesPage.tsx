@@ -16,11 +16,14 @@ import {
   Building2,
   CheckCircle,
   XCircle,
-  MinusCircle
+  MinusCircle,
+  UserCircle,
+  Bell
 } from 'lucide-react';
-import { getAccesses, createAccess, updateAccess, cancelAccess } from '../../services/api';
+import { getAccesses, createAccess, updateAccess, cancelAccess, getUsers } from '../../services/api';
 import { Access, InvitedUser } from '../../types';
 import { formatDate, formatDateTime } from '../../utils/dateUtils';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const AccessCodesPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'active' | 'finalized'>('active');
@@ -303,8 +306,10 @@ interface CreateAccessModalProps {
 }
 
 const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSuccess }) => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [hosts, setHosts] = useState<Array<{ id: string; name: string; email: string }>>([]);
   const [formData, setFormData] = useState({
     eventName: '',
     type: 'reunion' as 'reunion' | 'proyecto' | 'evento' | 'visita' | 'otro',
@@ -317,11 +322,30 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
     additionalInfo: '',
     sendEmail: true,
     preApproveAccess: false,
+    hostId: user?._id || '',
   });
   const [invitedUsers, setInvitedUsers] = useState<Array<{
     name: string;
     email: string;
   }>>([{ name: '', email: '' }]);
+
+  // Load hosts on mount
+  useEffect(() => {
+    const loadHosts = async () => {
+      try {
+        const response = await getUsers();
+        const hostUsers = response.filter((u: any) => u.role === 'host' || u.role === 'admin');
+        setHosts(hostUsers.map((h: any) => ({
+          id: h._id,
+          name: `${h.firstName} ${h.lastName}`,
+          email: h.email
+        })));
+      } catch (error) {
+        console.error('Error loading hosts:', error);
+      }
+    };
+    loadHosts();
+  }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -397,201 +421,188 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
+      <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="p-8">
           {/* Header */}
-          <div className="flex justify-between items-start mb-6">
+          <div className="flex justify-between items-start mb-8">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Crear accesos</h2>
-              <p className="text-sm text-gray-600 mt-1">Crea uno o varios accesos para tus visitantes.</p>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Crear acceso</h2>
+              <p className="text-sm text-gray-500">Configura los detalles del acceso para tus visitantes</p>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button 
+              onClick={onClose} 
+              className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg"
+            >
               <X className="w-6 h-6" />
             </button>
           </div>
 
-          {/* Alert Banner */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6 flex items-start">
-            <div className="text-yellow-600 mr-3">⚠️</div>
-            <div className="flex-1">
-              <p className="text-sm text-gray-700">
-                <span className="font-medium">Limitado a 10 invitados por WhatsApp por acceso.</span> Para más, utiliza su e-mail.
-              </p>
-            </div>
-            <button className="text-gray-400 hover:text-gray-600">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Razón del acceso y Título */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Razón del acceso <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  required
-                >
-                  <option value="reunion">Reunión</option>
-                  <option value="proyecto">Proyecto</option>
-                  <option value="evento">Evento</option>
-                  <option value="visita">Visita</option>
-                  <option value="otro">Otro</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Título <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.eventName}
-                  onChange={(e) => setFormData({ ...formData, eventName: e.target.value })}
-                  placeholder="Título de tu acceso"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+            {/* Información básica */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                  <Calendar className="w-5 h-5 text-white" />
+                </div>
+                Información del Acceso
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                    <Building2 className="w-4 h-4 mr-2 text-blue-600" />
+                    Razón del acceso <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all"
+                    required
+                  >
+                    <option value="reunion">🤝 Reunión</option>
+                    <option value="proyecto">📋 Proyecto</option>
+                    <option value="evento">🎉 Evento</option>
+                    <option value="visita">👤 Visita</option>
+                    <option value="otro">📌 Otro</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                    <Edit2 className="w-4 h-4 mr-2 text-blue-600" />
+                    Título <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.eventName}
+                    onChange={(e) => setFormData({ ...formData, eventName: e.target.value })}
+                    placeholder="Ej: Reunión de proyecto Q4"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    required
+                  />
+                </div>
               </div>
             </div>
 
             {/* Fechas y Horas */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid grid-cols-2 gap-2">
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border border-green-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center mr-3">
+                  <Clock className="w-5 h-5 text-white" />
+                </div>
+                Horario del Acceso
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-6">
+                {/* Inicio */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Inicia <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <Calendar className="w-4 h-4 mr-2 text-green-600" />
+                    Fecha y hora de inicio <span className="text-red-500 ml-1">*</span>
                   </label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="date"
-                      value={formData.startDate}
-                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                      className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="relative">
+                      <input
+                        type="date"
+                        value={formData.startDate}
+                        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                        className="w-full pl-4 pr-3 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                        required
+                      />
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="time"
+                        value={formData.startTime}
+                        onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                        className="w-full pl-4 pr-3 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                      />
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">&nbsp;</label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="time"
-                      value={formData.startTime}
-                      onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                      className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-2">
+                {/* Fin */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Finaliza <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <Calendar className="w-4 h-4 mr-2 text-green-600" />
+                    Fecha y hora de finalización <span className="text-red-500 ml-1">*</span>
                   </label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="date"
-                      value={formData.endDate}
-                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                      className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">&nbsp;</label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="time"
-                      value={formData.endTime}
-                      onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                      className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="relative">
+                      <input
+                        type="date"
+                        value={formData.endDate}
+                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                        className="w-full pl-4 pr-3 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                        required
+                      />
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="time"
+                        value={formData.endTime}
+                        onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                        className="w-full pl-4 pr-3 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Toggle: Crear un enlace para pre-registro */}
-            <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
-              <div className="flex items-center">
-                <span className="text-sm text-gray-700 mr-2">Crear un enlace para pre-registro</span>
-                <button type="button" className="text-gray-400 hover:text-gray-600">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </button>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.preApproveAccess}
-                  onChange={(e) => setFormData({ ...formData, preApproveAccess: e.target.checked })}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
-
-            {/* Agregar visitantes */}
-            <div>
-              <div className="flex justify-between items-center mb-3">
-                <label className="block text-sm font-medium text-gray-700">
-                  Agregar visitantes
-                </label>
-                <div className="flex items-center">
-                  <span className="text-sm text-gray-600 mr-3">
-                    Ingresa el correo electrónico de tus visitantes
-                  </span>
-                  <button
-                    type="button"
-                    onClick={addInvitedUser}
-                    className="px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-                  >
-                    Importar invitados
-                  </button>
+            {/* Invitados */}
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center mr-3">
+                  <Users className="w-5 h-5 text-white" />
                 </div>
-              </div>
+                Visitantes Invitados
+              </h3>
+              
+              <p className="text-sm text-gray-600 mb-4 flex items-center">
+                <Mail className="w-4 h-4 mr-2 text-purple-600" />
+                Ingresa el correo electrónico y nombre de tus visitantes
+              </p>
 
               <div className="space-y-3">
                 {invitedUsers.map((user, index) => (
-                  <div key={index} className="flex items-center space-x-3">
-                    {/* Icon dropdown (email by default) */}
-                    <div className="relative w-12">
-                      <button
-                        type="button"
-                        className="w-full h-11 flex items-center justify-center border border-gray-300 rounded-lg bg-white hover:bg-gray-50"
-                      >
-                        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                      </button>
+                  <div key={index} className="flex items-center gap-3 bg-white p-4 rounded-lg border-2 border-gray-200 hover:border-purple-300 transition-all">
+                    {/* Email input */}
+                    <div className="flex-1">
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                          type="email"
+                          placeholder="correo@ejemplo.com"
+                          value={user.email}
+                          onChange={(e) => updateInvitedUser(index, 'email', e.target.value)}
+                          className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        />
+                      </div>
                     </div>
 
-                    {/* Email input */}
-                    <input
-                      type="email"
-                      placeholder="Correo electrónico del visitante"
-                      value={user.email}
-                      onChange={(e) => updateInvitedUser(index, 'email', e.target.value)}
-                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    {/* Name input (appears when email is filled) */}
+                    {user.email && (
+                      <div className="flex-1">
+                        <div className="relative">
+                          <UserCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <input
+                            type="text"
+                            placeholder="Nombre del visitante"
+                            value={user.name}
+                            onChange={(e) => updateInvitedUser(index, 'name', e.target.value)}
+                            className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                          />
+                        </div>
+                      </div>
+                    )}
 
                     {/* Remove button */}
                     {invitedUsers.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeInvitedUser(index)}
-                        className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Eliminar visitante"
                       >
                         <X className="w-5 h-5" />
                       </button>
@@ -603,109 +614,118 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                 <button
                   type="button"
                   onClick={addInvitedUser}
-                  className="w-full py-2.5 text-sm text-gray-600 border border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:text-blue-600 transition-colors"
+                  className="w-full py-3 text-sm font-medium text-purple-600 border-2 border-dashed border-purple-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all flex items-center justify-center"
                 >
-                  + Agregar otro visitante
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agregar otro visitante
                 </button>
               </div>
             </div>
 
             {/* Opciones avanzadas */}
-            <div>
+            <div className="border-t border-gray-200 pt-6">
               <button
                 type="button"
                 onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                className="flex items-center text-sm text-blue-600 hover:text-blue-700"
+                className="flex items-center text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors group"
               >
-                <svg className={`w-4 h-4 mr-1 transition-transform ${showAdvancedOptions ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-5 h-5 mr-2 transition-transform ${showAdvancedOptions ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
-                Opciones avanzadas
+                <span className="group-hover:underline">Opciones avanzadas</span>
+                <span className="ml-2 text-xs text-gray-500">(opcional)</span>
               </button>
 
               {showAdvancedOptions && (
-                <div className="mt-4 space-y-4 pl-5 border-l-2 border-gray-200">
-                  {/* Imagen del evento */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Agrega una imagen a tu acceso
-                    </label>
-                    <div className="flex items-center space-x-3">
-                      {formData.eventImage ? (
-                        <div className="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-gray-200">
-                          <img src={formData.eventImage} alt="Preview" className="w-full h-full object-cover" />
-                          <button
-                            type="button"
-                            onClick={() => setFormData({ ...formData, eventImage: '' })}
-                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ) : (
-                        <label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
-                          <Upload className="w-6 h-6 text-gray-400 mb-1" />
-                          <span className="text-xs text-gray-500">Subir</span>
-                          <input
-                            type="file"
-                            accept="image/png, image/jpeg"
-                            onChange={handleImageUpload}
-                            className="hidden"
-                          />
-                        </label>
-                      )}
-                      <div className="text-xs text-gray-500">
-                        <p>Formatos permitidos: PNG y JPEG</p>
-                        <p>Tamaño máximo: 2MB</p>
-                      </div>
-                    </div>
-                  </div>
-
+                <div className="mt-6 space-y-5 bg-gray-50 rounded-xl p-6 border border-gray-200">
+                  
                   {/* Anfitrión */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Anfitrión
+                    <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                      <UserCircle className="w-5 h-5 mr-2 text-orange-600" />
+                      Anfitrión responsable
                     </label>
-                    <select className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                      <option>Emiliano Hernandez</option>
+                    <select 
+                      value={formData.hostId}
+                      onChange={(e) => setFormData({ ...formData, hostId: e.target.value })}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white transition-all"
+                    >
+                      {hosts.map((host) => (
+                        <option key={host.id} value={host.id}>
+                          {host.name} - {host.email}
+                        </option>
+                      ))}
                     </select>
-                  </div>
-
-                  {/* Notificar a alguien más */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Notificar a alguien más
-                    </label>
-                    <select className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                      <option>Selecciona los usuarios a notificar</option>
-                    </select>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Este usuario recibirá las notificaciones del acceso
+                    </p>
                   </div>
 
                   {/* Lugar */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Lugar
+                    <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                      <MapPin className="w-5 h-5 mr-2 text-red-600" />
+                      Ubicación específica
                     </label>
                     <input
                       type="text"
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      placeholder="Ej. Sala de juntas, Piso 3, Salón, etc."
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Ej. Sala de juntas, Edificio A, Piso 3"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                     />
+                  </div>
+
+                  {/* Imagen del evento */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                      <Upload className="w-5 h-5 mr-2 text-indigo-600" />
+                      Imagen del evento
+                    </label>
+                    <div className="flex items-start space-x-4">
+                      {formData.eventImage ? (
+                        <div className="relative w-32 h-32 rounded-xl overflow-hidden border-2 border-gray-300 shadow-md">
+                          <img src={formData.eventImage} alt="Preview" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, eventImage: '' })}
+                            className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="w-32 h-32 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition-all group">
+                          <Upload className="w-8 h-8 text-gray-400 group-hover:text-indigo-600 mb-2 transition-colors" />
+                          <span className="text-xs text-gray-500 group-hover:text-indigo-600 font-medium">Subir imagen</span>
+                          <input
+                            type="file"
+                            accept="image/png, image/jpeg, image/jpg"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                      <div className="flex-1 text-xs text-gray-600 space-y-1">
+                        <p className="flex items-center"><CheckCircle className="w-3 h-3 mr-1 text-green-600" /> Formatos: PNG, JPEG, JPG</p>
+                        <p className="flex items-center"><CheckCircle className="w-3 h-3 mr-1 text-green-600" /> Tamaño máximo: 2MB</p>
+                        <p className="flex items-center"><CheckCircle className="w-3 h-3 mr-1 text-green-600" /> Recomendado: 800x600px</p>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Información adicional */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Información adicional
+                    <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                      <Edit2 className="w-5 h-5 mr-2 text-teal-600" />
+                      Notas adicionales
                     </label>
                     <textarea
                       value={formData.additionalInfo}
                       onChange={(e) => setFormData({ ...formData, additionalInfo: e.target.value })}
-                      rows={3}
-                      placeholder="Ingresa alguna nota adicional del acceso"
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      rows={4}
+                      placeholder="Agrega instrucciones especiales, requisitos de entrada, código de vestimenta, etc."
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all resize-none"
                     />
                   </div>
                 </div>
@@ -713,31 +733,40 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
             </div>
 
             {/* Botones de acción */}
-            <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Creando...
-                  </>
-                ) : (
-                  'Enviar'
-                )}
-              </button>
+            <div className="flex justify-between items-center pt-8 border-t-2 border-gray-200">
+              <div className="flex items-center text-sm text-gray-500">
+                <Bell className="w-4 h-4 mr-2" />
+                Los invitados recibirán un correo con QR de acceso
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center font-semibold shadow-lg hover:shadow-xl"
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Creando acceso...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      Crear acceso
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </form>
         </div>

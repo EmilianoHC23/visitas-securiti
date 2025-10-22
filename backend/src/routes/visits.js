@@ -118,13 +118,14 @@ router.post('/', auth, async (req, res) => {
     let autoApproval = false;
     
     try {
-      // Validate that host.companyId is a valid ObjectId
-      if (host.companyId && mongoose.Types.ObjectId.isValid(host.companyId)) {
-        company = await Company.findOne({ _id: host.companyId });
+      // Buscar company por companyId (string), no por _id
+      const companyId = req.user.companyId || host.companyId;
+      if (companyId) {
+        company = await Company.findOne({ companyId: companyId });
         autoApproval = company?.settings?.autoApproval || false;
+        console.log('✅ Company found:', { companyId, autoApproval, autoCheckIn: company?.settings?.autoCheckIn });
       } else {
-        console.log('⚠️ Invalid companyId for host:', { hostId, companyId: host.companyId });
-        // Use default company settings if companyId is invalid
+        console.log('⚠️ No companyId found:', { userId: req.user._id, hostId });
         autoApproval = false;
       }
     } catch (error) {
@@ -225,10 +226,12 @@ router.post('/register', async (req, res) => {
     let autoCheckIn = false;
     
     try {
-      if (host.companyId && mongoose.Types.ObjectId.isValid(host.companyId)) {
-        company = await Company.findOne({ _id: host.companyId });
+      // Buscar company por companyId (string), no por _id
+      if (host.companyId) {
+        company = await Company.findOne({ companyId: host.companyId });
         autoApproval = company?.settings?.autoApproval || false;
         autoCheckIn = company?.settings?.autoCheckIn || false;
+        console.log('✅ [SELF-REGISTER] Company found:', { companyId: host.companyId, autoApproval, autoCheckIn });
       }
     } catch (error) {
       console.log('⚠️ Error fetching company settings for self-register:', error.message);
@@ -358,8 +361,8 @@ router.put('/:id/status', auth, async (req, res) => {
       // Verificar si auto check-in está habilitado
       try {
         const hostWithCompany = await User.findById(visit.host._id);
-        if (hostWithCompany && hostWithCompany.companyId && mongoose.Types.ObjectId.isValid(hostWithCompany.companyId)) {
-          const companySettings = await Company.findOne({ _id: hostWithCompany.companyId });
+        if (hostWithCompany && hostWithCompany.companyId) {
+          const companySettings = await Company.findOne({ companyId: hostWithCompany.companyId });
           if (companySettings?.settings?.autoCheckIn) {
             console.log('🔄 Auto check-in enabled, checking in visit automatically');
             updateData.status = 'checked-in';
@@ -617,8 +620,8 @@ router.get('/approve/:token', async (req, res) => {
     // Verificar si auto check-in está habilitado
     try {
       const hostUser = await User.findById(visit.host._id);
-      if (hostUser && hostUser.companyId && mongoose.Types.ObjectId.isValid(hostUser.companyId)) {
-        const companySettings = await Company.findOne({ _id: hostUser.companyId });
+      if (hostUser && hostUser.companyId) {
+        const companySettings = await Company.findOne({ companyId: hostUser.companyId });
         if (companySettings?.settings?.autoCheckIn) {
           console.log('🔄 [APPROVE-TOKEN] Auto check-in enabled, checking in visit automatically');
           visit.status = 'checked-in';

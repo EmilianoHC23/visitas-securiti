@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { User, Visit } from '../../types';
+import { User, Visit, Access } from '../../types';
 import * as api from '../../services/api';
 import CalendarMonth from '../../components/visits/CalendarMonth';
 
@@ -14,6 +14,7 @@ interface AgendaItem {
   preRegLink?: string;
   visitorName?: string;
   location?: string;
+  accessType?: string;
 }
 
 export const AgendaPage: React.FC = () => {
@@ -25,9 +26,10 @@ export const AgendaPage: React.FC = () => {
   const [q, setQ] = useState('');
   const [hosts, setHosts] = useState<User[]>([]);
   const [visits, setVisits] = useState<Visit[]>([]);
-  const [accesses, setAccesses] = useState<any[]>([]);
+  const [accesses, setAccesses] = useState<Access[]>([]);
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
+  const [filterType, setFilterType] = useState<'all' | 'visits' | 'accesses'>('all');
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => { api.getHosts().then(setHosts).catch(console.error); }, []);
@@ -40,20 +42,26 @@ export const AgendaPage: React.FC = () => {
       if (to) params.to = new Date(to).toISOString();
       if (hostId) params.hostId = hostId;
       if (q) params.q = q;
+      
+      // Fetch visits
       const visitsData = await api.getAgenda(params);
       setVisits(visitsData || []);
 
-      const accessesData = await api.getAccesses();
-      const fromDate = from ? new Date(from) : null;
-      const toDate = to ? new Date(to) : null;
-      const filteredAccesses = (accessesData || []).filter((a: any) => {
-        if (!a.schedule || !a.schedule.startDate) return false;
-        const startDate = new Date(a.schedule.startDate);
-        if (fromDate && startDate < fromDate) return false;
-        if (toDate && startDate > toDate) return false;
-        if (q && !a.title.toLowerCase().includes(q.toLowerCase()) && !a.description?.toLowerCase().includes(q.toLowerCase())) return false;
+      // Fetch accesses using new API
+      const accessesData = await api.getAccessesForAgenda(
+        from ? new Date(from).toISOString() : undefined,
+        to ? new Date(to).toISOString() : undefined
+      );
+      
+      // Filter by search query
+      const filteredAccesses = (accessesData || []).filter((a: Access) => {
+        if (q && !a.eventName.toLowerCase().includes(q.toLowerCase()) && 
+            !a.location?.toLowerCase().includes(q.toLowerCase())) {
+          return false;
+        }
         return true;
       });
+      
       setAccesses(filteredAccesses);
     } catch (e) {
       console.error(e);
@@ -66,13 +74,41 @@ export const AgendaPage: React.FC = () => {
 
   const agendaItems: AgendaItem[] = useMemo(() => {
     const items: AgendaItem[] = [];
-    visits.forEach(v => items.push({ id: v._id, type: 'visit', title: v.visitorName, startDate: v.scheduledDate, reason: v.reason, company: v.visitorCompany, hostName: `${v.host.firstName} ${v.host.lastName}`, visitorName: v.visitorName }));
-    accesses.forEach((a: any) => {
-      const startDateTime = a.schedule?.startDate && a.schedule?.startTime ? `${a.schedule.startDate}T${a.schedule.startTime}:00` : a.schedule?.startDate || new Date().toISOString();
-      items.push({ id: a._id, type: 'access', title: a.title, startDate: startDateTime, reason: a.description || 'Evento', company: '', hostName: a.host ? `${a.host.firstName} ${a.host.lastName}` : 'N/A', preRegLink: a.accessCode ? `${window.location.origin}/redeem/${a.accessCode}` : undefined, location: a.location });
-    });
+    
+    // Add visits if filter allows
+    if (filterType === 'all' || filterType === 'visits') {
+      visits.forEach(v => items.push({ 
+        id: v._id, 
+        type: 'visit', 
+        title: v.visitorName, 
+        startDate: v.scheduledDate, 
+        reason: v.reason, 
+        company: v.visitorCompany, 
+        hostName: `${v.host.firstName} ${v.host.lastName}`, 
+        visitorName: v.visitorName 
+      }));
+    }
+    
+    // Add accesses if filter allows
+    if (filterType === 'all' || filterType === 'accesses') {
+      accesses.forEach((a: Access) => {
+        items.push({ 
+          id: a._id, 
+          type: 'access', 
+          title: a.eventName, 
+          startDate: typeof a.startDate === 'string' ? a.startDate : new Date(a.startDate).toISOString(), 
+          reason: a.additionalInfo || 'Evento', 
+          company: '', 
+          hostName: a.creatorId ? `${a.creatorId.firstName} ${a.creatorId.lastName}` : 'N/A', 
+          preRegLink: a.accessCode ? `${window.location.origin}/redeem/${a.accessCode}` : undefined, 
+          location: a.location,
+          accessType: a.type
+        });
+      });
+    }
+    
     return items.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-  }, [visits, accesses]);
+  }, [visits, accesses, filterType]);
 
   const copyLink = async (link: string) => {
     try { await navigator.clipboard.writeText(link); setToast('Enlace copiado al portapapeles'); setTimeout(() => setToast(null), 2000); }
@@ -96,6 +132,34 @@ export const AgendaPage: React.FC = () => {
         <div className="flex gap-2">
           <button onClick={() => setViewMode('table')} className={`px-4 py-2 rounded-md font-semibold ${viewMode === 'table' ? 'bg-securiti-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Tabla</button>
           <button onClick={() => setViewMode('calendar')} className={`px-4 py-2 rounded-md font-semibold ${viewMode === 'calendar' ? 'bg-securiti-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Calendario</button>
+        </div>
+      </div>
+
+      {/* Filtro de tipo */}
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">Mostrar:</span>
+          <button 
+            onClick={() => setFilterType('all')} 
+            className={`px-3 py-1.5 rounded-md text-sm font-medium ${filterType === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+          >
+            Todos
+          </button>
+          <button 
+            onClick={() => setFilterType('visits')} 
+            className={`px-3 py-1.5 rounded-md text-sm font-medium ${filterType === 'visits' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+          >
+            Solo Visitas
+          </button>
+          <button 
+            onClick={() => setFilterType('accesses')} 
+            className={`px-3 py-1.5 rounded-md text-sm font-medium ${filterType === 'accesses' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+          >
+            Solo Accesos/Eventos
+          </button>
+          <span className="ml-auto text-sm text-gray-600">
+            {agendaItems.length} {agendaItems.length === 1 ? 'item' : 'items'}
+          </span>
         </div>
       </div>
 
@@ -148,9 +212,26 @@ export const AgendaPage: React.FC = () => {
                 ) : (
                   agendaItems.map(item => (
                     <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${item.type === 'visit' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>{item.type === 'visit' ? 'Visita' : 'Evento'}</span></td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                          item.type === 'visit' 
+                            ? 'bg-green-100 text-green-800' 
+                            : item.accessType === 'reunion' 
+                              ? 'bg-blue-100 text-blue-800'
+                              : item.accessType === 'proyecto'
+                                ? 'bg-purple-100 text-purple-800'
+                                : item.accessType === 'evento'
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {item.type === 'visit' ? 'Visita' : item.accessType === 'reunion' ? 'Reunión' : item.accessType === 'proyecto' ? 'Proyecto' : item.accessType === 'evento' ? 'Evento' : 'Otro'}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(item.startDate).toLocaleString('es-ES', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
-                      <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-medium text-gray-900">{item.title}</div></td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{item.title}</div>
+                        {item.location && <div className="text-xs text-gray-500 mt-1">📍 {item.location}</div>}
+                      </td>
                       <td className="px-6 py-4 text-sm text-gray-600">{item.reason}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.company || '—'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.hostName}</td>

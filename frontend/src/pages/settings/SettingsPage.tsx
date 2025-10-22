@@ -143,9 +143,9 @@ export const SettingsPage: React.FC = () => {
                                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Información de la organización</h2>
                                 
                                 {/* Logo Upload */}
-                                <div className="flex items-start gap-6">
+                                <div className="flex items-center gap-6">
                                     <div className="flex-shrink-0">
-                                        <div className="w-24 h-24 rounded-full border-2 border-gray-200 overflow-hidden bg-gradient-to-br from-cyan-100 to-blue-100 flex items-center justify-center">
+                                        <div className="w-36 h-36 rounded-full border-2 border-gray-200 overflow-hidden bg-gradient-to-br from-cyan-100 to-blue-100 flex items-center justify-center">
                                             {companyLogo ? (
                                                 <img src={companyLogo} alt="Logo" className="w-full h-full object-cover" />
                                             ) : (
@@ -154,66 +154,64 @@ export const SettingsPage: React.FC = () => {
                                                 </svg>
                                             )}
                                         </div>
-                                        <button
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className="mt-2 flex items-center gap-2 text-sm text-cyan-600 hover:text-cyan-700"
-                                        >
-                                            <Camera className="w-4 h-4" />
-                                            Cambiar
-                                        </button>
-                                        <input
-                                            ref={fileInputRef}
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleLogoUpload}
-                                            className="hidden"
-                                        />
+                                        <div className="mt-3">
+                                            <button
+                                                onClick={() => fileInputRef.current?.click()}
+                                                className="flex items-center gap-2 text-sm text-cyan-600 hover:text-cyan-700"
+                                            >
+                                                <Camera className="w-4 h-4" />
+                                                Cambiar
+                                            </button>
+                                            <input
+                                                ref={fileInputRef}
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleLogoUpload}
+                                                className="hidden"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex-1">
+                                        <div className="grid grid-cols-3 gap-4 items-center">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del edificio*</label>
+                                                <input
+                                                    type="text"
+                                                    value={buildingName}
+                                                    onChange={(e) => setBuildingName(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Idioma de la cuenta</label>
+                                                <select
+                                                    value={accountLanguage}
+                                                    onChange={(e) => setAccountLanguage(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                                                >
+                                                    <option>Español</option>
+                                                    <option>English</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Zona horaria</label>
+                                                <select
+                                                    value={timezone}
+                                                    onChange={(e) => setTimezone(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                                                >
+                                                    <option>Default (America/Mexico_City)</option>
+                                                    <option>America/Los_Angeles</option>
+                                                    <option>America/New_York</option>
+                                                </select>
+                                            </div>
+                                        </div>
                                         <p className="text-xs text-gray-500 mt-2">
                                             Sube el logo de la organización (PNG 500 × 500 px recomendado). Nota: Cualquier cambio aquí aplica para todos los usuarios de esta cuenta.
                                         </p>
-                                    </div>
-
-                                    <div className="flex-1 grid grid-cols-3 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Nombre del edificio*
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={buildingName}
-                                                onChange={(e) => setBuildingName(e.target.value)}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Idioma de la cuenta
-                                            </label>
-                                            <select
-                                                value={accountLanguage}
-                                                onChange={(e) => setAccountLanguage(e.target.value)}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                                            >
-                                                <option>Español</option>
-                                                <option>English</option>
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Zona horaria
-                                            </label>
-                                            <select
-                                                value={timezone}
-                                                onChange={(e) => setTimezone(e.target.value)}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                                            >
-                                                <option>Default (America/Mexico_City)</option>
-                                                <option>America/Los_Angeles</option>
-                                                <option>America/New_York</option>
-                                            </select>
-                                        </div>
                                     </div>
                                 </div>
 

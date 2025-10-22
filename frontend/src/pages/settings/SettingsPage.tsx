@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Camera } from 'lucide-react';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
 import { useAuth } from '../../contexts/AuthContext';
 import * as api from '../../services/api';
 
@@ -28,6 +31,23 @@ export const SettingsPage: React.FC = () => {
     const [googleMapsUrl, setGoogleMapsUrl] = useState('');
     const [companyPhoto, setCompanyPhoto] = useState<string>('');
     const [arrivalInstructions, setArrivalInstructions] = useState('');
+
+    // Lista de estados para México (se usará cuando country === 'México')
+    const MEXICO_STATES = [
+        'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
+        'Chihuahua', 'Ciudad de México', 'Coahuila', 'Colima', 'Durango', 'Guanajuato',
+        'Guerrero', 'Hidalgo', 'Jalisco', 'México', 'Michoacán', 'Morelos', 'Nayarit',
+        'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí',
+        'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas'
+    ];
+
+    const handleCountryChange = (value: string) => {
+        setCountry(value);
+        // Si no es México, limpiar el estado y no mostrar opciones
+        if (value !== 'México') {
+            setState('');
+        }
+    };
 
     const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -298,12 +318,12 @@ export const SettingsPage: React.FC = () => {
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-4 gap-4">
+                                <div className="grid grid-cols-4 gap-4 items-end">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">País</label>
                                         <select
                                             value={country}
-                                            onChange={(e) => setCountry(e.target.value)}
+                                            onChange={(e) => handleCountryChange(e.target.value)}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                                         >
                                             <option>México</option>
@@ -313,16 +333,60 @@ export const SettingsPage: React.FC = () => {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                                        <select
-                                            value={state}
-                                            onChange={(e) => setState(e.target.value)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                                        >
-                                            <option value="">Seleccionar</option>
-                                            <option>Ciudad de México</option>
-                                            <option>Jalisco</option>
-                                            <option>Nuevo León</option>
-                                        </select>
+                                        {country === 'México' ? (
+                                            <FormControl fullWidth sx={{
+                                                '& .MuiInputBase-root': {
+                                                    height: 40,
+                                                    borderRadius: '0.5rem',
+                                                }
+                                            }}>
+                                                <Select
+                                                    variant="outlined"
+                                                    value={state}
+                                                    onChange={(e) => setState(e.target.value as string)}
+                                                    MenuProps={{
+                                                        PaperProps: {
+                                                            style: {
+                                                                maxHeight: 220,
+                                                                width: 220,
+                                                            },
+                                                        },
+                                                        anchorOrigin: {
+                                                            vertical: 'bottom',
+                                                            horizontal: 'left',
+                                                        },
+                                                        transformOrigin: {
+                                                            vertical: 'top',
+                                                            horizontal: 'left',
+                                                        },
+                                                    }}
+                                                    sx={{
+                                                        '& .MuiSelect-select': {
+                                                            paddingTop: '8px',
+                                                            paddingBottom: '8px',
+                                                            paddingLeft: '12px',
+                                                            paddingRight: '36px'
+                                                        },
+                                                        '& .MuiOutlinedInput-notchedOutline': {
+                                                            borderColor: 'rgba(209,213,219,1)'
+                                                        }
+                                                    }}
+                                                >
+                                                    <MenuItem value="">Seleccionar</MenuItem>
+                                                    {MEXICO_STATES.map((s) => (
+                                                        <MenuItem key={s} value={s}>{s}</MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                value={state}
+                                                onChange={(e) => setState(e.target.value)}
+                                                placeholder="Estado"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                                            />
+                                        )}
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>

@@ -319,15 +319,86 @@ export const SettingsPage: React.FC = () => {
                                 <div className="grid grid-cols-4 gap-4 items-end">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">País</label>
-                                        <select
-                                            value={country}
-                                            onChange={(e) => handleCountryChange(e.target.value)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                                        >
-                                            <option>México</option>
-                                            <option>Estados Unidos</option>
-                                            <option>Canadá</option>
-                                        </select>
+                                            <FormControl fullWidth sx={{
+                                                '& .MuiInputBase-root': {
+                                                    height: 40,
+                                                    borderRadius: '0.5rem',
+                                                }
+                                            }}>
+                                                <Select
+                                                    variant="outlined"
+                                                    value={country}
+                                                    onChange={(e) => handleCountryChange(e.target.value as string)}
+                                                    MenuProps={{
+                                                        PaperProps: {
+                                                            style: {
+                                                                maxHeight: 220,
+                                                                width: 220,
+                                                            },
+                                                        },
+                                                        anchorOrigin: {
+                                                            vertical: 'bottom',
+                                                            horizontal: 'left',
+                                                        },
+                                                        transformOrigin: {
+                                                            vertical: 'top',
+                                                            horizontal: 'left',
+                                                        },
+                                                    }}
+                                                    sx={{
+                                                        '& .MuiSelect-select': {
+                                                            paddingTop: '8px',
+                                                            paddingBottom: '8px',
+                                                            paddingLeft: '12px',
+                                                            paddingRight: '36px'
+                                                        },
+                                                        '& .MuiOutlinedInput-notchedOutline': {
+                                                            borderColor: 'rgba(209,213,219,1)'
+                                                        }
+                                                    }}
+                                                >
+                                                    <MenuItem value="México">México</MenuItem>
+                                                    <MenuItem value="Argentina">Argentina</MenuItem>
+                                                    <MenuItem value="Australia">Australia</MenuItem>
+                                                    <MenuItem value="Barbados">Barbados</MenuItem>
+                                                    <MenuItem value="Belize">Belize</MenuItem>
+                                                    <MenuItem value="Bolivia">Bolivia</MenuItem>
+                                                    <MenuItem value="Canada">Canada</MenuItem>
+                                                    <MenuItem value="Chile">Chile</MenuItem>
+                                                    <MenuItem value="Colombia">Colombia</MenuItem>
+                                                    <MenuItem value="Costa Rica">Costa Rica</MenuItem>
+                                                    <MenuItem value="Cuba">Cuba</MenuItem>
+                                                    <MenuItem value="Ecuador">Ecuador</MenuItem>
+                                                    <MenuItem value="El Salvador">El Salvador</MenuItem>
+                                                    <MenuItem value="España">España</MenuItem>
+                                                    <MenuItem value="Estados Unidos">Estados Unidos</MenuItem>
+                                                    <MenuItem value="Ghana">Ghana</MenuItem>
+                                                    <MenuItem value="Guatemala">Guatemala</MenuItem>
+                                                    <MenuItem value="Guyana">Guyana</MenuItem>
+                                                    <MenuItem value="Honduras">Honduras</MenuItem>
+                                                    <MenuItem value="India">India</MenuItem>
+                                                    <MenuItem value="Ireland">Ireland</MenuItem>
+                                                    <MenuItem value="Jamaica">Jamaica</MenuItem>
+                                                    <MenuItem value="Kenya">Kenya</MenuItem>
+                                                    <MenuItem value="Malaysia">Malaysia</MenuItem>
+                                                    <MenuItem value="New Zealand">New Zealand</MenuItem>
+                                                    <MenuItem value="Nicaragua">Nicaragua</MenuItem>
+                                                    <MenuItem value="Nigeria">Nigeria</MenuItem>
+                                                    <MenuItem value="Panamá">Panamá</MenuItem>
+                                                    <MenuItem value="Paraguay">Paraguay</MenuItem>
+                                                    <MenuItem value="Perú">Perú</MenuItem>
+                                                    <MenuItem value="Philippines">Philippines</MenuItem>
+                                                    <MenuItem value="Puerto Rico">Puerto Rico</MenuItem>
+                                                    <MenuItem value="República Dominicana">República Dominicana</MenuItem>
+                                                    <MenuItem value="Reyno Unido">Reyno Unido</MenuItem>
+                                                    <MenuItem value="Singapore">Singapore</MenuItem>
+                                                    <MenuItem value="South Africa">South Africa</MenuItem>
+                                                    <MenuItem value="Trinidad and Tobago">Trinidad and Tobago</MenuItem>
+                                                    <MenuItem value="Uganda">Uganda</MenuItem>
+                                                    <MenuItem value="Uruguay">Uruguay</MenuItem>
+                                                    <MenuItem value="Venezuela">Venezuela</MenuItem>
+                                                </Select>
+                                            </FormControl>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>

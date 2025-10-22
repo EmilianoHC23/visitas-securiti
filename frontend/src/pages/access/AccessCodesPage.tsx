@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Eye, Edit2, CheckCircle, RefreshCw, Trash2, QrCode, Link as LinkIcon } from 'lucide-react';
 import { 
   getAccesses, 
   createAccess as apiCreateAccess, 
@@ -454,7 +455,14 @@ export const AccessCodesPage: React.FC = () => {
                       <td className="py-3 pr-4">{typeof item.invitedCount === 'number' ? item.invitedCount : item.visitors.length}</td>
                       <td className="py-3 pr-4">
                         {item.preRegLink ? (
-                          <button className="px-2 py-1 text-securiti-blue-700 hover:underline" onClick={() => copyLink(item.preRegLink)}>Copiar</button>
+                          <button
+                            title="Copiar enlace"
+                            aria-label={`Copiar enlace ${item.title}`}
+                            className="w-8 h-8 flex items-center justify-center bg-securiti-blue-100 text-securiti-blue-700 rounded hover:bg-securiti-blue-200"
+                            onClick={() => copyLink(item.preRegLink)}
+                          >
+                            <LinkIcon className="w-4 h-4" />
+                          </button>
                         ) : (
                           <span className="text-gray-400">—</span>
                         )}
@@ -462,15 +470,58 @@ export const AccessCodesPage: React.FC = () => {
                       <td className="py-3 pr-4 capitalize">{item.status}</td>
                       <td className="py-3 pr-4">
                         <div className="flex flex-wrap gap-2">
-                          <button className="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200" onClick={() => setViewId(item.id)}>Ver</button>
-                          <button className="px-2 py-1 bg-gray-100 rounded hover:bg-gray-200" onClick={() => openEdit(item)}>Editar</button>
+                          <button
+                            title="Ver"
+                            aria-label={`Ver ${item.title}`}
+                            className="w-8 h-8 flex items-center justify-center bg-securiti-blue-100 text-securiti-blue-700 rounded hover:bg-securiti-blue-200"
+                            onClick={() => setViewId(item.id)}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            title="Editar"
+                            aria-label={`Editar ${item.title}`}
+                            className="w-8 h-8 flex items-center justify-center bg-cyan-100 text-cyan-700 rounded hover:bg-cyan-200"
+                            onClick={() => openEdit(item)}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
                           {item.status === 'activo' ? (
-                            <button className="px-2 py-1 bg-amber-100 text-amber-700 rounded hover:bg-amber-200" onClick={() => finalizeItem(item.id)}>Finalizar</button>
+                            <button
+                              title="Finalizar"
+                              aria-label={`Finalizar ${item.title}`}
+                              className="w-8 h-8 flex items-center justify-center bg-amber-100 text-amber-700 rounded hover:bg-amber-200"
+                              onClick={() => finalizeItem(item.id)}
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
                           ) : (
-                            <button className="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200" onClick={() => reactivateItem(item.id)}>Activar</button>
+                            <button
+                              title="Activar"
+                              aria-label={`Activar ${item.title}`}
+                              className="w-8 h-8 flex items-center justify-center bg-green-100 text-green-700 rounded hover:bg-green-200"
+                              onClick={() => reactivateItem(item.id)}
+                            >
+                              <RefreshCw className="w-4 h-4" />
+                            </button>
                           )}
-                          <button className="px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200" onClick={() => setConfirmDeleteId(item.id)}>Eliminar</button>
-                          <button className="px-2 py-1 bg-securiti-blue-100 text-securiti-blue-700 rounded hover:bg-securiti-blue-200" disabled={!item.preRegLink} onClick={() => item.preRegLink && setQrId(item.id)}>QR</button>
+                          <button
+                            title="Eliminar"
+                            aria-label={`Eliminar ${item.title}`}
+                            className="w-8 h-8 flex items-center justify-center bg-red-100 text-red-700 rounded hover:bg-red-200"
+                            onClick={() => setConfirmDeleteId(item.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            title="QR"
+                            aria-label={`QR ${item.title}`}
+                            className={`w-8 h-8 flex items-center justify-center rounded ${item.preRegLink ? 'bg-securiti-blue-100 text-securiti-blue-700 hover:bg-securiti-blue-200' : 'bg-gray-100 text-gray-300'}`}
+                            disabled={!item.preRegLink}
+                            onClick={() => item.preRegLink && setQrId(item.id)}
+                          >
+                            <QrCode className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>

@@ -317,27 +317,40 @@ export const removeFromBlacklist = async (id: string): Promise<void> => {
 };
 
 // --- ACCESS CODES / EVENTS ---
-export const getAccesses = async (): Promise<Access[]> => {
-  return apiRequest('/access');
+export const getAccesses = async (status?: string): Promise<Access[]> => {
+  const query = status ? `?status=${status}` : '';
+  return apiRequest(`/access${query}`);
+};
+
+export const getAccessById = async (id: string): Promise<Access> => {
+  return apiRequest(`/access/${id}`);
+};
+
+export const getAccessesForAgenda = async (start?: string, end?: string): Promise<Access[]> => {
+  const query = start && end ? `?start=${start}&end=${end}` : '';
+  return apiRequest(`/access/agenda${query}`);
 };
 
 export const createAccess = async (accessData: {
-  title: string;
-  description?: string;
-  schedule: {
-    startDate: Date;
-    endDate: Date;
-    startTime: string;
-    endTime: string;
-    recurrence?: string;
+  eventName: string;
+  type: 'reunion' | 'proyecto' | 'evento' | 'visita' | 'otro';
+  startDate: Date | string;
+  endDate: Date | string;
+  location?: string;
+  eventImage?: string;
+  invitedUsers?: Array<{
+    name: string;
+    email?: string;
+    phone?: string;
+    company?: string;
+  }>;
+  notifyUsers?: string[];
+  settings?: {
+    sendAccessByEmail?: boolean;
+    language?: 'es' | 'en';
+    noExpiration?: boolean;
   };
-  settings: {
-    maxUses?: number;
-    autoApproval?: boolean;
-    requireApproval?: boolean;
-    allowGuests?: boolean;
-  };
-  invitedEmails?: string[];
+  additionalInfo?: string;
 }): Promise<Access> => {
   return apiRequest('/access', {
     method: 'POST',
@@ -345,23 +358,37 @@ export const createAccess = async (accessData: {
   });
 };
 
-export const updateAccess = async (id: string, updates: Partial<Access>): Promise<Access> => {
+export const updateAccess = async (id: string, updates: {
+  endDate?: Date | string;
+  eventImage?: string;
+  invitedUsers?: Array<{
+    name: string;
+    email?: string;
+    phone?: string;
+    company?: string;
+  }>;
+  additionalInfo?: string;
+}): Promise<Access> => {
   return apiRequest(`/access/${id}`, {
     method: 'PUT',
     body: JSON.stringify(updates),
   });
 };
 
-export const deleteAccess = async (id: string): Promise<void> => {
+export const cancelAccess = async (id: string): Promise<void> => {
   return apiRequest(`/access/${id}`, {
     method: 'DELETE',
   });
 };
 
-export const updateAccessStatus = async (id: string, status: string): Promise<Access> => {
-  return apiRequest(`/access/${id}/status`, {
-    method: 'PUT',
-    body: JSON.stringify({ status }),
+export const checkInAccess = async (accessCode: string, guestData: {
+  guestEmail?: string;
+  guestPhone?: string;
+  guestName: string;
+}): Promise<any> => {
+  return apiRequest(`/access/check-in/${accessCode}`, {
+    method: 'POST',
+    body: JSON.stringify(guestData),
   });
 };
 

@@ -99,42 +99,46 @@ export interface BlacklistEntry {
   updatedAt: string;
 }
 
+export interface InvitedUser {
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  attendanceStatus: 'pendiente' | 'asistio' | 'no-asistio';
+  checkInTime?: Date;
+}
+
 export interface Access {
   _id: string;
-  title: string;
-  description?: string;
+  eventName: string;
+  type: 'reunion' | 'proyecto' | 'evento' | 'visita' | 'otro';
   accessCode: string;
-  qrCode: string;
-  createdBy: {
+  creatorId: {
     _id: string;
     firstName: string;
     lastName: string;
     email: string;
   };
   companyId: string;
+  startDate: Date | string;
+  endDate: Date | string;
+  eventImage?: string;
+  location?: string;
   settings: {
-    autoApproval: boolean;
-    maxUses: number;
-    allowGuests: boolean;
-    requireApproval: boolean;
+    sendAccessByEmail: boolean;
+    language: 'es' | 'en';
+    noExpiration: boolean;
   };
-  schedule: {
-    startDate: Date;
-    endDate: Date;
-    startTime: string;
-    endTime: string;
-    recurrence: 'none' | 'daily' | 'weekly' | 'monthly';
-  };
-  status: 'active' | 'expired' | 'cancelled';
-  usageCount: number;
-  invitedEmails: Array<{
-    email: string;
-    sentAt: Date;
-    status: 'sent' | 'opened' | 'redeemed';
-  }>;
-  createdAt: Date;
-  updatedAt: Date;
-}export interface DashboardStats {
+  status: 'active' | 'expired' | 'cancelled' | 'finalized';
+  reminderSent: boolean;
+  notifyUsers: string[];
+  invitedUsers: InvitedUser[];
+  additionalInfo?: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface DashboardStats {
   active: number;
   pending: number;
   approved: number;

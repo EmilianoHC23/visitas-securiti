@@ -57,6 +57,22 @@ node scripts/test-email.js
 
 ---
 
+### `remove-qrcode-index.js`
+Elimina el índice obsoleto `qrCode_1` de la colección `accesses`.
+
+**Uso:**
+```bash
+cd backend
+node scripts/remove-qrcode-index.js
+```
+
+**Contexto:**
+- Este índice era de una versión anterior del modelo Access
+- Ya fue ejecutado en producción (22 Oct 2025)
+- Solo es necesario si encuentras errores de "duplicate key" con `qrCode: null`
+
+---
+
 ## 🔒 Notas de Seguridad
 
 - **NO** ejecutar estos scripts en producción sin revisar el código

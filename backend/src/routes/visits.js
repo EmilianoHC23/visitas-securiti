@@ -132,7 +132,21 @@ router.post('/', auth, async (req, res) => {
       autoApproval = false;
     }
     
-    console.log('🏢 Company settings:', { autoApproval, companyId: host.companyId });
+    console.log('🏢 Company settings:', { autoApproval, autoCheckIn: company?.settings?.autoCheckIn, companyId: host.companyId });
+
+    // Determinar estado inicial según configuración
+    let initialStatus = 'pending';
+    let checkInTime = null;
+    
+    if (autoApproval) {
+      initialStatus = 'approved';
+      // Si auto check-in también está habilitado, ir directamente a checked-in
+      if (company?.settings?.autoCheckIn) {
+        initialStatus = 'checked-in';
+        checkInTime = new Date();
+        console.log('🔄 Auto check-in enabled, visit will be created as checked-in');
+      }
+    }
 
     const visit = new Visit({
       visitorName,
@@ -145,11 +159,20 @@ router.post('/', auth, async (req, res) => {
       companyId: req.user.companyId,
       visitorEmail,
       visitorPhone,
-      status: autoApproval ? 'approved' : 'pending'
+      status: initialStatus,
+      checkInTime: checkInTime,
+      qrToken: autoApproval ? require('crypto').randomBytes(16).toString('hex') : null,
+      approvedAt: autoApproval ? new Date() : null
     });
 
     await visit.save();
     await visit.populate('host', 'firstName lastName email profileImage');
+
+    // Si se hizo auto check-in, crear evento
+    if (initialStatus === 'checked-in') {
+      await new VisitEvent({ visitId: visit._id, type: 'check-in' }).save();
+      console.log('✅ Auto check-in event created');
+    }
 
     // Create approval token and send email to host if not auto-approved
     if (!autoApproval) {
@@ -196,6 +219,34 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Host no válido' });
     }
 
+    // Get company settings for auto-approval and auto-checkin
+    let company = null;
+    let autoApproval = false;
+    let autoCheckIn = false;
+    
+    try {
+      if (host.companyId && mongoose.Types.ObjectId.isValid(host.companyId)) {
+        company = await Company.findOne({ _id: host.companyId });
+        autoApproval = company?.settings?.autoApproval || false;
+        autoCheckIn = company?.settings?.autoCheckIn || false;
+      }
+    } catch (error) {
+      console.log('⚠️ Error fetching company settings for self-register:', error.message);
+    }
+
+    // Determinar estado inicial
+    let initialStatus = 'pending';
+    let checkInTime = null;
+    
+    if (autoApproval) {
+      initialStatus = 'approved';
+      if (autoCheckIn) {
+        initialStatus = 'checked-in';
+        checkInTime = new Date();
+        console.log('🔄 [SELF-REGISTER] Auto check-in enabled, visit created as checked-in');
+      }
+    }
+
     const visit = new Visit({
       visitorName,
       visitorCompany: visitorCompany || '',
@@ -207,30 +258,41 @@ router.post('/register', async (req, res) => {
       visitorPhoto,
       visitorEmail,
       visitorPhone,
-      status: 'pending'
+      status: initialStatus,
+      checkInTime: checkInTime,
+      qrToken: autoApproval ? require('crypto').randomBytes(16).toString('hex') : null,
+      approvedAt: autoApproval ? new Date() : null
     });
 
     await visit.save();
     await visit.populate('host', 'firstName lastName email profileImage');
 
-    // Create approval token and email host
-    const approval = Approval.createWithExpiry(visit._id, host._id, 48);
-    await approval.save();
-  const FE = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
-  const approveUrl = `${FE}/api/visits/approve/${approval.token}`;
-  const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
-    await require('../services/emailService').sendApprovalRequestEmail({
-      hostEmail: host.email,
-      hostName: `${host.firstName} ${host.lastName}`,
-      companyName: 'SecurITI',
-      visitorName,
-      visitorCompany,
-      visitorPhoto,
-      reason,
-      scheduledDate: new Date(),
-      approveUrl,
-      rejectUrl
-    });
+    // Si se hizo auto check-in, crear evento
+    if (initialStatus === 'checked-in') {
+      await new VisitEvent({ visitId: visit._id, type: 'check-in' }).save();
+      console.log('✅ [SELF-REGISTER] Auto check-in event created');
+    }
+
+    // Create approval token and email host only if not auto-approved
+    if (!autoApproval) {
+      const approval = Approval.createWithExpiry(visit._id, host._id, 48);
+      await approval.save();
+      const FE = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+      const approveUrl = `${FE}/api/visits/approve/${approval.token}`;
+      const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
+      await require('../services/emailService').sendApprovalRequestEmail({
+        hostEmail: host.email,
+        hostName: `${host.firstName} ${host.lastName}`,
+        companyName: 'SecurITI',
+        visitorName,
+        visitorCompany,
+        visitorPhoto,
+        reason,
+        scheduledDate: new Date(),
+        approveUrl,
+        rejectUrl
+      });
+    }
 
     res.status(201).json(visit);
   } catch (error) {
@@ -292,6 +354,23 @@ router.put('/:id/status', auth, async (req, res) => {
       // Generar qrToken único
       updateData.qrToken = require('crypto').randomBytes(16).toString('hex');
       updateData.approvedAt = new Date();
+      
+      // Verificar si auto check-in está habilitado
+      try {
+        const hostWithCompany = await User.findById(visit.host._id);
+        if (hostWithCompany && hostWithCompany.companyId && mongoose.Types.ObjectId.isValid(hostWithCompany.companyId)) {
+          const companySettings = await Company.findOne({ _id: hostWithCompany.companyId });
+          if (companySettings?.settings?.autoCheckIn) {
+            console.log('🔄 Auto check-in enabled, checking in visit automatically');
+            updateData.status = 'checked-in';
+            updateData.checkInTime = new Date();
+            eventType = 'check-in';
+          }
+        }
+      } catch (autoCheckInError) {
+        console.warn('⚠️ Error checking auto check-in settings:', autoCheckInError?.message);
+        // Continue with normal approval if auto check-in fails
+      }
     }
     if (status === 'checked-in') {
       updateData.checkInTime = new Date();
@@ -526,7 +605,7 @@ router.get('/approve/:token', async (req, res) => {
     if (!approval || approval.status !== 'pending') return res.status(400).send('Token inválido o ya utilizado');
     if (approval.isExpired()) return res.status(400).send('El enlace de aprobación ha expirado');
     
-    const visit = await Visit.findById(approval.visitId);
+    const visit = await Visit.findById(approval.visitId).populate('host');
     if (!visit) return res.status(404).send('Visita no encontrada');
     
     visit.status = 'approved';
@@ -534,6 +613,23 @@ router.get('/approve/:token', async (req, res) => {
     if (!visit.qrToken) {
       visit.qrToken = require('crypto').randomBytes(16).toString('hex');
     }
+    
+    // Verificar si auto check-in está habilitado
+    try {
+      const hostUser = await User.findById(visit.host._id);
+      if (hostUser && hostUser.companyId && mongoose.Types.ObjectId.isValid(hostUser.companyId)) {
+        const companySettings = await Company.findOne({ _id: hostUser.companyId });
+        if (companySettings?.settings?.autoCheckIn) {
+          console.log('🔄 [APPROVE-TOKEN] Auto check-in enabled, checking in visit automatically');
+          visit.status = 'checked-in';
+          visit.checkInTime = new Date();
+          await new VisitEvent({ visitId: visit._id, type: 'check-in' }).save();
+        }
+      }
+    } catch (autoCheckInError) {
+      console.warn('⚠️ [APPROVE-TOKEN] Error checking auto check-in settings:', autoCheckInError?.message);
+    }
+    
     await visit.save();
     approval.status = 'decided';
     approval.decision = 'approved';

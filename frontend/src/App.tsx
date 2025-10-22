@@ -10,7 +10,6 @@ import { AgendaPage } from './pages/visits/AgendaPage';
 import { UserManagementPage } from './pages/users/UserManagementPage';
 import ReportsPage from './pages/reports/ReportsPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
-import { CompanyConfigPage } from './pages/settings/CompanyConfigPage';
 import { EmailTestPage } from './pages/settings/EmailTestPage';
 import { AccessCodesPage } from './pages/access/AccessCodesPage';
 import { BlacklistPage } from './pages/blacklist/BlacklistPage';
@@ -76,7 +75,6 @@ const AppRoutes: React.FC = () => {
                         <Route path="/users" element={<UserManagementPage />} />
                         <Route path="/reports" element={<ReportsPage />} />
                         <Route path="/settings" element={<SettingsPage />} />
-                        <Route path="/settings/company" element={<CompanyConfigPage />} />
                         <Route path="/settings/email-test" element={<EmailTestPage />} />
                     </>
                 )}

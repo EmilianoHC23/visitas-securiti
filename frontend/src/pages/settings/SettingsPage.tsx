@@ -16,6 +16,8 @@ export const SettingsPage: React.FC = () => {
     const [accountLanguage, setAccountLanguage] = useState('Español');
     const [timezone, setTimezone] = useState('Default (America/Mexico_City)');
     const [autoCheckout, setAutoCheckout] = useState(true);
+    const [autoApproval, setAutoApproval] = useState(false);
+    const [autoCheckIn, setAutoCheckIn] = useState(false);
     const [companyLogo, setCompanyLogo] = useState<string>('');
 
     // Additional Info Tab State
@@ -51,12 +53,36 @@ export const SettingsPage: React.FC = () => {
         }
     };
 
+    // Load settings on mount
+    useEffect(() => {
+        loadSettings();
+    }, []);
+
+    const loadSettings = async () => {
+        try {
+            const config = await api.getCompanyConfig();
+            setBuildingName(config.name || 'SecurITI');
+            setCompanyLogo(config.logo || '');
+            setAutoApproval(config.settings?.autoApproval || false);
+            setAutoCheckIn(config.settings?.autoCheckIn || false);
+        } catch (error) {
+            console.error('Error loading settings:', error);
+        }
+    };
+
     const handleSaveAccount = async () => {
         setLoading(true);
         try {
-            // Aquí iría la lógica de guardado
-            console.log('Saving account settings...');
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await api.updateCompanyConfig({
+                name: buildingName,
+                logo: companyLogo,
+                settings: {
+                    autoApproval,
+                    autoCheckIn,
+                    requirePhoto: true,
+                    enableSelfRegister: true
+                }
+            });
             alert('Configuración guardada exitosamente');
         } catch (error) {
             console.error('Error saving settings:', error);
@@ -197,29 +223,76 @@ export const SettingsPage: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Auto Checkout Setting */}
+                                {/* System Settings */}
                                 <div className="border-t border-gray-200 pt-6">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Registrar salida</h3>
-                                    <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-700">Registrar salida de manera automática</p>
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                La salida de tus visitas se aplica de manera automática a las 06:15 A.M. UTC.
-                                                Al deshabilitar esta opción, deberás realizar la salida de tus visitas de manera manual.
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={() => setAutoCheckout(!autoCheckout)}
-                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                                autoCheckout ? 'bg-cyan-600' : 'bg-gray-300'
-                                            }`}
-                                        >
-                                            <span
-                                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                                    autoCheckout ? 'translate-x-6' : 'translate-x-1'
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuración del sistema</h3>
+                                    <div className="space-y-3">
+                                        {/* Auto Approval */}
+                                        <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-700">Aprobación automática</p>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    Las visitas se aprueban automáticamente sin necesidad de confirmación del anfitrión.
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => setAutoApproval(!autoApproval)}
+                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                                    autoApproval ? 'bg-cyan-600' : 'bg-gray-300'
                                                 }`}
-                                            />
-                                        </button>
+                                            >
+                                                <span
+                                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                        autoApproval ? 'translate-x-6' : 'translate-x-1'
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
+
+                                        {/* Auto Check-in */}
+                                        <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-700">Check-in automático</p>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    Las visitas aprobadas registran su entrada automáticamente al momento de aprobarlas.
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => setAutoCheckIn(!autoCheckIn)}
+                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                                    autoCheckIn ? 'bg-cyan-600' : 'bg-gray-300'
+                                                }`}
+                                            >
+                                                <span
+                                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                        autoCheckIn ? 'translate-x-6' : 'translate-x-1'
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
+
+                                        {/* Auto Checkout */}
+                                        <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-700">Registrar salida de manera automática</p>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    La salida de tus visitas se aplica de manera automática a las 06:15 A.M. UTC.
+                                                    Al deshabilitar esta opción, deberás realizar la salida de tus visitas de manera manual.
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => setAutoCheckout(!autoCheckout)}
+                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                                    autoCheckout ? 'bg-cyan-600' : 'bg-gray-300'
+                                                }`}
+                                            >
+                                                <span
+                                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                        autoCheckout ? 'translate-x-6' : 'translate-x-1'
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 

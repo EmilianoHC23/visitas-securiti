@@ -49,8 +49,8 @@ router.put('/config', auth, authorize('admin'), async (req, res) => {
     
     if (settings) {
       updateData.settings = {
-        autoApproval: settings.autoApproval || false,
-        autoCheckIn: settings.autoCheckIn || false,
+        autoApproval: settings.autoApproval !== undefined ? settings.autoApproval : false,
+        autoCheckIn: settings.autoCheckIn !== undefined ? settings.autoCheckIn : false,
         requirePhoto: settings.requirePhoto !== undefined ? settings.requirePhoto : true,
         enableSelfRegister: settings.enableSelfRegister !== undefined ? settings.enableSelfRegister : true,
         notificationEmail: settings.notificationEmail || null

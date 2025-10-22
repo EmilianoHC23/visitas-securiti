@@ -105,6 +105,25 @@ router.post('/visit', async (req, res) => {
       return res.status(400).json({ message: 'Anfitrión no válido' });
     }
 
+    // Determinar estado inicial según configuración
+    let initialStatus = 'pending';
+    let checkInTime = null;
+    let qrToken = null;
+    let approvedAt = null;
+    
+    if (company.settings.autoApproval) {
+      initialStatus = 'approved';
+      qrToken = require('crypto').randomBytes(16).toString('hex');
+      approvedAt = new Date();
+      
+      // Si auto check-in también está habilitado
+      if (company.settings.autoCheckIn) {
+        initialStatus = 'checked-in';
+        checkInTime = new Date();
+        console.log('🔄 [PUBLIC-REGISTER] Auto check-in enabled, visit created as checked-in');
+      }
+    }
+
     // Create visit
     const visit = new Visit({
       visitorName,
@@ -114,19 +133,30 @@ router.post('/visit', async (req, res) => {
       visitorPhoto,
       host: hostId,
       reason,
-      status: company.settings.autoApproval ? 'approved' : 'pending',
+      status: initialStatus,
       visitType: 'spontaneous',
       scheduledDate: new Date(),
-      companyId
+      companyId,
+      checkInTime,
+      qrToken,
+      approvedAt
     });
 
     await visit.save();
     await visit.populate('host', 'firstName lastName email');
 
+    // Si se hizo auto check-in, crear evento
+    if (initialStatus === 'checked-in') {
+      const VisitEvent = require('../models/VisitEvent');
+      await new VisitEvent({ visitId: visit._id, type: 'check-in' }).save();
+      console.log('✅ [PUBLIC-REGISTER] Auto check-in event created');
+    }
+
     res.status(201).json({
       message: 'Visita registrada exitosamente',
       visit,
       autoApproved: company.settings.autoApproval,
+      autoCheckedIn: initialStatus === 'checked-in',
       requiresApproval: !company.settings.autoApproval
     });
   } catch (error) {

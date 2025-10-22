@@ -1144,6 +1144,880 @@ class EmailService {
     }
   }
 
+  // ============================================
+  // EMAILS PARA SISTEMA DE ACCESOS/EVENTOS
+  // ============================================
+
+  /**
+   * Email 1: Confirmación de acceso creado (al creador)
+   * @param {Object} data - { creatorEmail, creatorName, accessTitle, accessType, startDate, endDate, startTime, endTime, location, invitedCount, companyName, companyLogo, additionalInfo }
+   */
+  async sendAccessCreatedEmail(data) {
+    if (!this.isEnabled()) {
+      console.log('Email service disabled - would send access created confirmation');
+      return { success: false, disabled: true };
+    }
+
+    try {
+      const logoHtml = data.companyLogo 
+        ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto; margin-bottom: 15px;" />`
+        : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
+
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: data.creatorEmail,
+        subject: `Acceso ${data.accessTitle} creado exitosamente`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td align="center" style="padding: 40px 0;">
+                  <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                      <td style="padding: 40px 40px 20px 40px; text-align: center; background: linear-gradient(135deg, #1f2937 0%, #374151 100%); border-radius: 12px 12px 0 0;">
+                        ${logoHtml}
+                        <div style="background-color: #10b981; width: 60px; height: 60px; border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center;">
+                          <span style="color: white; font-size: 32px;">✓</span>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                      <td style="padding: 40px;">
+                        <h1 style="color: #1f2937; margin: 0 0 10px 0; font-size: 24px; font-weight: 600;">
+                          ¡Acceso creado y enviado exitosamente!
+                        </h1>
+                        
+                        <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 10px 0 30px 0;">
+                          Hola <strong>${data.creatorName}</strong>,
+                        </p>
+
+                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
+                          Se ha creado tu acceso <strong>${data.accessTitle}</strong> exitosamente.
+                        </p>
+
+                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 30px;">
+                          Tus visitantes recibirán una notificación con las instrucciones del acceso para agilizar su ingreso.
+                        </p>
+
+                        <!-- Detalles del acceso -->
+                        <div style="background-color: #f9fafb; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
+                          <h2 style="color: #1f2937; font-size: 18px; margin: 0 0 20px 0; font-weight: 600;">Detalles del acceso</h2>
+                          
+                          <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                              <td style="padding: 8px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Razón del acceso:</td>
+                              <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">${data.accessType}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Fecha y hora de inicio:</td>
+                              <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">${formatFullDate(new Date(data.startDate))} ${data.startTime}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Fecha y hora de fin:</td>
+                              <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">${formatFullDate(new Date(data.endDate))} ${data.endTime}</td>
+                            </tr>
+                            ${data.location ? `
+                            <tr>
+                              <td style="padding: 8px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Lugar:</td>
+                              <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">${data.location}</td>
+                            </tr>
+                            ` : ''}
+                            ${data.additionalInfo ? `
+                            <tr>
+                              <td style="padding: 8px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Información adicional:</td>
+                              <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">${data.additionalInfo}</td>
+                            </tr>
+                            ` : ''}
+                          </table>
+                        </div>
+
+                        <!-- Acceso enviado a -->
+                        <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+                          <p style="color: #1e40af; margin: 0; font-size: 15px; line-height: 1.6;">
+                            <strong>Acceso enviado a:</strong><br>
+                            ${data.invitedCount} ${data.invitedCount === 1 ? 'invitado' : 'invitados'}
+                          </p>
+                        </div>
+
+                        ${data.companyAddress || data.companyEmail ? `
+                        <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin-top: 30px;">
+                          Si tienes alguna duda, visita nuestro Centro de Ayuda o ponte en contacto con nosotros.
+                        </p>
+                        ` : ''}
+                      </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
+                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                        </p>
+                      </td>
+                    </tr>
+
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('Access created email sent to creator:', data.creatorEmail);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('Error sending access created email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Email 2: Invitación a acceso (a los invitados)
+   * @param {Object} data - { invitedEmail, invitedName, hostName, accessTitle, accessType, startDate, endDate, startTime, endTime, location, qrCode, companyName, companyLogo, additionalInfo, companyAddress, companyEmail }
+   */
+  async sendAccessInvitationEmail(data) {
+    if (!this.isEnabled()) {
+      console.log('Email service disabled - would send access invitation');
+      return { success: false, disabled: true };
+    }
+
+    try {
+      const logoHtml = data.companyLogo 
+        ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto; margin-bottom: 15px;" />`
+        : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
+
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: data.invitedEmail,
+        subject: `Invitación a ${data.companyName}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td align="center" style="padding: 40px 0;">
+                  <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                      <td style="padding: 40px 40px 30px 40px; text-align: center; background: linear-gradient(135deg, #1f2937 0%, #374151 100%); border-radius: 12px 12px 0 0;">
+                        ${logoHtml}
+                      </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                      <td style="padding: 40px;">
+                        <h1 style="color: #1f2937; margin: 0 0 10px 0; font-size: 24px; font-weight: 600; text-align: center;">
+                          Invitación a ${data.companyName}
+                        </h1>
+                        
+                        <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 20px 0;">
+                          Hola <strong>${data.invitedName}</strong>,
+                        </p>
+
+                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
+                          <strong>${data.hostName}</strong> de ${data.companyName} tiene un acceso para <strong>${data.accessTitle}</strong>, el ${formatFullDate(new Date(data.startDate))} ${data.startTime}.
+                        </p>
+
+                        <!-- Detalles del acceso -->
+                        <div style="background-color: #f9fafb; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
+                          <h2 style="color: #1f2937; font-size: 16px; margin: 0 0 15px 0; font-weight: 600;">Detalles del acceso</h2>
+                          
+                          <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                              <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Fecha y hora de inicio:</td>
+                              <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${formatFullDate(new Date(data.startDate))} ${data.startTime}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Fecha y hora de fin:</td>
+                              <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${formatFullDate(new Date(data.endDate))} ${data.endTime}</td>
+                            </tr>
+                            ${data.location ? `
+                            <tr>
+                              <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Lugar:</td>
+                              <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${data.location}</td>
+                            </tr>
+                            ` : ''}
+                            <tr>
+                              <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Anfitrión:</td>
+                              <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${data.hostName}</td>
+                            </tr>
+                            ${data.additionalInfo ? `
+                            <tr>
+                              <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Información adicional:</td>
+                              <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${data.additionalInfo}</td>
+                            </tr>
+                            ` : ''}
+                          </table>
+                        </div>
+
+                        <!-- QR Code -->
+                        ${data.qrCode ? `
+                        <div style="background-color: #ffffff; border: 2px solid #e5e7eb; border-radius: 8px; padding: 25px; text-align: center; margin-bottom: 25px;">
+                          <p style="color: #1f2937; font-size: 16px; font-weight: 600; margin: 0 0 15px 0;">
+                            ${data.invitedName}
+                          </p>
+                          <img src="${data.qrCode}" alt="QR Code" style="width: 200px; height: 200px; display: block; margin: 0 auto;" />
+                        </div>
+                        ` : ''}
+
+                        <!-- Al llegar -->
+                        <div style="background-color: #dbeafe; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                          <p style="color: #1e40af; margin: 0; font-size: 14px; line-height: 1.6; text-align: center;">
+                            <strong>📱 Al llegar</strong><br>
+                            Muestra este mensaje con una identificación y ¡Dirígete a las filas!
+                          </p>
+                        </div>
+
+                        ${data.companyAddress || data.companyEmail ? `
+                        <p style="color: #6b7280; font-size: 13px; line-height: 1.6; text-align: center; margin-top: 25px;">
+                          Si tienes alguna duda sobre este acceso, puedes contactar a ${data.hostName}${data.companyEmail ? ` al correo ${data.companyEmail}` : ''}.
+                        </p>
+                        ` : ''}
+                      </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
+                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                        </p>
+                      </td>
+                    </tr>
+
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('Access invitation email sent to:', data.invitedEmail);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('Error sending access invitation email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Email 3: Recordatorio de acceso (al creador cuando el acceso inicia)
+   * @param {Object} data - { creatorEmail, creatorName, accessTitle, startDate, startTime, location, companyName, companyLogo }
+   */
+  async sendAccessReminderToCreatorEmail(data) {
+    if (!this.isEnabled()) {
+      console.log('Email service disabled - would send access reminder to creator');
+      return { success: false, disabled: true };
+    }
+
+    try {
+      const logoHtml = data.companyLogo 
+        ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+        : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
+
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: data.creatorEmail,
+        subject: `No olvides la cita ${data.accessTitle}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td align="center" style="padding: 40px 0;">
+                  <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                      <td style="padding: 40px; text-align: center;">
+                        ${logoHtml}
+                      </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                      <td style="padding: 0 40px 40px 40px;">
+                        <h1 style="color: #1f2937; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">
+                          Hola ${data.creatorName}
+                        </h1>
+                        
+                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
+                          No olvides la cita <strong>${data.accessTitle}</strong> el día de hoy. Te notificaremos la llegada de tus visitantes.
+                        </p>
+
+                        <!-- Detalles -->
+                        <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+                          <p style="color: #92400e; margin: 0; font-size: 15px; line-height: 1.8;">
+                            <strong>Detalles del acceso</strong><br><br>
+                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))} ${data.startTime}
+                            ${data.location ? `<br><strong>Lugar:</strong> ${data.location}` : ''}
+                          </p>
+                        </div>
+
+                        ${data.companyAddress || data.companyEmail ? `
+                        <p style="color: #6b7280; font-size: 13px; line-height: 1.6; text-align: center; margin-top: 25px;">
+                          Si tienes alguna duda, visita nuestro Centro de Ayuda o ponte en contacto con nosotros.
+                        </p>
+                        ` : ''}
+                      </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <p style="color: #6b7280; font-size: 12px; margin: 0;">
+                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                        </p>
+                      </td>
+                    </tr>
+
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('Access reminder sent to creator:', data.creatorEmail);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('Error sending access reminder to creator:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Email 4: Recordatorio de acceso (al invitado cuando el acceso inicia)
+   * @param {Object} data - { invitedEmail, invitedName, hostName, accessTitle, startDate, startTime, location, qrCode, companyName, companyLogo }
+   */
+  async sendAccessReminderToGuestEmail(data) {
+    if (!this.isEnabled()) {
+      console.log('Email service disabled - would send access reminder to guest');
+      return { success: false, disabled: true };
+    }
+
+    try {
+      const logoHtml = data.companyLogo 
+        ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+        : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
+
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: data.invitedEmail,
+        subject: `${data.hostName} de ${data.companyName} te espera para ${data.accessTitle}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td align="center" style="padding: 40px 0;">
+                  <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                      <td style="padding: 40px; text-align: center;">
+                        ${logoHtml}
+                      </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                      <td style="padding: 0 40px 40px 40px;">
+                        <h1 style="color: #1f2937; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">
+                          Hola ${data.invitedName} Chávez
+                        </h1>
+                        
+                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
+                          ${data.hostName} de <strong>${data.companyName}</strong> te espera para <strong>${data.accessTitle}</strong>
+                        </p>
+
+                        <!-- Detalles -->
+                        <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+                          <p style="color: #1f2937; margin: 0; font-size: 14px; line-height: 1.8;">
+                            <strong>Detalles del acceso</strong><br><br>
+                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))} ${data.startTime}<br>
+                            ${data.location ? `<strong>Lugar:</strong> ${data.location}<br>` : ''}
+                            <strong>Información adicional:</strong> ${data.additionalInfo || 'N/A'}
+                          </p>
+                        </div>
+
+                        <!-- QR Code -->
+                        ${data.qrCode ? `
+                        <div style="background-color: #ffffff; border: 2px solid #e5e7eb; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 20px;">
+                          <img src="${data.qrCode}" alt="QR Code" style="width: 180px; height: 180px; display: block; margin: 0 auto;" />
+                          <p style="color: #6b7280; font-size: 13px; margin: 10px 0 0 0;">
+                            ${data.invitedName}
+                          </p>
+                        </div>
+                        ` : ''}
+
+                        <div style="background-color: #dbeafe; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                          <p style="color: #1e40af; margin: 0; font-size: 14px; text-align: center;">
+                            <strong>Tu QR se activa una hora antes de la fecha y hora de inicio. Muéstralo para ingresar.</strong>
+                          </p>
+                        </div>
+
+                        <p style="color: #6b7280; font-size: 13px; line-height: 1.6; text-align: center;">
+                          Si tienes alguna duda sobre este acceso, visita nuestro Centro de Ayuda o ponte en contacto con nosotros.
+                        </p>
+                      </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <p style="color: #6b7280; font-size: 12px; margin: 0;">
+                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                        </p>
+                      </td>
+                    </tr>
+
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('Access reminder sent to guest:', data.invitedEmail);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('Error sending access reminder to guest:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Email 5: Notificación de check-in completado (al creador)
+   * @param {Object} data - { creatorEmail, creatorName, guestName, accessTitle, companyName, companyLogo }
+   */
+  async sendGuestCheckedInEmail(data) {
+    if (!this.isEnabled()) {
+      console.log('Email service disabled - would send guest checked-in notification');
+      return { success: false, disabled: true };
+    }
+
+    try {
+      const logoHtml = data.companyLogo 
+        ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+        : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
+
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: data.creatorEmail,
+        subject: `${data.guestName} se aprobó la entrada de un nuevo visitante`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td align="center" style="padding: 40px 0;">
+                  <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                      <td style="padding: 40px; text-align: center; background: linear-gradient(135deg, #1f2937 0%, #374151 100%); border-radius: 12px 12px 0 0;">
+                        ${logoHtml}
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background-color: rgba(255,255,255,0.1); display: inline-flex; align-items: center; justify-content: center; margin-top: 20px;">
+                          <span style="font-size: 40px;">👤</span>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                      <td style="padding: 40px; text-align: center;">
+                        <h1 style="color: #1f2937; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">
+                          Hola ${data.creatorName}
+                        </h1>
+                        
+                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 30px;">
+                          El acceso del visitante ya fue pre-aprobado. Está en espera que se le dé ingreso a tu organización.
+                        </p>
+
+                        <!-- Detalles -->
+                        <div style="background-color: #f0fdf4; border-radius: 8px; padding: 25px; margin-bottom: 25px; text-align: left;">
+                          <p style="color: #166534; margin: 0; font-size: 15px; line-height: 1.8;">
+                            <strong>Detalle del acceso</strong><br><br>
+                            <strong>Razón del acceso:</strong> ${data.accessTitle}<br>
+                            <strong>Título:</strong> ${data.accessTitle}
+                          </p>
+                        </div>
+
+                        <p style="color: #6b7280; font-size: 13px; line-height: 1.6;">
+                          Si tienes alguna duda, visita nuestro Centro de Ayuda o ponte en contacto con nosotros.
+                        </p>
+                      </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <p style="color: #6b7280; font-size: 12px; margin: 0;">
+                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                        </p>
+                      </td>
+                    </tr>
+
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('Guest checked-in email sent to creator:', data.creatorEmail);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('Error sending guest checked-in email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Email 6: Modificación de acceso (al creador)
+   * @param {Object} data - { creatorEmail, creatorName, accessTitle, startDate, companyName, companyLogo }
+   */
+  async sendAccessModifiedToCreatorEmail(data) {
+    if (!this.isEnabled()) {
+      console.log('Email service disabled - would send access modified to creator');
+      return { success: false, disabled: true };
+    }
+
+    try {
+      const logoHtml = data.companyLogo 
+        ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+        : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
+
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: data.creatorEmail,
+        subject: `Modificación del acceso`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td align="center" style="padding: 40px 0;">
+                  <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                      <td style="padding: 40px; text-align: center;">
+                        ${logoHtml}
+                      </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                      <td style="padding: 0 40px 40px 40px;">
+                        <h1 style="color: #1f2937; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">
+                          Hola ${data.creatorName}
+                        </h1>
+                        
+                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
+                          El acceso <strong>${data.accessTitle}</strong> ha sido modificado, se ha notificado a los demás usuarios y visitantes.
+                        </p>
+
+                        <!-- Detalles -->
+                        <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+                          <p style="color: #92400e; margin: 0; font-size: 14px; line-height: 1.8;">
+                            <strong>Detalle del acceso</strong><br><br>
+                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))} ${data.startTime}
+                          </p>
+                        </div>
+
+                        <p style="color: #6b7280; font-size: 13px; line-height: 1.6; text-align: center;">
+                          Si tienes alguna duda, visita nuestro Centro de Ayuda o ponte en contacto con nosotros.
+                        </p>
+                      </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <p style="color: #6b7280; font-size: 12px; margin: 0;">
+                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                        </p>
+                      </td>
+                    </tr>
+
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('Access modified email sent to creator:', data.creatorEmail);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('Error sending access modified to creator:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Email 7: Modificación de acceso (a los invitados)
+   * @param {Object} data - { invitedEmail, invitedName, accessTitle, startDate, qrCode, companyName, companyLogo }
+   */
+  async sendAccessModifiedToGuestEmail(data) {
+    if (!this.isEnabled()) {
+      console.log('Email service disabled - would send access modified to guest');
+      return { success: false, disabled: true };
+    }
+
+    try {
+      const logoHtml = data.companyLogo 
+        ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+        : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
+
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: data.invitedEmail,
+        subject: `Modificación del acceso en ${data.companyName}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td align="center" style="padding: 40px 0;">
+                  <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                      <td style="padding: 40px; text-align: center;">
+                        ${logoHtml}
+                      </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                      <td style="padding: 0 40px 40px 40px;">
+                        <h1 style="color: #1f2937; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">
+                          Hola ${data.invitedName}
+                        </h1>
+                        
+                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
+                          El acceso <strong>${data.accessTitle}</strong> se ha modificado.
+                        </p>
+
+                        <!-- Detalles -->
+                        <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+                          <p style="color: #1f2937; margin: 0; font-size: 14px; line-height: 1.8;">
+                            <strong>Detalles del acceso</strong><br><br>
+                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))} ${data.startTime}
+                          </p>
+                        </div>
+
+                        <!-- QR Code -->
+                        ${data.qrCode ? `
+                        <div style="background-color: #ffffff; border: 2px solid #e5e7eb; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 20px;">
+                          <img src="${data.qrCode}" alt="QR Code" style="width: 180px; height: 180px; display: block; margin: 0 auto;" />
+                          <p style="color: #6b7280; font-size: 13px; margin: 10px 0 0 0;">
+                            ${data.invitedName}
+                          </p>
+                        </div>
+                        ` : ''}
+
+                        <div style="background-color: #fef3c7; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                          <p style="color: #92400e; margin: 0; font-size: 14px; text-align: center;">
+                            Tu acceso ya se encuentra aprobado y es válido desde una hora antes de la fecha y hora de inicio.
+                          </p>
+                        </div>
+
+                        <p style="color: #6b7280; font-size: 13px; line-height: 1.6; text-align: center;">
+                          Si tienes alguna duda, visita nuestro Centro de Ayuda o ponte en contacto con nosotros.
+                        </p>
+                      </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <p style="color: #6b7280; font-size: 12px; margin: 0;">
+                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                        </p>
+                      </td>
+                    </tr>
+
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('Access modified email sent to guest:', data.invitedEmail);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('Error sending access modified to guest:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Email 8: Cancelación de acceso (al creador y a los invitados)
+   * @param {Object} data - { recipientEmail, recipientName, accessTitle, startDate, companyName, companyLogo, isCreator }
+   */
+  async sendAccessCancelledEmail(data) {
+    if (!this.isEnabled()) {
+      console.log('Email service disabled - would send access cancelled notification');
+      return { success: false, disabled: true };
+    }
+
+    try {
+      const logoHtml = data.companyLogo 
+        ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+        : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
+
+      const message = data.isCreator 
+        ? `El acceso <strong>${data.accessTitle}</strong> se ha cancelado exitosamente, ya hemos notificado a los demás usuarios y visitantes.`
+        : `El acceso <strong>${data.accessTitle}</strong> ha sido cancelado y ya no se encuentra vigente.`;
+
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: data.recipientEmail,
+        subject: `Acceso cancelado${data.isCreator ? '' : ' en ' + data.companyName}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td align="center" style="padding: 40px 0;">
+                  <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                      <td style="padding: 40px; text-align: center;">
+                        ${logoHtml}
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background-color: #fee2e2; display: inline-flex; align-items: center; justify-content: center; margin-top: 20px;">
+                          <span style="font-size: 40px; color: #dc2626;">🏢</span>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                      <td style="padding: 0 40px 40px 40px; text-align: center;">
+                        <h1 style="color: #1f2937; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">
+                          Hola ${data.recipientName}
+                        </h1>
+                        
+                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
+                          ${message}
+                        </p>
+
+                        <!-- Detalles -->
+                        <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; border-radius: 8px; padding: 20px; margin-bottom: 25px; text-align: left;">
+                          <p style="color: #991b1b; margin: 0; font-size: 14px; line-height: 1.8;">
+                            <strong>Detalles del acceso</strong><br><br>
+                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))} ${data.startTime}
+                          </p>
+                        </div>
+
+                        <p style="color: #6b7280; font-size: 13px; line-height: 1.6;">
+                          Si tienes alguna duda, visita nuestro Centro de Ayuda o ponte en contacto con nosotros.
+                        </p>
+                      </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <p style="color: #6b7280; font-size: 12px; margin: 0;">
+                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                        </p>
+                      </td>
+                    </tr>
+
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('Access cancelled email sent to:', data.recipientEmail);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('Error sending access cancelled email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
 }
 
 module.exports = new EmailService();
+

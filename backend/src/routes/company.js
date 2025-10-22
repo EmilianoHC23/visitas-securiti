@@ -40,21 +40,44 @@ router.get('/config', auth, async (req, res) => {
 // Update company configuration (Admin only)
 router.put('/config', auth, authorize('admin'), async (req, res) => {
   try {
-    const { name, logo, settings } = req.body;
+    const { name, logo, settings, location, additionalInfo } = req.body;
+    
+    const updateData = {};
+    
+    if (name !== undefined) updateData.name = name;
+    if (logo !== undefined) updateData.logo = logo;
+    
+    if (settings) {
+      updateData.settings = {
+        autoApproval: settings.autoApproval || false,
+        autoCheckIn: settings.autoCheckIn || false,
+        requirePhoto: settings.requirePhoto !== undefined ? settings.requirePhoto : true,
+        enableSelfRegister: settings.enableSelfRegister !== undefined ? settings.enableSelfRegister : true,
+        notificationEmail: settings.notificationEmail || null
+      };
+    }
+    
+    if (location) {
+      updateData.location = {
+        address: location.address || '',
+        city: location.city || '',
+        country: location.country || 'México',
+        coordinates: location.coordinates || null
+      };
+    }
+    
+    if (additionalInfo) {
+      updateData.additionalInfo = {
+        phone: additionalInfo.phone || '',
+        email: additionalInfo.email || '',
+        website: additionalInfo.website || '',
+        description: additionalInfo.description || ''
+      };
+    }
     
     const company = await Company.findOneAndUpdate(
       { companyId: req.user.companyId },
-      { 
-        name,
-        logo,
-        settings: {
-          autoApproval: settings?.autoApproval || false,
-          autoCheckIn: settings?.autoCheckIn || false,
-          requirePhoto: settings?.requirePhoto || true,
-          enableSelfRegister: settings?.enableSelfRegister || true,
-          notificationEmail: settings?.notificationEmail || null
-        }
-      },
+      updateData,
       { new: true, upsert: true }
     );
 

@@ -10,6 +10,11 @@ const accessSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  type: {
+    type: String,
+    enum: ['reunion', 'proyecto', 'evento', 'visita', 'otro'],
+    default: 'reunion'
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -27,6 +32,14 @@ const accessSchema = new mongoose.Schema({
     type: String,
     unique: true
   },
+  eventImage: {
+    type: String, // Base64 o URL
+    default: ''
+  },
+  location: {
+    type: String,
+    default: ''
+  },
   settings: {
     autoApproval: {
       type: Boolean,
@@ -34,13 +47,26 @@ const accessSchema = new mongoose.Schema({
     },
     maxUses: {
       type: Number,
-      default: 1
+      default: 0 // 0 = ilimitado
     },
     allowGuests: {
       type: Boolean,
       default: false
     },
     requireApproval: {
+      type: Boolean,
+      default: false
+    },
+    sendAccessByEmail: {
+      type: Boolean,
+      default: true
+    },
+    language: {
+      type: String,
+      enum: ['es', 'en'],
+      default: 'es'
+    },
+    noExpiration: {
       type: Boolean,
       default: false
     }
@@ -70,22 +96,45 @@ const accessSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'expired', 'cancelled'],
+    enum: ['active', 'expired', 'cancelled', 'finalized'],
     default: 'active'
   },
   usageCount: {
     type: Number,
     default: 0
   },
-  invitedEmails: [{
-    email: String,
-    sentAt: Date,
-    status: {
+  notifyUsers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  invitedUsers: [{
+    email: {
       type: String,
-      enum: ['sent', 'opened', 'redeemed'],
-      default: 'sent'
-    }
-  }]
+      required: true
+    },
+    name: {
+      type: String,
+      required: true
+    },
+    invitedAt: {
+      type: Date,
+      default: Date.now
+    },
+    attendance: {
+      type: String,
+      enum: ['pendiente', 'asistio', 'no-asistio'],
+      default: 'pendiente'
+    },
+    visitId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Visit'
+    },
+    qrScannedAt: Date
+  }],
+  additionalInfo: {
+    type: String,
+    default: ''
+  }
 }, {
   timestamps: true
 });

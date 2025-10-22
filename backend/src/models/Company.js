@@ -16,6 +16,42 @@ const companySchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  location: {
+    address: {
+      type: String,
+      default: ''
+    },
+    city: {
+      type: String,
+      default: ''
+    },
+    country: {
+      type: String,
+      default: ''
+    },
+    coordinates: {
+      lat: Number,
+      lng: Number
+    }
+  },
+  additionalInfo: {
+    phone: {
+      type: String,
+      default: ''
+    },
+    email: {
+      type: String,
+      default: ''
+    },
+    website: {
+      type: String,
+      default: ''
+    },
+    description: {
+      type: String,
+      default: ''
+    }
+  },
   settings: {
     autoApproval: {
       type: Boolean,

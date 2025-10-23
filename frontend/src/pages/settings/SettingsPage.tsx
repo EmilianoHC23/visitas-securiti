@@ -17,13 +17,7 @@ export const SettingsPage: React.FC = () => {
     const [accountLanguage, setAccountLanguage] = useState('Español');
     const [timezone, setTimezone] = useState('Default (America/Mexico_City)');
     const [autoCheckout, setAutoCheckout] = useState(true);
-    const [autoApproval, setAutoApproval] = useState(false);
-    const [autoCheckIn, setAutoCheckIn] = useState(false);
     const [companyLogo, setCompanyLogo] = useState<string>('');
-    // Agenda preferences
-    const [agendaDefaultView, setAgendaDefaultView] = useState<'table' | 'calendar'>('table');
-    const [agendaDefaultRangeDays, setAgendaDefaultRangeDays] = useState<number>(7);
-    const [agendaDarkContrast, setAgendaDarkContrast] = useState<boolean>(true);
 
     // Additional Info Tab State
     const [street, setStreet] = useState('');
@@ -53,17 +47,36 @@ export const SettingsPage: React.FC = () => {
 
             try {
                 setLoading(true);
-                // Subir el logo al servidor
-                const result = await api.uploadCompanyLogo(file);
                 
-                // Actualizar el estado con la URL pública
-                setCompanyLogo(result.logoUrl);
+                // Convertir a Base64
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const base64Logo = event.target?.result as string;
+                    
+                    try {
+                        // Guardar directamente en MongoDB como Base64
+                        await api.updateCompanyConfig({
+                            logo: base64Logo
+                        } as any);
+                        
+                        setCompanyLogo(base64Logo);
+                        console.log('✅ Logo guardado exitosamente en Base64');
+                        
+                        // Mostrar confirmación
+                        setSaved(true);
+                        setTimeout(() => setSaved(false), 3000);
+                    } catch (error) {
+                        console.error('Error al guardar logo:', error);
+                        alert('Error al guardar el logo. Por favor, intenta de nuevo.');
+                    } finally {
+                        setLoading(false);
+                    }
+                };
                 
-                console.log('✅ Logo subido exitosamente:', result.logoUrl);
+                reader.readAsDataURL(file);
             } catch (error) {
-                console.error('Error al subir logo:', error);
-                alert('Error al subir el logo. Por favor, intenta de nuevo.');
-            } finally {
+                console.error('Error al procesar logo:', error);
+                alert('Error al procesar el logo. Por favor, intenta de nuevo.');
                 setLoading(false);
             }
         }
@@ -90,13 +103,7 @@ export const SettingsPage: React.FC = () => {
             const config = await api.getCompanyConfig();
             setBuildingName(config.name || 'SecurITI');
             setCompanyLogo(config.logo || '');
-            setAutoApproval(config.settings?.autoApproval || false);
-            setAutoCheckIn(config.settings?.autoCheckIn || false);
-            // Load agenda preferences if present
-            const agenda = (config.settings as any)?.agenda || {};
-            setAgendaDefaultView(agenda.defaultView === 'calendar' ? 'calendar' : 'table');
-            setAgendaDefaultRangeDays(typeof agenda.defaultRangeDays === 'number' ? agenda.defaultRangeDays : 7);
-            setAgendaDarkContrast(typeof agenda.darkContrast === 'boolean' ? agenda.darkContrast : true);
+            setAutoCheckout(config.settings?.autoCheckout !== false);
         } catch (error) {
             console.error('Error loading settings:', error);
         }
@@ -106,17 +113,12 @@ export const SettingsPage: React.FC = () => {
         setLoading(true);
         setSaved(false);
         try {
-            // El logo ya se subió con handleLogoUpload, no necesitamos enviarlo aquí
             await api.updateCompanyConfig({
                 name: buildingName,
-                // logo ya está guardado en la DB por uploadCompanyLogo
                 settings: {
-                    autoApproval,
-                    autoCheckIn,
+                    autoCheckout,
                     requirePhoto: true,
-                    enableSelfRegister: true,
-                    // Agenda preferences (cast to any to keep compatibility with Company type)
-                    ...( { agenda: { defaultView: agendaDefaultView, defaultRangeDays: agendaDefaultRangeDays, darkContrast: agendaDarkContrast } } as any )
+                    enableSelfRegister: true
                 } as any
             } as any);
             setSaved(true);
@@ -302,75 +304,9 @@ export const SettingsPage: React.FC = () => {
                                         </div>
                                         <h3 className="text-xl font-bold text-gray-900">Configuración del Sistema</h3>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {/* Auto Approval */}
-                                        <div className="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-gray-400 transition-all">
-                                            <div className="flex items-start justify-between gap-4">
-                                                <div className="flex-1">
-                                                    <h4 className="text-base font-bold text-gray-900 mb-2">Aprobación Automática</h4>
-                                                    <p className="text-sm text-gray-600 leading-relaxed">
-                                                        Las visitas se aprueban sin confirmación del anfitrión
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    onClick={() => setAutoApproval(!autoApproval)}
-                                                    role="switch"
-                                                    aria-checked={autoApproval}
-                                                    tabIndex={0}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter' || e.key === ' ') {
-                                                            e.preventDefault();
-                                                            setAutoApproval(!autoApproval);
-                                                        }
-                                                    }}
-                                                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors flex-shrink-0 ${
-                                                        autoApproval ? 'bg-gray-900' : 'bg-gray-300'
-                                                    }`}
-                                                >
-                                                    <span
-                                                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-md ${
-                                                            autoApproval ? 'translate-x-7' : 'translate-x-1'
-                                                        }`}
-                                                    />
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {/* Auto Check-in */}
-                                        <div className="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-gray-400 transition-all">
-                                            <div className="flex items-start justify-between gap-4">
-                                                <div className="flex-1">
-                                                    <h4 className="text-base font-bold text-gray-900 mb-2">Check-in Automático</h4>
-                                                    <p className="text-sm text-gray-600 leading-relaxed">
-                                                        Las visitas aprobadas registran entrada automáticamente
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    onClick={() => setAutoCheckIn(!autoCheckIn)}
-                                                    role="switch"
-                                                    aria-checked={autoCheckIn}
-                                                    tabIndex={0}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter' || e.key === ' ') {
-                                                            e.preventDefault();
-                                                            setAutoCheckIn(!autoCheckIn);
-                                                        }
-                                                    }}
-                                                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors flex-shrink-0 ${
-                                                        autoCheckIn ? 'bg-gray-900' : 'bg-gray-300'
-                                                    }`}
-                                                >
-                                                    <span
-                                                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-md ${
-                                                            autoCheckIn ? 'translate-x-7' : 'translate-x-1'
-                                                        }`}
-                                                    />
-                                                </button>
-                                            </div>
-                                        </div>
-
+                                    <div className="grid grid-cols-1 gap-4">
                                         {/* Auto Checkout */}
-                                        <div className="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-gray-400 transition-all md:col-span-2">
+                                        <div className="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-gray-400 transition-all">
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex-1">
                                                     <h4 className="text-base font-bold text-gray-900 mb-2">Checkout Automático</h4>
@@ -401,45 +337,6 @@ export const SettingsPage: React.FC = () => {
                                                     />
                                                 </button>
                                             </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Agenda Preferences */}
-                                <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-6 sm:p-8">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center">
-                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7H3v12a2 2 0 002 2z" />
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <h3 className="text-xl font-bold text-gray-900">Preferencias de Agenda</h3>
-                                            <p className="text-sm text-gray-600">Controla la vista y comportamiento por defecto de la agenda</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Vista por defecto</label>
-                                            <select value={agendaDefaultView} onChange={e => setAgendaDefaultView(e.target.value as any)} className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all">
-                                                <option value="table">Tabla</option>
-                                                <option value="calendar">Calendario</option>
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Rango por defecto (días)</label>
-                                            <input type="number" min={1} max={30} value={agendaDefaultRangeDays} onChange={e => setAgendaDefaultRangeDays(Number(e.target.value) || 7)} className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all" />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2">Contraste oscuro</label>
-                                            <div className="flex items-center gap-3">
-                                                <button onClick={() => setAgendaDarkContrast(true)} className={`px-3 py-2 rounded-md ${agendaDarkContrast ? 'bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white' : 'bg-gray-100 text-gray-700'}`}>Activado</button>
-                                                <button onClick={() => setAgendaDarkContrast(false)} className={`px-3 py-2 rounded-md ${!agendaDarkContrast ? 'bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white' : 'bg-gray-100 text-gray-700'}`}>Desactivado</button>
-                                            </div>
-                                            <p className="text-xs text-gray-500 mt-2">Aplica el esquema de contraste oscuro en botones y controles de la Agenda</p>
                                         </div>
                                     </div>
                                 </div>

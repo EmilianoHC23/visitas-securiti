@@ -251,11 +251,12 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-cyan-500 to-blue-600">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 bg-gradient-to-r from-gray-900 via-cyan-600 to-blue-600">
           <h2 className="text-xl font-bold text-white">Registrar Entrada</h2>
           <button
             onClick={onClose}
-            className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+            aria-label="Cerrar panel"
+            className="text-white bg-white/0 hover:bg-white/10 rounded-full p-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/40"
           >
             <X className="w-5 h-5" />
           </button>

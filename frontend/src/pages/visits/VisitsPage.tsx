@@ -48,13 +48,39 @@ const VisitCard: React.FC<{
             case VisitStatus.PENDING: 
                 return <span className="px-3 py-1 text-xs font-medium text-amber-700 bg-amber-100 rounded-full">En espera</span>;
             case VisitStatus.APPROVED: 
-                return <span className="px-3 py-1 text-xs font-medium text-cyan-700 bg-cyan-100 rounded-full">Aprobado</span>;
+                return <span className="px-3 py-1 text-xs font-medium text-emerald-700 bg-emerald-100 rounded-full">Aprobado</span>;
             case VisitStatus.REJECTED: 
                 return <span className="px-3 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">Rechazado</span>;
             case VisitStatus.CHECKED_IN: 
-                return <span className="px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">Dentro</span>;
+                return <span className="px-3 py-1 text-xs font-medium text-cyan-700 bg-cyan-100 rounded-full">Dentro</span>;
             case VisitStatus.COMPLETED: 
                 return <span className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded-full">Completado</span>;
+        }
+    };
+
+    // Avatar / color helpers según estado
+    const getAvatarClasses = (status: VisitStatus) => {
+        switch (status) {
+            case VisitStatus.PENDING:
+                return 'w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-orange-50 via-orange-300 to-orange-200 flex items-center justify-center flex-shrink-0 ring-2 ring-orange-600';
+            case VisitStatus.APPROVED:
+                return 'w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-emerald-50 via-emerald-300 to-emerald-200 flex items-center justify-center flex-shrink-0 ring-2 ring-emerald-600';
+            case VisitStatus.CHECKED_IN:
+                return 'w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-cyan-50 via-cyan-300 to-cyan-200 flex items-center justify-center flex-shrink-0 ring-2 ring-cyan-600';
+            case VisitStatus.REJECTED:
+                return 'w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-red-50 via-red-300 to-red-200 flex items-center justify-center flex-shrink-0 ring-2 ring-red-600';
+            default:
+                return 'w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center flex-shrink-0 ring-2 ring-gray-100';
+        }
+    };
+
+    const getAvatarIconColor = (status: VisitStatus) => {
+        switch (status) {
+            case VisitStatus.PENDING: return 'text-orange-600';
+            case VisitStatus.APPROVED: return 'text-emerald-600';
+            case VisitStatus.CHECKED_IN: return 'text-cyan-600';
+            case VisitStatus.REJECTED: return 'text-red-600';
+            default: return 'text-gray-600';
         }
     };
     
@@ -94,11 +120,11 @@ const VisitCard: React.FC<{
             >
                 <div className="flex gap-3">
                     {/* Foto circular del visitante */}
-                    <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-cyan-100 to-blue-100 flex items-center justify-center flex-shrink-0 ring-2 ring-gray-100">
+                    <div className={getAvatarClasses(visit.status)}>
                         {visit.visitorPhoto ? (
                             <img src={visit.visitorPhoto} alt={visit.visitorName} className="w-full h-full object-cover" />
                         ) : (
-                            <svg className="w-8 h-8 text-cyan-600" fill="currentColor" viewBox="0 0 24 24">
+                            <svg className={`w-8 h-8 ${getAvatarIconColor(visit.status)}`} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                             </svg>
                         )}
@@ -138,7 +164,7 @@ const VisitCard: React.FC<{
                                 {formattedDate} {formattedTime}
                             </span>
                             {showElapsed && (
-                                <span className="flex items-center gap-1 text-cyan-600 font-medium">
+                                <span className={`flex items-center gap-1 ${getAvatarIconColor(visit.status)} font-medium`}>
                                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                                     </svg>

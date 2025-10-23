@@ -213,13 +213,14 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-500 to-purple-600">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-900 via-purple-600 to-purple-500">
           <h2 className="text-xl font-bold text-white">Registrar Salida</h2>
           <button
             onClick={onClose}
-            className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+            className="text-white hover:text-gray-200 rounded-full p-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-700"
+            aria-label="Cerrar"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden={true} />
           </button>
         </div>
 
@@ -240,7 +241,7 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                   className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all flex items-center gap-4 group"
                 >
                   <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-500 transition-colors">
-                    <QrCode className="w-6 h-6 text-purple-600 group-hover:text-white" />
+                    <QrCode className="w-6 h-6 text-purple-600 group-hover:text-white" aria-hidden={true} />
                   </div>
                   <div className="text-left">
                     <h3 className="font-semibold text-gray-800">Escanear QR</h3>
@@ -351,7 +352,7 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                     {selectedVisit.visitorPhoto ? (
                       <img src={selectedVisit.visitorPhoto} alt={selectedVisit.visitorName} className="w-full h-full object-cover" />
                     ) : (
-                      <svg className="w-12 h-12 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-12 h-12 text-purple-600" aria-hidden={true} fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                       </svg>
                     )}
@@ -447,8 +448,9 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                   </button>
                   <button
                     onClick={handleConfirmExit}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 font-medium transition-all shadow-lg hover:shadow-xl"
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-600 font-medium transition-all shadow-lg hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-200"
                   >
+                    <span className="sr-only">Confirmar Salida</span>
                     Confirmar Salida
                   </button>
                 </div>

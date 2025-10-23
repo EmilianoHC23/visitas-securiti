@@ -285,6 +285,29 @@ export const updateCompanyConfig = async (config: Partial<Company>): Promise<Com
   });
 };
 
+export const uploadCompanyLogo = async (file: File): Promise<{ logoUrl: string; filename: string }> => {
+  const formData = new FormData();
+  formData.append('logo', file);
+
+  const token = localStorage.getItem('token');
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+  const response = await fetch(`${API_URL}/company/upload-logo`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Error al subir el logo');
+  }
+
+  return response.json();
+};
+
 export const getCompanyQR = async (): Promise<{ qrCode: string; qrUrl: string; publicUrl: string }> => {
   return apiRequest('/company/qr-code');
 };

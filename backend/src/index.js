@@ -78,6 +78,9 @@ app.use(async (req, res, next) => {
   next();
 });
 
+// Servir archivos estáticos desde /uploads
+app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);

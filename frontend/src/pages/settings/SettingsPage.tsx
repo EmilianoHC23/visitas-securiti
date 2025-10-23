@@ -32,14 +32,36 @@ export const SettingsPage: React.FC = () => {
     const [companyPhoto, setCompanyPhoto] = useState<string>('');
     const [arrivalInstructions, setArrivalInstructions] = useState('');
 
-    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                setCompanyLogo(event.target?.result as string);
-            };
-            reader.readAsDataURL(file);
+            // Validar tamaño (5MB máximo)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('El archivo es demasiado grande. Máximo 5MB.');
+                return;
+            }
+
+            // Validar tipo
+            if (!file.type.match(/image\/(jpeg|jpg|png|gif|webp)/)) {
+                alert('Solo se permiten archivos de imagen (jpeg, jpg, png, gif, webp)');
+                return;
+            }
+
+            try {
+                setLoading(true);
+                // Subir el logo al servidor
+                const result = await api.uploadCompanyLogo(file);
+                
+                // Actualizar el estado con la URL pública
+                setCompanyLogo(result.logoUrl);
+                
+                console.log('✅ Logo subido exitosamente:', result.logoUrl);
+            } catch (error) {
+                console.error('Error al subir logo:', error);
+                alert('Error al subir el logo. Por favor, intenta de nuevo.');
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
@@ -75,9 +97,10 @@ export const SettingsPage: React.FC = () => {
         setLoading(true);
         setSaved(false);
         try {
+            // El logo ya se subió con handleLogoUpload, no necesitamos enviarlo aquí
             await api.updateCompanyConfig({
                 name: buildingName,
-                logo: companyLogo,
+                // logo ya está guardado en la DB por uploadCompanyLogo
                 settings: {
                     autoApproval,
                     autoCheckIn,

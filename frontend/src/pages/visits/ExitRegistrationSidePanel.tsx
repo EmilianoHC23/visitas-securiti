@@ -213,11 +213,11 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-900 via-purple-600 to-purple-500">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-900 via-cyan-600 to-cyan-500">
           <h2 className="text-xl font-bold text-white">Registrar Salida</h2>
           <button
             onClick={onClose}
-            className="text-white hover:text-gray-200 rounded-full p-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-700"
+            className="text-white hover:text-gray-200 rounded-full p-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-cyan-700"
             aria-label="Cerrar"
           >
             <X className="w-5 h-5" aria-hidden={true} />
@@ -238,10 +238,10 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                     setShowQrScanner(true);
                     startCamera();
                   }}
-                  className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all flex items-center gap-4 group"
+                  className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-cyan-500 hover:bg-cyan-50 transition-all flex items-center gap-4 group"
                 >
-                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-500 transition-colors">
-                    <QrCode className="w-6 h-6 text-purple-600 group-hover:text-white" aria-hidden={true} />
+                  <div className="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center group-hover:bg-cyan-500 transition-colors">
+                    <QrCode className="w-6 h-6 text-cyan-600 group-hover:text-white" aria-hidden={true} />
                   </div>
                   <div className="text-left">
                     <h3 className="font-semibold text-gray-800">Escanear QR</h3>
@@ -348,7 +348,7 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
               <div className="p-6 space-y-6">
                 {/* Foto y datos básicos */}
                 <div className="flex flex-col items-center pb-6 border-b border-gray-200">
-                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center mb-3 ring-4 ring-purple-100">
+                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-cyan-100 to-blue-100 flex items-center justify-center mb-3 ring-4 ring-cyan-100">
                     {selectedVisit.visitorPhoto ? (
                       <img src={selectedVisit.visitorPhoto} alt={selectedVisit.visitorName} className="w-full h-full object-cover" />
                     ) : (
@@ -368,7 +368,7 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
                     <span className="text-sm font-medium text-gray-600">A quién visitó</span>
-                    <span className="text-sm font-semibold text-purple-600">
+                    <span className="text-sm font-semibold text-cyan-600">
                       {selectedVisit.host.firstName} {selectedVisit.host.lastName}
                     </span>
                   </div>
@@ -376,20 +376,20 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                   {selectedVisit.assignedResource && (
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
                       <span className="text-sm font-medium text-gray-600">Recurso asignado</span>
-                      <span className="text-sm font-semibold text-purple-600">{selectedVisit.assignedResource}</span>
+                      <span className="text-sm font-semibold text-cyan-600">{selectedVisit.assignedResource}</span>
                     </div>
                   )}
 
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
                     <span className="text-sm font-medium text-gray-600">Hora de entrada</span>
-                    <span className="text-sm font-semibold text-purple-600">
+                    <span className="text-sm font-semibold text-cyan-600">
                       {selectedVisit.checkInTime ? new Date(selectedVisit.checkInTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '-'}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
                     <span className="text-sm font-medium text-gray-600">Tiempo transcurrido</span>
-                    <span className="text-lg font-bold text-purple-600">{elapsedTime}</span>
+                    <span className="text-lg font-bold text-cyan-600">{elapsedTime}</span>
                   </div>
                 </div>
 
@@ -402,7 +402,7 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                   {/* Grid de fotos */}
                   <div className="grid grid-cols-5 gap-2 mb-3">
                     {exitPhotos.map((photo, index) => (
-                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden border-2 border-purple-200 group">
+                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border-2 border-cyan-200 group">
                         <img src={photo} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />
                         <button
                           onClick={() => removePhoto(index)}
@@ -416,11 +416,11 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                     {/* Botón para agregar más fotos */}
                     {exitPhotos.length < 5 && (
                       <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-purple-500 hover:bg-purple-50 flex items-center justify-center transition-all"
-                      >
-                        <Upload className="w-5 h-5 text-gray-400" />
-                      </button>
+                          onClick={() => fileInputRef.current?.click()}
+                          className="aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-cyan-500 hover:bg-cyan-50 flex items-center justify-center transition-all"
+                        >
+                          <Upload className="w-5 h-5 text-gray-400" aria-hidden={true} />
+                        </button>
                     )}
                   </div>
                   

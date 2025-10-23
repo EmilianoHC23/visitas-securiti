@@ -20,6 +20,10 @@ export const SettingsPage: React.FC = () => {
     const [autoApproval, setAutoApproval] = useState(false);
     const [autoCheckIn, setAutoCheckIn] = useState(false);
     const [companyLogo, setCompanyLogo] = useState<string>('');
+    // Agenda preferences
+    const [agendaDefaultView, setAgendaDefaultView] = useState<'table' | 'calendar'>('table');
+    const [agendaDefaultRangeDays, setAgendaDefaultRangeDays] = useState<number>(7);
+    const [agendaDarkContrast, setAgendaDarkContrast] = useState<boolean>(true);
 
     // Additional Info Tab State
     const [street, setStreet] = useState('');
@@ -88,6 +92,11 @@ export const SettingsPage: React.FC = () => {
             setCompanyLogo(config.logo || '');
             setAutoApproval(config.settings?.autoApproval || false);
             setAutoCheckIn(config.settings?.autoCheckIn || false);
+            // Load agenda preferences if present
+            const agenda = (config.settings as any)?.agenda || {};
+            setAgendaDefaultView(agenda.defaultView === 'calendar' ? 'calendar' : 'table');
+            setAgendaDefaultRangeDays(typeof agenda.defaultRangeDays === 'number' ? agenda.defaultRangeDays : 7);
+            setAgendaDarkContrast(typeof agenda.darkContrast === 'boolean' ? agenda.darkContrast : true);
         } catch (error) {
             console.error('Error loading settings:', error);
         }
@@ -105,9 +114,11 @@ export const SettingsPage: React.FC = () => {
                     autoApproval,
                     autoCheckIn,
                     requirePhoto: true,
-                    enableSelfRegister: true
-                }
-            });
+                    enableSelfRegister: true,
+                    // Agenda preferences (cast to any to keep compatibility with Company type)
+                    ...( { agenda: { defaultView: agendaDefaultView, defaultRangeDays: agendaDefaultRangeDays, darkContrast: agendaDarkContrast } } as any )
+                } as any
+            } as any);
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
         } catch (error) {
@@ -237,7 +248,7 @@ export const SettingsPage: React.FC = () => {
                                         <div className="flex-1 w-full space-y-6">
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                                                    Nombre del Edificio / Empresa *
+                                                    Nombre de la Empresa *
                                                 </label>
                                                 <input
                                                     type="text"
@@ -365,6 +376,45 @@ export const SettingsPage: React.FC = () => {
                                                     />
                                                 </button>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Agenda Preferences */}
+                                <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-6 sm:p-8">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center">
+                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7H3v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold text-gray-900">Preferencias de Agenda</h3>
+                                            <p className="text-sm text-gray-600">Controla la vista y comportamiento por defecto de la agenda</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Vista por defecto</label>
+                                            <select value={agendaDefaultView} onChange={e => setAgendaDefaultView(e.target.value as any)} className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all">
+                                                <option value="table">Tabla</option>
+                                                <option value="calendar">Calendario</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Rango por defecto (días)</label>
+                                            <input type="number" min={1} max={30} value={agendaDefaultRangeDays} onChange={e => setAgendaDefaultRangeDays(Number(e.target.value) || 7)} className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all" />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Contraste oscuro</label>
+                                            <div className="flex items-center gap-3">
+                                                <button onClick={() => setAgendaDarkContrast(true)} className={`px-3 py-2 rounded-md ${agendaDarkContrast ? 'bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white' : 'bg-gray-100 text-gray-700'}`}>Activado</button>
+                                                <button onClick={() => setAgendaDarkContrast(false)} className={`px-3 py-2 rounded-md ${!agendaDarkContrast ? 'bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white' : 'bg-gray-100 text-gray-700'}`}>Desactivado</button>
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-2">Aplica el esquema de contraste oscuro en botones y controles de la Agenda</p>
                                         </div>
                                     </div>
                                 </div>

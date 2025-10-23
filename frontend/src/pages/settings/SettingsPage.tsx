@@ -241,7 +241,7 @@ export const SettingsPage: React.FC = () => {
                                         <div className="flex-1 lg:ml-6">
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                                                 <div>
-                                                    <label className="block text-sm font-bold text-gray-700 mb-2">Nombre del edificio*</label>
+                                                    <label className="block text-sm font-bold text-gray-700 mb-2">Nombre de la empresa*</label>
                                                     <input
                                                         type="text"
                                                         value={buildingName}

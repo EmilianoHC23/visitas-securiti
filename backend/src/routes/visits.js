@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 const Visit = require('../models/Visit');
 const User = require('../models/User');
 const Company = require('../models/Company');
@@ -184,6 +185,7 @@ router.post('/', auth, async (req, res) => {
     const approveUrl = `${FE}/api/visits/approve/${approval.token}`;
     const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
       await require('../services/emailService').sendApprovalRequestEmail({
+        visitId: visit._id, // ✅ Agregar visitId para generar URL temporal de foto
         hostEmail: host.email,
         hostName: `${host.firstName} ${host.lastName}`,
         companyName: (company && company.name) || 'SecurITI',
@@ -285,6 +287,7 @@ router.post('/register', async (req, res) => {
       const approveUrl = `${FE}/api/visits/approve/${approval.token}`;
       const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
       await require('../services/emailService').sendApprovalRequestEmail({
+        visitId: visit._id, // ✅ Agregar visitId para generar URL temporal de foto
         hostEmail: host.email,
         hostName: `${host.firstName} ${host.lastName}`,
         companyName: company?.name || 'SecurITI',
@@ -556,6 +559,75 @@ router.delete('/:id', auth, authorize('admin', 'reception'), async (req, res) =>
   } catch (error) {
     console.error('Delete visit error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// ========================================
+// 🖼️ ENDPOINT TEMPORAL PARA FOTOS DE VISITANTES
+// ========================================
+/**
+ * GET /api/visits/visitor-photo/:visitId/:token
+ * Endpoint público para servir fotos de visitantes con token temporal
+ * - Valida token JWT (expira en 30 días)
+ * - Convierte Base64 a imagen
+ * - Cache de 7 días para optimización
+ */
+router.get('/visitor-photo/:visitId/:token', async (req, res) => {
+  try {
+    const { visitId, token } = req.params;
+    
+    // Validar token JWT
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      console.log('⚠️ Token JWT inválido o expirado:', error.message);
+      return res.status(403).send('Token inválido o expirado');
+    }
+    
+    // Verificar que el token corresponde a esta visita
+    if (decoded.visitId !== visitId || decoded.type !== 'visitor-photo') {
+      console.log('⚠️ Token no corresponde a esta visita');
+      return res.status(403).send('Token inválido para esta visita');
+    }
+    
+    // Buscar la visita en la base de datos
+    const visit = await Visit.findById(visitId);
+    if (!visit) {
+      console.log('⚠️ Visita no encontrada:', visitId);
+      return res.status(404).send('Visita no encontrada');
+    }
+    
+    // Verificar que tiene foto
+    if (!visit.visitorPhoto) {
+      console.log('⚠️ Visita sin foto:', visitId);
+      return res.status(404).send('Foto no disponible');
+    }
+    
+    // Convertir Base64 a Buffer
+    const base64Data = visit.visitorPhoto.replace(/^data:image\/\w+;base64,/, '');
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+    
+    // Detectar tipo de imagen del Base64 original
+    let contentType = 'image/jpeg'; // default
+    const base64Match = visit.visitorPhoto.match(/^data:image\/(\w+);base64,/);
+    if (base64Match) {
+      contentType = `image/${base64Match[1]}`;
+    }
+    
+    // Enviar imagen con headers de cache
+    res.set({
+      'Content-Type': contentType,
+      'Cache-Control': 'public, max-age=604800', // Cache 7 días
+      'Content-Length': imageBuffer.length
+    });
+    
+    console.log(`✅ Foto servida exitosamente para visita ${visitId}`);
+    res.send(imageBuffer);
+    
+  } catch (error) {
+    console.error('❌ Error al servir foto de visitante:', error);
+    res.status(500).send('Error al cargar la foto');
   }
 });
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Camera, Building2, MapPin, Check, AlertCircle } from 'lucide-react';
+import { Upload, Camera, Building2, MapPin, Check, AlertCircle, Edit2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import * as api from '../../services/api';
 
@@ -207,23 +207,25 @@ export const SettingsPage: React.FC = () => {
                                         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Logo de la Organización</h2>
                                     </div>
                                     
-                                    <div className="flex flex-col lg:flex-row gap-8 items-start">
+                                    <div className="flex flex-col lg:flex-row gap-8 items-start lg:items-center">
                                         {/* Logo Preview */}
-                                        <div className="flex-shrink-0 mx-auto lg:mx-0">
-                                            <div className="relative group">
-                                                <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-3xl border-3 border-gray-300 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center shadow-xl hover:shadow-2xl transition-all">
+                                        <div className="flex-shrink-0">
+                                            <div className="relative">
+                                                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full ring-4 ring-sky-200 overflow-hidden flex items-center justify-center shadow-lg transition-all">
                                                     {companyLogo ? (
-                                                        <img src={companyLogo} alt="Logo" className="w-full h-full object-contain p-4" />
+                                                        <img src={companyLogo} alt="Logo" className="w-full h-full object-cover" />
                                                     ) : (
-                                                        <Building2 className="w-20 h-20 text-gray-300" />
+                                                        <Building2 className="w-12 h-12 text-gray-300" />
                                                     )}
                                                 </div>
+
+                                                {/* small edit button */}
                                                 <button
                                                     onClick={() => fileInputRef.current?.click()}
-                                                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl flex flex-col items-center justify-center"
+                                                    className="absolute -right-2 -bottom-2 bg-gradient-to-br from-gray-900 to-gray-700 text-white w-9 h-9 rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform"
+                                                    aria-label="Cambiar logo"
                                                 >
-                                                    <Upload className="w-10 h-10 text-white mb-2" />
-                                                    <span className="text-white text-sm font-semibold">Cambiar Logo</span>
+                                                    <Edit2 className="w-4 h-4" />
                                                 </button>
                                             </div>
                                             <input
@@ -233,37 +235,24 @@ export const SettingsPage: React.FC = () => {
                                                 onChange={handleLogoUpload}
                                                 className="hidden"
                                             />
-                                            <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-xl p-3">
-                                                <div className="flex gap-2">
-                                                    <AlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
-                                                    <p className="text-xs text-yellow-800 leading-relaxed">
-                                                        Recomendado: PNG con fondo transparente, 500×500px, menor a 2MB. 
-                                                        Este logo aparecerá en todos los correos del sistema.
-                                                    </p>
-                                                </div>
-                                            </div>
                                         </div>
 
-                                        {/* Form Fields rediseñados */}
-                                        <div className="flex-1 w-full space-y-6">
-                                            <div>
-                                                <label className="block text-sm font-bold text-gray-700 mb-2">
-                                                    Nombre de la Empresa *
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={buildingName}
-                                                    onChange={(e) => setBuildingName(e.target.value)}
-                                                    placeholder="Ej: SecurITI Corporation"
-                                                    className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
-                                                />
-                                            </div>
-
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {/* Form Fields rediseñados (single row on md+) */}
+                                        <div className="flex-1 lg:ml-6">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                                                 <div>
-                                                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                                                        Idioma de la cuenta
-                                                    </label>
+                                                    <label className="block text-sm font-bold text-gray-700 mb-2">Nombre del edificio*</label>
+                                                    <input
+                                                        type="text"
+                                                        value={buildingName}
+                                                        onChange={(e) => setBuildingName(e.target.value)}
+                                                        placeholder="Mi Empresa"
+                                                        className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-bold text-gray-700 mb-2">Idioma de la cuenta</label>
                                                     <select
                                                         value={accountLanguage}
                                                         onChange={(e) => setAccountLanguage(e.target.value)}
@@ -275,9 +264,7 @@ export const SettingsPage: React.FC = () => {
                                                 </div>
 
                                                 <div>
-                                                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                                                        Zona horaria
-                                                    </label>
+                                                    <label className="block text-sm font-bold text-gray-700 mb-2">Zona horaria</label>
                                                     <select
                                                         value={timezone}
                                                         onChange={(e) => setTimezone(e.target.value)}
@@ -289,6 +276,17 @@ export const SettingsPage: React.FC = () => {
                                                     </select>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Recommendation note spanning both columns */}
+                                    <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-xl p-3">
+                                        <div className="flex gap-2">
+                                            <AlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                                            <p className="text-xs text-yellow-800 leading-relaxed">
+                                                Recomendado: PNG con fondo transparente, 500×500px, menor a 2MB. 
+                                                Este logo aparecerá en todos los correos del sistema.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>

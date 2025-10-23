@@ -1405,12 +1405,12 @@ class EmailService {
                         </div>
 
                         <!-- QR Code -->
-                        ${data.qrCode ? `
+                        ${data.qrData ? `
                         <div style="background-color: #ffffff; border: 2px solid #e5e7eb; border-radius: 8px; padding: 25px; text-align: center; margin-bottom: 25px;">
                           <p style="color: #1f2937; font-size: 16px; font-weight: 600; margin: 0 0 15px 0;">
                             ${data.invitedName}
                           </p>
-                          <img src="${data.qrCode}" alt="QR Code" style="width: 200px; height: 200px; display: block; margin: 0 auto;" />
+                          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.qrData)}" alt="QR Code" style="width: 200px; height: 200px; display: block; margin: 0 auto;" />
                         </div>
                         ` : ''}
 
@@ -1612,9 +1612,9 @@ class EmailService {
                         </div>
 
                         <!-- QR Code -->
-                        ${data.qrCode ? `
+                        ${data.qrData ? `
                         <div style="background-color: #ffffff; border: 2px solid #e5e7eb; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 20px;">
-                          <img src="${data.qrCode}" alt="QR Code" style="width: 180px; height: 180px; display: block; margin: 0 auto;" />
+                          <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(data.qrData)}" alt="QR Code" style="width: 180px; height: 180px; display: block; margin: 0 auto;" />
                           <p style="color: #6b7280; font-size: 13px; margin: 10px 0 0 0;">
                             ${data.invitedName}
                           </p>
@@ -1905,9 +1905,9 @@ class EmailService {
                         </div>
 
                         <!-- QR Code -->
-                        ${data.qrCode ? `
+                        ${data.qrData ? `
                         <div style="background-color: #ffffff; border: 2px solid #e5e7eb; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 20px;">
-                          <img src="${data.qrCode}" alt="QR Code" style="width: 180px; height: 180px; display: block; margin: 0 auto;" />
+                          <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(data.qrData)}" alt="QR Code" style="width: 180px; height: 180px; display: block; margin: 0 auto;" />
                           <p style="color: #6b7280; font-size: 13px; margin: 10px 0 0 0;">
                             ${data.invitedName}
                           </p>

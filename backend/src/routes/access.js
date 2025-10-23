@@ -186,6 +186,17 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
             // Generate QR code for guest
             const qrCode = await generateAccessInvitationQR(access, guest);
 
+            // En lugar de pasar el QR en Base64, pasamos los datos para generar el QR en el email
+            const qrData = {
+              type: 'access-invitation',
+              accessId: access._id.toString(),
+              accessCode: access.accessCode,
+              guestName: guest.name,
+              guestEmail: guest.email || '',
+              eventName: access.eventName,
+              eventDate: access.startDate
+            };
+
             await emailService.sendAccessInvitationEmail({
               invitedEmail: guest.email,
               invitedName: guest.name,
@@ -198,7 +209,7 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
               endTime: formatTime(access.endDate),
               location: access.location,
               accessCode: access.accessCode,
-              qrCode: qrCode,
+              qrData: JSON.stringify(qrData), // Pasar como string para usar en la API pública
               companyName: company.name,
               companyLogo: company.logo
             });
@@ -287,7 +298,17 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
         for (const guest of newGuests) {
           if (guest.email) {
             try {
-              const qrCode = await generateAccessInvitationQR(access, guest);
+              // Generar datos del QR para usar con API pública
+              const qrData = {
+                type: 'access-invitation',
+                accessId: access._id.toString(),
+                accessCode: access.accessCode,
+                guestName: guest.name,
+                guestEmail: guest.email || '',
+                eventName: access.eventName,
+                eventDate: access.startDate
+              };
+
               await emailService.sendAccessInvitationEmail({
                 invitedEmail: guest.email,
                 invitedName: guest.name,
@@ -300,7 +321,7 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
                 endTime: formatTime(access.endDate),
                 location: access.location,
                 accessCode: access.accessCode,
-                qrCode: qrCode,
+                qrData: JSON.stringify(qrData),
                 companyName: company.name,
                 companyLogo: company.logo
               });
@@ -345,7 +366,17 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
         if (guest.email) {
           try {
             const company = await Company.findOne({ companyId: access.companyId });
-            const qrCode = await generateAccessInvitationQR(access, guest);
+            
+            // Generar datos del QR para usar con API pública
+            const qrData = {
+              type: 'access-invitation',
+              accessId: access._id.toString(),
+              accessCode: access.accessCode,
+              guestName: guest.name,
+              guestEmail: guest.email || '',
+              eventName: access.eventName,
+              eventDate: access.startDate
+            };
             
             await emailService.sendAccessModifiedToGuestEmail({
               invitedEmail: guest.email,
@@ -359,7 +390,7 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
               endTime: formatTime(access.endDate),
               location: access.location,
               accessCode: access.accessCode,
-              qrCode: qrCode,
+              qrData: JSON.stringify(qrData),
               companyName: company.name,
               companyLogo: company.logo
             });

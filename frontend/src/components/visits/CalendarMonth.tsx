@@ -237,7 +237,13 @@ export const CalendarMonth: React.FC<Props> = ({ year, month, events = [] }) => 
               <h2 className="text-lg font-semibold">{new Date(currentYear, currentMonth).toLocaleString('es-ES', { month: 'long', year: 'numeric' })}</h2>
             </button>
             <button onClick={nextMonth} className="p-2 rounded-md hover:bg-gray-100 text-gray-600" aria-label="Next month">▶</button>
-            <button onClick={() => { setCurrentYear(new Date().getFullYear()); setCurrentMonth(new Date().getMonth()); }} className="ml-3 px-3 py-1 bg-securiti-blue-600 text-white rounded" aria-label="Ir a hoy">Hoy</button>
+            <button
+              onClick={() => { setCurrentYear(new Date().getFullYear()); setCurrentMonth(new Date().getMonth()); }}
+              className="ml-3 px-3 py-1 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white rounded shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/40"
+              aria-label="Ir a hoy"
+            >
+              Hoy
+            </button>
 
             {popoverOpen && createPortal(
               <div ref={popoverRef} role="dialog" aria-modal="false" aria-labelledby="month-picker-label" className="absolute mt-2 bg-white border rounded shadow-lg p-4 z-50 transform transition duration-150 ease-out opacity-100 scale-100 motion-reduce:transition-none">
@@ -254,7 +260,12 @@ export const CalendarMonth: React.FC<Props> = ({ year, month, events = [] }) => 
                   <button onClick={() => setCurrentYear(y => y - 1)} className="px-2 py-1 rounded hover:bg-gray-100">«</button>
                   <input aria-label="Año" type="number" value={currentYear} onChange={(e) => setCurrentYear(Number(e.target.value) || currentYear)} className="w-24 p-1 border rounded text-sm" />
                   <button onClick={() => setCurrentYear(y => y + 1)} className="px-2 py-1 rounded hover:bg-gray-100">»</button>
-                  <button onClick={() => { setCurrentYear(new Date().getFullYear()); setCurrentMonth(new Date().getMonth()); setPopoverOpen(false); headerButtonRef.current?.focus(); }} className="ml-3 px-3 py-1 bg-securiti-blue-600 text-white rounded">Ir a hoy</button>
+                  <button
+                    onClick={() => { setCurrentYear(new Date().getFullYear()); setCurrentMonth(new Date().getMonth()); setPopoverOpen(false); headerButtonRef.current?.focus(); }}
+                    className="ml-3 px-3 py-1 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white rounded shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/40"
+                  >
+                    Ir a hoy
+                  </button>
                 </div>
               </div>, document.body)
             }

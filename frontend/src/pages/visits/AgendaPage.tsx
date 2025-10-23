@@ -130,8 +130,18 @@ export const AgendaPage: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Agenda de Visitas y Eventos</h1>
         <div className="flex gap-2">
-          <button onClick={() => setViewMode('table')} className={`px-4 py-2 rounded-md font-semibold ${viewMode === 'table' ? 'bg-securiti-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Tabla</button>
-          <button onClick={() => setViewMode('calendar')} className={`px-4 py-2 rounded-md font-semibold ${viewMode === 'calendar' ? 'bg-securiti-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Calendario</button>
+          <button
+            onClick={() => setViewMode('table')}
+            className={`px-4 py-2 rounded-md font-semibold ${viewMode === 'table' ? 'bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white shadow-sm' : 'bg-gray-100 text-gray-700'}`}
+          >
+            Tabla
+          </button>
+          <button
+            onClick={() => setViewMode('calendar')}
+            className={`px-4 py-2 rounded-md font-semibold ${viewMode === 'calendar' ? 'bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white shadow-sm' : 'bg-gray-100 text-gray-700'}`}
+          >
+            Calendario
+          </button>
         </div>
       </div>
 
@@ -141,7 +151,7 @@ export const AgendaPage: React.FC = () => {
           <span className="text-sm font-medium text-gray-700">Mostrar:</span>
           <button 
             onClick={() => setFilterType('all')} 
-            className={`px-3 py-1.5 rounded-md text-sm font-medium ${filterType === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium ${filterType === 'all' ? 'bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
           >
             Todos
           </button>
@@ -184,7 +194,7 @@ export const AgendaPage: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
             <div className="flex gap-2">
               <input type="text" placeholder="Nombre, empresa, título o motivo" value={q} onChange={e => setQ(e.target.value)} className="flex-1 border border-gray-300 rounded-lg p-2" />
-              <button onClick={fetchAgenda} className="px-6 py-2 bg-securiti-blue-600 text-white rounded-lg">Buscar</button>
+              <button onClick={fetchAgenda} className="px-6 py-2 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white rounded-lg shadow-sm">Buscar</button>
             </div>
           </div>
         </div>

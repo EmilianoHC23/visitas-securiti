@@ -1257,7 +1257,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
             <div className="mb-6 flex justify-between items-center">
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col items-center">
-                        <div className="text-5xl font-bold text-securiti-blue-600">{todayVisits.length}</div>
+                        <div className="text-5xl font-bold text-gray-900">{todayVisits.length}</div>
                         <div className="text-xs text-gray-600 mt-1">Total de registros hoy</div>
                         <div className="text-xs text-gray-500 capitalize">{formattedDate}</div>
                     </div>
@@ -1279,7 +1279,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                     <div className="relative">
                         <button
                             onClick={() => setRegisterMenuOpen(!registerMenuOpen)}
-                            className="px-4 py-2.5 bg-cyan-400 text-white rounded-lg hover:bg-cyan-500 font-medium flex items-center gap-2 transition-colors shadow-sm"
+                            className="px-4 py-2.5 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white rounded-lg hover:from-gray-800 hover:to-gray-600 font-medium flex items-center gap-2 transition-all shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-700"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1323,8 +1323,8 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                         <div className="bg-gradient-to-br from-orange-50 to-white p-5 border-b border-gray-200">
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg">
-                                        <ClockIcon className="w-6 h-6 text-white" />
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-900 via-orange-600 to-orange-400 flex items-center justify-center shadow-lg ring-1 ring-white/10">
+                                        <ClockIcon aria-hidden="true" className="w-6 h-6 text-white" />
                                     </div>
                                     <div>
                                         <div className="text-3xl font-bold text-gray-800">{pendingVisits.length}</div>
@@ -1379,8 +1379,8 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                         <div className="bg-gradient-to-br from-green-50 to-white p-5 border-b border-gray-200">
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center shadow-lg">
-                                        <CheckCircleIcon className="w-6 h-6 text-white" />
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-900 via-green-600 to-green-400 flex items-center justify-center shadow-lg ring-1 ring-white/10">
+                                        <CheckCircleIcon aria-hidden="true" className="w-6 h-6 text-white" />
                                     </div>
                                     <div>
                                         <div className="text-3xl font-bold text-gray-800">{respondedVisits.length}</div>
@@ -1438,8 +1438,8 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                         <div className="bg-gradient-to-br from-cyan-50 to-white p-5 border-b border-gray-200">
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-500 flex items-center justify-center shadow-lg">
-                                        <LoginIcon className="w-6 h-6 text-white" />
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-900 via-cyan-600 to-cyan-400 flex items-center justify-center shadow-lg ring-1 ring-white/10">
+                                        <LoginIcon aria-hidden="true" className="w-6 h-6 text-white" />
                                     </div>
                                     <div>
                                         <div className="text-3xl font-bold text-gray-800">{checkedInVisits.length}</div>

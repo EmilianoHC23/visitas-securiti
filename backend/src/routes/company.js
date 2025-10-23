@@ -2,6 +2,7 @@ const express = require('express');
 const Company = require('../models/Company');
 const { auth, authorize } = require('../middleware/auth');
 const multer = require('multer');
+const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
@@ -211,6 +212,91 @@ router.get('/qr-code', auth, async (req, res) => {
   } catch (error) {
     console.error('Get QR code error:', error);
     res.status(500).json({ message: 'Error interno del servidor', error: error.message });
+  }
+});
+
+/**
+ * Endpoint público para servir logos de empresa con token JWT
+ * GET /api/company/logo/:companyId/:token
+ */
+router.get('/logo/:companyId/:token', async (req, res) => {
+  try {
+    const { companyId, token } = req.params;
+    
+    console.log(`🏢 [COMPANY LOGO] Solicitud de logo para empresa: ${companyId}`);
+    
+    // Verificar el token JWT
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log(`✅ [COMPANY LOGO] Token válido:`, decoded);
+    } catch (jwtError) {
+      console.error('❌ [COMPANY LOGO] Token inválido o expirado:', jwtError.message);
+      return res.status(401).json({ message: 'Token inválido o expirado' });
+    }
+    
+    // Verificar que el token sea del tipo correcto
+    if (decoded.type !== 'company-logo') {
+      console.error('❌ [COMPANY LOGO] Tipo de token incorrecto:', decoded.type);
+      return res.status(403).json({ message: 'Token no válido para este recurso' });
+    }
+    
+    // Verificar que el companyId coincida
+    if (decoded.companyId !== companyId) {
+      console.error('❌ [COMPANY LOGO] CompanyId no coincide. Token:', decoded.companyId, 'URL:', companyId);
+      return res.status(403).json({ message: 'Token no corresponde a esta empresa' });
+    }
+    
+    // Buscar la empresa en la base de datos
+    const company = await Company.findOne({ companyId: companyId });
+    
+    if (!company) {
+      console.error('❌ [COMPANY LOGO] Empresa no encontrada:', companyId);
+      return res.status(404).json({ message: 'Empresa no encontrada' });
+    }
+    
+    // Verificar que la empresa tenga logo
+    if (!company.logo) {
+      console.log('⚠️ [COMPANY LOGO] Empresa sin logo configurado:', companyId);
+      return res.status(404).json({ message: 'Logo no disponible' });
+    }
+    
+    // Verificar que el logo sea Base64
+    if (!company.logo.startsWith('data:image')) {
+      console.error('❌ [COMPANY LOGO] Logo no es Base64:', companyId);
+      return res.status(400).json({ message: 'Formato de logo inválido' });
+    }
+    
+    // Extraer tipo MIME y datos Base64
+    const matches = company.logo.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/);
+    
+    if (!matches || matches.length !== 3) {
+      console.error('❌ [COMPANY LOGO] Formato Base64 inválido');
+      return res.status(400).json({ message: 'Formato de imagen inválido' });
+    }
+    
+    const mimeType = `image/${matches[1]}`;
+    const base64Data = matches[2];
+    
+    // Convertir Base64 a Buffer
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+    
+    console.log(`✅ [COMPANY LOGO] Logo servido exitosamente. Tamaño: ${imageBuffer.length} bytes, Tipo: ${mimeType}`);
+    
+    // Configurar headers para caché y tipo de contenido
+    res.set({
+      'Content-Type': mimeType,
+      'Content-Length': imageBuffer.length,
+      'Cache-Control': 'public, max-age=604800', // 7 días de caché
+      'ETag': `"${companyId}-${Date.now()}"` // ETag para validación de caché
+    });
+    
+    // Enviar la imagen
+    res.send(imageBuffer);
+    
+  } catch (error) {
+    console.error('❌ [COMPANY LOGO] Error al servir logo:', error);
+    res.status(500).json({ message: 'Error al obtener logo', error: error.message });
   }
 });
 

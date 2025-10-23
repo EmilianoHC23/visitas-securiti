@@ -224,6 +224,7 @@ class EmailService {
       const statusText = isApproved ? 'APROBADA' : 'RECHAZADA';
       const primaryColor = '#000000'; // Negro moderno
       const secondaryColor = '#ffffff'; // Blanco
+      const accentColor = '#f59e0b'; // Amber para instrucciones
       const statusColor = isApproved ? '#10b981' : '#ef4444';
 
       // QR para futuras visitas - JSON compatible con el escáner del panel (VisitRegistrationSidePanel)

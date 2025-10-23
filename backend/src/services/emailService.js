@@ -1,5 +1,6 @@
 // EmailService usando Nodemailer - Backend Email Service
 const nodemailer = require('nodemailer');
+const jwt = require('jsonwebtoken');
 const { formatFullDate, formatDateTime, formatShortDate, formatTime } = require('../utils/dateUtils');
 
 class EmailService {
@@ -70,6 +71,30 @@ class EmailService {
 
   isEnabled() {
     return this.checkEnabled();
+  }
+
+  /**
+   * Genera URL temporal para foto de visitante
+   * @param {string} visitId - ID de la visita
+   * @returns {string} URL pública temporal con token JWT
+   */
+  generateVisitorPhotoUrl(visitId) {
+    // Generar token JWT que expira en 30 días
+    const token = jwt.sign(
+      { 
+        visitId: visitId,
+        type: 'visitor-photo'
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+    
+    // Construir URL pública
+    const baseUrl = process.env.API_URL || 'http://localhost:5000';
+    const photoUrl = `${baseUrl}/api/visits/visitor-photo/${visitId}/${token}`;
+    
+    console.log(`🔗 URL temporal generada para visita ${visitId}`);
+    return photoUrl;
   }
 
   async sendTestEmail(to) {
@@ -417,6 +442,18 @@ class EmailService {
       console.log('📧 [Approval Request] Logo recibido:', isBase64 ? 'Base64 (bloqueado por email)' : 'URL pública');
     }
     
+    // 🔗 Generar URL temporal para foto del visitante (si existe y es Base64)
+    let visitorPhotoUrl = null;
+    if (data.visitorPhoto && data.visitorPhoto.startsWith('data:image')) {
+      // Es Base64, generar URL temporal
+      visitorPhotoUrl = this.generateVisitorPhotoUrl(data.visitId);
+      console.log('🖼️ [Approval Request] Foto de visitante convertida a URL temporal');
+    } else if (data.visitorPhoto) {
+      // Ya es una URL pública, usarla directamente
+      visitorPhotoUrl = data.visitorPhoto;
+      console.log('🖼️ [Approval Request] Usando URL pública de foto de visitante');
+    }
+    
     const primaryColor = '#000000'; // Negro moderno
     const secondaryColor = '#ffffff'; // Blanco
     const accentColor = '#4b5563'; // Gris medio
@@ -462,8 +499,8 @@ class EmailService {
                             <td style="padding: 25px;">
                               <!-- Visitor Photo/Icon -->
                               <div style="text-align: center; margin-bottom: 20px;">
-                                ${data.visitorPhoto ? `
-                                  <img src="${data.visitorPhoto}" alt="Foto del visitante" style="width: 120px; height: 120px; border-radius: 50%; border: 4px solid ${primaryColor}; object-fit: cover; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"/>
+                                ${visitorPhotoUrl ? `
+                                  <img src="${visitorPhotoUrl}" alt="Foto del visitante" style="width: 120px; height: 120px; border-radius: 50%; border: 4px solid ${primaryColor}; object-fit: cover; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"/>
                                 ` : `
                                   <div style="width: 120px; height: 120px; margin: 0 auto; border-radius: 50%; background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                                     <svg width="70" height="70" viewBox="0 0 24 24" fill="#ffffff">

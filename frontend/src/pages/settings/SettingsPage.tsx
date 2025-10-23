@@ -316,7 +316,16 @@ export const SettingsPage: React.FC = () => {
                                                 </div>
                                                 <button
                                                     onClick={() => setAutoApproval(!autoApproval)}
-                                                    className={`relative inline-flex h-7 w-13 items-center rounded-full transition-colors flex-shrink-0 ${
+                                                    role="switch"
+                                                    aria-checked={autoApproval}
+                                                    tabIndex={0}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            e.preventDefault();
+                                                            setAutoApproval(!autoApproval);
+                                                        }
+                                                    }}
+                                                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors flex-shrink-0 ${
                                                         autoApproval ? 'bg-gray-900' : 'bg-gray-300'
                                                     }`}
                                                 >
@@ -340,7 +349,16 @@ export const SettingsPage: React.FC = () => {
                                                 </div>
                                                 <button
                                                     onClick={() => setAutoCheckIn(!autoCheckIn)}
-                                                    className={`relative inline-flex h-7 w-13 items-center rounded-full transition-colors flex-shrink-0 ${
+                                                    role="switch"
+                                                    aria-checked={autoCheckIn}
+                                                    tabIndex={0}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            e.preventDefault();
+                                                            setAutoCheckIn(!autoCheckIn);
+                                                        }
+                                                    }}
+                                                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors flex-shrink-0 ${
                                                         autoCheckIn ? 'bg-gray-900' : 'bg-gray-300'
                                                     }`}
                                                 >
@@ -365,7 +383,16 @@ export const SettingsPage: React.FC = () => {
                                                 </div>
                                                 <button
                                                     onClick={() => setAutoCheckout(!autoCheckout)}
-                                                    className={`relative inline-flex h-7 w-13 items-center rounded-full transition-colors flex-shrink-0 ${
+                                                    role="switch"
+                                                    aria-checked={autoCheckout}
+                                                    tabIndex={0}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            e.preventDefault();
+                                                            setAutoCheckout(!autoCheckout);
+                                                        }
+                                                    }}
+                                                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors flex-shrink-0 ${
                                                         autoCheckout ? 'bg-gray-900' : 'bg-gray-300'
                                                     }`}
                                                 >

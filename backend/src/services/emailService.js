@@ -1092,6 +1092,7 @@ class EmailService {
     
     const primaryColor = '#000000'; // Negro moderno
     const secondaryColor = '#ffffff'; // Blanco
+    const accentColor = '#f59e0b'; // Amber para resaltar información
 
     // Calcular tiempo de permanencia (desde entrada física hasta salida)
     const checkInTime = new Date(data.checkInTime);
@@ -1506,6 +1507,8 @@ class EmailService {
     }
 
     try {
+      const accentColor = '#f59e0b'; // Amber para resaltar información
+      
       const logoHtml = data.companyLogo 
         ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
         : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
@@ -1546,7 +1549,7 @@ class EmailService {
                         </p>
 
                         <!-- Detalles -->
-                        <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+                        <div style="background-color: #fef3c7; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
                           <p style="color: #92400e; margin: 0; font-size: 15px; line-height: 1.8;">
                             <strong>Detalles del acceso</strong><br><br>
                             <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))} ${data.startTime}
@@ -1804,6 +1807,8 @@ class EmailService {
     }
 
     try {
+      const accentColor = '#f59e0b'; // Amber para resaltar información
+      
       const logoHtml = data.companyLogo 
         ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
         : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
@@ -1844,7 +1849,7 @@ class EmailService {
                         </p>
 
                         <!-- Detalles -->
-                        <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+                        <div style="background-color: #fef3c7; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
                           <p style="color: #92400e; margin: 0; font-size: 14px; line-height: 1.8;">
                             <strong>Detalle del acceso</strong><br><br>
                             <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))} ${data.startTime}

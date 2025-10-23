@@ -1,11 +1,26 @@
 const express = require('express');
 const Company = require('../models/Company');
 const { auth, authorize } = require('../middleware/auth');
-const { uploadLogo } = require('../config/multer');
-const path = require('path');
-const fs = require('fs');
+const multer = require('multer');
 
 const router = express.Router();
+
+// Configurar multer para recibir archivos en memoria
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB máximo
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (mimetype) {
+      cb(null, true);
+    } else {
+      cb(new Error('Solo se permiten archivos de imagen (jpeg, jpg, png, gif, webp)'));
+    }
+  }
+});
 
 // Get company configuration
 router.get('/config', auth, async (req, res) => {
@@ -40,36 +55,47 @@ router.get('/config', auth, async (req, res) => {
   }
 });
 
-// Upload company logo
-router.post('/upload-logo', auth, authorize('admin'), uploadLogo.single('logo'), async (req, res) => {
+// Upload company logo to Imgur
+router.post('/upload-logo', auth, authorize('admin'), upload.single('logo'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No se ha subido ningún archivo' });
     }
 
-    // Construir URL pública del logo
-    const baseUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 3000}`;
-    const logoUrl = `${baseUrl}/api/uploads/logos/${req.file.filename}`;
+    // Convertir buffer a base64 para Imgur
+    const imageBase64 = req.file.buffer.toString('base64');
 
-    // Obtener la empresa actual
-    const company = await Company.findOne({ companyId: req.user.companyId });
+    // Subir a Imgur (usando API anónima - sin necesidad de client ID para testing)
+    // Para producción, registra una app en https://api.imgur.com/oauth2/addclient
+    const IMGUR_CLIENT_ID = process.env.IMGUR_CLIENT_ID || 'client_id_here'; // Puedes usar uno público de prueba
     
-    if (company && company.logo) {
-      // Eliminar el logo anterior del sistema de archivos si existe
-      const oldLogoPath = company.logo.split('/api/uploads/logos/')[1];
-      if (oldLogoPath) {
-        const oldFilePath = path.join(__dirname, '../../uploads/logos', oldLogoPath);
-        if (fs.existsSync(oldFilePath)) {
-          fs.unlinkSync(oldFilePath);
-          console.log('Logo anterior eliminado:', oldFilePath);
-        }
-      }
+    const response = await fetch('https://api.imgur.com/3/image', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Client-ID ${IMGUR_CLIENT_ID}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        image: imageBase64,
+        type: 'base64',
+        name: `logo-${req.user.companyId}-${Date.now()}`,
+        title: `Logo de ${req.user.companyId}`
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Error de Imgur:', errorData);
+      throw new Error(`Imgur API error: ${errorData.data?.error || response.statusText}`);
     }
+
+    const data = await response.json();
+    const imgurUrl = data.data.link; // URL pública de Imgur
 
     // Actualizar el logo en la base de datos
     const updatedCompany = await Company.findOneAndUpdate(
       { companyId: req.user.companyId },
-      { logo: logoUrl },
+      { logo: imgurUrl },
       { new: true }
     );
 
@@ -77,25 +103,23 @@ router.post('/upload-logo', auth, authorize('admin'), uploadLogo.single('logo'),
       return res.status(404).json({ message: 'Empresa no encontrada' });
     }
 
-    console.log('✅ Logo subido exitosamente:', logoUrl);
+    console.log('✅ Logo subido exitosamente a Imgur:', imgurUrl);
     
     res.json({
       message: 'Logo subido exitosamente',
-      logoUrl: logoUrl,
-      filename: req.file.filename
+      logoUrl: imgurUrl,
+      imgurData: {
+        id: data.data.id,
+        deleteHash: data.data.deletehash // Guárdalo si quieres poder eliminar la imagen después
+      }
     });
   } catch (error) {
-    console.error('Error al subir logo:', error);
-    
-    // Eliminar el archivo si hubo un error
-    if (req.file) {
-      const filePath = path.join(__dirname, '../../uploads/logos', req.file.filename);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    }
-    
-    res.status(500).json({ message: 'Error al subir el logo', error: error.message });
+    console.error('Error al subir logo a Imgur:', error);
+    res.status(500).json({ 
+      message: 'Error al subir el logo', 
+      error: error.message,
+      hint: 'Verifica que IMGUR_CLIENT_ID esté configurado en las variables de entorno'
+    });
   }
 });
 

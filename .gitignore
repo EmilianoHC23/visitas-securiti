@@ -49,10 +49,6 @@ visitas-laravel-backend/
 # Scripts de mantenimiento temporal
 backend/scripts/*.tmp
 
-# Uploads (archivos subidos por usuarios)
-backend/uploads/*
-!backend/uploads/.gitkeep
-
 # Cache directories
 .cache
 .parcel-cache

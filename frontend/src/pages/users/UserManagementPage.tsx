@@ -92,11 +92,18 @@ interface EditUserData {
 
 const RoleBadge: React.FC<{ role: UserRole }> = ({ role }) => {
     const roleStyles: Record<UserRole, string> = {
-        [UserRole.ADMIN]: 'bg-red-100 text-red-800',
-        [UserRole.RECEPTION]: 'bg-blue-100 text-blue-800',
-        [UserRole.HOST]: 'bg-green-100 text-green-800',
+    // Admin: dark blue for a stronger, professional tone (slight transparency)
+    [UserRole.ADMIN]: 'bg-blue-900/80 text-white',
+    // Reception: darker yellow/amber with slightly more transparency
+    [UserRole.RECEPTION]: 'bg-amber-500/60 text-amber-900',
+        // Host: slightly darker orange for better contrast (slight transparency)
+        [UserRole.HOST]: 'bg-orange-300/80 text-orange-900',
     };
-    return <span className={`px-2 py-1 text-xs font-medium rounded-full ${roleStyles[role]}`}>{role.charAt(0).toUpperCase() + role.slice(1)}</span>
+    return (
+        <span className={`px-2 py-1 text-xs font-medium rounded-full ${roleStyles[role]}`}>
+            {role.charAt(0).toUpperCase() + role.slice(1)}
+        </span>
+    );
 };
 
 const formatPermissionLabel = (perm: string) => {
@@ -405,6 +412,8 @@ export const UserManagementPage: React.FC = () => {
     const [editLoading, setEditLoading] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
 
+    // We'll use CSS :hover for row highlight (no JS state needed)
+
     // Estado para la vista previa
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [previewUser, setPreviewUser] = useState<User | null>(null);
@@ -535,34 +544,34 @@ export const UserManagementPage: React.FC = () => {
         <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-gray-800">Gestión de Usuarios</h2>
-                <button 
+                <button
                     onClick={() => setIsModalOpen(true)}
-                    className="px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2 font-semibold text-white bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 rounded-lg shadow-md hover:from-gray-800 hover:via-gray-700 hover:to-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-900 transition-transform"
                 >
                     Invitar Usuario
                 </button>
             </div>
             
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-lg shadow-sm border border-gray-100">
                 {loading ? (
                      <div className="text-center p-8">Cargando usuarios...</div>
                 ) : (
-                    <table className="w-full text-sm text-left text-gray-500">
-                        <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-900">
                             <tr>
-                                <th scope="col" className="px-6 py-3">Foto</th>
-                                <th scope="col" className="px-6 py-3">Nombre</th>
-                                <th scope="col" className="px-6 py-3">Email</th>
-                                <th scope="col" className="px-6 py-3">Rol</th>
-                                <th scope="col" className="px-6 py-3">Estatus</th>
-                                <th scope="col" className="px-6 py-3 text-right">Acciones</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Foto</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Nombre</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Email</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Rol</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Estatus</th>
+                                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {users.map(user => (
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {users.map((user, rowIndex) => (
                                 <tr
                                     key={user._id}
-                                    className="bg-white border-b cursor-pointer group"
+                                    className="group bg-white even:bg-gray-50 border-b cursor-pointer transition-colors hover:bg-blue-100 focus-within:bg-blue-100"
                                     onClick={e => {
                                         // Evitar que los botones de acción abran el modal
                                         if ((e.target as HTMLElement).closest('button')) return;
@@ -570,8 +579,8 @@ export const UserManagementPage: React.FC = () => {
                                         setIsPreviewModalOpen(true);
                                     }}
                                 >
-                                    <td className="px-6 py-4 transition-colors group-hover:bg-blue-100">
-                                        <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                                    <td className="px-6 py-4 align-middle transition-colors group-hover:bg-blue-100">
+                                        <span className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-sm ring-1 ring-gray-200">
                                             {user.profileImage && user.profileImage.trim() !== '' ? (
                                                 <img
                                                     src={user.profileImage}
@@ -609,13 +618,12 @@ export const UserManagementPage: React.FC = () => {
                                         <StatusBadge status={user.invitationStatus || 'none'} />
                                     </td>
                                     <td className="px-6 py-4 text-right transition-colors group-hover:bg-blue-100">
-                                        <div className="flex justify-end space-x-2">
+                                        <div className="flex justify-end items-center space-x-2">
                                             {user.invitationStatus === 'pending' && (
                                                 <button 
                                                     onClick={e => { e.stopPropagation(); handleResendInvitation(user._id); }}
-                                                    className="p-2 text-blue-600 hover:text-blue-800 bg-transparent border-none shadow-none"
+                                                    className="p-2 text-blue-600 hover:text-blue-800 rounded hover:bg-gray-100 transition"
                                                     title="Reenviar invitación"
-                                                    style={{ background: 'none' }}
                                                 >
                                                     {/* Heroicons outline: Envelope + Arrow Right (forward email) */}
                                                     <span className="relative inline-block w-5 h-5">
@@ -630,9 +638,8 @@ export const UserManagementPage: React.FC = () => {
                                             )}
                                             <button 
                                                 onClick={e => { e.stopPropagation(); handleEditUser(user); }}
-                                                className="p-2 text-green-600 hover:text-green-800 bg-transparent border-none shadow-none"
+                                                className="p-2 text-green-600 hover:text-green-800 rounded hover:bg-gray-100 transition"
                                                 title="Editar usuario"
-                                                style={{ background: 'none' }}
                                             >
                                                 {/* Heroicons outline: Pencil Square */}
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -641,9 +648,8 @@ export const UserManagementPage: React.FC = () => {
                                             </button>
                                             <button 
                                                 onClick={e => { e.stopPropagation(); handleDeleteUser(user); }}
-                                                className="p-2 text-red-600 hover:text-red-800 bg-transparent border-none shadow-none"
+                                                className="p-2 text-red-600 hover:text-red-800 rounded hover:bg-gray-100 transition"
                                                 title="Eliminar usuario"
-                                                style={{ background: 'none' }}
                                             >
                                                 {/* Heroicons outline: X-Mark (tache) */}
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">

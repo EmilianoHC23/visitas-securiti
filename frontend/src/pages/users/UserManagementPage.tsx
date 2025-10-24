@@ -166,12 +166,21 @@ const InviteUserModal: React.FC<{
     onInvite: (userData: NewUserData) => void;
     loading: boolean;
 }> = ({ isOpen, onClose, onInvite, loading }) => {
-    const [formData, setFormData] = useState<NewUserData>({
+    const initialFormData: NewUserData = {
         email: '',
         firstName: '',
         lastName: '',
         role: UserRole.HOST,
-    });
+    };
+
+    const [formData, setFormData] = useState<NewUserData>(initialFormData);
+
+    // Reset form whenever the modal is opened so fields are empty for a new invite
+    useEffect(() => {
+        if (isOpen) {
+            setFormData(initialFormData);
+        }
+    }, [isOpen]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -191,7 +200,7 @@ const InviteUserModal: React.FC<{
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden">
-                <div className="p-6 bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-500 border-b border-indigo-600 flex items-start justify-between text-white">
+                <div className="p-6 bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 border-b border-gray-700 flex items-start justify-between text-white">
                     <div className="flex items-start gap-4">
                         <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
                             {/* Decorative user icon (react-icons) */}
@@ -204,7 +213,7 @@ const InviteUserModal: React.FC<{
                     </div>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 p-2 rounded-lg transition-colors"
+                        className="text-gray-200 hover:text-white p-2 rounded-lg transition-colors"
                         aria-label="Cerrar"
                     >
                         ✕
@@ -212,9 +221,9 @@ const InviteUserModal: React.FC<{
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100 shadow-sm">
+                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-md bg-blue-100 flex items-center justify-center text-blue-700 ring-1 ring-blue-50">
+                            <div className="w-10 h-10 rounded-md bg-gray-100 flex items-center justify-center text-gray-700 ring-1 ring-gray-50">
                                     <MdEditNote className="w-5 h-5" />
                                 </div>
                             <div>
@@ -307,7 +316,7 @@ const InviteUserModal: React.FC<{
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-4 py-2 text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow hover:from-blue-500 hover:to-indigo-500 disabled:opacity-60"
+                            className="px-4 py-2 text-white bg-gradient-to-r from-gray-900 to-gray-600 rounded-lg shadow hover:from-gray-800 hover:to-gray-500 disabled:opacity-60"
                         >
                             {loading ? 'Invitando...' : 'Invitar Usuario'}
                         </button>
@@ -360,7 +369,7 @@ const EditUserModal: React.FC<{
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden">
-                <div className="p-6 bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-500 border-b border-indigo-600 flex items-start justify-between text-white">
+                <div className="p-6 bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 border-b border-gray-700 flex items-start justify-between text-white">
                     <div className="flex items-start gap-4">
                         <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
                             <MdEditNote className="w-6 h-6 text-white" />
@@ -372,7 +381,7 @@ const EditUserModal: React.FC<{
                     </div>
                     <button
                         onClick={onClose}
-                        className="text-indigo-100 hover:text-white p-2 rounded-lg transition-colors"
+                        className="text-gray-200 hover:text-white p-2 rounded-lg transition-colors"
                         aria-label="Cerrar"
                     >
                         ✕
@@ -380,9 +389,9 @@ const EditUserModal: React.FC<{
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100 shadow-sm">
+                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-md bg-blue-100 flex items-center justify-center text-blue-700 ring-1 ring-blue-50">
+                            <div className="w-10 h-10 rounded-md bg-gray-100 flex items-center justify-center text-gray-700 ring-1 ring-gray-50">
                                 <MdEditNote className="w-5 h-5" />
                             </div>
                             <div>
@@ -472,7 +481,7 @@ const EditUserModal: React.FC<{
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-4 py-2 text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow hover:from-blue-500 hover:to-indigo-500 disabled:opacity-60"
+                            className="px-4 py-2 text-white bg-gradient-to-r from-gray-900 to-gray-600 rounded-lg shadow hover:from-gray-800 hover:to-gray-500 disabled:opacity-60"
                         >
                             {loading ? 'Actualizando...' : 'Actualizar'}
                         </button>

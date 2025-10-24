@@ -63,6 +63,7 @@ export interface Company {
   settings: {
     autoApproval: boolean;
     autoCheckIn: boolean;
+    autoCheckout?: boolean;
     requirePhoto: boolean;
     enableSelfRegister: boolean;
     notificationEmail?: string;

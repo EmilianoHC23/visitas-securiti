@@ -97,6 +97,30 @@ class EmailService {
     return photoUrl;
   }
 
+  /**
+   * Genera URL temporal para logo de empresa
+   * @param {string} companyId - ID de la empresa
+   * @returns {string} URL pública temporal con token JWT
+   */
+  generateCompanyLogoUrl(companyId) {
+    // Generar token JWT que expira en 90 días (logos cambian con menos frecuencia)
+    const token = jwt.sign(
+      { 
+        companyId: companyId,
+        type: 'company-logo'
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '90d' }
+    );
+    
+    // Construir URL pública
+    const baseUrl = process.env.API_URL || 'http://localhost:5000';
+    const logoUrl = `${baseUrl}/api/company/logo/${companyId}/${token}`;
+    
+    console.log(`🏢 URL temporal generada para logo de empresa ${companyId}`);
+    return logoUrl;
+  }
+
   async sendTestEmail(to) {
     if (!this.isEnabled()) {
       return { success: false, error: 'Email service not configured' };
@@ -200,23 +224,26 @@ class EmailService {
       return { success: false, error: 'No visitor email' };
     }
 
-    // Usar logo dinámico de la empresa o fallback
-    const COMPANY_LOGO_URL = data.companyLogo || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-    
-    // Log para debugging - verificar si el logo está en Base64
-    if (data.companyLogo) {
-      const isBase64 = data.companyLogo.startsWith('data:image');
-      console.log('📧 Logo recibido:', {
-        existe: !!data.companyLogo,
-        esBase64: isBase64,
-        longitudBase64: isBase64 ? data.companyLogo.length : 'N/A',
-        primeros50caracteres: data.companyLogo.substring(0, 50) + '...'
-      });
-      
-      if (isBase64) {
-        console.warn('⚠️  ADVERTENCIA: El logo está en formato Base64. Muchos clientes de email (Gmail, Outlook) bloquean imágenes Base64 por seguridad.');
-        console.warn('   Solución recomendada: Subir el logo a un servidor público (Cloudinary, AWS S3, etc.) y guardar la URL.');
+    // Generar URL temporal para el logo si existe y es Base64
+    let COMPANY_LOGO_URL;
+    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
+      // Es Base64, generar URL temporal
+      if (data.companyId) {
+        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
+        console.log('🏢 [EMAIL] Logo empresa: Generando URL temporal con JWT');
+      } else {
+        // Fallback si no hay companyId
+        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+        console.warn('⚠️ [EMAIL] No companyId disponible, usando logo fallback');
       }
+    } else if (data.companyLogo) {
+      // Ya es una URL pública
+      COMPANY_LOGO_URL = data.companyLogo;
+      console.log('🏢 [EMAIL] Logo empresa: URL pública detectada');
+    } else {
+      // No hay logo, usar fallback
+      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+      console.log('🏢 [EMAIL] No logo disponible, usando fallback');
     }
 
     try {
@@ -434,13 +461,22 @@ class EmailService {
       return { success: false, error: 'Email service not configured' };
     }
 
-    // Usar logo dinámico de la empresa o fallback
-    const COMPANY_LOGO_URL = data.companyLogo || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-    
-    // Log para debugging
-    if (data.companyLogo) {
-      const isBase64 = data.companyLogo.startsWith('data:image');
-      console.log('📧 [Approval Request] Logo recibido:', isBase64 ? 'Base64 (bloqueado por email)' : 'URL pública');
+    // Generar URL temporal para el logo si existe y es Base64
+    let COMPANY_LOGO_URL;
+    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
+      if (data.companyId) {
+        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
+        console.log('🏢 [APPROVAL] Logo empresa: URL temporal generada');
+      } else {
+        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+        console.warn('⚠️ [APPROVAL] No companyId, usando fallback');
+      }
+    } else if (data.companyLogo) {
+      COMPANY_LOGO_URL = data.companyLogo;
+      console.log('🏢 [APPROVAL] Logo empresa: URL pública');
+    } else {
+      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+      console.log('🏢 [APPROVAL] Sin logo, usando fallback');
     }
     
     // 🔗 Generar URL temporal para foto del visitante (si existe y es Base64)
@@ -1081,13 +1117,22 @@ class EmailService {
       return { success: false, error: 'No visitor email' };
     }
 
-    // Usar logo dinámico de la empresa o fallback
-    const COMPANY_LOGO_URL = data.companyLogo || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-    
-    // Log para debugging
-    if (data.companyLogo) {
-      const isBase64 = data.companyLogo.startsWith('data:image');
-      console.log('📧 [Checkout] Logo recibido:', isBase64 ? 'Base64 (bloqueado por email)' : 'URL pública');
+    // Generar URL temporal para el logo si existe y es Base64
+    let COMPANY_LOGO_URL;
+    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
+      if (data.companyId) {
+        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
+        console.log('🏢 [CHECKOUT] Logo empresa: URL temporal generada');
+      } else {
+        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+        console.warn('⚠️ [CHECKOUT] No companyId, usando fallback');
+      }
+    } else if (data.companyLogo) {
+      COMPANY_LOGO_URL = data.companyLogo;
+      console.log('🏢 [CHECKOUT] Logo empresa: URL pública');
+    } else {
+      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+      console.log('🏢 [CHECKOUT] Sin logo, usando fallback');
     }
     
     const primaryColor = '#000000'; // Negro moderno

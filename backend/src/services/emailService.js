@@ -968,8 +968,25 @@ class EmailService {
       return { success: false, message: 'Email service not configured' };
     }
 
+    // Generar URL temporal para el logo si existe y es Base64
+    let COMPANY_LOGO_URL;
+    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
+      if (data.companyId) {
+        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
+        console.log('🏢 [REGISTRATION NOTIFICATION] Logo empresa: URL temporal generada');
+      } else {
+        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+        console.warn('⚠️ [REGISTRATION NOTIFICATION] No companyId, usando fallback');
+      }
+    } else if (data.companyLogo) {
+      COMPANY_LOGO_URL = data.companyLogo;
+      console.log('🏢 [REGISTRATION NOTIFICATION] Logo empresa: URL pública');
+    } else {
+      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+      console.log('🏢 [REGISTRATION NOTIFICATION] Sin logo, usando fallback');
+    }
+
     try {
-      const COMPANY_LOGO_URL = process.env.COMPANY_LOGO_URL || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png`;
       const primaryColor = '#1e3a8a';
       const accentColor = '#f97316';
 
@@ -1276,9 +1293,27 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
+    // Generar URL temporal para el logo si existe y es Base64
+    let COMPANY_LOGO_URL;
+    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
+      if (data.companyId) {
+        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
+        console.log('🏢 [ACCESS CREATED] Logo empresa: URL temporal generada');
+      } else {
+        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+        console.warn('⚠️ [ACCESS CREATED] No companyId, usando fallback');
+      }
+    } else if (data.companyLogo) {
+      COMPANY_LOGO_URL = data.companyLogo;
+      console.log('🏢 [ACCESS CREATED] Logo empresa: URL pública');
+    } else {
+      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+      console.log('🏢 [ACCESS CREATED] Sin logo, usando fallback');
+    }
+
     try {
-      const logoHtml = data.companyLogo 
-        ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto; margin-bottom: 15px;" />`
+      const logoHtml = COMPANY_LOGO_URL 
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto; margin-bottom: 15px;" />`
         : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
@@ -1412,9 +1447,27 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
+    // Generar URL temporal para el logo si existe y es Base64
+    let COMPANY_LOGO_URL;
+    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
+      if (data.companyId) {
+        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
+        console.log('🏢 [ACCESS INVITATION] Logo empresa: URL temporal generada');
+      } else {
+        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+        console.warn('⚠️ [ACCESS INVITATION] No companyId, usando fallback');
+      }
+    } else if (data.companyLogo) {
+      COMPANY_LOGO_URL = data.companyLogo;
+      console.log('🏢 [ACCESS INVITATION] Logo empresa: URL pública');
+    } else {
+      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+      console.log('🏢 [ACCESS INVITATION] Sin logo, usando fallback');
+    }
+
     try {
-      const logoHtml = data.companyLogo 
-        ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto; margin-bottom: 15px;" />`
+      const logoHtml = COMPANY_LOGO_URL 
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto; margin-bottom: 15px;" />`
         : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
@@ -1551,11 +1604,29 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
+    // Generar URL temporal para el logo si existe y es Base64
+    let COMPANY_LOGO_URL;
+    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
+      if (data.companyId) {
+        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
+        console.log('🏢 [REMINDER CREATOR] Logo empresa: URL temporal generada');
+      } else {
+        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+        console.warn('⚠️ [REMINDER CREATOR] No companyId, usando fallback');
+      }
+    } else if (data.companyLogo) {
+      COMPANY_LOGO_URL = data.companyLogo;
+      console.log('🏢 [REMINDER CREATOR] Logo empresa: URL pública');
+    } else {
+      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+      console.log('🏢 [REMINDER CREATOR] Sin logo, usando fallback');
+    }
+
     try {
       const accentColor = '#f59e0b'; // Amber para resaltar información
       
-      const logoHtml = data.companyLogo 
-        ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+      const logoHtml = COMPANY_LOGO_URL 
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
         : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
@@ -1647,9 +1718,27 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
+    // Generar URL temporal para el logo si existe y es Base64
+    let COMPANY_LOGO_URL;
+    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
+      if (data.companyId) {
+        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
+        console.log('🏢 [REMINDER GUEST] Logo empresa: URL temporal generada');
+      } else {
+        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+        console.warn('⚠️ [REMINDER GUEST] No companyId, usando fallback');
+      }
+    } else if (data.companyLogo) {
+      COMPANY_LOGO_URL = data.companyLogo;
+      console.log('🏢 [REMINDER GUEST] Logo empresa: URL pública');
+    } else {
+      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+      console.log('🏢 [REMINDER GUEST] Sin logo, usando fallback');
+    }
+
     try {
-      const logoHtml = data.companyLogo 
-        ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+      const logoHtml = COMPANY_LOGO_URL 
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
         : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
@@ -1756,9 +1845,27 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
+    // Generar URL temporal para el logo si existe y es Base64
+    let COMPANY_LOGO_URL;
+    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
+      if (data.companyId) {
+        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
+        console.log('🏢 [GUEST CHECKED IN] Logo empresa: URL temporal generada');
+      } else {
+        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+        console.warn('⚠️ [GUEST CHECKED IN] No companyId, usando fallback');
+      }
+    } else if (data.companyLogo) {
+      COMPANY_LOGO_URL = data.companyLogo;
+      console.log('🏢 [GUEST CHECKED IN] Logo empresa: URL pública');
+    } else {
+      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+      console.log('🏢 [GUEST CHECKED IN] Sin logo, usando fallback');
+    }
+
     try {
-      const logoHtml = data.companyLogo 
-        ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+      const logoHtml = COMPANY_LOGO_URL 
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
         : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
@@ -1851,11 +1958,29 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
+    // Generar URL temporal para el logo si existe y es Base64
+    let COMPANY_LOGO_URL;
+    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
+      if (data.companyId) {
+        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
+        console.log('🏢 [MODIFIED CREATOR] Logo empresa: URL temporal generada');
+      } else {
+        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+        console.warn('⚠️ [MODIFIED CREATOR] No companyId, usando fallback');
+      }
+    } else if (data.companyLogo) {
+      COMPANY_LOGO_URL = data.companyLogo;
+      console.log('🏢 [MODIFIED CREATOR] Logo empresa: URL pública');
+    } else {
+      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+      console.log('🏢 [MODIFIED CREATOR] Sin logo, usando fallback');
+    }
+
     try {
       const accentColor = '#f59e0b'; // Amber para resaltar información
       
-      const logoHtml = data.companyLogo 
-        ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+      const logoHtml = COMPANY_LOGO_URL 
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
         : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
@@ -1944,9 +2069,27 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
+    // Generar URL temporal para el logo si existe y es Base64
+    let COMPANY_LOGO_URL;
+    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
+      if (data.companyId) {
+        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
+        console.log('🏢 [MODIFIED GUEST] Logo empresa: URL temporal generada');
+      } else {
+        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+        console.warn('⚠️ [MODIFIED GUEST] No companyId, usando fallback');
+      }
+    } else if (data.companyLogo) {
+      COMPANY_LOGO_URL = data.companyLogo;
+      console.log('🏢 [MODIFIED GUEST] Logo empresa: URL pública');
+    } else {
+      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+      console.log('🏢 [MODIFIED GUEST] Sin logo, usando fallback');
+    }
+
     try {
-      const logoHtml = data.companyLogo 
-        ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+      const logoHtml = COMPANY_LOGO_URL 
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
         : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
@@ -2051,9 +2194,27 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
+    // Generar URL temporal para el logo si existe y es Base64
+    let COMPANY_LOGO_URL;
+    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
+      if (data.companyId) {
+        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
+        console.log('🏢 [CANCELLED] Logo empresa: URL temporal generada');
+      } else {
+        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+        console.warn('⚠️ [CANCELLED] No companyId, usando fallback');
+      }
+    } else if (data.companyLogo) {
+      COMPANY_LOGO_URL = data.companyLogo;
+      console.log('🏢 [CANCELLED] Logo empresa: URL pública');
+    } else {
+      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+      console.log('🏢 [CANCELLED] Sin logo, usando fallback');
+    }
+
     try {
-      const logoHtml = data.companyLogo 
-        ? `<img src="${data.companyLogo}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+      const logoHtml = COMPANY_LOGO_URL 
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
         : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
 
       const message = data.isCreator 

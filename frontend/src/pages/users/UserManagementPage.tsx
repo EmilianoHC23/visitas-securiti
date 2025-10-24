@@ -73,6 +73,10 @@ const UserPreviewModal: React.FC<{
 };
 import React, { useState, useEffect } from 'react';
 import { LogoutIcon, SettingsIcon, UsersIcon } from '../../components/common/icons';
+import { FaUser } from 'react-icons/fa';
+import { MdEditNote } from 'react-icons/md';
+import { FaRegUser } from 'react-icons/fa6';
+import { FiShield, FiMail } from 'react-icons/fi';
 import { User, UserRole } from '../../types';
 import * as api from '../../services/api';
 
@@ -185,91 +189,127 @@ const InviteUserModal: React.FC<{
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">Invitar Nuevo Usuario</h3>
-                    <button 
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden">
+                <div className="p-6 bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-500 border-b border-indigo-600 flex items-start justify-between text-white">
+                    <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
+                            {/* Decorative user icon (react-icons) */}
+                            <FaUser className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-white">Invitar Nuevo Usuario</h3>
+                            <p className="text-sm text-indigo-100">Envía una invitación por correo para crear acceso al sistema</p>
+                        </div>
+                    </div>
+                    <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="text-gray-400 hover:text-gray-600 p-2 rounded-lg transition-colors"
+                        aria-label="Cerrar"
                     >
                         ✕
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Nombre
-                        </label>
-                        <input
-                            type="text"
-                            name="firstName"
-                            value={formData.firstName}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100 shadow-sm">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-md bg-blue-100 flex items-center justify-center text-blue-700 ring-1 ring-blue-50">
+                                    <MdEditNote className="w-5 h-5" />
+                                </div>
+                            <div>
+                                <h4 className="text-sm font-semibold text-gray-800">Datos del usuario</h4>
+                                <p className="text-xs text-gray-500">Rellena la información básica para enviar la invitación</p>
+                            </div>
+                        </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                    <FaRegUser className="w-5 h-5" />
+                                </span>
+                                <input
+                                    type="text"
+                                    name="firstName"
+                                    value={formData.firstName}
+                                    onChange={handleChange}
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-100 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+                            <div>
+                                <input
+                                    type="text"
+                                    name="lastName"
+                                    value={formData.lastName}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 border border-gray-100 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Apellido
-                        </label>
-                        <input
-                            type="text"
-                            name="lastName"
-                            value={formData.lastName}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                {/* Mail icon */}
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a3 3 0 003.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                            </span>
+                            <input
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                className="w-full pl-10 pr-4 py-3 border border-gray-100 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                                placeholder="correo@ejemplo.com"
+                                required
+                            />
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Email
-                        </label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
+                        <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                <FiShield className="w-5 h-5" />
+                            </span>
+                            <select
+                                name="role"
+                                value={formData.role}
+                                onChange={handleChange}
+                                className="w-full pl-10 pr-3 py-3 border border-gray-100 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                            >
+                                <option value={UserRole.HOST}>Host</option>
+                                <option value={UserRole.RECEPTION}>Recepcionista</option>
+                                <option value={UserRole.ADMIN}>Administrador</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Rol
-                        </label>
-                        <select
-                            name="role"
-                            value={formData.role}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value={UserRole.HOST}>Host</option>
-                            <option value={UserRole.RECEPTION}>Recepcionista</option>
-                            <option value={UserRole.ADMIN}>Administrador</option>
-                        </select>
                     </div>
-
-                    <div className="flex gap-3 pt-4">
+                    <div className="pt-2 flex items-center justify-end gap-3">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex-1 px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                            className="px-4 py-2 text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow hover:from-blue-500 hover:to-indigo-500 disabled:opacity-60"
                         >
-                            {loading ? 'Invitando...' : 'Invitar'}
+                            {loading ? 'Invitando...' : 'Invitar Usuario'}
                         </button>
                     </div>
                 </form>
@@ -318,81 +358,121 @@ const EditUserModal: React.FC<{
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                <h3 className="text-lg font-semibold mb-4">Editar Usuario</h3>
-                
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Nombre
-                        </label>
-                        <input
-                            type="text"
-                            name="firstName"
-                            value={formData.firstName}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden">
+                <div className="p-6 bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-500 border-b border-indigo-600 flex items-start justify-between text-white">
+                    <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
+                            <MdEditNote className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-white">Editar Usuario</h3>
+                            <p className="text-sm text-indigo-100">Actualiza la información básica del usuario</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="text-indigo-100 hover:text-white p-2 rounded-lg transition-colors"
+                        aria-label="Cerrar"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100 shadow-sm">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-md bg-blue-100 flex items-center justify-center text-blue-700 ring-1 ring-blue-50">
+                                <MdEditNote className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-semibold text-gray-800">Datos del usuario</h4>
+                                <p className="text-xs text-gray-500">Rellena la información básica para actualizar al usuario</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                        <FaRegUser className="w-5 h-5" />
+                                    </span>
+                                    <input
+                                        type="text"
+                                        name="firstName"
+                                        value={formData.firstName}
+                                        onChange={handleChange}
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-100 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+                                <div>
+                                    <input
+                                        type="text"
+                                        name="lastName"
+                                        value={formData.lastName}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 border border-gray-100 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                    <FiMail className="w-5 h-5" />
+                                </span>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-100 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                    <FiShield className="w-5 h-5" />
+                                </span>
+                                <select
+                                    name="role"
+                                    value={formData.role}
+                                    onChange={handleChange}
+                                    className="w-full pl-10 pr-3 py-3 border border-gray-100 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                                >
+                                    <option value={UserRole.HOST}>Host</option>
+                                    <option value={UserRole.RECEPTION}>Recepcionista</option>
+                                    <option value={UserRole.ADMIN}>Administrador</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Apellido
-                        </label>
-                        <input
-                            type="text"
-                            name="lastName"
-                            value={formData.lastName}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Correo Electrónico
-                        </label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Rol
-                        </label>
-                        <select
-                            name="role"
-                            value={formData.role}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value={UserRole.HOST}>Host</option>
-                            <option value={UserRole.RECEPTION}>Recepcionista</option>
-                            <option value={UserRole.ADMIN}>Administrador</option>
-                        </select>
-                    </div>
-
-                    <div className="flex gap-3 pt-4">
+                    <div className="pt-2 flex items-center justify-end gap-3">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex-1 px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                            className="px-4 py-2 text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow hover:from-blue-500 hover:to-indigo-500 disabled:opacity-60"
                         >
                             {loading ? 'Actualizando...' : 'Actualizar'}
                         </button>

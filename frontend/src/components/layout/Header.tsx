@@ -54,7 +54,6 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                         onMouseEnter={() => setBtnHover(true)}
                         onMouseLeave={() => setBtnHover(false)}
                         style={{
-                            boxShadow: 'none',
                             width: 40,
                             height: 40,
                             borderRadius: '50%',
@@ -64,9 +63,12 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                             justifyContent: 'center',
                             lineHeight: 0,
                             boxSizing: 'border-box',
-                            transition: 'background-color 160ms ease, border-color 160ms ease',
-                            background: btnHover ? '#2563eb' : 'transparent',
-                            borderColor: btnHover ? '#2563eb' : undefined
+                            transition: 'background 180ms ease, border-color 180ms ease, box-shadow 180ms ease',
+                            /* hover: black -> gray gradient */
+                            background: btnHover ? 'linear-gradient(180deg, #000000 0%, #6b7280 100%)' : 'transparent',
+                            borderColor: btnHover ? '#000000' : undefined,
+                            outline: 'none',
+                            boxShadow: btnHover ? '0 0 0 6px rgba(0,0,0,0.12)' : 'none'
                         }}
                     >
                         {/* Animated hamburger -> X: cross-fade between SVG and react-icon X for a crisper X */}

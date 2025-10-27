@@ -5,66 +5,82 @@ const UserPreviewModal: React.FC<{
     user: User | null;
 }> = ({ isOpen, onClose, user }) => {
     if (!isOpen || !user) return null;
+
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 w-full max-w-2xl mx-4 relative">
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
-                    title="Cerrar"
-                >
-                    ✕
-                </button>
-                <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
-                    <div className="flex flex-col items-center">
-                        <span className="w-32 h-32 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden border-4 border-blue-200 mb-4">
-                            {user.profileImage && user.profileImage.trim() !== '' ? (
-                                <img
-                                    src={user.profileImage}
-                                    alt={`${user.firstName} ${user.lastName}`}
-                                    className="w-32 h-32 object-cover"
-                                    onError={e => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.style.display = 'none';
-                                        const fallback = target.nextElementSibling as HTMLElement;
-                                        if (fallback) fallback.style.display = 'inline';
-                                    }}
-                                />
-                            ) : null}
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth="1.5"
-                                stroke="currentColor"
-                                className="w-20 h-20 text-blue-300"
-                                style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'none' : 'inline' }}
-                            >
-                                <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                                <path d="M4 20c0-4 4-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                            </svg>
-                        </span>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden">
+                <div className="p-6 bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 border-b border-gray-700 flex items-start justify-between text-white">
+                    <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
+                            <FaUser className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-white">Detalle de usuario</h3>
+                            <p className="text-sm text-gray-200">Información básica del usuario</p>
+                        </div>
                     </div>
-                    <div className="flex-1">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-2">Detalle de usuario</h2>
-                        <div className="mb-6">
-                            <h3 className="text-lg font-semibold text-blue-900 mb-2">Datos generales</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-gray-700">
-                                <div><span className="font-semibold">Nombre</span><br />{user.firstName}</div>
-                                <div><span className="font-semibold">Apellido</span><br />{user.lastName}</div>
-                                <div><span className="font-semibold">Correo electrónico</span><br />{user.email}</div>
-                                <div><span className="font-semibold">Rol de usuario</span><br /><RoleBadge role={user.role} /></div>
-                                <div className="md:col-span-2 mt-4">
-                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Permisos</h4>
-                                    <div className="flex flex-wrap">
-                                        {ROLE_PERMISSIONS[user.role]?.map(p => (
-                                            <PermissionBadge key={p} permission={p} />
-                                        ))}
+                    <button
+                        onClick={onClose}
+                        className="text-gray-200 hover:text-white p-2 rounded-lg transition-colors"
+                        title="Cerrar"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <div className="p-6">
+                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
+                        <div className="flex flex-col md:flex-row gap-6 items-start">
+                            <div className="flex-shrink-0">
+                                <span className="w-28 h-28 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden border-4 border-blue-200">
+                                    {user.profileImage && user.profileImage.trim() !== '' ? (
+                                        <img
+                                            src={user.profileImage}
+                                            alt={`${user.firstName} ${user.lastName}`}
+                                            className="w-28 h-28 object-cover"
+                                            onError={e => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.style.display = 'none';
+                                                const fallback = target.nextElementSibling as HTMLElement;
+                                                if (fallback) fallback.style.display = 'inline';
+                                            }}
+                                        />
+                                    ) : (
+                                        <FaUser className="w-16 h-16 text-blue-300" />
+                                    )}
+                                </span>
+                            </div>
+
+                            <div className="flex-1">
+                                <h4 className="text-sm font-semibold text-blue-900 mb-3">Datos generales</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-gray-700">
+                                    <div>
+                                        <span className="font-semibold block">Nombre</span>
+                                        <div className="mt-1 p-3 bg-white rounded-lg border border-gray-100 shadow-sm text-sm">{user.firstName}</div>
+                                    </div>
+                                    <div>
+                                        <span className="font-semibold block">Apellido</span>
+                                        <div className="mt-1 p-3 bg-white rounded-lg border border-gray-100 shadow-sm text-sm">{user.lastName}</div>
+                                    </div>
+                                    <div>
+                                        <span className="font-semibold block">Correo electrónico</span>
+                                        <div className="mt-1 p-3 bg-white rounded-lg border border-gray-100 shadow-sm text-sm break-words max-w-full">{user.email}</div>
+                                    </div>
+                                    <div>
+                                        <span className="font-semibold block">Rol de usuario</span>
+                                        <div className="mt-1 p-1"><RoleBadge role={user.role} /></div>
+                                    </div>
+                                    <div className="md:col-span-2 mt-4">
+                                        <h5 className="text-sm font-semibold text-gray-700 mb-2">Permisos</h5>
+                                        <div className="flex flex-wrap">
+                                            {ROLE_PERMISSIONS[user.role]?.map(p => (
+                                                <PermissionBadge key={p} permission={p} />
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        {/* Aquí puedes agregar más secciones como permisos, etc. */}
                     </div>
                 </div>
             </div>

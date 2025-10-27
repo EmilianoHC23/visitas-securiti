@@ -208,9 +208,16 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
     const visitDataToSubmit = { ...formData };
     
     if (pendingAccess) {
+      // Marcar que esta visita viene de un acceso/evento para auto check-in ANTES de intentar el fetch
+      // Esto garantiza que la visita vaya a "Dentro" incluso si falla la actualización de asistencia
+      (visitDataToSubmit as any).fromAccessEvent = true;
+      (visitDataToSubmit as any).accessCode = pendingAccess.accessCode;
+      
+      console.log('🎫 Visita marcada como fromAccessEvent con código:', pendingAccess.accessCode);
+      
       try {
         // Hacer check-in en el acceso (construir URL evitando /api duplicado)
-        const rawBase = (import.meta.env.VITE_API_URL as string) || 'http://localhost:3000';
+        const rawBase = (import.meta.env.VITE_API_URL as string) || 'http://localhost:3001';
         const baseNoTrailingApi = rawBase.replace(/\/?api\/?$/, '');
         const response = await fetch(`${baseNoTrailingApi}/api/public/access-check-in`, {
           method: 'POST',
@@ -230,17 +237,11 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
           console.warn('⚠️ No se pudo actualizar la asistencia en el acceso');
         }
         
-        // Marcar que esta visita viene de un acceso/evento para auto check-in
-        (visitDataToSubmit as any).fromAccessEvent = true;
-        (visitDataToSubmit as any).accessCode = pendingAccess.accessCode;
-        
-        console.log('🎫 Visita marcada como fromAccessEvent con código:', pendingAccess.accessCode);
-        
         // Limpiar el acceso pendiente
         delete (window as any).__pendingAccessCheckIn;
       } catch (error) {
         console.error('Error al actualizar asistencia:', error);
-        // No bloqueamos el registro de visita si falla la actualización
+        // No bloqueamos el registro de visita si falla la actualización - el flag ya está establecido
       }
     }
 

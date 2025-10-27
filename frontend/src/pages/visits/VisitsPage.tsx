@@ -1129,11 +1129,11 @@ export const VisitsPage: React.FC = () => {
             console.log('📝 Datos de visita recibidos:', visitData);
             console.log('🔍 fromAccessEvent:', visitData.fromAccessEvent);
             
-            // Si viene de un acceso/evento, crear con auto check-in
+            // Si viene de un acceso/evento, crear como aprobada (irá a "Respuesta recibida")
                         if (visitData.fromAccessEvent) {
-                console.log('🎫 Procesando visita de ACCESO/EVENTO - auto check-in habilitado');
+                console.log('🎫 Procesando visita de ACCESO/EVENTO - irá a "Respuesta recibida"');
                 
-                const newVisit = await api.createVisit({
+                await api.createVisit({
                     visitorName: visitData.visitorName,
                     visitorCompany: visitData.visitorCompany,
                     reason: visitData.reason,
@@ -1147,14 +1147,7 @@ export const VisitsPage: React.FC = () => {
                     fromAccessEvent: true
                 });
                 
-                console.log('✅ Visita creada:', newVisit._id);
-                            // Si el backend ya creó la visita como checked-in, no volver a hacer check-in para evitar duplicar eventos
-                            if (newVisit.status !== VisitStatus.CHECKED_IN) {
-                                await api.checkInVisit(newVisit._id);
-                                console.log('✅ Check-in automático completado - visita debe estar en tabla DENTRO');
-                            } else {
-                                console.log('ℹ️ Visita ya creada en estado checked-in por backend');
-                            }
+                console.log('✅ Visita creada como aprobada - el organizador debe registrar la entrada manualmente');
             } else {
                 console.log('👤 Procesando visita REGULAR - flujo normal');
                 

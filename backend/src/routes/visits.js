@@ -175,12 +175,11 @@ router.post('/', auth, async (req, res) => {
       }
     }
 
-    // Forzar auto check-in cuando proviene de un acceso/evento (QR de invitación)
-    // Esto evita depender de la configuración de la empresa y garantiza que aparezca en "Dentro" inmediatamente
+    // Forzar aprobación automática cuando proviene de un acceso/evento (QR de invitación)
+    // El invitado irá a "Respuesta recibida" (approved) para que el organizador registre su entrada manualmente
     if (req.body.visitType === 'access-code' || req.body.fromAccessEvent === true) {
-      initialStatus = 'checked-in';
-      checkInTime = new Date();
-      console.log('🎟️ [ACCESS EVENT] Forcing initial status to checked-in for access/event flow');
+      initialStatus = 'approved';
+      console.log('🎟️ [ACCESS EVENT] Forcing initial status to approved for access/event flow');
     }
 
     const visit = new Visit({
@@ -202,6 +201,35 @@ router.post('/', auth, async (req, res) => {
 
     await visit.save();
     await visit.populate('host', 'firstName lastName email profileImage');
+
+    // Si es una visita de acceso/evento, enviar email al organizador notificando que el invitado llegó
+    if ((req.body.visitType === 'access-code' || req.body.fromAccessEvent === true) && initialStatus === 'approved') {
+      try {
+        // Buscar el acceso para obtener el creador
+        const Access = require('../models/Access');
+        const access = await Access.findOne({ accessCode: req.body.accessCode }).populate('creatorId', 'firstName lastName email');
+        
+        if (access && access.creatorId) {
+          await require('../services/emailService').sendGuestArrivedEmail({
+            visitId: visit._id,
+            creatorEmail: access.creatorId.email,
+            creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+            guestName: visitorName,
+            guestEmail: visitorEmail || 'No proporcionado',
+            guestCompany: visitorCompany || 'No proporcionado',
+            guestPhoto: req.body.visitorPhoto,
+            accessTitle: access.eventName,
+            companyName: (company && company.name) || 'SecurITI',
+            companyId: company?.companyId || null,
+            companyLogo: company?.logo || null
+          });
+          console.log('✅ Email de llegada de invitado enviado al organizador:', access.creatorId.email);
+        }
+      } catch (emailError) {
+        console.error('⚠️ Error enviando email de llegada:', emailError);
+        // No bloqueamos el flujo si falla el email
+      }
+    }
 
     // Si se hizo auto check-in, crear evento
     if (initialStatus === 'checked-in') {
@@ -837,6 +865,7 @@ router.post('/checkin/:id', auth, async (req, res) => {
     const { assignedResource } = req.body;
     const visit = await Visit.findById(req.params.id).populate('host', 'firstName lastName');
     if (!visit) return res.status(404).json({ message: 'Visita no encontrada' });
+    
     visit.status = 'checked-in';
     visit.checkInTime = new Date();
     if (assignedResource) {
@@ -844,7 +873,36 @@ router.post('/checkin/:id', auth, async (req, res) => {
     }
     await visit.save();
     await new VisitEvent({ visitId: visit._id, type: 'check-in' }).save();
-    // Ya no enviar email al visitante en check-in para evitar confusiones o estados erróneos
+    
+    // Si la visita proviene de un acceso/evento, actualizar la asistencia del invitado
+    if (visit.visitType === 'access-code' && visit.accessCode) {
+      try {
+        const Access = require('../models/Access');
+        const access = await Access.findOne({ accessCode: visit.accessCode });
+        
+        if (access) {
+          // Buscar el invitado por email
+          const invitedUser = access.invitedUsers.find(user => 
+            user.email === visit.visitorEmail
+          );
+          
+          if (invitedUser) {
+            invitedUser.attendanceStatus = 'asistio';
+            invitedUser.checkInTime = visit.checkInTime;
+            await access.save();
+            console.log(`✅ [CHECK-IN] Asistencia actualizada a "asistio" para ${visit.visitorName} en acceso ${access.eventName}`);
+          } else {
+            console.warn(`⚠️ [CHECK-IN] No se encontró invitado con email ${visit.visitorEmail} en el acceso`);
+          }
+        } else {
+          console.warn(`⚠️ [CHECK-IN] No se encontró acceso con código ${visit.accessCode}`);
+        }
+      } catch (accessError) {
+        console.error('⚠️ [CHECK-IN] Error actualizando asistencia en acceso:', accessError);
+        // No bloqueamos el check-in si falla la actualización del acceso
+      }
+    }
+    
     res.json(visit);
   } catch (e) {
     console.error('Check-in error:', e);

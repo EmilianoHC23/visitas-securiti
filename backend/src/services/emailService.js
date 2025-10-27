@@ -2363,6 +2363,183 @@ class EmailService {
     }
   }
 
+  /**
+   * Email: Notificación al organizador de que un invitado llegó y se registró
+   * @param {Object} data - { visitId, creatorEmail, creatorName, guestName, guestEmail, guestCompany, guestPhoto, accessTitle, companyName, companyId, companyLogo }
+   */
+  async sendGuestArrivedEmail(data) {
+    if (!this.isEnabled()) {
+      console.log('Email service disabled - would send guest arrived notification');
+      return { success: false, disabled: true };
+    }
+
+    // Generar URL temporal para el logo si existe y es Base64
+    let COMPANY_LOGO_URL;
+    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
+      if (data.companyId) {
+        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
+        console.log('🏢 [GUEST ARRIVED] Logo empresa: URL temporal generada');
+      } else {
+        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+        console.warn('⚠️ [GUEST ARRIVED] No companyId, usando fallback');
+      }
+    } else if (data.companyLogo) {
+      COMPANY_LOGO_URL = data.companyLogo;
+      console.log('🏢 [GUEST ARRIVED] Logo empresa: URL pública');
+    } else {
+      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+      console.log('🏢 [GUEST ARRIVED] Sin logo, usando fallback');
+    }
+
+    // Generar URL temporal para la foto del visitante si existe
+    let GUEST_PHOTO_URL;
+    if (data.guestPhoto && data.guestPhoto.startsWith('data:image')) {
+      if (data.visitId) {
+        GUEST_PHOTO_URL = this.generateVisitorPhotoUrl(data.visitId);
+        console.log('📸 [GUEST ARRIVED] Foto de visitante: URL temporal generada');
+      } else {
+        GUEST_PHOTO_URL = null;
+        console.warn('⚠️ [GUEST ARRIVED] No visitId para foto temporal');
+      }
+    } else if (data.guestPhoto) {
+      GUEST_PHOTO_URL = data.guestPhoto;
+    } else {
+      GUEST_PHOTO_URL = null;
+    }
+
+    try {
+      const logoHtml = COMPANY_LOGO_URL 
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+        : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
+
+      const photoHtml = GUEST_PHOTO_URL 
+        ? `<div style="margin: 20px 0; text-align: center;">
+             <img src="${GUEST_PHOTO_URL}" alt="${data.guestName}" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 3px solid #e5e7eb;" />
+           </div>`
+        : '';
+
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: data.creatorEmail,
+        subject: `🔔 ${data.guestName} ha llegado a tu evento/acceso`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
+            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td align="center" style="padding: 40px 0;">
+                  <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                      <td style="padding: 40px; text-align: center; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px 12px 0 0;">
+                        ${logoHtml}
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background-color: rgba(255,255,255,0.2); display: inline-flex; align-items: center; justify-content: center; margin-top: 20px;">
+                          <span style="font-size: 40px;">✅</span>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                      <td style="padding: 40px;">
+                        <h1 style="color: #1f2937; margin: 0 0 10px 0; font-size: 24px; font-weight: 600; text-align: center;">
+                          ¡Hola ${data.creatorName}!
+                        </h1>
+                        
+                        <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px; text-align: center;">
+                          <strong>${data.guestName}</strong> ha llegado y completado su pre-registro para:
+                        </p>
+
+                        <!-- Evento Info -->
+                        <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 20px; margin-bottom: 25px; border-radius: 4px;">
+                          <p style="color: #166534; margin: 0; font-size: 18px; font-weight: 600;">
+                            📅 ${data.accessTitle}
+                          </p>
+                        </div>
+
+                        ${photoHtml}
+
+                        <!-- Detalles del Invitado -->
+                        <div style="background-color: #f9fafb; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
+                          <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 16px; font-weight: 600;">
+                            Información del Invitado
+                          </h3>
+                          <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                              <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">
+                                <strong>Nombre:</strong>
+                              </td>
+                              <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">
+                                ${data.guestName}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0; color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb;">
+                                <strong>Email:</strong>
+                              </td>
+                              <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right; border-top: 1px solid #e5e7eb;">
+                                ${data.guestEmail}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0; color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb;">
+                                <strong>Empresa:</strong>
+                              </td>
+                              <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right; border-top: 1px solid #e5e7eb;">
+                                ${data.guestCompany}
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
+
+                        <!-- Acción Requerida -->
+                        <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 20px; margin-bottom: 25px; border-radius: 4px;">
+                          <p style="color: #92400e; margin: 0; font-size: 14px; line-height: 1.6;">
+                            <strong>⏳ Acción requerida:</strong><br>
+                            El invitado está esperando en la tabla "Respuesta recibida".<br>
+                            Por favor, dirígete al panel de visitas y haz clic en <strong>"Registrar entrada"</strong> para darle acceso.
+                          </p>
+                        </div>
+
+                        <p style="color: #6b7280; font-size: 13px; line-height: 1.6; text-align: center; margin: 0;">
+                          Si tienes alguna duda, visita nuestro Centro de Ayuda o ponte en contacto con nosotros.
+                        </p>
+                      </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <p style="color: #6b7280; font-size: 12px; margin: 0;">
+                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                        </p>
+                      </td>
+                    </tr>
+
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('Guest arrived email sent to creator:', data.creatorEmail);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('Error sending guest arrived email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
 }
 
 module.exports = new EmailService();

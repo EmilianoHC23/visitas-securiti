@@ -177,9 +177,11 @@ router.post('/', auth, async (req, res) => {
 
     // Forzar aprobación automática cuando proviene de un acceso/evento (QR de invitación)
     // El invitado irá a "Respuesta recibida" (approved) para que el organizador registre su entrada manualmente
+    // SOBRESCRIBE cualquier configuración de auto check-in
     if (req.body.visitType === 'access-code' || req.body.fromAccessEvent === true) {
       initialStatus = 'approved';
-      console.log('🎟️ [ACCESS EVENT] Forcing initial status to approved for access/event flow');
+      checkInTime = null; // Limpiar checkInTime - el organizador debe registrar manualmente
+      console.log('🎟️ [ACCESS EVENT] Forcing initial status to approved for access/event flow (overriding auto check-in)');
     }
 
     const visit = new Visit({

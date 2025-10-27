@@ -96,7 +96,7 @@ const accessSchema = new mongoose.Schema({
     },
     attendanceStatus: {
       type: String,
-      enum: ['pendiente', 'asistio', 'no-asistio'],
+      enum: ['pendiente', 'confirmo', 'asistio', 'no-asistio'],
       default: 'pendiente'
     },
     checkInTime: {

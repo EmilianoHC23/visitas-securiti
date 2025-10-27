@@ -44,14 +44,6 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
         <nav className="navbar navbar-expand navbar-light bg-white border-bottom px-3" style={{ minHeight: 64 }}>
             <div className="container-fluid">
                 <div className="d-flex align-items-center">
-                    {/* Logo y nombre */}
-                    <div style={{ width: 52, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="me-3">
-                        <img src="/logo.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
-                    </div>
-                    <div className="d-flex flex-column lh-1 me-4">
-                        <span className="fw-bold text-dark" style={{ fontSize: 18, letterSpacing: 1 }}>VISITAS</span>
-                        <span className="fw-bold" style={{ fontSize: 18, letterSpacing: 1, color: '#232b3e' }}>SECURITI</span>
-                    </div>
                     {/* Botón hamburguesa a la izquierda */}
                     <button
                         className="btn btn-outline-primary me-2 d-flex align-items-center justify-content-center"

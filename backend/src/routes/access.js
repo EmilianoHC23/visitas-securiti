@@ -215,7 +215,8 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
               hostName: `${req.user.firstName} ${req.user.lastName}`,
               companyName: company.name,
               companyLogo: company.logo,
-              companyId: company._id
+              companyId: company._id,
+              accessId: access._id.toString() // ✅ AGREGAR accessId
             });
           } catch (emailError) {
             console.error(`Error sending invitation to ${guest.email}:`, emailError);
@@ -331,7 +332,8 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
                 hostName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
                 companyName: company.name,
                 companyLogo: company.logo,
-                companyId: company._id
+                companyId: company._id,
+                accessId: access._id.toString() // ✅ AGREGAR accessId
               });
             } catch (emailError) {
               console.error(`Error sending invitation to ${guest.email}:`, emailError);
@@ -719,7 +721,8 @@ router.post('/:accessId/pre-register', async (req, res) => {
           hostName: access.creatorId ? `${access.creatorId.firstName} ${access.creatorId.lastName}` : 'Anfitrión',
           companyName: companyData?.name || 'Empresa',
           companyLogo: companyData?.logo,
-          companyId: companyData?._id
+          companyId: companyData?._id,
+          accessId: access._id.toString() // ✅ AGREGAR accessId
         });
       } catch (emailError) {
         console.error('Error sending confirmation email:', emailError);
@@ -734,6 +737,60 @@ router.post('/:accessId/pre-register', async (req, res) => {
     });
   } catch (error) {
     console.error('Pre-registration error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// ==================== SERVE EVENT IMAGE (URL TEMPORAL) ====================
+router.get('/event-image/:accessId/:token', async (req, res) => {
+  try {
+    const { accessId, token } = req.params;
+
+    // Verificar el token JWT
+    const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
+    
+    // Validar que el token es del tipo correcto
+    if (decoded.type !== 'event-image') {
+      return res.status(403).json({ message: 'Token inválido' });
+    }
+
+    // Validar que el accessId coincide
+    if (decoded.accessId !== accessId) {
+      return res.status(403).json({ message: 'AccessId no coincide' });
+    }
+
+    // Buscar el acceso
+    const access = await Access.findById(accessId);
+    if (!access) {
+      return res.status(404).json({ message: 'Acceso no encontrado' });
+    }
+
+    // Verificar que existe imagen de evento
+    if (!access.eventImage || !access.eventImage.startsWith('data:image')) {
+      return res.status(404).json({ message: 'Imagen de evento no encontrada' });
+    }
+
+    // Convertir Base64 a buffer
+    const base64Data = access.eventImage.replace(/^data:image\/\w+;base64,/, '');
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+
+    // Determinar el tipo de imagen
+    const imageType = access.eventImage.match(/data:image\/(\w+);/)?.[1] || 'jpeg';
+    
+    // Establecer headers de caché
+    res.set({
+      'Content-Type': `image/${imageType}`,
+      'Cache-Control': 'public, max-age=604800', // 7 días
+      'ETag': `"${accessId}-${access.updatedAt?.getTime() || Date.now()}"`
+    });
+
+    console.log(`✅ [EVENT IMAGE] Imagen servida para acceso ${accessId}. Tamaño: ${imageBuffer.length} bytes`);
+    res.send(imageBuffer);
+  } catch (error) {
+    console.error('❌ [EVENT IMAGE] Error:', error.message);
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token inválido o expirado' });
+    }
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

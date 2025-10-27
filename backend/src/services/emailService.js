@@ -121,6 +121,30 @@ class EmailService {
     return logoUrl;
   }
 
+  /**
+   * Genera URL temporal para imagen de evento
+   * @param {string} accessId - ID del acceso/evento
+   * @returns {string} URL pública temporal con token JWT
+   */
+  generateEventImageUrl(accessId) {
+    // Generar token JWT que expira en 60 días
+    const token = jwt.sign(
+      { 
+        accessId: accessId,
+        type: 'event-image'
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '60d' }
+    );
+    
+    // Construir URL pública
+    const baseUrl = process.env.API_URL || 'http://localhost:5000';
+    const imageUrl = `${baseUrl}/api/access/event-image/${accessId}/${token}`;
+    
+    console.log(`🖼️ URL temporal generada para imagen de evento ${accessId}`);
+    return imageUrl;
+  }
+
   async sendTestEmail(to) {
     if (!this.isEnabled()) {
       return { success: false, error: 'Email service not configured' };
@@ -1439,7 +1463,7 @@ class EmailService {
 
   /**
    * Email 2: Invitación a acceso (a los invitados)
-   * @param {Object} data - { invitedEmail, invitedName, hostName, accessTitle, accessType, startDate, endDate, startTime, endTime, location, qrCode, companyName, companyLogo, additionalInfo, companyAddress, companyEmail }
+   * @param {Object} data - { invitedEmail, invitedName, hostName, accessTitle, accessType, startDate, endDate, startTime, endTime, location, qrCode, companyName, companyLogo, additionalInfo, companyAddress, companyEmail, eventImage, accessId, companyId }
    */
   async sendAccessInvitationEmail(data) {
     if (!this.isEnabled()) {
@@ -1449,6 +1473,38 @@ class EmailService {
 
     // Generar URL temporal para el logo si existe y es Base64
     let COMPANY_LOGO_URL;
+    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
+      if (data.companyId) {
+        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
+        console.log('🏢 [ACCESS INVITATION] Logo empresa: URL temporal generada');
+      } else {
+        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+        console.warn('⚠️ [ACCESS INVITATION] No companyId, usando fallback');
+      }
+    } else if (data.companyLogo) {
+      COMPANY_LOGO_URL = data.companyLogo;
+      console.log('🏢 [ACCESS INVITATION] Logo empresa: URL pública');
+    } else {
+      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+      console.log('🏢 [ACCESS INVITATION] Sin logo, usando fallback');
+    }
+
+    // Generar URL temporal para la imagen del evento si existe y es Base64
+    let EVENT_IMAGE_URL;
+    if (data.eventImage && data.eventImage.startsWith('data:image')) {
+      if (data.accessId) {
+        EVENT_IMAGE_URL = this.generateEventImageUrl(data.accessId);
+        console.log('🖼️ [ACCESS INVITATION] Imagen evento: URL temporal generada');
+      } else {
+        EVENT_IMAGE_URL = null;
+        console.warn('⚠️ [ACCESS INVITATION] No accessId para imagen de evento');
+      }
+    } else if (data.eventImage) {
+      EVENT_IMAGE_URL = data.eventImage;
+      console.log('🖼️ [ACCESS INVITATION] Imagen evento: URL pública');
+    } else {
+      EVENT_IMAGE_URL = null;
+    }
     if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
       if (data.companyId) {
         COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
@@ -1542,9 +1598,9 @@ class EmailService {
                         </div>
 
                         <!-- Event Image (if provided) -->
-                        ${data.eventImage ? `
+                        ${EVENT_IMAGE_URL ? `
                         <div style="text-align: center; margin-bottom: 25px;">
-                          <img src="${data.eventImage}" alt="Imagen del evento" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" />
+                          <img src="${EVENT_IMAGE_URL}" alt="Imagen del evento" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" />
                         </div>
                         ` : ''}
 

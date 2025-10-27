@@ -1125,16 +1125,39 @@ export const VisitsPage: React.FC = () => {
     const handleVisitRegistration = async (visitData: any) => {
         try {
             const scheduledDate = new Date().toISOString();
-            await api.createVisit({
-                visitorName: visitData.visitorName,
-                visitorCompany: visitData.visitorCompany,
-                reason: visitData.reason,
-                hostId: visitData.host,
-                scheduledDate,
-                destination: visitData.destination || '',
-                visitorEmail: visitData.visitorEmail,
-                visitorPhoto: visitData.visitorPhoto || undefined,
-            });
+            
+            // Si viene de un acceso/evento, crear con auto check-in
+            if (visitData.fromAccessEvent) {
+                const newVisit = await api.createVisit({
+                    visitorName: visitData.visitorName,
+                    visitorCompany: visitData.visitorCompany,
+                    reason: visitData.reason,
+                    hostId: visitData.host,
+                    scheduledDate,
+                    destination: visitData.destination || '',
+                    visitorEmail: visitData.visitorEmail,
+                    visitorPhoto: visitData.visitorPhoto || undefined,
+                    visitType: 'access-code',
+                    accessCode: visitData.accessCode
+                });
+                
+                // Hacer check-in inmediatamente
+                await api.checkInVisit(newVisit._id);
+                console.log('✅ Visita de acceso/evento creada y check-in realizado automáticamente');
+            } else {
+                // Flujo normal para visitas regulares
+                await api.createVisit({
+                    visitorName: visitData.visitorName,
+                    visitorCompany: visitData.visitorCompany,
+                    reason: visitData.reason,
+                    hostId: visitData.host,
+                    scheduledDate,
+                    destination: visitData.destination || '',
+                    visitorEmail: visitData.visitorEmail,
+                    visitorPhoto: visitData.visitorPhoto || undefined,
+                });
+            }
+            
             fetchVisits();
         } catch (error) {
             console.error('Failed to create visit:', error);

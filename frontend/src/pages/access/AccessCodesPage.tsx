@@ -277,7 +277,7 @@ export const AccessCodesPage: React.FC = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        {access.settings?.enablePreRegistration && (
+                        {access.settings?.enablePreRegistration && access.status === 'active' && (
                           <button
                             onClick={() => {
                               const link = `${window.location.origin}/public/register/${access._id}`;
@@ -365,8 +365,8 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
   // Calculate default dates/times
   const getDefaultDateTime = () => {
     const now = new Date();
-    // Add 10 minutes to current time
-    now.setMinutes(now.getMinutes() + 10);
+    // Add 3 minutes to current time (allow near-immediate scheduling)
+    now.setMinutes(now.getMinutes() + 3);
     
     const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
     const time = now.toTimeString().slice(0, 5); // HH:MM
@@ -376,8 +376,8 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
   
   const getDefaultEndDateTime = () => {
     const now = new Date();
-    // Add 1 hour and 10 minutes to current time
-    now.setMinutes(now.getMinutes() + 70);
+    // Keep default duration ~60 minutes relative to start: 3 + 60 = 63 minutes from now
+    now.setMinutes(now.getMinutes() + 63);
     
     const date = now.toISOString().split('T')[0];
     const time = now.toTimeString().slice(0, 5);
@@ -1181,7 +1181,11 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose }) => {
               <LinkIcon className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
               <div className="w-full">
                 <p className="text-sm font-medium text-gray-700">Pre-registro</p>
-                {access.settings?.enablePreRegistration ? (
+                {access.status !== 'active' ? (
+                  <p className="text-sm text-gray-600">
+                    Deshabilitado ({access.status === 'cancelled' ? 'acceso cancelado' : 'acceso finalizado'})
+                  </p>
+                ) : access.settings?.enablePreRegistration ? (
                   <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3 mt-1">
                     <p className="text-sm text-gray-700">Habilitado</p>
                     <button
@@ -1224,31 +1228,7 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose }) => {
               Invitados ({access.invitedUsers.length})
             </h3>
             
-            {/* Mostrar link de pre-registro si está habilitado */}
-            {access.settings?.enablePreRegistration && (
-              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <LinkIcon className="w-5 h-5 text-gray-600 mr-2" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Pre-registro habilitado</p>
-                      <p className="text-xs text-gray-500">Los visitantes pueden registrarse con este enlace</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      const link = `${window.location.origin}/public/register/${access._id}`;
-                      navigator.clipboard.writeText(link);
-                      alert('Enlace copiado al portapapeles');
-                    }}
-                    className="flex items-center px-3 py-2 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-100"
-                  >
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copiar enlace
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Se elimina duplicado del enlace de pre-registro; ahora solo se muestra en el resumen superior */}
             
             {access.invitedUsers.length === 0 ? (
               <p className="text-sm text-gray-600">No hay invitados registrados</p>

@@ -55,7 +55,13 @@ const connectDB = async () => {
     const mongoURI = process.env.DATABASE_URL || 'mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti';
     await mongoose.connect(mongoURI);
     console.log('✅ MongoDB Atlas connected successfully');
-    console.log('📊 Database:', mongoose.connection.db.databaseName);
+    // In some environments (e.g., serverless cold starts), connection.db may not be immediately available
+    const dbName = mongoose.connection?.name || mongoose.connection?.db?.databaseName;
+    if (dbName) {
+      console.log('📊 Database:', dbName);
+    } else {
+      console.log('⚠️ Mongo connected but database name not yet available');
+    }
 
     // Initialize database with default data if needed
     await initializeDatabase();

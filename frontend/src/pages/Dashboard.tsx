@@ -104,11 +104,16 @@ export const Dashboard: React.FC = () => {
     });
     const [recentVisits, setRecentVisits] = useState<Visit[]>([]);
     const [frequentCompanies, setFrequentCompanies] = useState<Array<{ company: string; count: number }>>([]);
+    const [frequentVisitors, setFrequentVisitors] = useState<Array<{ id: string; name: string; company?: string; photo?: string; count: number }>>([]);
     const [analyticsData, setAnalyticsData] = useState<any[]>([]);
+    const [analyticsStatusData, setAnalyticsStatusData] = useState<any[]>([]);
+    const [period, setPeriod] = useState<'week' | 'month'>('week');
+    const [chartLoading, setChartLoading] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
+                setChartLoading(true);
                 setIsLoading(true);
                 setError(null);
                 
@@ -116,7 +121,7 @@ export const Dashboard: React.FC = () => {
                     api.getDashboardStats(),
                     api.getRecentVisits(5),
                     api.getRecentVisits(200), // fetch more to compute frequent companies
-                    api.getAnalytics('week')
+                    api.getAnalytics(period)
                 ]);
                 
                 if (statsData) setStats(statsData);
@@ -135,14 +140,92 @@ export const Dashboard: React.FC = () => {
                 } catch (err) {
                     console.warn('Could not compute frequent companies:', err);
                 }
+                // Build frequent visitors list (top 5)
+                try {
+                    const visitsForVisitors = (largeRecentVisitsData && largeRecentVisitsData.length > 0) ? largeRecentVisitsData : (recentVisitsData || []);
+                    const vmap = new Map<string, { id: string; name: string; company?: string; photo?: string; count: number }>();
+                    visitsForVisitors.forEach((v: Visit) => {
+                        const id = (v.visitorEmail || v.visitorName || v._id) as string;
+                        const name = v.visitorName || (v.visitorEmail ? v.visitorEmail.split('@')[0] : 'Visitante');
+                        const company = v.visitorCompany || '';
+                        const photo = v.visitorPhoto || '';
+                        if (!vmap.has(id)) {
+                            vmap.set(id, { id, name, company, photo, count: 0 });
+                        }
+                        const cur = vmap.get(id)!;
+                        cur.count = (cur.count || 0) + 1;
+                    });
+                    const varr = Array.from(vmap.values());
+                    varr.sort((a, b) => b.count - a.count);
+                    setFrequentVisitors(varr.slice(0, 5));
+                } catch (err) {
+                    console.warn('Could not compute frequent visitors:', err);
+                }
                 if (analytics) {
-                    // Transform analytics data for chart
+                    // Transform analytics data for simple visits chart (kept for compatibility)
                     const chartData = analytics.map((item: any) => ({
                         day: new Date(item._id).toLocaleDateString('es-ES', { weekday: 'short' }),
                         visits: item.total
                     }));
                     setAnalyticsData(chartData);
                 }
+
+                // Build time series aggregated by status from recent visits (client-side)
+                try {
+                    const visitsSource: Visit[] = (largeRecentVisitsData && largeRecentVisitsData.length > 0) ? largeRecentVisitsData : (recentVisitsData || []);
+                    const days = period === 'week' ? 7 : 30;
+                    const end = new Date();
+                    end.setHours(0, 0, 0, 0);
+                    const dateKeys: string[] = [];
+                    for (let i = days - 1; i >= 0; i--) {
+                        const d = new Date(end);
+                        d.setDate(end.getDate() - i);
+                        dateKeys.push(d.toISOString().slice(0, 10));
+                    }
+
+                    const seriesMap = new Map<string, any>();
+                    dateKeys.forEach(k => {
+                        const d = new Date(k + 'T00:00:00');
+                        seriesMap.set(k, {
+                            day: d.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit' }),
+                            pending: 0,
+                            approved: 0,
+                            checkedIn: 0,
+                            completed: 0
+                        });
+                    });
+
+                    visitsSource.forEach((v: Visit) => {
+                        const d = new Date(v.scheduledDate || v.createdAt || v._id);
+                        const key = d.toISOString().slice(0, 10);
+                        if (!seriesMap.has(key)) return;
+                        const obj = seriesMap.get(key);
+                        switch (v.status) {
+                            case VisitStatus.PENDING:
+                                obj.pending = (obj.pending || 0) + 1;
+                                break;
+                            case VisitStatus.APPROVED:
+                                obj.approved = (obj.approved || 0) + 1;
+                                break;
+                            case VisitStatus.CHECKED_IN:
+                                obj.checkedIn = (obj.checkedIn || 0) + 1;
+                                break;
+                            case VisitStatus.COMPLETED:
+                                obj.completed = (obj.completed || 0) + 1;
+                                break;
+                            default:
+                                // treat unknown as completed for display purposes
+                                obj.completed = (obj.completed || 0) + 1;
+                                break;
+                        }
+                    });
+
+                    const statusSeries = Array.from(seriesMap.values());
+                    setAnalyticsStatusData(statusSeries);
+                } catch (err) {
+                    console.warn('Could not compute analyticsStatusData:', err);
+                }
+                setChartLoading(false);
             } catch (error: any) {
                 console.error('Error fetching dashboard data:', error);
                 setError(error.message || 'Error al cargar los datos del dashboard');
@@ -152,7 +235,7 @@ export const Dashboard: React.FC = () => {
         };
 
         fetchData();
-    }, []);
+    }, [period]);
 
     if (isLoading && stats.active === 0) {
         return (
@@ -308,30 +391,82 @@ export const Dashboard: React.FC = () => {
                 <div className="col-12 col-lg-8">
                     <div className="card shadow-sm border-0 h-100">
                         <div className="card-body">
-                            <h5 className="card-title fw-semibold mb-3">Visitas Esta Semana</h5>
+                            <div className="d-flex justify-content-between items-center mb-2">
+                                <h5 className="card-title fw-semibold mb-0">Visitas</h5>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => setPeriod('week')} className={`px-3 py-1 rounded-lg text-sm ${period === 'week' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700'}`}>7 días</button>
+                                    <button onClick={() => setPeriod('month')} className={`px-3 py-1 rounded-lg text-sm ${period === 'month' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700'}`}>30 días</button>
+                                </div>
+                            </div>
                             <div style={{ width: '100%', height: 300 }}>
                                 <ResponsiveContainer>
-                                    <BarChart data={analyticsData.length > 0 ? analyticsData : [
-                                        { day: 'Lun', visits: 0 },
-                                        { day: 'Mar', visits: 0 },
-                                        { day: 'Mié', visits: 0 },
-                                        { day: 'Jue', visits: 0 },
-                                        { day: 'Vie', visits: 0 },
-                                        { day: 'Sáb', visits: 0 },
-                                        { day: 'Dom', visits: 0 },
+                                    <BarChart data={analyticsStatusData.length > 0 ? analyticsStatusData : [
+                                        { day: 'Lun', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
+                                        { day: 'Mar', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
+                                        { day: 'Mié', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
+                                        { day: 'Jue', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
+                                        { day: 'Vie', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
+                                        { day: 'Sáb', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
+                                        { day: 'Dom', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
                                     ]}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false}/>
                                         <XAxis dataKey="day" tick={{fontSize: 12}}/>
                                         <YAxis allowDecimals={false} tick={{fontSize: 12}} />
                                         <Tooltip 
                                             wrapperClassName="shadow rounded border" 
-                                            cursor={{fill: 'rgba(34, 131, 229, 0.1)'}} 
+                                            cursor={{fill: 'rgba(34, 131, 229, 0.06)'}} 
                                             labelFormatter={(label) => `${label}`}
-                                            formatter={(value) => [value, 'Visitas']}
                                         />
-                                        <Bar dataKey="visits" fill="#2283e5" radius={[4, 4, 0, 0]} />
+                                        {/* Stacked bars: pending (orange), approved (blue), checkedIn (green), completed (gray) */}
+                                        <Bar dataKey="pending" stackId="a" fill="#f6ad55" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="approved" stackId="a" fill="#60a5fa" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="checkedIn" stackId="a" fill="#34d399" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="completed" stackId="a" fill="#9ca3af" radius={[4, 4, 0, 0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
+                            </div>
+                            {/* Top visitors metric below the chart */}
+                            <div className="mt-4">
+                                <h6 className="mb-3 fw-semibold">Visitantes frecuentes</h6>
+                                {frequentVisitors.length > 0 ? (
+                                    (() => {
+                                        const total = frequentVisitors.reduce((s, v) => s + v.count, 0) || 1;
+                                        return (
+                                            <div className="space-y-3">
+                                                {frequentVisitors.map(v => {
+                                                    const pct = Math.round((v.count / total) * 100);
+                                                    return (
+                                                        <div key={v.id} className="d-flex align-items-center justify-content-between">
+                                                            <div className="d-flex align-items-center">
+                                                                <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center me-3">
+                                                                    {v.photo ? (
+                                                                        <img src={v.photo} alt={v.name} className="w-10 h-10 object-cover" />
+                                                                    ) : (
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6 text-gray-400">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                                                        </svg>
+                                                                    )}
+                                                                </div>
+                                                                <div style={{ maxWidth: 220 }}>
+                                                                    <div className="text-sm fw-medium text-gray-800 truncate">{v.name}</div>
+                                                                    <div className="text-xs text-muted truncate">{v.company}</div>
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ width: 140 }} className="text-end">
+                                                                <div className="text-sm text-gray-600">{v.count} · {pct}%</div>
+                                                                <div className="w-full bg-gray-100 rounded-full h-2 mt-1 overflow-hidden">
+                                                                    <div className="h-2 bg-gradient-to-r from-purple-500 to-indigo-600" style={{ width: `${pct}%` }} />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        );
+                                    })()
+                                ) : (
+                                    <div className="text-center text-muted">No hay visitantes frecuentes</div>
+                                )}
                             </div>
                         </div>
                     </div>

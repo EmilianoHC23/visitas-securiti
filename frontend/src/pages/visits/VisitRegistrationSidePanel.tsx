@@ -209,8 +209,10 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
     
     if (pendingAccess) {
       try {
-        // Hacer check-in en el acceso
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/public/access-check-in`, {
+        // Hacer check-in en el acceso (construir URL evitando /api duplicado)
+        const rawBase = (import.meta.env.VITE_API_URL as string) || 'http://localhost:3000';
+        const baseNoTrailingApi = rawBase.replace(/\/?api\/?$/, '');
+        const response = await fetch(`${baseNoTrailingApi}/api/public/access-check-in`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

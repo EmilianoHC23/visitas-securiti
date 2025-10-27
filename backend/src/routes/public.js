@@ -195,80 +195,32 @@ router.post('/access-check-in', async (req, res) => {
       return res.status(404).json({ message: 'No estás en la lista de invitados para este acceso' });
     }
 
-    if (invitedUser.attendanceStatus === 'asistio') {
+    if (invitedUser.attendanceStatus === 'asistio' || invitedUser.attendanceStatus === 'confirmo') {
       return res.status(400).json({ 
-        message: 'Ya has registrado tu entrada',
+        message: invitedUser.attendanceStatus === 'asistio' 
+          ? 'Ya has registrado tu entrada' 
+          : 'Ya has confirmado tu asistencia',
         checkInTime: invitedUser.checkInTime
       });
     }
 
-    // Registrar check-in en el acceso/evento
-    invitedUser.attendanceStatus = 'asistio';
+    // SOLO actualizar el attendanceStatus en el Access
+    // NO crear la visita aquí - el frontend la creará con el estado correcto (approved)
+    invitedUser.attendanceStatus = 'confirmo';  // Cambiar a 'confirmo' en lugar de 'asistio'
     invitedUser.checkInTime = new Date();
     
     await access.save();
 
-    console.log(`✅ [AUTO CHECK-IN] ${guestName} registrado en ${access.eventName}`);
-
-    // Crear también una visita en estado 'checked-in' para que aparezca en "Dentro"
-    // Estrategia para resolver host:
-    // 1) Si el creador del acceso es host activo, usarlo
-    // 2) Si no, buscar cualquier host activo de la misma compañía
-    // 3) Si no hay host disponible, omitir creación de visita (pero mantener check-in del acceso)
-    let visit = null;
-    let resolvedHost = null;
-    try {
-      const User = require('../models/User');
-      const Visit = require('../models/Visit');
-      const VisitEvent = require('../models/VisitEvent');
-
-      // Intentar con el creador
-      resolvedHost = await User.findOne({ _id: access.creatorId, role: 'host', isActive: true });
-
-      // Si el creador no es host o no está activo, buscar otro host de la compañía
-      if (!resolvedHost) {
-        resolvedHost = await User.findOne({ companyId: access.companyId, role: 'host', isActive: true });
-      }
-
-      if (resolvedHost) {
-        visit = new Visit({
-          visitorName: invitedUser.name,
-          visitorCompany: invitedUser.company || '',
-          reason: `Evento: ${access.eventName}`,
-          destination: access.location || 'SecurITI',
-          host: resolvedHost._id,
-          scheduledDate: new Date(),
-          companyId: access.companyId,
-          visitorEmail: invitedUser.email || undefined,
-          visitorPhone: invitedUser.phone || undefined,
-          status: 'checked-in',
-          checkInTime: invitedUser.checkInTime,
-          visitType: 'access-code',
-          accessCode: access.accessCode,
-          accessId: access._id
-        });
-
-        await visit.save();
-        await new VisitEvent({ visitId: visit._id, type: 'check-in' }).save();
-        console.log('✅ [AUTO CHECK-IN] Visita creada como checked-in para el invitado');
-      } else {
-        console.warn('⚠️ [AUTO CHECK-IN] No se encontró host activo para crear la visita automáticamente');
-      }
-    } catch (visitError) {
-      console.warn('⚠️ [AUTO CHECK-IN] Error creando visita automática:', visitError?.message);
-      // No interrumpir la respuesta de check-in del acceso
-      visit = null;
-    }
+    console.log(`✅ [ACCESS CHECK-IN] ${guestName} confirmó asistencia a ${access.eventName}`);
+    console.log(`📋 El frontend creará la visita en estado 'approved' para control manual del organizador`);
 
     res.json({
-      message: 'Check-in registrado exitosamente',
+      message: 'Asistencia confirmada exitosamente',
       access: {
         eventName: access.eventName,
         location: access.location,
         checkInTime: invitedUser.checkInTime
-      },
-      visitCreated: !!visit,
-      visitId: visit ? visit._id : null
+      }
     });
   } catch (error) {
     console.error('Auto check-in error:', error);

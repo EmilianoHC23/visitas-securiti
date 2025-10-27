@@ -64,6 +64,31 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// Agenda endpoint - DEBE IR ANTES DE /:id para evitar que "agenda" se interprete como ID
+router.get('/agenda', auth, async (req, res) => {
+  try {
+    const { from, to, hostId, q } = req.query;
+    const filter = { companyId: req.user.companyId };
+    const now = new Date();
+    const start = from ? new Date(from) : now;
+    const end = to ? new Date(to) : new Date(now.getTime() + 30*24*60*60*1000);
+    filter.scheduledDate = { $gte: start, $lte: end };
+    if (hostId) filter.host = hostId;
+    if (q) {
+      filter.$or = [
+        { visitorName: { $regex: q, $options: 'i' } },
+        { visitorCompany: { $regex: q, $options: 'i' } },
+        { reason: { $regex: q, $options: 'i' } }
+      ];
+    }
+    const visits = await Visit.find(filter).populate('host', 'firstName lastName email');
+    res.json(visits);
+  } catch (e) {
+    console.error('Agenda error:', e);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 // Get single visit
 router.get('/:id', auth, async (req, res) => {
   try {
@@ -643,8 +668,6 @@ router.get('/visitor-photo/:visitId/:token', async (req, res) => {
   }
 });
 
-module.exports = router;
-
 // Additional endpoints
 
 // Get visit status by id (mapped)
@@ -883,27 +906,4 @@ router.post('/checkout/:id', auth, async (req, res) => {
   }
 });
 
-// Agenda endpoint
-router.get('/agenda', auth, async (req, res) => {
-  try {
-    const { from, to, hostId, q } = req.query;
-    const filter = { companyId: req.user.companyId };
-    const now = new Date();
-    const start = from ? new Date(from) : now;
-    const end = to ? new Date(to) : new Date(now.getTime() + 30*24*60*60*1000);
-    filter.scheduledDate = { $gte: start, $lte: end };
-    if (hostId) filter.host = hostId;
-    if (q) {
-      filter.$or = [
-        { visitorName: { $regex: q, $options: 'i' } },
-        { visitorCompany: { $regex: q, $options: 'i' } },
-        { reason: { $regex: q, $options: 'i' } }
-      ];
-    }
-    const visits = await Visit.find(filter).populate('host', 'firstName lastName email');
-    res.json(visits);
-  } catch (e) {
-    console.error('Agenda error:', e);
-    res.status(500).json({ message: 'Error interno del servidor' });
-  }
-});
+module.exports = router;

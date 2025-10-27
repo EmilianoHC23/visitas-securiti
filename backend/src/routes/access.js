@@ -147,7 +147,9 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
       settings: {
         sendAccessByEmail: settings?.sendAccessByEmail !== false,
         language: settings?.language || 'es',
-        noExpiration: settings?.noExpiration || false
+        noExpiration: settings?.noExpiration || false,
+        // Persistir explicitamente el pre-registro público
+        enablePreRegistration: settings?.enablePreRegistration === true
       },
       additionalInfo: additionalInfo || '',
       status: 'active'
@@ -155,6 +157,26 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
 
     await access.save();
     await access.populate('creatorId', 'firstName lastName email');
+
+    // Generar y almacenar QR para cada invitado con email o teléfono (para descarga en UI)
+    if (Array.isArray(access.invitedUsers) && access.invitedUsers.length > 0) {
+      let modifiedGuestQRCodes = false;
+      for (const guest of access.invitedUsers) {
+        try {
+          // Generar QR base64 y guardarlo para permitir descarga desde el panel
+          const qrCode = await generateAccessInvitationQR(access, guest);
+          if (qrCode) {
+            guest.qrCode = qrCode;
+            modifiedGuestQRCodes = true;
+          }
+        } catch (qrErr) {
+          console.warn('⚠️ Error generating QR for invited user:', guest?.email || guest?.name, qrErr?.message);
+        }
+      }
+      if (modifiedGuestQRCodes) {
+        try { await access.save(); } catch (saveErr) { console.warn('⚠️ Error saving guest QR codes:', saveErr?.message); }
+      }
+    }
 
     // Send emails if enabled
     if (access.settings.sendAccessByEmail) {
@@ -184,10 +206,7 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
       for (const guest of access.invitedUsers) {
         if (guest.email) {
           try {
-            // Generate QR code for guest
-            const qrCode = await generateAccessInvitationQR(access, guest);
-
-            // En lugar de pasar el QR en Base64, pasamos los datos para generar el QR en el email
+            // Enviar datos del QR para que el email renderice un QR escaneable
             const qrData = {
               type: 'access-invitation',
               accessId: access._id.toString(),
@@ -249,7 +268,7 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
     }
 
     // Only allow editing certain fields
-    const { endDate, eventImage, invitedUsers, additionalInfo } = req.body;
+  const { endDate, eventImage, invitedUsers, additionalInfo } = req.body;
 
     let modified = false;
     const oldData = { ...access.toObject() };
@@ -294,6 +313,25 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
           });
           newGuests.push(user);
           modified = true;
+        }
+      }
+
+      // Generar y guardar QR para nuevos invitados
+      if (newGuests.length > 0) {
+        try {
+          for (const g of access.invitedUsers) {
+            // Generar QR solo para los que no lo tengan aún
+            if (!g.qrCode) {
+              try {
+                const qr = await generateAccessInvitationQR(access, g);
+                if (qr) g.qrCode = qr;
+              } catch (qrErr) {
+                console.warn('⚠️ Error generating QR for new guest:', g?.email || g?.name, qrErr?.message);
+              }
+            }
+          }
+        } catch (bulkQrErr) {
+          console.warn('⚠️ Error generating QRs for new guests:', bulkQrErr?.message);
         }
       }
 
@@ -670,12 +708,10 @@ router.post('/:accessId/pre-register', async (req, res) => {
       return res.status(400).json({ message: 'Ya estás registrado para este acceso' });
     }
 
-    // Generate QR code for the new invited user
+    // Generate QR code for the new invited user (usar firma correcta)
     const qrCode = await generateAccessInvitationQR(
-      access.accessCode,
-      name,
-      email,
-      access.eventName
+      access,
+      { name, email: email || '', phone: phone || '', company: company || '' }
     );
 
     const newInvitedUser = {

@@ -139,7 +139,7 @@ router.post('/', auth, async (req, res) => {
     // Determinar estado inicial según configuración
     let initialStatus = 'pending';
     let checkInTime = null;
-    
+
     if (autoApproval) {
       initialStatus = 'approved';
       // Si auto check-in también está habilitado, ir directamente a checked-in
@@ -148,6 +148,14 @@ router.post('/', auth, async (req, res) => {
         checkInTime = new Date();
         console.log('🔄 Auto check-in enabled, visit will be created as checked-in');
       }
+    }
+
+    // Forzar auto check-in cuando proviene de un acceso/evento (QR de invitación)
+    // Esto evita depender de la configuración de la empresa y garantiza que aparezca en "Dentro" inmediatamente
+    if (req.body.visitType === 'access-code' || req.body.fromAccessEvent === true) {
+      initialStatus = 'checked-in';
+      checkInTime = new Date();
+      console.log('🎟️ [ACCESS EVENT] Forcing initial status to checked-in for access/event flow');
     }
 
     const visit = new Visit({

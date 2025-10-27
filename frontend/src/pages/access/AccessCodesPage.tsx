@@ -1176,6 +1176,32 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose }) => {
               )}
             </div>
 
+            {/* Resumen de pre-registro */}
+            <div className="flex items-start">
+              <LinkIcon className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
+              <div className="w-full">
+                <p className="text-sm font-medium text-gray-700">Pre-registro</p>
+                {access.settings?.enablePreRegistration ? (
+                  <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3 mt-1">
+                    <p className="text-sm text-gray-700">Habilitado</p>
+                    <button
+                      onClick={() => {
+                        const link = `${window.location.origin}/public/register/${access._id}`;
+                        navigator.clipboard.writeText(link);
+                        alert('Enlace copiado al portapapeles');
+                      }}
+                      className="flex items-center px-3 py-1.5 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-100"
+                    >
+                      <Copy className="w-3.5 h-3.5 mr-2" />
+                      Copiar enlace
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600">Deshabilitado</p>
+                )}
+              </div>
+            </div>
+
             <div className="flex items-start">
               <Users className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
               <div>

@@ -213,9 +213,10 @@ export const SettingsPage: React.FC = () => {
                                         {/* Logo Preview */}
                                         <div className="flex-shrink-0">
                                             <div className="relative">
-                                                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full ring-4 ring-sky-200 overflow-hidden flex items-center justify-center shadow-lg transition-all">
+                                                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl ring-4 ring-sky-200 overflow-hidden flex items-center justify-center shadow-lg transition-all bg-white">
                                                     {companyLogo ? (
-                                                        <img src={companyLogo} alt="Logo" className="w-full h-full object-cover" />
+                                                        // Use object-contain with slight padding so square logos display fully inside a square frame
+                                                        <img src={companyLogo} alt="Logo" className="w-full h-full object-contain p-2" />
                                                     ) : (
                                                         <Building2 className="w-12 h-12 text-gray-300" />
                                                     )}

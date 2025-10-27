@@ -202,7 +202,7 @@ router.post('/access-check-in', async (req, res) => {
       });
     }
 
-    // Registrar check-in
+    // Registrar check-in en el acceso/evento
     invitedUser.attendanceStatus = 'asistio';
     invitedUser.checkInTime = new Date();
     
@@ -210,13 +210,65 @@ router.post('/access-check-in', async (req, res) => {
 
     console.log(`✅ [AUTO CHECK-IN] ${guestName} registrado en ${access.eventName}`);
 
+    // Crear también una visita en estado 'checked-in' para que aparezca en "Dentro"
+    // Estrategia para resolver host:
+    // 1) Si el creador del acceso es host activo, usarlo
+    // 2) Si no, buscar cualquier host activo de la misma compañía
+    // 3) Si no hay host disponible, omitir creación de visita (pero mantener check-in del acceso)
+    let visit = null;
+    let resolvedHost = null;
+    try {
+      const User = require('../models/User');
+      const Visit = require('../models/Visit');
+      const VisitEvent = require('../models/VisitEvent');
+
+      // Intentar con el creador
+      resolvedHost = await User.findOne({ _id: access.creatorId, role: 'host', isActive: true });
+
+      // Si el creador no es host o no está activo, buscar otro host de la compañía
+      if (!resolvedHost) {
+        resolvedHost = await User.findOne({ companyId: access.companyId, role: 'host', isActive: true });
+      }
+
+      if (resolvedHost) {
+        visit = new Visit({
+          visitorName: invitedUser.name,
+          visitorCompany: invitedUser.company || '',
+          reason: `Evento: ${access.eventName}`,
+          destination: access.location || 'SecurITI',
+          host: resolvedHost._id,
+          scheduledDate: new Date(),
+          companyId: access.companyId,
+          visitorEmail: invitedUser.email || undefined,
+          visitorPhone: invitedUser.phone || undefined,
+          status: 'checked-in',
+          checkInTime: invitedUser.checkInTime,
+          visitType: 'access-code',
+          accessCode: access.accessCode,
+          accessId: access._id
+        });
+
+        await visit.save();
+        await new VisitEvent({ visitId: visit._id, type: 'check-in' }).save();
+        console.log('✅ [AUTO CHECK-IN] Visita creada como checked-in para el invitado');
+      } else {
+        console.warn('⚠️ [AUTO CHECK-IN] No se encontró host activo para crear la visita automáticamente');
+      }
+    } catch (visitError) {
+      console.warn('⚠️ [AUTO CHECK-IN] Error creando visita automática:', visitError?.message);
+      // No interrumpir la respuesta de check-in del acceso
+      visit = null;
+    }
+
     res.json({
       message: 'Check-in registrado exitosamente',
       access: {
         eventName: access.eventName,
         location: access.location,
         checkInTime: invitedUser.checkInTime
-      }
+      },
+      visitCreated: !!visit,
+      visitId: visit ? visit._id : null
     });
   } catch (error) {
     console.error('Auto check-in error:', error);

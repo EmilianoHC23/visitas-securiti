@@ -22,6 +22,8 @@ import { PublicRegistrationPage } from './pages/public-registration/PublicRegist
 import { PublicLandingPage } from './pages/public/PublicLandingPage';
 import { PublicVisitRegistrationPage } from './pages/public/PublicVisitRegistrationPage';
 import { PublicAccessListPage } from './pages/public/PublicAccessListPage';
+import PublicPreRegistrationPage from './pages/public/PublicPreRegistrationPage';
+import RegistrationSuccessPage from './pages/public/RegistrationSuccessPage';
 import { ToastProvider } from './components/common/Toast';
 
 const PublicRegistrationWrapper: React.FC = () => {
@@ -50,6 +52,8 @@ const AppRoutes: React.FC = () => {
                 <Route path="/public" element={<PublicLandingPage />} />
                 <Route path="/public/visit-registration" element={<PublicVisitRegistrationPage />} />
                 <Route path="/public/access-list" element={<PublicAccessListPage />} />
+                <Route path="/public/register/:accessId" element={<PublicPreRegistrationPage />} />
+                <Route path="/public/registration-success/:accessId" element={<RegistrationSuccessPage />} />
                 <Route path="*" element={<Navigate to="/login" />} />
             </Routes>
         );

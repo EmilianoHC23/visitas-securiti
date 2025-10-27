@@ -165,4 +165,63 @@ router.post('/visit', async (req, res) => {
   }
 });
 
+// Auto check-in for access invitation QR
+router.post('/access-check-in', async (req, res) => {
+  try {
+    const { accessCode, guestEmail, guestPhone, guestName } = req.body;
+
+    if (!accessCode || !guestName) {
+      return res.status(400).json({ message: 'Código de acceso y nombre son requeridos' });
+    }
+
+    const Access = require('../models/Access');
+    const access = await Access.findOne({ accessCode }).populate('companyId');
+
+    if (!access) {
+      return res.status(404).json({ message: 'Código de acceso no encontrado' });
+    }
+
+    if (access.status !== 'active') {
+      return res.status(400).json({ message: 'Este acceso ya no está activo' });
+    }
+
+    // Buscar el invitado en la lista
+    const invitedUser = access.invitedUsers.find(user => 
+      user.name === guestName && 
+      ((guestEmail && user.email === guestEmail) || (guestPhone && user.phone === guestPhone))
+    );
+
+    if (!invitedUser) {
+      return res.status(404).json({ message: 'No estás en la lista de invitados para este acceso' });
+    }
+
+    if (invitedUser.attendanceStatus === 'asistio') {
+      return res.status(400).json({ 
+        message: 'Ya has registrado tu entrada',
+        checkInTime: invitedUser.checkInTime
+      });
+    }
+
+    // Registrar check-in
+    invitedUser.attendanceStatus = 'asistio';
+    invitedUser.checkInTime = new Date();
+    
+    await access.save();
+
+    console.log(`✅ [AUTO CHECK-IN] ${guestName} registrado en ${access.eventName}`);
+
+    res.json({
+      message: 'Check-in registrado exitosamente',
+      access: {
+        eventName: access.eventName,
+        location: access.location,
+        checkInTime: invitedUser.checkInTime
+      }
+    });
+  } catch (error) {
+    console.error('Auto check-in error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 module.exports = router;

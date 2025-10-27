@@ -372,6 +372,7 @@ export const createAccess = async (accessData: {
     sendAccessByEmail?: boolean;
     language?: 'es' | 'en';
     noExpiration?: boolean;
+    enablePreRegistration?: boolean;
   };
   additionalInfo?: string;
 }): Promise<Access> => {

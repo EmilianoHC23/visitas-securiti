@@ -128,11 +128,43 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
     try {
       const data = JSON.parse(qrData);
       
-      // Si es un QR de invitación de acceso
+      // Si es un QR de invitación de acceso - AUTO CHECK-IN
       if (data.type === 'access-invitation') {
         console.log('✅ QR de invitación de acceso detectado:', data);
         
-        // Auto-completar formulario con datos del invitado
+        try {
+          // Intentar check-in automático
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/public/access-check-in`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              accessCode: data.accessCode,
+              guestEmail: data.guestEmail,
+              guestPhone: data.guestPhone,
+              guestName: data.guestName
+            })
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            // Check-in exitoso
+            alert(`✅ Bienvenido ${data.guestName}!\n\n${data.eventName}\n${result.access.location || ''}\n\nCheck-in registrado automáticamente`);
+            onClose();
+            return;
+          } else {
+            // Si falla el auto check-in, mostrar mensaje y permitir registro manual
+            console.warn('Auto check-in falló:', result.message);
+            alert(`⚠️ ${result.message}\n\nPor favor registra manualmente.`);
+          }
+        } catch (checkInError) {
+          console.error('Error en auto check-in:', checkInError);
+          alert('No se pudo realizar el check-in automático. Por favor registra manualmente.');
+        }
+        
+        // Auto-completar formulario como fallback
         setFormData(prev => ({
           ...prev,
           visitorEmail: data.guestEmail || '',
@@ -143,16 +175,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
           reason: `${data.eventName} (${data.accessCode})`
         }));
         
-        // Guardar datos del acceso para el check-in posterior
-        (window as any).__pendingAccessCheckIn = {
-          accessCode: data.accessCode,
-          guestEmail: data.guestEmail,
-          guestPhone: data.guestPhone,
-          guestName: data.guestName
-        };
-        
         setMode('manual');
-        alert(`QR de acceso detectado: ${data.eventName}\nPor favor completa el registro.`);
       }
       // Si es un QR de visitante, autocompletar formulario
       else if (data.type === 'visitor-info') {

@@ -1541,6 +1541,13 @@ class EmailService {
                           </table>
                         </div>
 
+                        <!-- Event Image (if provided) -->
+                        ${data.eventImage ? `
+                        <div style="text-align: center; margin-bottom: 25px;">
+                          <img src="${data.eventImage}" alt="Imagen del evento" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" />
+                        </div>
+                        ` : ''}
+
                         <!-- QR Code -->
                         ${data.qrData ? `
                         <div style="background-color: #ffffff; border: 2px solid #e5e7eb; border-radius: 8px; padding: 25px; text-align: center; margin-bottom: 25px;">

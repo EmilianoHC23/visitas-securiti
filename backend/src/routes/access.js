@@ -210,8 +210,12 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
               location: access.location,
               accessCode: access.accessCode,
               qrData: JSON.stringify(qrData), // Pasar como string para usar en la API pública
+              eventImage: access.eventImage,
+              additionalInfo: access.additionalInfo,
+              hostName: `${req.user.firstName} ${req.user.lastName}`,
               companyName: company.name,
-              companyLogo: company.logo
+              companyLogo: company.logo,
+              companyId: company._id
             });
           } catch (emailError) {
             console.error(`Error sending invitation to ${guest.email}:`, emailError);
@@ -322,8 +326,12 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
                 location: access.location,
                 accessCode: access.accessCode,
                 qrData: JSON.stringify(qrData),
+                eventImage: access.eventImage,
+                additionalInfo: access.additionalInfo,
+                hostName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
                 companyName: company.name,
-                companyLogo: company.logo
+                companyLogo: company.logo,
+                companyId: company._id
               });
             } catch (emailError) {
               console.error(`Error sending invitation to ${guest.email}:`, emailError);
@@ -593,6 +601,139 @@ router.post('/redeem', async (req, res) => {
     });
   } catch (error) {
     console.error('Redeem access error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// ==================== PUBLIC PRE-REGISTRATION ENDPOINTS ====================
+
+// Get public access information (no auth required)
+router.get('/:accessId/public-info', async (req, res) => {
+  try {
+    const access = await Access.findById(req.params.accessId)
+      .select('eventName type startDate endDate location eventImage additionalInfo status settings')
+      .lean();
+
+    if (!access) {
+      return res.status(404).json({ message: 'Acceso no encontrado' });
+    }
+
+    if (!access.settings?.enablePreRegistration) {
+      return res.status(403).json({ message: 'Pre-registro no habilitado para este acceso' });
+    }
+
+    if (access.status !== 'active') {
+      return res.status(400).json({ message: 'Este acceso ya no está activo' });
+    }
+
+    res.json(access);
+  } catch (error) {
+    console.error('Get public access info error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Pre-register for an access (no auth required)
+router.post('/:accessId/pre-register', async (req, res) => {
+  try {
+    const { name, email, phone, company } = req.body;
+
+    if (!name || (!email && !phone)) {
+      return res.status(400).json({ message: 'Nombre y email o teléfono son requeridos' });
+    }
+
+    const access = await Access.findById(req.params.accessId).populate('companyId');
+
+    if (!access) {
+      return res.status(404).json({ message: 'Acceso no encontrado' });
+    }
+
+    if (!access.settings?.enablePreRegistration) {
+      return res.status(403).json({ message: 'Pre-registro no habilitado para este acceso' });
+    }
+
+    if (access.status !== 'active') {
+      return res.status(400).json({ message: 'Este acceso ya no está activo' });
+    }
+
+    // Check if user already registered
+    const existingUser = access.invitedUsers.find(u => 
+      (email && u.email === email) || (phone && u.phone === phone)
+    );
+
+    if (existingUser) {
+      return res.status(400).json({ message: 'Ya estás registrado para este acceso' });
+    }
+
+    // Generate QR code for the new invited user
+    const qrCode = await generateAccessInvitationQR(
+      access.accessCode,
+      name,
+      email,
+      access.eventName
+    );
+
+    const newInvitedUser = {
+      name,
+      email: email || '',
+      phone: phone || '',
+      company: company || '',
+      qrCode,
+      attendanceStatus: 'pendiente',
+      addedViaPreRegistration: true
+    };
+
+    access.invitedUsers.push(newInvitedUser);
+    await access.save();
+
+    // Send email with QR code if email provided
+    if (email) {
+      try {
+        const companyData = await Company.findOne({ companyId: access.companyId });
+        
+        const qrData = {
+          type: 'access-invitation',
+          accessId: access._id.toString(),
+          accessCode: access.accessCode,
+          guestName: name,
+          guestEmail: email || '',
+          eventName: access.eventName,
+          eventDate: access.startDate
+        };
+
+        await emailService.sendAccessInvitationEmail({
+          invitedEmail: email,
+          invitedName: name,
+          creatorName: access.creatorId ? `${access.creatorId.firstName} ${access.creatorId.lastName}` : 'Sistema',
+          accessTitle: access.eventName,
+          accessType: access.type,
+          startDate: access.startDate,
+          endDate: access.endDate,
+          startTime: formatTime(access.startDate),
+          endTime: formatTime(access.endDate),
+          location: access.location,
+          accessCode: access.accessCode,
+          qrData: JSON.stringify(qrData),
+          eventImage: access.eventImage,
+          additionalInfo: access.additionalInfo,
+          hostName: access.creatorId ? `${access.creatorId.firstName} ${access.creatorId.lastName}` : 'Anfitrión',
+          companyName: companyData?.name || 'Empresa',
+          companyLogo: companyData?.logo,
+          companyId: companyData?._id
+        });
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError);
+        // Don't fail the registration if email fails
+      }
+    }
+
+    res.status(201).json({
+      message: 'Registro exitoso',
+      qrCode,
+      invitedUser: newInvitedUser
+    });
+  } catch (error) {
+    console.error('Pre-registration error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

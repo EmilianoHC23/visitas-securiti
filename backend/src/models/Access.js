@@ -54,6 +54,10 @@ const accessSchema = new mongoose.Schema({
     noExpiration: {
       type: Boolean,
       default: false
+    },
+    enablePreRegistration: {
+      type: Boolean,
+      default: false
     }
   },
   status: {
@@ -86,6 +90,10 @@ const accessSchema = new mongoose.Schema({
       type: String,
       default: ''
     },
+    qrCode: {
+      type: String,
+      default: ''
+    },
     attendanceStatus: {
       type: String,
       enum: ['pendiente', 'asistio', 'no-asistio'],
@@ -93,6 +101,10 @@ const accessSchema = new mongoose.Schema({
     },
     checkInTime: {
       type: Date
+    },
+    addedViaPreRegistration: {
+      type: Boolean,
+      default: false
     }
   }],
   additionalInfo: {

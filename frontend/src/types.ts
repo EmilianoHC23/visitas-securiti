@@ -105,8 +105,10 @@ export interface InvitedUser {
   email: string;
   phone: string;
   company: string;
+  qrCode?: string;
   attendanceStatus: 'pendiente' | 'asistio' | 'no-asistio';
   checkInTime?: Date;
+  addedViaPreRegistration?: boolean;
 }
 
 export interface Access {
@@ -129,6 +131,7 @@ export interface Access {
     sendAccessByEmail: boolean;
     language: 'es' | 'en';
     noExpiration: boolean;
+    enablePreRegistration?: boolean;
   };
   status: 'active' | 'expired' | 'cancelled' | 'finalized';
   reminderSent: boolean;

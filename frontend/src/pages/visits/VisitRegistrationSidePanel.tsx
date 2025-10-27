@@ -128,31 +128,31 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
     try {
       const data = JSON.parse(qrData);
       
-      // Si es un QR de invitación de acceso
+      // Si es un QR de invitación de acceso - SOLO RELLENAR FORMULARIO
       if (data.type === 'access-invitation') {
         console.log('✅ QR de invitación de acceso detectado:', data);
         
-        // Auto-completar formulario con datos del invitado
+        // Auto-completar formulario con los datos del QR
         setFormData(prev => ({
           ...prev,
           visitorEmail: data.guestEmail || '',
           visitorName: data.guestName || '',
           visitorCompany: '',
-          visitorPhone: data.guestPhone || '',
           destination: data.location || '',
-          reason: `${data.eventName} (${data.accessCode})`
+          host: '', // Debe seleccionar manualmente
+          reason: `Evento: ${data.eventName}`
         }));
         
-        // Guardar datos del acceso para el check-in posterior
+        // Guardar datos del acceso para actualizar asistencia después del registro
         (window as any).__pendingAccessCheckIn = {
+          accessId: data.accessId,
           accessCode: data.accessCode,
           guestEmail: data.guestEmail,
-          guestPhone: data.guestPhone,
           guestName: data.guestName
         };
         
         setMode('manual');
-        alert(`QR de acceso detectado: ${data.eventName}\nPor favor completa el registro.`);
+        alert(`✅ Datos del QR cargados\n\nEvento: ${data.eventName}\n\nPor favor completa el formulario y registra la visita.`);
       }
       // Si es un QR de visitante, autocompletar formulario
       else if (data.type === 'visitor-info') {
@@ -201,23 +201,38 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
       return;
     }
 
-    // Si hay un acceso pendiente, registrar el check-in
+    // Si hay un acceso pendiente de QR escaneado, registrar el check-in y crear visita con auto check-in
     const pendingAccess = (window as any).__pendingAccessCheckIn;
     if (pendingAccess) {
       try {
-        const { checkInAccess } = await import('../../services/api');
-        await checkInAccess(pendingAccess.accessCode, {
-          guestEmail: pendingAccess.guestEmail,
-          guestPhone: pendingAccess.guestPhone,
-          guestName: pendingAccess.guestName
+        // Hacer check-in en el acceso
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/public/access-check-in`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            accessCode: pendingAccess.accessCode,
+            guestEmail: pendingAccess.guestEmail || formData.visitorEmail,
+            guestName: pendingAccess.guestName || formData.visitorName
+          })
         });
-        console.log('✅ Check-in de acceso registrado exitosamente');
+
+        if (response.ok) {
+          console.log('✅ Asistencia actualizada en el acceso');
+        } else {
+          console.warn('⚠️ No se pudo actualizar la asistencia en el acceso');
+        }
+        
+        // Marcar que esta visita viene de un acceso/evento para auto check-in
+        (formData as any).fromAccessEvent = true;
+        (formData as any).accessCode = pendingAccess.accessCode;
         
         // Limpiar el acceso pendiente
         delete (window as any).__pendingAccessCheckIn;
       } catch (error) {
-        console.error('Error al registrar check-in de acceso:', error);
-        // No bloqueamos el registro de visita si falla el check-in
+        console.error('Error al actualizar asistencia:', error);
+        // No bloqueamos el registro de visita si falla la actualización
       }
     }
 

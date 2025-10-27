@@ -210,8 +210,13 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
               location: access.location,
               accessCode: access.accessCode,
               qrData: JSON.stringify(qrData), // Pasar como string para usar en la API pública
+              eventImage: access.eventImage,
+              additionalInfo: access.additionalInfo,
+              hostName: `${req.user.firstName} ${req.user.lastName}`,
               companyName: company.name,
-              companyLogo: company.logo
+              companyLogo: company.logo,
+              companyId: company._id,
+              accessId: access._id.toString() // ✅ AGREGAR accessId
             });
           } catch (emailError) {
             console.error(`Error sending invitation to ${guest.email}:`, emailError);
@@ -322,8 +327,13 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
                 location: access.location,
                 accessCode: access.accessCode,
                 qrData: JSON.stringify(qrData),
+                eventImage: access.eventImage,
+                additionalInfo: access.additionalInfo,
+                hostName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
                 companyName: company.name,
-                companyLogo: company.logo
+                companyLogo: company.logo,
+                companyId: company._id,
+                accessId: access._id.toString() // ✅ AGREGAR accessId
               });
             } catch (emailError) {
               console.error(`Error sending invitation to ${guest.email}:`, emailError);
@@ -593,6 +603,194 @@ router.post('/redeem', async (req, res) => {
     });
   } catch (error) {
     console.error('Redeem access error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// ==================== PUBLIC PRE-REGISTRATION ENDPOINTS ====================
+
+// Get public access information (no auth required)
+router.get('/:accessId/public-info', async (req, res) => {
+  try {
+    const access = await Access.findById(req.params.accessId)
+      .select('eventName type startDate endDate location eventImage additionalInfo status settings')
+      .lean();
+
+    if (!access) {
+      return res.status(404).json({ message: 'Acceso no encontrado' });
+    }
+
+    if (!access.settings?.enablePreRegistration) {
+      return res.status(403).json({ message: 'Pre-registro no habilitado para este acceso' });
+    }
+
+    if (access.status !== 'active') {
+      return res.status(400).json({ message: 'Este acceso ya no está activo' });
+    }
+
+    res.json(access);
+  } catch (error) {
+    console.error('Get public access info error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Pre-register for an access (no auth required)
+router.post('/:accessId/pre-register', async (req, res) => {
+  try {
+    const { name, email, phone, company } = req.body;
+
+    if (!name || (!email && !phone)) {
+      return res.status(400).json({ message: 'Nombre y email o teléfono son requeridos' });
+    }
+
+    const access = await Access.findById(req.params.accessId).populate('companyId');
+
+    if (!access) {
+      return res.status(404).json({ message: 'Acceso no encontrado' });
+    }
+
+    if (!access.settings?.enablePreRegistration) {
+      return res.status(403).json({ message: 'Pre-registro no habilitado para este acceso' });
+    }
+
+    if (access.status !== 'active') {
+      return res.status(400).json({ message: 'Este acceso ya no está activo' });
+    }
+
+    // Check if user already registered
+    const existingUser = access.invitedUsers.find(u => 
+      (email && u.email === email) || (phone && u.phone === phone)
+    );
+
+    if (existingUser) {
+      return res.status(400).json({ message: 'Ya estás registrado para este acceso' });
+    }
+
+    // Generate QR code for the new invited user
+    const qrCode = await generateAccessInvitationQR(
+      access.accessCode,
+      name,
+      email,
+      access.eventName
+    );
+
+    const newInvitedUser = {
+      name,
+      email: email || '',
+      phone: phone || '',
+      company: company || '',
+      qrCode,
+      attendanceStatus: 'pendiente',
+      addedViaPreRegistration: true
+    };
+
+    access.invitedUsers.push(newInvitedUser);
+    await access.save();
+
+    // Send email with QR code if email provided
+    if (email) {
+      try {
+        const companyData = await Company.findOne({ companyId: access.companyId });
+        
+        const qrData = {
+          type: 'access-invitation',
+          accessId: access._id.toString(),
+          accessCode: access.accessCode,
+          guestName: name,
+          guestEmail: email || '',
+          eventName: access.eventName,
+          eventDate: access.startDate
+        };
+
+        await emailService.sendAccessInvitationEmail({
+          invitedEmail: email,
+          invitedName: name,
+          creatorName: access.creatorId ? `${access.creatorId.firstName} ${access.creatorId.lastName}` : 'Sistema',
+          accessTitle: access.eventName,
+          accessType: access.type,
+          startDate: access.startDate,
+          endDate: access.endDate,
+          startTime: formatTime(access.startDate),
+          endTime: formatTime(access.endDate),
+          location: access.location,
+          accessCode: access.accessCode,
+          qrData: JSON.stringify(qrData),
+          eventImage: access.eventImage,
+          additionalInfo: access.additionalInfo,
+          hostName: access.creatorId ? `${access.creatorId.firstName} ${access.creatorId.lastName}` : 'Anfitrión',
+          companyName: companyData?.name || 'Empresa',
+          companyLogo: companyData?.logo,
+          companyId: companyData?._id,
+          accessId: access._id.toString() // ✅ AGREGAR accessId
+        });
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError);
+        // Don't fail the registration if email fails
+      }
+    }
+
+    res.status(201).json({
+      message: 'Registro exitoso',
+      qrCode,
+      invitedUser: newInvitedUser
+    });
+  } catch (error) {
+    console.error('Pre-registration error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// ==================== SERVE EVENT IMAGE (URL TEMPORAL) ====================
+router.get('/event-image/:accessId/:token', async (req, res) => {
+  try {
+    const { accessId, token } = req.params;
+
+    // Verificar el token JWT
+    const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
+    
+    // Validar que el token es del tipo correcto
+    if (decoded.type !== 'event-image') {
+      return res.status(403).json({ message: 'Token inválido' });
+    }
+
+    // Validar que el accessId coincide
+    if (decoded.accessId !== accessId) {
+      return res.status(403).json({ message: 'AccessId no coincide' });
+    }
+
+    // Buscar el acceso
+    const access = await Access.findById(accessId);
+    if (!access) {
+      return res.status(404).json({ message: 'Acceso no encontrado' });
+    }
+
+    // Verificar que existe imagen de evento
+    if (!access.eventImage || !access.eventImage.startsWith('data:image')) {
+      return res.status(404).json({ message: 'Imagen de evento no encontrada' });
+    }
+
+    // Convertir Base64 a buffer
+    const base64Data = access.eventImage.replace(/^data:image\/\w+;base64,/, '');
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+
+    // Determinar el tipo de imagen
+    const imageType = access.eventImage.match(/data:image\/(\w+);/)?.[1] || 'jpeg';
+    
+    // Establecer headers de caché
+    res.set({
+      'Content-Type': `image/${imageType}`,
+      'Cache-Control': 'public, max-age=604800', // 7 días
+      'ETag': `"${accessId}-${access.updatedAt?.getTime() || Date.now()}"`
+    });
+
+    console.log(`✅ [EVENT IMAGE] Imagen servida para acceso ${accessId}. Tamaño: ${imageBuffer.length} bytes`);
+    res.send(imageBuffer);
+  } catch (error) {
+    console.error('❌ [EVENT IMAGE] Error:', error.message);
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token inválido o expirado' });
+    }
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

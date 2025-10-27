@@ -7,8 +7,9 @@ require('dotenv').config();
 // Import database initialization
 const { initializeDatabase } = require('./init-db');
 
-// Import scheduler
+// Import schedulers
 const { startScheduler } = require('./jobs/accessScheduler');
+const { scheduleAccessFinalization } = require('./jobs/accessFinalizationScheduler');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -136,6 +137,7 @@ if (!process.env.VERCEL) {
     
     // Start scheduler jobs (only in local development, not in Vercel)
     startScheduler();
+    scheduleAccessFinalization();
   });
 }
 

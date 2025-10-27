@@ -203,6 +203,10 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
 
     // Si hay un acceso pendiente de QR escaneado, registrar el check-in y crear visita con auto check-in
     const pendingAccess = (window as any).__pendingAccessCheckIn;
+    
+    // Crear objeto de datos con los flags necesarios
+    const visitDataToSubmit = { ...formData };
+    
     if (pendingAccess) {
       try {
         // Hacer check-in en el acceso
@@ -225,8 +229,10 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
         }
         
         // Marcar que esta visita viene de un acceso/evento para auto check-in
-        (formData as any).fromAccessEvent = true;
-        (formData as any).accessCode = pendingAccess.accessCode;
+        (visitDataToSubmit as any).fromAccessEvent = true;
+        (visitDataToSubmit as any).accessCode = pendingAccess.accessCode;
+        
+        console.log('🎫 Visita marcada como fromAccessEvent con código:', pendingAccess.accessCode);
         
         // Limpiar el acceso pendiente
         delete (window as any).__pendingAccessCheckIn;
@@ -236,7 +242,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
       }
     }
 
-    onSubmit(formData);
+    onSubmit(visitDataToSubmit);
     onClose();
   };
 

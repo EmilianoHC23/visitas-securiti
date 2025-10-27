@@ -1126,8 +1126,13 @@ export const VisitsPage: React.FC = () => {
         try {
             const scheduledDate = new Date().toISOString();
             
+            console.log('📝 Datos de visita recibidos:', visitData);
+            console.log('🔍 fromAccessEvent:', visitData.fromAccessEvent);
+            
             // Si viene de un acceso/evento, crear con auto check-in
             if (visitData.fromAccessEvent) {
+                console.log('🎫 Procesando visita de ACCESO/EVENTO - auto check-in habilitado');
+                
                 const newVisit = await api.createVisit({
                     visitorName: visitData.visitorName,
                     visitorCompany: visitData.visitorCompany,
@@ -1141,10 +1146,14 @@ export const VisitsPage: React.FC = () => {
                     accessCode: visitData.accessCode
                 });
                 
+                console.log('✅ Visita creada:', newVisit._id);
+                
                 // Hacer check-in inmediatamente
                 await api.checkInVisit(newVisit._id);
-                console.log('✅ Visita de acceso/evento creada y check-in realizado automáticamente');
+                console.log('✅ Check-in automático completado - visita debe estar en tabla DENTRO');
             } else {
+                console.log('👤 Procesando visita REGULAR - flujo normal');
+                
                 // Flujo normal para visitas regulares
                 await api.createVisit({
                     visitorName: visitData.visitorName,

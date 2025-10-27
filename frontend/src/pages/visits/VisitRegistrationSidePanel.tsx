@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { User } from '../../types';
 import { X, Camera, QrCode, User as UserIcon } from 'lucide-react';
 import jsQR from 'jsqr';
+import * as api from '../../services/api';
 
 interface VisitRegistrationSidePanelProps {
   isOpen: boolean;
@@ -216,26 +217,14 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
       console.log('🎫 Visita marcada como fromAccessEvent con código:', pendingAccess.accessCode);
       
       try {
-        // Hacer check-in en el acceso (construir URL evitando /api duplicado)
-        const rawBase = (import.meta.env.VITE_API_URL as string) || 'http://localhost:3001';
-        const baseNoTrailingApi = rawBase.replace(/\/?api\/?$/, '');
-        const response = await fetch(`${baseNoTrailingApi}/api/public/access-check-in`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            accessCode: pendingAccess.accessCode,
-            guestEmail: pendingAccess.guestEmail || formData.visitorEmail,
-            guestName: pendingAccess.guestName || formData.visitorName
-          })
+        // Hacer check-in en el acceso usando el servicio API
+        await api.publicAccessCheckIn({
+          accessCode: pendingAccess.accessCode,
+          guestEmail: pendingAccess.guestEmail || formData.visitorEmail,
+          guestName: pendingAccess.guestName || formData.visitorName
         });
-
-        if (response.ok) {
-          console.log('✅ Asistencia actualizada en el acceso');
-        } else {
-          console.warn('⚠️ No se pudo actualizar la asistencia en el acceso');
-        }
+        
+        console.log('✅ Asistencia actualizada en el acceso');
         
         // Limpiar el acceso pendiente
         delete (window as any).__pendingAccessCheckIn;

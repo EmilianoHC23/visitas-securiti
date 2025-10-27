@@ -536,3 +536,16 @@ export const testSMTPConfig = async () => {
 export const getVisitDetails = async (visitId: string): Promise<{ visit: Visit; events: any[] }> => {
   return apiRequest(`/visits/${visitId}`);
 };
+
+// Public access check-in
+export const publicAccessCheckIn = async (data: {
+  accessCode: string;
+  guestEmail?: string;
+  guestPhone?: string;
+  guestName: string;
+}) => {
+  return apiRequest('/public/access-check-in', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};

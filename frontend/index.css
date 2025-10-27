@@ -9,3 +9,14 @@ body {
   background-color: #232a36 !important;
   color: #fff !important;
 }
+
+/* Utility: remove focus ring for specific elements when desired */
+.no-focus-ring,
+.no-focus-ring:focus,
+.no-focus-ring:focus-visible,
+.no-focus-ring:active {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}

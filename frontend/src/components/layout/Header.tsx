@@ -48,11 +48,35 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                 <div className="d-flex align-items-center">
                     {/* Botón hamburguesa a la izquierda */}
                     <button
-                        className="btn btn-outline-primary me-2 d-flex align-items-center justify-content-center"
+                        className="btn btn-outline-primary me-2 d-flex align-items-center justify-content-center no-focus-ring"
                         onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                         aria-label={sidebarCollapsed ? 'Mostrar menú' : 'Ocultar menú'}
                         onMouseEnter={() => setBtnHover(true)}
                         onMouseLeave={() => setBtnHover(false)}
+                        onFocus={(e) => {
+                            // remove any browser or framework focus ring and keep hover state
+                            setBtnHover(true);
+                            const t = e.currentTarget as HTMLButtonElement;
+                            try {
+                                t.style.outline = 'none';
+                                t.style.boxShadow = 'none';
+                                t.style.border = 'none';
+                            } catch (err) {
+                                // ignore
+                            }
+                        }}
+                        onBlur={(e) => {
+                            setBtnHover(false);
+                            const t = e.currentTarget as HTMLButtonElement;
+                            try {
+                                // clear styles set on focus so React's style object applies again
+                                t.style.outline = '';
+                                t.style.boxShadow = '';
+                                t.style.border = '';
+                            } catch (err) {
+                                // ignore
+                            }
+                        }}
                         style={{
                             width: 40,
                             height: 40,
@@ -63,12 +87,13 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                             justifyContent: 'center',
                             lineHeight: 0,
                             boxSizing: 'border-box',
-                            transition: 'background 180ms ease, border-color 180ms ease, box-shadow 180ms ease',
+                            transition: 'background 180ms ease, border-color 180ms ease',
                             /* hover: black -> gray gradient */
                             background: btnHover ? 'linear-gradient(180deg, #000000 0%, #6b7280 100%)' : 'transparent',
-                            borderColor: btnHover ? '#000000' : undefined,
+                            border: 'none',
                             outline: 'none',
-                            boxShadow: btnHover ? '0 0 0 6px rgba(0,0,0,0.12)' : 'none'
+                            boxShadow: 'none',
+                            WebkitTapHighlightColor: 'transparent'
                         }}
                     >
                         {/* Animated hamburger -> X: cross-fade between SVG and react-icon X for a crisper X */}

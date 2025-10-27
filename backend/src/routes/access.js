@@ -173,7 +173,8 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
           accessCode: access.accessCode,
           invitedCount: access.invitedUsers.length,
           companyName: company.name,
-          companyLogo: company.logo
+          companyLogo: company.logo,
+          companyId: company._id.toString() // ✅ AGREGAR companyId
         });
       } catch (emailError) {
         console.error('Error sending access created email:', emailError);

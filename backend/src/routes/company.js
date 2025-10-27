@@ -247,8 +247,8 @@ router.get('/logo/:companyId/:token', async (req, res) => {
       return res.status(403).json({ message: 'Token no corresponde a esta empresa' });
     }
     
-    // Buscar la empresa en la base de datos
-    const company = await Company.findOne({ companyId: companyId });
+    // Buscar la empresa en la base de datos por _id (ObjectId de MongoDB)
+    const company = await Company.findById(companyId);
     
     if (!company) {
       console.error('❌ [COMPANY LOGO] Empresa no encontrada:', companyId);

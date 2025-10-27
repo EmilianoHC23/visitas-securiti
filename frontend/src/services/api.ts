@@ -133,6 +133,8 @@ export const createVisit = async (visitData: {
   visitorPhone?: string;
   visitorPhoto?: string;
   qrToken?: string;
+  visitType?: 'spontaneous' | 'pre-registered' | 'access-code';
+  accessCode?: string;
 }): Promise<Visit> => {
   return apiRequest('/visits', {
     method: 'POST',

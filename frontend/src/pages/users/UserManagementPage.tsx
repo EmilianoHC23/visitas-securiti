@@ -33,21 +33,27 @@ const UserPreviewModal: React.FC<{
                         <div className="flex flex-col md:flex-row gap-6 items-start">
                             <div className="flex-shrink-0">
                                 <span className="w-28 h-28 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden border-4 border-blue-200">
-                                    {user.profileImage && user.profileImage.trim() !== '' ? (
-                                        <img
-                                            src={user.profileImage}
-                                            alt={`${user.firstName} ${user.lastName}`}
-                                            className="w-28 h-28 object-cover"
-                                            onError={e => {
-                                                const target = e.target as HTMLImageElement;
-                                                target.style.display = 'none';
-                                                const fallback = target.nextElementSibling as HTMLElement;
-                                                if (fallback) fallback.style.display = 'inline';
-                                            }}
-                                        />
-                                    ) : (
-                                        <FaUser className="w-16 h-16 text-blue-300" />
-                                    )}
+                                    {/* Always render both image and fallback. Control visibility via inline styles and handlers. */}
+                                    <img
+                                        src={user.profileImage || ''}
+                                        alt={`${user.firstName} ${user.lastName}`}
+                                        className="w-28 h-28 object-cover"
+                                        onError={e => {
+                                            const img = e.target as HTMLImageElement;
+                                            img.style.display = 'none';
+                                            const fallback = img.nextElementSibling as HTMLElement;
+                                            if (fallback) fallback.style.display = 'inline-flex';
+                                        }}
+                                        onLoad={e => {
+                                            const img = e.target as HTMLImageElement;
+                                            // If loaded successfully, ensure img is visible and fallback hidden
+                                            img.style.display = 'inline';
+                                            const fallback = img.nextElementSibling as HTMLElement;
+                                            if (fallback) fallback.style.display = 'none';
+                                        }}
+                                        style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'inline' : 'none' }}
+                                    />
+                                    <FaUser className="w-16 h-16 text-blue-300" style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'none' : 'inline-flex' }} />
                                 </span>
                             </div>
 
@@ -686,30 +692,25 @@ export const UserManagementPage: React.FC = () => {
                                 >
                                     <td className="px-6 py-4 align-middle transition-colors group-hover:bg-blue-100">
                                         <span className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-sm ring-1 ring-gray-200">
-                                            {user.profileImage && user.profileImage.trim() !== '' ? (
-                                                <img
-                                                    src={user.profileImage}
-                                                    alt={`${user.firstName} ${user.lastName}`}
-                                                    className="w-10 h-10 object-cover"
-                                                    onError={e => {
-                                                        const target = e.target as HTMLImageElement;
-                                                        target.style.display = 'none';
-                                                        const fallback = target.nextElementSibling as HTMLElement;
-                                                        if (fallback) fallback.style.display = 'inline';
-                                                    }}
-                                                />
-                                            ) : null}
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="currentColor"
-                                                viewBox="0 0 24 24"
-                                                strokeWidth="1.5"
-                                                stroke="currentColor"
-                                                className="w-7 h-7 text-gray-400"
-                                                style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'none' : 'inline' }}
-                                            >
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                                            </svg>
+                                            <img
+                                                src={user.profileImage || ''}
+                                                alt={`${user.firstName} ${user.lastName}`}
+                                                className="w-10 h-10 object-cover"
+                                                onError={e => {
+                                                    const img = e.target as HTMLImageElement;
+                                                    img.style.display = 'none';
+                                                    const fallback = img.nextElementSibling as HTMLElement;
+                                                    if (fallback) fallback.style.display = 'inline-flex';
+                                                }}
+                                                onLoad={e => {
+                                                    const img = e.target as HTMLImageElement;
+                                                    img.style.display = 'inline';
+                                                    const fallback = img.nextElementSibling as HTMLElement;
+                                                    if (fallback) fallback.style.display = 'none';
+                                                }}
+                                                style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'inline' : 'none' }}
+                                            />
+                                            <FaUser className="w-7 h-7 text-gray-400" style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'none' : 'inline-flex' }} />
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap transition-colors group-hover:bg-blue-100">

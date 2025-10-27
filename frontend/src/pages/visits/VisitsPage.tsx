@@ -1143,7 +1143,8 @@ export const VisitsPage: React.FC = () => {
                     visitorEmail: visitData.visitorEmail,
                     visitorPhoto: visitData.visitorPhoto || undefined,
                     visitType: 'access-code',
-                    accessCode: visitData.accessCode
+                    accessCode: visitData.accessCode,
+                    fromAccessEvent: true
                 });
                 
                 console.log('✅ Visita creada:', newVisit._id);

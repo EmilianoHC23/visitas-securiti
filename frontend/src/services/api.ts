@@ -135,6 +135,7 @@ export const createVisit = async (visitData: {
   qrToken?: string;
   visitType?: 'spontaneous' | 'pre-registered' | 'access-code';
   accessCode?: string;
+  fromAccessEvent?: boolean;
 }): Promise<Visit> => {
   return apiRequest('/visits', {
     method: 'POST',

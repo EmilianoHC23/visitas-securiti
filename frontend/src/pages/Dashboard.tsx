@@ -103,6 +103,7 @@ export const Dashboard: React.FC = () => {
         totalHosts: 0 
     });
     const [recentVisits, setRecentVisits] = useState<Visit[]>([]);
+    const [frequentCompanies, setFrequentCompanies] = useState<Array<{ company: string; count: number }>>([]);
     const [analyticsData, setAnalyticsData] = useState<any[]>([]);
 
     useEffect(() => {
@@ -111,14 +112,29 @@ export const Dashboard: React.FC = () => {
                 setIsLoading(true);
                 setError(null);
                 
-                const [statsData, recentVisitsData, analytics] = await Promise.all([
+                const [statsData, recentVisitsData, largeRecentVisitsData, analytics] = await Promise.all([
                     api.getDashboardStats(),
                     api.getRecentVisits(5),
+                    api.getRecentVisits(200), // fetch more to compute frequent companies
                     api.getAnalytics('week')
                 ]);
                 
                 if (statsData) setStats(statsData);
                 if (recentVisitsData) setRecentVisits(recentVisitsData);
+                // Build frequent companies list from the larger recent visits sample
+                try {
+                    const visitsForCompanies = (largeRecentVisitsData && largeRecentVisitsData.length > 0) ? largeRecentVisitsData : (recentVisitsData || []);
+                    const map = new Map<string, number>();
+                    visitsForCompanies.forEach((v: Visit) => {
+                        const name = (v.visitorCompany || 'Sin empresa').trim() || 'Sin empresa';
+                        map.set(name, (map.get(name) || 0) + 1);
+                    });
+                    const arr = Array.from(map.entries()).map(([company, count]) => ({ company, count }));
+                    arr.sort((a, b) => b.count - a.count);
+                    setFrequentCompanies(arr.slice(0, 8));
+                } catch (err) {
+                    console.warn('Could not compute frequent companies:', err);
+                }
                 if (analytics) {
                     // Transform analytics data for chart
                     const chartData = analytics.map((item: any) => ({
@@ -323,19 +339,50 @@ export const Dashboard: React.FC = () => {
                 <div className="col-12 col-lg-4">
                     <div className="card shadow-sm border-0 h-100">
                         <div className="card-body">
-                            <h5 className="card-title fw-semibold mb-3">Actividad Reciente</h5>
-                            {recentVisits.length > 0 ? (
-                                <ul className="list-unstyled mb-0">
-                                    {recentVisits.map(visit => (
-                                        <RecentActivityItem key={visit._id} visit={visit} />
-                                    ))}
-                                </ul>
-                            ) : (
-                                <div className="text-center py-5">
-                                    <div className="text-muted mb-2">No hay actividad reciente</div>
-                                    <div className="small text-secondary">Las visitas aparecerán aquí cuando se registren</div>
-                                </div>
-                            )}
+                            <div className="mb-4">
+                                <h5 className="card-title fw-semibold mb-3">Empresas frecuentes</h5>
+                                {frequentCompanies.length > 0 ? (
+                                    (() => {
+                                        const total = frequentCompanies.reduce((s, c) => s + c.count, 0) || 1;
+                                        return (
+                                            <div className="space-y-3">
+                                                {frequentCompanies.map(fc => {
+                                                    const pct = Math.round((fc.count / total) * 100);
+                                                    return (
+                                                        <div key={fc.company} className="">
+                                                            <div className="d-flex justify-content-between items-center mb-1">
+                                                                <div className="text-sm text-gray-700 font-medium truncate" style={{maxWidth: '65%'}}>{fc.company}</div>
+                                                                <div className="text-sm text-gray-600">{fc.count} · {pct}%</div>
+                                                            </div>
+                                                            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                                                <div className="h-2 bg-gradient-to-r from-blue-500 to-blue-700" style={{ width: `${pct}%` }} />
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        );
+                                    })()
+                                ) : (
+                                    <div className="text-center py-3 text-sm text-muted">No hay datos de empresas frecuentes</div>
+                                )}
+                            </div>
+
+                            <div>
+                                <h5 className="card-title fw-semibold mb-3">Actividad Reciente</h5>
+                                {recentVisits.length > 0 ? (
+                                    <ul className="list-unstyled mb-0">
+                                        {recentVisits.map(visit => (
+                                            <RecentActivityItem key={visit._id} visit={visit} />
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <div className="text-center py-5">
+                                        <div className="text-muted mb-2">No hay actividad reciente</div>
+                                        <div className="small text-secondary">Las visitas aparecerán aquí cuando se registren</div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

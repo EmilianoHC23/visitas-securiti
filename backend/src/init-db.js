@@ -10,13 +10,14 @@ const initializeDatabase = async () => {
     if (alreadyInitialized) {
       return;
     }
-    // Ensure we have an active connection (1 = connected)
-    if (mongoose.connection.readyState !== 1) {
-      console.warn('⚠️ initializeDatabase called without active mongoose connection. Skipping init.');
+    // Ensure we have an active connection (1 = connected) AND db object is available
+    if (mongoose.connection.readyState !== 1 || !mongoose.connection.db) {
+      // En entorno serverless, db puede no estar disponible inmediatamente después de conectar
+      // Simplemente retornamos sin warning - se ejecutará en la siguiente petición
       return;
     }
-    const dbName = mongoose.connection.db && mongoose.connection.db.databaseName;
-    console.log('✅ Mongo connection ready. DB:', dbName || 'unknown');
+    const dbName = mongoose.connection.db.databaseName;
+    console.log('✅ Mongo connection ready. DB:', dbName);
 
     // Check if users already exist
     const existingUsers = await User.countDocuments();

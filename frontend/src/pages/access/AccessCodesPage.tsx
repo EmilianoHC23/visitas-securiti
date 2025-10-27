@@ -399,7 +399,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
     eventImage: '',
     additionalInfo: '',
     sendEmail: true,
-    enablePreRegistration: false,
+    enablePreRegistration: true,
     hostId: user?._id || '',
   });
   const [invitedUsers, setInvitedUsers] = useState<Array<{

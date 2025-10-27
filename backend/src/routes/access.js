@@ -455,7 +455,8 @@ router.delete('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
           endTime: formatTime(access.endDate),
           location: access.location,
           companyName: company.name,
-          companyLogo: company.logo
+          companyLogo: company.logo,
+          companyId: company._id.toString()
         });
       } catch (emailError) {
         console.error('Error sending cancellation email to creator:', emailError);
@@ -476,7 +477,8 @@ router.delete('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
               endTime: formatTime(access.endDate),
               location: access.location,
               companyName: company.name,
-              companyLogo: company.logo
+              companyLogo: company.logo,
+              companyId: company._id.toString()
             });
           } catch (emailError) {
             console.error(`Error sending cancellation email to ${guest.email}:`, emailError);

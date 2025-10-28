@@ -240,7 +240,10 @@ router.post('/', auth, async (req, res) => {
     }
 
     // Create approval token and send email to host if not auto-approved
-    if (!autoApproval) {
+    // EXCEPTO si la visita proviene de un acceso/evento (ya está pre-aprobada)
+    const isAccessEvent = req.body.visitType === 'access-code' || req.body.fromAccessEvent === true;
+    
+    if (!autoApproval && !isAccessEvent) {
       const approval = Approval.createWithExpiry(visit._id, host._id, 48);
       await approval.save();
 
@@ -262,6 +265,9 @@ router.post('/', auth, async (req, res) => {
         approveUrl,
         rejectUrl
       });
+      console.log('📧 Email de solicitud de aprobación enviado al host:', host.email);
+    } else if (isAccessEvent) {
+      console.log('🎟️ [ACCESS EVENT] Email de aprobación omitido - visita pre-aprobada de acceso/evento');
     }
 
     res.status(201).json(visit);

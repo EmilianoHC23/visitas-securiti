@@ -882,19 +882,31 @@ router.post('/checkin/:id', auth, async (req, res) => {
         const Access = require('../models/Access');
         const access = await Access.findOne({ accessCode: visit.accessCode });
         
+        console.log(`🔍 [CHECK-IN] Buscando acceso con código: ${visit.accessCode}`);
+        console.log(`🔍 [CHECK-IN] Email del visitante: ${visit.visitorEmail}`);
+        
         if (access) {
+          console.log(`✅ [CHECK-IN] Acceso encontrado: ${access.eventName}`);
+          console.log(`📋 [CHECK-IN] Total de invitados: ${access.invitedUsers.length}`);
+          
           // Buscar el invitado por email
-          const invitedUser = access.invitedUsers.find(user => 
-            user.email === visit.visitorEmail
-          );
+          const invitedUser = access.invitedUsers.find(user => {
+            console.log(`  🔎 Comparando: "${user.email}" === "${visit.visitorEmail}"`);
+            return user.email === visit.visitorEmail;
+          });
           
           if (invitedUser) {
+            console.log(`✅ [CHECK-IN] Invitado encontrado: ${invitedUser.name}`);
+            console.log(`📊 [CHECK-IN] Estado anterior: ${invitedUser.attendanceStatus}`);
+            
             invitedUser.attendanceStatus = 'asistio';
             invitedUser.checkInTime = visit.checkInTime;
             await access.save();
+            
             console.log(`✅ [CHECK-IN] Asistencia actualizada a "asistio" para ${visit.visitorName} en acceso ${access.eventName}`);
           } else {
             console.warn(`⚠️ [CHECK-IN] No se encontró invitado con email ${visit.visitorEmail} en el acceso`);
+            console.warn(`📋 [CHECK-IN] Emails en la lista:`, access.invitedUsers.map(u => u.email));
           }
         } else {
           console.warn(`⚠️ [CHECK-IN] No se encontró acceso con código ${visit.accessCode}`);

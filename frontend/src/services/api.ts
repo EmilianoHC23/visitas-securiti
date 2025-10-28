@@ -26,13 +26,17 @@ export const deleteUser = async (userId: string): Promise<void> => {
 // CONFIGURACIÓN DE LA API
 // =================================================================
 
-const isDevelopment = import.meta.env.VITE_ENVIRONMENT === 'development';
-const BASE_URL = isDevelopment 
-  ? import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
-  : '/api'; // Usar ruta relativa en producción
+// Detectar entorno basado en hostname (más confiable que variables de entorno)
+const isLocalhost = typeof window !== 'undefined' && 
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+const BASE_URL = isLocalhost 
+  ? (import.meta.env.VITE_API_URL || 'http://localhost:3001/api')
+  : '/api'; // En producción, usar ruta relativa
 
 console.log('🌐 API Base URL:', BASE_URL);
-console.log('🌍 Environment:', import.meta.env.VITE_ENVIRONMENT || 'not set');
+console.log('🌍 Environment:', isLocalhost ? 'localhost' : 'production');
+console.log('🔗 Current hostname:', typeof window !== 'undefined' ? window.location.hostname : 'SSR');
 
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => { // eslint-disable-line no-undef
   const token = localStorage.getItem('securitiToken');

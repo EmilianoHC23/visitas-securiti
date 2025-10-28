@@ -33,7 +33,8 @@ export const PublicVisitRegistrationPage: React.FC = () => {
 
   const loadHosts = async () => {
     try {
-      const data = await api.getHosts();
+      // Usar endpoint público que ahora incluye hosts y admins
+      const data = await api.getHostsPublic();
       setHosts(data);
     } catch (err) {
       console.error('Error loading hosts:', err);

@@ -132,9 +132,9 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ message: 'Todos los campos requeridos deben ser proporcionados' });
     }
 
-    // Verify host exists and is active
+    // Verify host exists and is active (allow host or admin)
     const host = await User.findById(hostId);
-    if (!host || !host.isActive || host.role !== 'host') {
+    if (!host || !host.isActive || !['host', 'admin'].includes(host.role)) {
       console.log('❌ Invalid host:', { hostId, found: !!host, active: host?.isActive, role: host?.role });
       return res.status(400).json({ message: 'Host no válido' });
     }
@@ -287,9 +287,9 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Todos los campos requeridos deben ser proporcionados' });
     }
 
-    // Verify host exists and is active
+    // Verify host exists and is active (allow host or admin)
     const host = await User.findById(hostId);
-    if (!host || !host.isActive || host.role !== 'host') {
+    if (!host || !host.isActive || !['host', 'admin'].includes(host.role)) {
       return res.status(400).json({ message: 'Host no válido' });
     }
 

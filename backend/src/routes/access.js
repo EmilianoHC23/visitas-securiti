@@ -688,7 +688,7 @@ router.get('/:accessId/public-info', async (req, res) => {
     // Ensure up-to-date status for public
     await finalizeExpiredAccesses();
     const access = await Access.findById(req.params.accessId)
-      .select('eventName type startDate endDate location eventImage additionalInfo status settings')
+      .select('eventName type startDate endDate location eventImage additionalInfo status settings companyId')
       .lean();
 
     if (!access) {
@@ -703,7 +703,24 @@ router.get('/:accessId/public-info', async (req, res) => {
       return res.status(400).json({ message: 'Este acceso ya no está activo' });
     }
 
-    res.json(access);
+    // Adjuntar datos públicos de la empresa (nombre y logo) si existen
+    let company = null;
+    try {
+      if (access.companyId) {
+        const Company = require('../models/Company');
+        const c = await Company.findOne({ companyId: access.companyId }).select('name logo').lean();
+        if (c) {
+          company = { name: c.name, logo: c.logo || null };
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ Error fetching company for public-info:', e?.message);
+    }
+
+    res.json({
+      ...access,
+      company
+    });
   } catch (error) {
     console.error('Get public access info error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
@@ -715,10 +732,11 @@ router.post('/:accessId/pre-register', async (req, res) => {
   try {
     // Ensure up-to-date status before allowing registration
     await finalizeExpiredAccesses();
-    const { name, email, phone, company } = req.body;
+    const { name, email, company } = req.body;
 
-    if (!name || (!email && !phone)) {
-      return res.status(400).json({ message: 'Nombre y email o teléfono son requeridos' });
+    // Validación estricta: nombre, email y empresa son obligatorios
+    if (!name || !email || !company) {
+      return res.status(400).json({ message: 'Nombre, email y empresa son requeridos' });
     }
 
     const access = await Access.findById(req.params.accessId).populate('companyId');
@@ -737,7 +755,7 @@ router.post('/:accessId/pre-register', async (req, res) => {
 
     // Check if user already registered
     const existingUser = access.invitedUsers.find(u => 
-      (email && u.email === email) || (phone && u.phone === phone)
+      (email && u.email === email)
     );
 
     if (existingUser) {
@@ -747,14 +765,14 @@ router.post('/:accessId/pre-register', async (req, res) => {
     // Generate QR code for the new invited user (usar firma correcta)
     const qrCode = await generateAccessInvitationQR(
       access,
-      { name, email: email || '', phone: phone || '', company: company || '' }
+      { name, email: email || '', phone: '', company: company || '' }
     );
 
     const newInvitedUser = {
       name,
-      email: email || '',
-      phone: phone || '',
-      company: company || '',
+  email: email || '',
+  phone: '',
+  company: company || '',
       qrCode,
       attendanceStatus: 'pendiente',
       addedViaPreRegistration: true

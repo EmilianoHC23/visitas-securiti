@@ -24,6 +24,10 @@ interface AccessInfo {
   settings: {
     enablePreRegistration?: boolean;
   };
+  company?: {
+    name: string;
+    logo?: string | null;
+  };
 }
 
 const PublicPreRegistrationPage: React.FC = () => {
@@ -36,7 +40,6 @@ const PublicPreRegistrationPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
     company: ''
   });
 
@@ -83,8 +86,9 @@ const PublicPreRegistrationPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || (!formData.email && !formData.phone)) {
-      setError('Por favor completa al menos nombre y email o teléfono');
+    // Requeridos: nombre, email y empresa
+    if (!formData.name || !formData.email || !formData.company) {
+      setError('Por favor completa nombre, email y empresa');
       return;
     }
 
@@ -103,7 +107,11 @@ const PublicPreRegistrationPage: React.FC = () => {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          company: formData.company
+        })
       });
 
       if (!response.ok) {
@@ -170,14 +178,26 @@ const PublicPreRegistrationPage: React.FC = () => {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
-          {access?.eventImage && (
-            <img 
-              src={access.eventImage} 
-              alt={access.eventName}
-              className="w-full h-48 object-cover"
+          {/* Company Logo at top */}
+          <div className="w-full flex items-center justify-center pt-6">
+            <img
+              src={access?.company?.logo || '/logo.png'}
+              alt={access?.company?.name || 'Logo'}
+              className="h-12 w-auto object-contain"
             />
-          )}
+          </div>
+
           <div className="p-6">
+            {/* Centered Event Image above title */}
+            {access?.eventImage && (
+              <div className="w-full flex items-center justify-center mb-4">
+                <img
+                  src={access.eventImage}
+                  alt={access.eventName}
+                  className="max-h-40 w-auto object-contain rounded-lg shadow-sm"
+                />
+              </div>
+            )}
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">{access?.eventName}</h1>
@@ -274,24 +294,12 @@ const PublicPreRegistrationPage: React.FC = () => {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Phone className="w-4 h-4 inline mr-2" />
-                Teléfono
-              </label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
-                placeholder="+52 123 456 7890"
-              />
-            </div>
+            {/* Phone removed */}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Building2 className="w-4 h-4 inline mr-2" />
-                Empresa (opcional)
+                Empresa
               </label>
               <input
                 type="text"
@@ -299,6 +307,7 @@ const PublicPreRegistrationPage: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
                 placeholder="Nombre de tu empresa"
+                required
               />
             </div>
 
@@ -323,7 +332,7 @@ const PublicPreRegistrationPage: React.FC = () => {
             </div>
 
             <p className="text-xs text-gray-500 text-center">
-              * Al menos debes proporcionar nombre y email o teléfono
+              * Debes proporcionar nombre, email y empresa
             </p>
           </form>
         </div>

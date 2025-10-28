@@ -7,16 +7,18 @@ const mongoose = require('mongoose');
 
 // Handler para Vercel Cron
 module.exports = async (req, res) => {
-  // Verificar que sea una request de Vercel Cron
+  // Verificar que sea una request de Vercel Cron o que incluya secreto personalizado
   const authHeader = req.headers.authorization;
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const isVercelCron = req.headers['x-vercel-cron'] === '1' || req.headers['x-vercel-signature'] || req.headers['x-vercel-deployment-url'];
+  const hasValidBearer = authHeader && authHeader === `Bearer ${process.env.CRON_SECRET}`;
+  if (!isVercelCron && !hasValidBearer) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {
     // Conectar a MongoDB si no está conectado
     if (mongoose.connection.readyState !== 1) {
-      const mongoURI = process.env.DATABASE_URL;
+      const mongoURI = process.env.DATABASE_URL || 'mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti';
       await mongoose.connect(mongoURI);
       console.log('✅ MongoDB connected for cron job');
     }

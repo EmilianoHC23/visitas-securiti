@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Mail, Phone, Building2, User, CheckCircle } from 'lucide-react';
 
-// Detectar entorno basado en hostname
-const isLocalhost = typeof window !== 'undefined' && 
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+// Detectar entorno de desarrollo de forma robusta (Vite) y soportar IPs locales
+const isLocalEnv = typeof window !== 'undefined'
+  ? (import.meta.env.DEV || /^(localhost|127\.0\.0\.1|192\.168\.|10\.)/.test(window.location.hostname))
+  : false;
 
-const API_BASE_URL = isLocalhost 
+const API_BASE_URL = isLocalEnv
   ? (import.meta.env.VITE_API_URL || 'http://localhost:3001')
   : ''; // En producción, usar rutas relativas
 
@@ -47,7 +48,7 @@ const PublicPreRegistrationPage: React.FC = () => {
     try {
       setLoading(true);
       // En producción, usar ruta relativa sin agregar API_BASE_URL
-      const url = isLocalhost 
+      const url = isLocalEnv 
         ? `${API_BASE_URL}/api/access/${accessId}/public-info`
         : `/api/access/${accessId}/public-info`;
       
@@ -92,7 +93,7 @@ const PublicPreRegistrationPage: React.FC = () => {
       setError('');
 
       // En producción, usar ruta relativa sin agregar API_BASE_URL
-      const url = isLocalhost 
+      const url = isLocalEnv 
         ? `${API_BASE_URL}/api/access/${accessId}/pre-register`
         : `/api/access/${accessId}/pre-register`;
       

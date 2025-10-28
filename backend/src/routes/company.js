@@ -3,6 +3,7 @@ const Company = require('../models/Company');
 const { auth, authorize } = require('../middleware/auth');
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 
 const router = express.Router();
 
@@ -247,8 +248,15 @@ router.get('/logo/:companyId/:token', async (req, res) => {
       return res.status(403).json({ message: 'Token no corresponde a esta empresa' });
     }
     
-    // Buscar la empresa en la base de datos por _id (ObjectId de MongoDB)
-    const company = await Company.findById(companyId);
+    // Buscar la empresa por _id (ObjectId) o por companyId (string tenant)
+    let company = null;
+    if (mongoose.Types.ObjectId.isValid(companyId)) {
+      company = await Company.findById(companyId);
+    }
+    if (!company) {
+      // Fallback: buscar por campo companyId (multi-tenant id)
+      company = await Company.findOne({ companyId });
+    }
     
     if (!company) {
       console.error('❌ [COMPANY LOGO] Empresa no encontrada:', companyId);

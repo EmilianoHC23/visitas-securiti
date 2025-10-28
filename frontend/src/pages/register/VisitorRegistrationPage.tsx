@@ -282,7 +282,7 @@ export const VisitorRegistrationPage: React.FC<VisitorRegistrationPageProps> = (
                                     required
                                 >
                                     <option value="" disabled>Selecciona un anfitrión</option>
-                                    {hosts.map(host => <option key={host._id} value={host._id}>{host.firstName} {host.lastName}</option>)}
+                                    {hosts.map(host => <option key={host._id} value={host._id}>{host.firstName} {host.lastName}{host.role === 'admin' ? ' (Administrador)' : ''}</option>)}
                                 </select>
                             </div>
                             

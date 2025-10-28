@@ -27,11 +27,11 @@ router.get('/', auth, authorize('admin'), async (req, res) => {
   }
 });
 
-// Get hosts (for visit assignment)
+// Get hosts (for visit assignment) - Incluye hosts y admins
 router.get('/hosts', auth, async (req, res) => {
   try {
     const hosts = await User.find({ 
-      role: 'host', 
+      role: { $in: ['host', 'admin'] }, 
       isActive: true 
     }).select('-password');
     res.json(hosts);
@@ -143,12 +143,12 @@ router.delete('/:id', auth, authorize('admin'), async (req, res) => {
   }
 });
 
-// Get hosts publicly (for visitor registration)
+// Get hosts publicly (for visitor registration) - Incluye hosts y admins
 router.get('/public/hosts', async (req, res) => {
   try {
-    // Get hosts from all companies for general registration
+    // Get hosts and admins from all companies for general registration
     const hosts = await User.find({ 
-      role: 'host', 
+      role: { $in: ['host', 'admin'] }, 
       isActive: true 
     }).select('firstName lastName email _id companyId');
     res.json(hosts);

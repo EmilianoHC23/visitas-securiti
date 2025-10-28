@@ -415,7 +415,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
         const hostUsers = response.filter((u: any) => u.role === 'host' || u.role === 'admin');
         setHosts(hostUsers.map((h: any) => ({
           id: h._id,
-          name: `${h.firstName} ${h.lastName}`,
+          name: `${h.firstName} ${h.lastName}${h.role === 'admin' ? ' (Administrador)' : ''}`,
           email: h.email
         })));
       } catch (error) {

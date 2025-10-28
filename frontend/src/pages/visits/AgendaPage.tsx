@@ -194,7 +194,7 @@ export const AgendaPage: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Anfitrión</label>
             <select value={hostId} onChange={e => setHostId(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 bg-white">
               <option value="">Todos</option>
-              {hosts.map(h => <option key={h._id} value={h._id}>{h.firstName} {h.lastName}</option>)}
+              {hosts.map(h => <option key={h._id} value={h._id}>{h.firstName} {h.lastName}{h.role === 'admin' ? ' (Administrador)' : ''}</option>)}
             </select>
           </div>
           <div className="md:col-span-2">

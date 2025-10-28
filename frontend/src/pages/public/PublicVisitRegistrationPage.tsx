@@ -250,7 +250,7 @@ export const PublicVisitRegistrationPage: React.FC = () => {
                 <option value="">Selecciona una persona</option>
                 {hosts.map(host => (
                   <option key={host._id} value={host._id}>
-                    {host.firstName} {host.lastName}
+                    {host.firstName} {host.lastName}{host.role === 'admin' ? ' (Administrador)' : ''}
                   </option>
                 ))}
               </select>

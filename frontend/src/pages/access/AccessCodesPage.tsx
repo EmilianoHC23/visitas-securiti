@@ -34,6 +34,7 @@ export const AccessCodesPage: React.FC = () => {
   const [filteredAccesses, setFilteredAccesses] = useState<Access[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDate, setSelectedDate] = useState<string>('');
   
   // Modales
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -67,8 +68,19 @@ export const AccessCodesPage: React.FC = () => {
       );
     }
 
+    // Filtrar por día seleccionado (intersección con el rango del acceso)
+    if (selectedDate) {
+      const dayStart = new Date(`${selectedDate}T00:00:00`);
+      const dayEnd = new Date(`${selectedDate}T23:59:59.999`);
+      filtered = filtered.filter(a => {
+        const start = new Date(a.startDate);
+        const end = new Date(a.endDate);
+        return start <= dayEnd && end >= dayStart;
+      });
+    }
+
     setFilteredAccesses(filtered);
-  }, [accesses, activeTab, searchTerm]);
+  }, [accesses, activeTab, searchTerm, selectedDate]);
 
   const loadAccesses = async () => {
     setLoading(true);
@@ -133,10 +145,19 @@ export const AccessCodesPage: React.FC = () => {
 
   return (
     <div className="p-6">
-      {/* Header */}
+      {/* Header mejorado */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Accesos / Eventos</h1>
-        <p className="text-gray-600">Gestiona los accesos y eventos de tu organización</p>
+        <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Accesos / Eventos</h1>
+              <p className="text-gray-600 text-sm md:text-base">Gestiona, filtra y consulta los accesos creados en tu organización</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -163,9 +184,9 @@ export const AccessCodesPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="relative flex-1 max-w-md">
+      {/* Toolbar con búsqueda y calendario */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
@@ -175,13 +196,34 @@ export const AccessCodesPage: React.FC = () => {
             className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
           />
         </div>
-        <button
-          onClick={handleCreate}
-          className="ml-4 flex items-center px-5 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-semibold shadow-md hover:shadow-lg"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Crear Acceso
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="pl-10 pr-10 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+            />
+            {selectedDate && (
+              <button
+                type="button"
+                onClick={() => setSelectedDate('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                title="Limpiar fecha"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={handleCreate}
+            className="flex items-center px-5 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-semibold shadow-md hover:shadow-lg"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Crear Acceso
+          </button>
+        </div>
       </div>
 
       {/* Tabla de accesos */}
@@ -197,7 +239,7 @@ export const AccessCodesPage: React.FC = () => {
           <p className="text-sm text-gray-500 mt-1">Los accesos que crees aparecerán aquí</p>
         </div>
       ) : (
-        <div className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -214,6 +256,11 @@ export const AccessCodesPage: React.FC = () => {
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                     Razón
                   </th>
+                  {activeTab === 'finalized' && (
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Estado
+                    </th>
+                  )}
                   <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
                     Acciones
                   </th>
@@ -225,7 +272,14 @@ export const AccessCodesPage: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div>
-                          <div className="text-sm font-semibold text-gray-900">{access.eventName}</div>
+                          <div className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                            {access.eventName}
+                            {access.status !== 'active' && (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${access.status === 'finalized' ? 'bg-gray-200 text-gray-800' : 'bg-red-100 text-red-700'}`}>
+                                {access.status === 'finalized' ? 'Finalizado' : 'Cancelado'}
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs text-gray-500 mt-1 flex items-center">
                             <Users className="w-3 h-3 mr-1" />
                             {access.invitedUsers.length} invitado{access.invitedUsers.length !== 1 ? 's' : ''}
@@ -268,6 +322,13 @@ export const AccessCodesPage: React.FC = () => {
                         {getTypeLabel(access.type)}
                       </span>
                     </td>
+                    {activeTab === 'finalized' && (
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${access.status === 'finalized' ? 'bg-gray-100 text-gray-700' : 'bg-red-100 text-red-700'}`}>
+                          {access.status === 'finalized' ? 'Finalizado' : 'Cancelado'}
+                        </span>
+                      </td>
+                    )}
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <button
@@ -1149,22 +1210,25 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Detalles del Acceso</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+      <div className="bg-white rounded-2xl border-2 border-gray-200 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="p-6 md:p-8">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Detalles del Acceso</h2>
+              <p className="text-sm text-gray-600 mt-1">Consulta información del evento y el estado de sus invitados</p>
+            </div>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <X className="w-6 h-6" />
             </button>
           </div>
 
           {/* Imagen */}
           {access.eventImage && (
-            <div className="mb-4 rounded-lg overflow-hidden">
+            <div className="mb-5 rounded-xl overflow-hidden ring-1 ring-gray-200">
               <img 
                 src={access.eventImage} 
                 alt={access.eventName}
-                className="w-full h-48 object-cover"
+                className="w-full h-52 object-cover"
               />
             </div>
           )}
@@ -1172,8 +1236,15 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose }) => {
           {/* Información general */}
           <div className="space-y-4 mb-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">{access.eventName}</h3>
-              <p className="text-sm text-gray-600">{getTypeLabel(access.type)}</p>
+              <h3 className="text-xl font-bold text-gray-900">{access.eventName}</h3>
+              <div className="mt-1 flex items-center gap-2">
+                <span className="text-sm text-gray-600">{getTypeLabel(access.type)}</span>
+                {access.status !== 'active' && (
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${access.status === 'finalized' ? 'bg-gray-100 text-gray-700' : 'bg-red-100 text-red-700'}`}>
+                    {access.status === 'finalized' ? 'Finalizado' : 'Cancelado'}
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -1208,7 +1279,7 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose }) => {
                     Deshabilitado ({access.status === 'cancelled' ? 'acceso cancelado' : 'acceso finalizado'})
                   </p>
                 ) : access.settings?.enablePreRegistration ? (
-                  <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-3 mt-1">
+                  <div className="flex items-center justify-between bg-gray-50 border-2 border-gray-200 rounded-xl p-3 mt-1">
                     <p className="text-sm text-gray-700">Habilitado</p>
                     <button
                       onClick={() => {
@@ -1216,7 +1287,7 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose }) => {
                         navigator.clipboard.writeText(link);
                         alert('Enlace copiado al portapapeles');
                       }}
-                      className="flex items-center px-3 py-1.5 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-100"
+                      className="flex items-center px-3 py-1.5 text-xs text-gray-900 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-100"
                     >
                       <Copy className="w-3.5 h-3.5 mr-2" />
                       Copiar enlace
@@ -1256,27 +1327,27 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose }) => {
               <p className="text-sm text-gray-600">No hay invitados registrados</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+                <table className="min-w-full divide-y divide-gray-200 border-2 border-gray-200 rounded-xl overflow-hidden">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                         Nombre
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                         Email
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                         Asistencia
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                         QR
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {access.invitedUsers.map((user, index) => (
-                      <tr key={index}>
-                        <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                           {user.name}
                         </td>
                         <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -1304,7 +1375,7 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose }) => {
                                 link.download = `QR-${user.name.replace(/\s/g, '_')}.png`;
                                 link.click();
                               }}
-                              className="flex items-center px-2 py-1 text-xs text-gray-900 bg-gray-100 rounded hover:bg-gray-200"
+                              className="flex items-center px-2.5 py-1.5 text-xs text-gray-900 bg-gray-100 rounded-lg border border-gray-200 hover:bg-gray-200"
                             >
                               <Download className="w-3 h-3 mr-1" />
                               Descargar

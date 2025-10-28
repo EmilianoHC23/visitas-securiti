@@ -7,7 +7,8 @@ require('dotenv').config();
 // Import database initialization
 const { initializeDatabase } = require('./init-db');
 
-// (Removed) schedulers - replaced by lazy finalization in routes
+// Access scheduler to send reminders/finalizations on time
+const { startScheduler } = require('./jobs/accessScheduler');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -138,8 +139,14 @@ if (!process.env.VERCEL) {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🌐 Server listening on http://localhost:${PORT}`);
-    
-    // Schedulers removed: lazy finalization runs on access routes
+    // Start access scheduler (disabled on Vercel)
+    try {
+      if (!process.env.VERCEL) {
+        startScheduler();
+      }
+    } catch (e) {
+      console.warn('⚠️ Scheduler failed to start:', e?.message);
+    }
   });
 }
 

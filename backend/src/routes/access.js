@@ -9,7 +9,7 @@ const { formatTime } = require('../utils/dateUtils');
 
 const router = express.Router();
 
-// ==================== LAZY FINALIZATION HELPER ====================
+// ==================== LAZY HELPERS: FINALIZATION + REMINDERS ====================
 // Marca como 'finalized' todos los accesos activos cuyo endDate ya pasó
 // y cambia invitados 'pendiente' -> 'no-asistio'. Idempotente.
 async function finalizeExpiredAccesses() {
@@ -35,11 +35,86 @@ async function finalizeExpiredAccesses() {
   }
 }
 
+// Envía recordatorios cuando da la hora/fecha de inicio del acceso/evento.
+// Envío único: usa access.reminderSent como candado. Idempotente.
+async function sendDueReminders() {
+  try {
+    const now = new Date();
+    const AccessModel = Access;
+    const due = await AccessModel.find({
+      status: 'active',
+      startDate: { $lte: now },
+      reminderSent: { $ne: true }
+    }).populate('creatorId', 'firstName lastName email');
+
+    if (!due.length) return;
+
+    for (const access of due) {
+      try {
+        // Respetar configuración de envío de correos
+        if (access?.settings?.sendAccessByEmail !== false) {
+          const company = await Company.findOne({ companyId: access.companyId });
+          const startTimeStr = formatTime(access.startDate);
+
+          // 3) Recordatorio al creador
+          if (access.creatorId?.email) {
+            try {
+              await emailService.sendAccessReminderToCreatorEmail({
+                creatorEmail: access.creatorId.email,
+                creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+                accessTitle: access.eventName,
+                startDate: access.startDate,
+                startTime: startTimeStr,
+                location: access.location,
+                companyName: company?.name || 'Empresa',
+                companyLogo: company?.logo
+              });
+            } catch (e) {
+              console.warn('⚠️ Error sending creator reminder:', e?.message);
+            }
+          }
+
+          // 4) Recordatorio a los invitados (solo a los que tienen email)
+          for (const guest of access.invitedUsers || []) {
+            if (!guest?.email) continue;
+            try {
+              await emailService.sendAccessReminderToGuestEmail({
+                invitedEmail: guest.email,
+                invitedName: guest.name,
+                hostName: `${access.creatorId?.firstName || ''} ${access.creatorId?.lastName || ''}`.trim(),
+                accessTitle: access.eventName,
+                startDate: access.startDate,
+                startTime: startTimeStr,
+                location: access.location,
+                additionalInfo: access.additionalInfo || '',
+                companyName: company?.name || 'Empresa',
+                companyLogo: company?.logo
+              });
+            } catch (e) {
+              console.warn('⚠️ Error sending guest reminder to', guest.email, e?.message);
+            }
+          }
+        }
+
+        // Marcar recordatorio como enviado para evitar duplicados
+        access.reminderSent = true;
+        await access.save();
+      } catch (inner) {
+        console.warn('⚠️ sendDueReminders inner error:', inner?.message);
+      }
+    }
+  } catch (e) {
+    console.warn('⚠️ sendDueReminders error:', e?.message);
+  }
+}
+
 // ==================== GET ALL ACCESS CODES ====================
 router.get('/', auth, authorize(['admin', 'reception', 'host']), async (req, res) => {
   try {
     // Lazy finalize before listing
     await finalizeExpiredAccesses();
+    // Lazy reminders at access start
+    await sendDueReminders();
     const { status } = req.query;
     const filter = { companyId: req.user.companyId };
 
@@ -69,6 +144,8 @@ router.get('/agenda', auth, authorize(['admin', 'reception', 'host']), async (re
   try {
     // Lazy finalize before agenda
     await finalizeExpiredAccesses();
+    // Lazy reminders at access start
+    await sendDueReminders();
     const { start, end } = req.query;
     
     const filter = { 
@@ -105,6 +182,8 @@ router.get('/:id', auth, authorize(['admin', 'reception', 'host']), async (req, 
   try {
     // Lazy finalize before fetch
     await finalizeExpiredAccesses();
+    // Lazy reminders at access start
+    await sendDueReminders();
     const access = await Access.findById(req.params.id)
       .populate('creatorId', 'firstName lastName email')
       .populate('notifyUsers', 'firstName lastName email');
@@ -610,16 +689,19 @@ router.post('/check-in/:accessCode', async (req, res) => {
       if (access.settings.sendAccessByEmail) {
         try {
           const company = await Company.findOne({ companyId: access.companyId });
-          await emailService.sendGuestCheckedInEmail({
-            creatorEmail: access.creatorId.email,
-            creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-            guestName: guest.name,
-            accessTitle: access.eventName,
-            checkInTime: guest.checkInTime,
-            location: access.location,
-            companyName: company.name,
-            companyLogo: company.logo
-          });
+          // No enviar "checked-in" si el invitado fue agregado vía pre-registro público
+          if (!guest.addedViaPreRegistration) {
+            await emailService.sendGuestCheckedInEmail({
+              creatorEmail: access.creatorId.email,
+              creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+              guestName: guest.name,
+              accessTitle: access.eventName,
+              checkInTime: guest.checkInTime,
+              location: access.location,
+              companyName: company.name,
+              companyLogo: company.logo
+            });
+          }
         } catch (emailError) {
           console.error('Error sending check-in notification:', emailError);
         }
@@ -739,7 +821,8 @@ router.post('/:accessId/pre-register', async (req, res) => {
       return res.status(400).json({ message: 'Nombre, email y empresa son requeridos' });
     }
 
-    const access = await Access.findById(req.params.accessId).populate('companyId');
+    const access = await Access.findById(req.params.accessId)
+      .populate('creatorId', 'firstName lastName email');
 
     if (!access) {
       return res.status(404).json({ message: 'Acceso no encontrado' });
@@ -817,6 +900,27 @@ router.post('/:accessId/pre-register', async (req, res) => {
           companyId: companyData?._id,
           accessId: access._id.toString() // ✅ AGREGAR accessId
         });
+
+        // Notificar al organizador únicamente si es pre-registro público
+        if (access?.settings?.sendAccessByEmail !== false && access?.creatorId?.email) {
+          try {
+            await emailService.sendGuestArrivedEmail({
+              visitId: access._id.toString(),
+              creatorEmail: access.creatorId.email,
+              creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+              guestName: name,
+              guestEmail: email,
+              guestCompany: company,
+              guestPhoto: '',
+              accessTitle: access.eventName,
+              companyName: companyData?.name || 'Empresa',
+              companyId: companyData?._id?.toString(),
+              companyLogo: companyData?.logo
+            });
+          } catch (notifyErr) {
+            console.warn('⚠️ Error sending guest arrived (pre-register) email:', notifyErr?.message);
+          }
+        }
       } catch (emailError) {
         console.error('Error sending confirmation email:', emailError);
         // Don't fail the registration if email fails

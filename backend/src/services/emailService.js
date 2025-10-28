@@ -1353,6 +1353,12 @@ class EmailService {
    * @param {Object} data - { creatorEmail, creatorName, accessTitle, accessType, startDate, endDate, startTime, endTime, location, invitedCount, companyName, companyLogo, additionalInfo }
    */
   async sendAccessCreatedEmail(data) {
+  // Fallback para creatorName
+  const creatorName = data.creatorName && typeof data.creatorName === 'string' && data.creatorName.trim() ? data.creatorName : 'Anfitrión';
+  // Fallback para hora de inicio/fin
+  const startTime = data.startTime && typeof data.startTime === 'string' && data.startTime.trim() ? data.startTime : '';
+  const endTime = data.endTime && typeof data.endTime === 'string' && data.endTime.trim() ? data.endTime : '';
+  const showTimeRange = startTime && endTime && startTime !== endTime;
     if (!this.isEnabled()) {
       console.log('Email service disabled - would send access created confirmation');
       return { success: false, disabled: true };
@@ -1384,6 +1390,20 @@ class EmailService {
         ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto; margin-bottom: 15px;" />`
         : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
 
+        // Generar URL temporal para la imagen del evento si existe y es Base64
+        let EVENT_IMAGE_URL;
+        if (data.eventImage && data.eventImage.startsWith('data:image')) {
+          if (data.accessId) {
+            EVENT_IMAGE_URL = this.generateEventImageUrl(data.accessId);
+          } else {
+            EVENT_IMAGE_URL = null;
+          }
+        } else if (data.eventImage) {
+          EVENT_IMAGE_URL = data.eventImage;
+        } else {
+          EVENT_IMAGE_URL = null;
+        }
+
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
         to: data.creatorEmail,
@@ -1405,9 +1425,9 @@ class EmailService {
                     <tr>
                       <td style="padding: 40px 40px 20px 40px; text-align: center; background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); border-radius: 12px 12px 0 0;">
                         ${logoHtml}
-                        <div style="background-color: #10b981; width: 60px; height: 60px; border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center;">
-                          <span style="color: white; font-size: 32px;">✓</span>
-                        </div>
+                          <div style="background-color: #10b981; width: 60px; height: 60px; border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center;">
+                            <span style="color: white; font-size: 32px;">✓</span>
+                          </div>
                       </td>
                     </tr>
 
@@ -1419,7 +1439,7 @@ class EmailService {
                         </h1>
                         
                         <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 10px 0 30px 0;">
-                          Hola <strong>${data.creatorName}</strong>,
+                          Hola <strong>${creatorName}</strong>,
                         </p>
 
                         <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
@@ -1441,11 +1461,11 @@ class EmailService {
                             </tr>
                             <tr>
                               <td style="padding: 8px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Fecha y hora de inicio:</td>
-                              <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">${formatFullDate(new Date(data.startDate))} ${data.startTime}</td>
+                              <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">${formatFullDate(new Date(data.startDate))}${startTime ? ` ${startTime}` : ''}</td>
                             </tr>
                             <tr>
                               <td style="padding: 8px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Fecha y hora de fin:</td>
-                              <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">${formatFullDate(new Date(data.endDate))} ${data.endTime}</td>
+                              <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">${formatFullDate(new Date(data.endDate))}${endTime ? ` ${endTime}` : ''}</td>
                             </tr>
                             ${data.location ? `
                             <tr>
@@ -1552,10 +1572,16 @@ class EmailService {
       EVENT_IMAGE_URL = null;
     }
 
+    // Fallback para hostName
+    const hostName = data.hostName && typeof data.hostName === 'string' && data.hostName.trim() ? data.hostName : (data.creatorName && typeof data.creatorName === 'string' && data.creatorName.trim() ? data.creatorName : 'Anfitrión');
+    // Fallback para hora de inicio/fin
+    const startTime = data.startTime && typeof data.startTime === 'string' && data.startTime.trim() ? data.startTime : '';
+    const endTime = data.endTime && typeof data.endTime === 'string' && data.endTime.trim() ? data.endTime : '';
+    const showTimeRange = startTime && endTime && startTime !== endTime;
+
     try {
       const primaryColor = '#1e3a8a';
       const accentColor = '#f97316';
-      
       const logoHtml = COMPANY_LOGO_URL 
         ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto; margin-bottom: 15px;" />`
         : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
@@ -1576,47 +1602,40 @@ class EmailService {
               <tr>
                 <td align="center" style="padding: 40px 0;">
                   <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                    
                     <!-- Header -->
                     <tr>
                       <td style="padding: 40px 40px 30px 40px; text-align: center; background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); border-radius: 12px 12px 0 0;">
                         ${logoHtml}
                       </td>
                     </tr>
-
                     <!-- Body -->
                     <tr>
                       <td style="padding: 40px;">
                         <h1 style="color: #1f2937; margin: 0 0 10px 0; font-size: 24px; font-weight: 600; text-align: center;">
                           Invitación a ${data.companyName}
                         </h1>
-                        
                         <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 20px 0;">
                           Hola <strong>${data.invitedName}</strong>,
                         </p>
-
                         <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
-                          <strong>${data.hostName}</strong> de ${data.companyName} tiene un acceso para <strong>${data.accessTitle}</strong>, el ${formatFullDate(new Date(data.startDate))}.
+                          <strong>${hostName}</strong> de ${data.companyName} tiene un acceso para <strong>${data.accessTitle}</strong>, el ${formatFullDate(new Date(data.startDate))}.
                         </p>
-
                         <!-- Detalles del acceso -->
                         <div style="background-color: #f9fafb; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
                           <h2 style="color: #1f2937; font-size: 16px; margin: 0 0 15px 0; font-weight: 600;">Detalles del acceso</h2>
-                          
                           ${EVENT_IMAGE_URL ? `
                           <div style="text-align: center; margin-bottom: 20px;">
                             <img src="${EVENT_IMAGE_URL}" alt="Imagen del evento" style="max-width: 200px; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" />
                           </div>
                           ` : ''}
-                          
                           <table style="width: 100%; border-collapse: collapse;">
                             <tr>
                               <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Fecha y hora de inicio:</td>
-                              <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${formatFullDate(new Date(data.startDate))} ${data.startTime}</td>
+                              <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${formatFullDate(new Date(data.startDate))}${startTime ? ` ${startTime}` : ''}</td>
                             </tr>
                             <tr>
                               <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Fecha y hora de fin:</td>
-                              <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${formatFullDate(new Date(data.endDate))} ${data.endTime}</td>
+                              <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${formatFullDate(new Date(data.endDate))}${endTime ? ` ${endTime}` : ''}</td>
                             </tr>
                             ${data.location ? `
                             <tr>
@@ -1626,7 +1645,7 @@ class EmailService {
                             ` : ''}
                             <tr>
                               <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Anfitrión:</td>
-                              <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${data.hostName}</td>
+                              <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${hostName}</td>
                             </tr>
                             ${data.additionalInfo ? `
                             <tr>
@@ -1636,10 +1655,6 @@ class EmailService {
                             ` : ''}
                           </table>
                         </div>
-
-                        <!-- Event Image (if provided) -->
-                        ${''}
-
                         <!-- QR Code -->
                         ${data.qrData ? `
                         <div style="background-color: #ffffff; border: 2px solid #e5e7eb; border-radius: 8px; padding: 25px; text-align: center; margin-bottom: 25px;">
@@ -1649,7 +1664,6 @@ class EmailService {
                           <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.qrData)}" alt="QR Code" style="width: 200px; height: 200px; display: block; margin: 0 auto;" />
                         </div>
                         ` : ''}
-
                         <!-- Al llegar -->
                         <div style="background-color: #fef3c7; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                           <p style="color: #92400e; margin: 0; font-size: 14px; line-height: 1.6; text-align: center;">
@@ -1657,15 +1671,13 @@ class EmailService {
                             Muestra este mensaje con una identificación y ¡Dirígete a las filas!
                           </p>
                         </div>
-
                         ${data.companyAddress || data.companyEmail ? `
                         <p style="color: #6b7280; font-size: 13px; line-height: 1.6; text-align: center; margin-top: 25px;">
-                          Si tienes alguna duda sobre este acceso, puedes contactar a ${data.hostName}${data.companyEmail ? ` al correo ${data.companyEmail}` : ''}.
+                          Si tienes alguna duda sobre este acceso, puedes contactar a ${hostName}${data.companyEmail ? ` al correo ${data.companyEmail}` : ''}.
                         </p>
                         ` : ''}
                       </td>
                     </tr>
-
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
@@ -1676,7 +1688,6 @@ class EmailService {
                         </p>
                       </td>
                     </tr>
-
                   </table>
                 </td>
               </tr>
@@ -1685,7 +1696,6 @@ class EmailService {
           </html>
         `
       };
-
       const result = await this.transporter.sendMail(mailOptions);
       console.log('Access invitation email sent to:', data.invitedEmail);
       return { success: true, messageId: result.messageId };
@@ -1759,7 +1769,7 @@ class EmailService {
                     <tr>
                       <td style="padding: 0 40px 40px 40px;">
                         <h1 style="color: #1f2937; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">
-                          Hola ${data.creatorName}
+                          Hola ${creatorName}
                         </h1>
                         
                         <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
@@ -1770,7 +1780,7 @@ class EmailService {
                         <div style="background-color: #fef3c7; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
                           <p style="color: #92400e; margin: 0; font-size: 15px; line-height: 1.8;">
                             <strong>Detalles del acceso</strong><br><br>
-                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))} ${data.startTime}
+                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}${startTime ? ` ${startTime}` : ''}
                             ${data.location ? `<br><strong>Lugar:</strong> ${data.location}` : ''}
                           </p>
                         </div>
@@ -1851,7 +1861,7 @@ class EmailService {
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
         to: data.invitedEmail,
-        subject: `${data.hostName} de ${data.companyName} te espera para ${data.accessTitle}`,
+        subject: `${hostName} de ${data.companyName} te espera para ${data.accessTitle}`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -1864,30 +1874,26 @@ class EmailService {
               <tr>
                 <td align="center" style="padding: 40px 0;">
                   <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                    
                     <!-- Header -->
                     <tr>
                       <td style="padding: 40px; text-align: center;">
                         ${logoHtml}
                       </td>
                     </tr>
-
                     <!-- Body -->
                     <tr>
                       <td style="padding: 0 40px 40px 40px;">
                         <h1 style="color: #1f2937; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">
-                          Hola ${data.invitedName} Chávez
+                          Hola ${data.invitedName}
                         </h1>
-                        
                         <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
-                          ${data.hostName} de <strong>${data.companyName}</strong> te espera para <strong>${data.accessTitle}</strong>
+                          ${hostName} de <strong>${data.companyName}</strong> te espera para <strong>${data.accessTitle}</strong>
                         </p>
-
                         <!-- Detalles -->
                         <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
                           <p style="color: #1f2937; margin: 0; font-size: 14px; line-height: 1.8;">
                             <strong>Detalles del acceso</strong><br><br>
-                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))} ${data.startTime}<br>
+                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}${startTime ? ` ${startTime}` : ''}<br>
                             ${data.location ? `<strong>Lugar:</strong> ${data.location}<br>` : ''}
                             <strong>Información adicional:</strong> ${data.additionalInfo || 'N/A'}
                           </p>
@@ -2362,42 +2368,36 @@ class EmailService {
               <tr>
                 <td align="center" style="padding: 40px 0;">
                   <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                    
                     <!-- Header -->
                     <tr>
-                      <td style="padding: 40px; text-align: center;">
+                      <td style="padding: 40px; text-align: center; background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); border-radius: 12px 12px 0 0;">
                         ${logoHtml}
-                        <div style="width: 80px; height: 80px; border-radius: 50%; background-color: #fee2e2; display: inline-flex; align-items: center; justify-content: center; margin-top: 20px;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background-color: #fee2e2; display: inline-flex; align-items: center; justify-content: center; margin-top: 20px; border: 3px solid ${accentColor};">
                           <span style="font-size: 40px; color: #dc2626;">🏢</span>
                         </div>
                       </td>
                     </tr>
-
                     <!-- Body -->
                     <tr>
                       <td style="padding: 0 40px 40px 40px; text-align: center;">
-                        <h1 style="color: #1f2937; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">
+                        <h1 style="color: ${primaryColor}; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">
                           Hola ${data.recipientName}
                         </h1>
-                        
                         <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
                           ${message}
                         </p>
-
                         <!-- Detalles -->
-                        <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; border-radius: 8px; padding: 20px; margin-bottom: 25px; text-align: left;">
+                        <div style="background-color: #fef2f2; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 25px; text-align: left;">
                           <p style="color: #991b1b; margin: 0; font-size: 14px; line-height: 1.8;">
-                            <strong>Detalles del acceso</strong><br><br>
-                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))} ${data.startTime}
+                            <strong style="color: ${accentColor};">Detalles del acceso</strong><br><br>
+                            <strong>Fecha y hora de inicio:</strong> <span style="color: ${primaryColor};">${formatFullDate(new Date(data.startDate))}${data.startTime ? ` ${data.startTime}` : ''}</span>
                           </p>
                         </div>
-
                         <p style="color: #6b7280; font-size: 13px; line-height: 1.6;">
                           Si tienes alguna duda, visita nuestro Centro de Ayuda o ponte en contacto con nosotros.
                         </p>
                       </td>
                     </tr>
-
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
@@ -2408,7 +2408,6 @@ class EmailService {
                         </p>
                       </td>
                     </tr>
-
                   </table>
                 </td>
               </tr>

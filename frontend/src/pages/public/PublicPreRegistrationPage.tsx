@@ -43,7 +43,13 @@ const PublicPreRegistrationPage: React.FC = () => {
   const loadAccessInfo = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/access/${accessId}/public-info`);
+      // En producción, usar ruta relativa sin agregar API_BASE_URL
+      const url = isDevelopment 
+        ? `${API_BASE_URL}/api/access/${accessId}/public-info`
+        : `/api/access/${accessId}/public-info`;
+      
+      console.log('🔍 Fetching access info from:', url);
+      const response = await fetch(url);
       
       if (!response.ok) {
         throw new Error('Failed to load access info');
@@ -82,7 +88,13 @@ const PublicPreRegistrationPage: React.FC = () => {
       setSubmitting(true);
       setError('');
 
-      const response = await fetch(`${API_BASE_URL}/api/access/${accessId}/pre-register`, {
+      // En producción, usar ruta relativa sin agregar API_BASE_URL
+      const url = isDevelopment 
+        ? `${API_BASE_URL}/api/access/${accessId}/pre-register`
+        : `/api/access/${accessId}/pre-register`;
+      
+      console.log('🔍 Submitting registration to:', url);
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

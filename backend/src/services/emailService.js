@@ -273,9 +273,9 @@ class EmailService {
     try {
       const isApproved = data.status === 'approved';
       const statusText = isApproved ? 'APROBADA' : 'RECHAZADA';
-      const primaryColor = '#000000'; // Negro moderno
+      const primaryColor = '#1e3a8a'; // Azul oscuro
       const secondaryColor = '#ffffff'; // Blanco
-      const accentColor = '#f59e0b'; // Amber para instrucciones
+      const accentColor = '#f97316'; // Naranja
       const statusColor = isApproved ? '#10b981' : '#ef4444';
 
       // QR para futuras visitas - JSON compatible con el escáner del panel (VisitRegistrationSidePanel)
@@ -316,8 +316,8 @@ class EmailService {
                     
                     <!-- Header -->
                     <tr>
-                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1f2937 100%); padding: 40px 30px; text-align: center;">
-                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 70px; margin-bottom: 20px;">
+                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
+                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 50px; margin-bottom: 20px;">
                         <h1 style="color: ${secondaryColor}; margin: 0; font-size: 28px; font-weight: 600;">Visita ${statusText}</h1>
                       </td>
                     </tr>
@@ -452,8 +452,9 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
-                          Este es un mensaje automático del Sistema de Gestión de Visitas<br>
+                          Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${data.companyName}</strong>
                         </p>
                       </td>
@@ -515,9 +516,9 @@ class EmailService {
       console.log('🖼️ [Approval Request] Usando URL pública de foto de visitante');
     }
     
-    const primaryColor = '#000000'; // Negro moderno
+    const primaryColor = '#1e3a8a'; // Azul oscuro
     const secondaryColor = '#ffffff'; // Blanco
-    const accentColor = '#4b5563'; // Gris medio
+    const accentColor = '#f97316'; // Naranja
 
     try {
       const mailOptions = {
@@ -539,8 +540,8 @@ class EmailService {
                     
                     <!-- Header -->
                     <tr>
-                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1f2937 100%); padding: 40px 30px; text-align: center;">
-                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 70px; margin-bottom: 20px;">
+                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
+                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 50px; margin-bottom: 20px;">
                         <h1 style="color: ${secondaryColor}; margin: 0; font-size: 28px; font-weight: 600;">Nueva Solicitud de Visita</h1>
                       </td>
                     </tr>
@@ -631,8 +632,9 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
-                          Este es un mensaje automático del Sistema de Gestión de Visitas<br>
+                          Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${data.companyName}</strong>
                         </p>
                       </td>
@@ -662,7 +664,24 @@ class EmailService {
       return { success: false, error: 'Email service not configured' };
     }
 
-    const COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+    // Generar URL temporal para el logo si existe y es Base64
+    let COMPANY_LOGO_URL;
+    if (invitationData.companyLogo && invitationData.companyLogo.startsWith('data:image')) {
+      if (invitationData.companyId) {
+        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(invitationData.companyId);
+        console.log('🏢 [INVITATION] Logo empresa: URL temporal generada');
+      } else {
+        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+        console.warn('⚠️ [INVITATION] No companyId, usando fallback');
+      }
+    } else if (invitationData.companyLogo) {
+      COMPANY_LOGO_URL = invitationData.companyLogo;
+      console.log('🏢 [INVITATION] Logo empresa: URL pública');
+    } else {
+      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+      console.log('🏢 [INVITATION] Sin logo, usando fallback');
+    }
+
     const primaryColor = '#1e3a8a';
     const accentColor = '#f97316';
 
@@ -689,7 +708,7 @@ class EmailService {
                     <!-- Header -->
                     <tr>
                       <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
-                        <img src="${COMPANY_LOGO_URL}" alt="${invitationData.companyName}" style="max-height: 60px; margin-bottom: 20px;">
+                        <img src="${COMPANY_LOGO_URL}" alt="${invitationData.companyName}" style="max-height: 50px; margin-bottom: 20px;">
                         <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Has sido invitado</h1>
                         <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Únete al sistema de gestión de visitas</p>
                       </td>
@@ -747,8 +766,9 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
-                          Sistema de Gestión de Visitas - SecuriTI<br>
+                          Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${invitationData.companyName}</strong>
                         </p>
                       </td>
@@ -780,7 +800,24 @@ class EmailService {
       return { success: false, error: 'Email service not configured' };
     }
 
-    const COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+    // Generar URL temporal para el logo si existe y es Base64
+    let COMPANY_LOGO_URL;
+    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
+      if (data.companyId) {
+        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
+        console.log('🏢 [CANCELLATION] Logo empresa: URL temporal generada');
+      } else {
+        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+        console.warn('⚠️ [CANCELLATION] No companyId, usando fallback');
+      }
+    } else if (data.companyLogo) {
+      COMPANY_LOGO_URL = data.companyLogo;
+      console.log('🏢 [CANCELLATION] Logo empresa: URL pública');
+    } else {
+      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+      console.log('🏢 [CANCELLATION] Sin logo, usando fallback');
+    }
+
     const primaryColor = '#1e3a8a';
     const accentColor = '#f97316';
 
@@ -807,7 +844,7 @@ class EmailService {
                       <!-- Header -->
                       <tr>
                         <td style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 40px 30px; text-align: center;">
-                          <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 60px; margin-bottom: 20px; filter: brightness(0) invert(1);">
+                          <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 50px; margin-bottom: 20px; filter: brightness(0) invert(1);">
                           <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Acceso Cancelado</h1>
                         </td>
                       </tr>
@@ -859,8 +896,9 @@ class EmailService {
                       <!-- Footer -->
                       <tr>
                         <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+                          <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                           <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
-                            Sistema de Gestión de Visitas<br>
+                            Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                             <strong>${data.companyName}</strong>
                           </p>
                         </td>
@@ -901,7 +939,7 @@ class EmailService {
                       <!-- Header -->
                       <tr>
                         <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
-                          <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 60px; margin-bottom: 20px;">
+                          <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 50px; margin-bottom: 20px;">
                           <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Acceso Cancelado Exitosamente</h1>
                         </td>
                       </tr>
@@ -946,8 +984,9 @@ class EmailService {
                       <!-- Footer -->
                       <tr>
                         <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+                          <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                           <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
-                            Sistema de Gestión de Visitas<br>
+                            Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                             <strong>${data.companyName}</strong>
                           </p>
                         </td>
@@ -1034,7 +1073,7 @@ class EmailService {
                     <!-- Header -->
                     <tr>
                       <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
-                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 60px; margin-bottom: 20px;">
+                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 50px; margin-bottom: 20px;">
                         <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Nuevo Registro</h1>
                         <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Evento: ${data.eventTitle}</p>
                       </td>
@@ -1121,9 +1160,10 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
-                          Este es un correo automático, por favor no responder<br>
-                          Sistema de Gestión de Visitas - <strong>${data.companyName}</strong>
+                          Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
+                          <strong>${data.companyName}</strong>
                         </p>
                       </td>
                     </tr>
@@ -1176,9 +1216,9 @@ class EmailService {
       console.log('🏢 [CHECKOUT] Sin logo, usando fallback');
     }
     
-    const primaryColor = '#000000'; // Negro moderno
+    const primaryColor = '#1e3a8a'; // Azul oscuro
     const secondaryColor = '#ffffff'; // Blanco
-    const accentColor = '#f59e0b'; // Amber para resaltar información
+    const accentColor = '#f97316'; // Naranja
 
     // Calcular tiempo de permanencia (desde entrada física hasta salida)
     const checkInTime = new Date(data.checkInTime);
@@ -1209,10 +1249,10 @@ class EmailService {
                     
                     <!-- Header -->
                     <tr>
-                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1f2937 100%); padding: 40px 30px; text-align: center;">
-                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 70px; margin-bottom: 20px;">
+                      <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
+                        <img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-height: 50px; margin-bottom: 20px;">
                         <h1 style="color: ${secondaryColor}; margin: 0; font-size: 28px; font-weight: 600;">¡Hasta pronto!</h1>
-                        <p style="color: #d1d5db; margin: 10px 0 0 0; font-size: 16px;">Gracias por tu visita</p>
+                        <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Gracias por tu visita</p>
                       </td>
                     </tr>
                     
@@ -1278,8 +1318,9 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
+                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
-                          Este es un mensaje automático del Sistema de Gestión de Visitas<br>
+                          Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${data.companyName}</strong>
                         </p>
                       </td>
@@ -1336,9 +1377,12 @@ class EmailService {
     }
 
     try {
+      const primaryColor = '#1e3a8a';
+      const accentColor = '#f97316';
+      
       const logoHtml = COMPANY_LOGO_URL 
-        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto; margin-bottom: 15px;" />`
-        : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto; margin-bottom: 15px;" />`
+        : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
@@ -1359,7 +1403,7 @@ class EmailService {
                     
                     <!-- Header -->
                     <tr>
-                      <td style="padding: 40px 40px 20px 40px; text-align: center; background: linear-gradient(135deg, #1f2937 0%, #374151 100%); border-radius: 12px 12px 0 0;">
+                      <td style="padding: 40px 40px 20px 40px; text-align: center; background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); border-radius: 12px 12px 0 0;">
                         ${logoHtml}
                         <div style="background-color: #10b981; width: 60px; height: 60px; border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center;">
                           <span style="color: white; font-size: 32px;">✓</span>
@@ -1419,7 +1463,7 @@ class EmailService {
                         </div>
 
                         <!-- Acceso enviado a -->
-                        <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+                        <div style="background-color: #eff6ff; border-left: 4px solid ${primaryColor}; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
                           <p style="color: #1e40af; margin: 0; font-size: 15px; line-height: 1.6;">
                             <strong>Acceso enviado a:</strong><br>
                             ${data.invitedCount} ${data.invitedCount === 1 ? 'invitado' : 'invitados'}
@@ -1437,8 +1481,10 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
-                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                          Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
+                          <strong>${data.companyName}</strong>
                         </p>
                       </td>
                     </tr>
@@ -1505,25 +1551,13 @@ class EmailService {
     } else {
       EVENT_IMAGE_URL = null;
     }
-    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
-      if (data.companyId) {
-        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
-        console.log('🏢 [ACCESS INVITATION] Logo empresa: URL temporal generada');
-      } else {
-        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-        console.warn('⚠️ [ACCESS INVITATION] No companyId, usando fallback');
-      }
-    } else if (data.companyLogo) {
-      COMPANY_LOGO_URL = data.companyLogo;
-      console.log('🏢 [ACCESS INVITATION] Logo empresa: URL pública');
-    } else {
-      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-      console.log('🏢 [ACCESS INVITATION] Sin logo, usando fallback');
-    }
 
     try {
+      const primaryColor = '#1e3a8a';
+      const accentColor = '#f97316';
+      
       const logoHtml = COMPANY_LOGO_URL 
-        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto; margin-bottom: 15px;" />`
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto; margin-bottom: 15px;" />`
         : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
@@ -1545,7 +1579,7 @@ class EmailService {
                     
                     <!-- Header -->
                     <tr>
-                      <td style="padding: 40px 40px 30px 40px; text-align: center; background: linear-gradient(135deg, #1f2937 0%, #374151 100%); border-radius: 12px 12px 0 0;">
+                      <td style="padding: 40px 40px 30px 40px; text-align: center; background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); border-radius: 12px 12px 0 0;">
                         ${logoHtml}
                       </td>
                     </tr>
@@ -1562,12 +1596,18 @@ class EmailService {
                         </p>
 
                         <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
-                          <strong>${data.hostName}</strong> de ${data.companyName} tiene un acceso para <strong>${data.accessTitle}</strong>, el ${formatFullDate(new Date(data.startDate))} ${data.startTime}.
+                          <strong>${data.hostName}</strong> de ${data.companyName} tiene un acceso para <strong>${data.accessTitle}</strong>, el ${formatFullDate(new Date(data.startDate))}.
                         </p>
 
                         <!-- Detalles del acceso -->
                         <div style="background-color: #f9fafb; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
                           <h2 style="color: #1f2937; font-size: 16px; margin: 0 0 15px 0; font-weight: 600;">Detalles del acceso</h2>
+                          
+                          ${EVENT_IMAGE_URL ? `
+                          <div style="text-align: center; margin-bottom: 20px;">
+                            <img src="${EVENT_IMAGE_URL}" alt="Imagen del evento" style="max-width: 200px; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" />
+                          </div>
+                          ` : ''}
                           
                           <table style="width: 100%; border-collapse: collapse;">
                             <tr>
@@ -1598,11 +1638,7 @@ class EmailService {
                         </div>
 
                         <!-- Event Image (if provided) -->
-                        ${EVENT_IMAGE_URL ? `
-                        <div style="text-align: center; margin-bottom: 25px;">
-                          <img src="${EVENT_IMAGE_URL}" alt="Imagen del evento" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" />
-                        </div>
-                        ` : ''}
+                        ${''}
 
                         <!-- QR Code -->
                         ${data.qrData ? `
@@ -1615,8 +1651,8 @@ class EmailService {
                         ` : ''}
 
                         <!-- Al llegar -->
-                        <div style="background-color: #dbeafe; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-                          <p style="color: #1e40af; margin: 0; font-size: 14px; line-height: 1.6; text-align: center;">
+                        <div style="background-color: #fef3c7; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                          <p style="color: #92400e; margin: 0; font-size: 14px; line-height: 1.6; text-align: center;">
                             <strong>📱 Al llegar</strong><br>
                             Muestra este mensaje con una identificación y ¡Dirígete a las filas!
                           </p>
@@ -1633,8 +1669,10 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
-                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                          Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
+                          <strong>${data.companyName}</strong>
                         </p>
                       </td>
                     </tr>
@@ -1686,10 +1724,11 @@ class EmailService {
     }
 
     try {
-      const accentColor = '#f59e0b'; // Amber para resaltar información
+      const primaryColor = '#1e3a8a';
+      const accentColor = '#f97316';
       
       const logoHtml = COMPANY_LOGO_URL 
-        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto;" />`
         : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
@@ -1747,8 +1786,10 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0;">
-                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                          Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
+                          <strong>${data.companyName}</strong>
                         </p>
                       </td>
                     </tr>
@@ -1800,8 +1841,11 @@ class EmailService {
     }
 
     try {
+      const primaryColor = '#1e3a8a';
+      const accentColor = '#f97316';
+      
       const logoHtml = COMPANY_LOGO_URL 
-        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto;" />`
         : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
@@ -1874,8 +1918,10 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0;">
-                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                          Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
+                          <strong>${data.companyName}</strong>
                         </p>
                       </td>
                     </tr>
@@ -1927,8 +1973,11 @@ class EmailService {
     }
 
     try {
+      const primaryColor = '#1e3a8a';
+      const accentColor = '#f97316';
+      
       const logoHtml = COMPANY_LOGO_URL 
-        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto;" />`
         : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
@@ -1950,7 +1999,7 @@ class EmailService {
                     
                     <!-- Header -->
                     <tr>
-                      <td style="padding: 40px; text-align: center; background: linear-gradient(135deg, #1f2937 0%, #374151 100%); border-radius: 12px 12px 0 0;">
+                      <td style="padding: 40px; text-align: center; background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); border-radius: 12px 12px 0 0;">
                         ${logoHtml}
                         <div style="width: 80px; height: 80px; border-radius: 50%; background-color: rgba(255,255,255,0.1); display: inline-flex; align-items: center; justify-content: center; margin-top: 20px;">
                           <span style="font-size: 40px;">👤</span>
@@ -1987,8 +2036,10 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0;">
-                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                          Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
+                          <strong>${data.companyName}</strong>
                         </p>
                       </td>
                     </tr>
@@ -2040,10 +2091,11 @@ class EmailService {
     }
 
     try {
-      const accentColor = '#f59e0b'; // Amber para resaltar información
+      const primaryColor = '#1e3a8a';
+      const accentColor = '#f97316';
       
       const logoHtml = COMPANY_LOGO_URL 
-        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto;" />`
         : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
@@ -2098,8 +2150,10 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0;">
-                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                          Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
+                          <strong>${data.companyName}</strong>
                         </p>
                       </td>
                     </tr>
@@ -2151,8 +2205,11 @@ class EmailService {
     }
 
     try {
+      const primaryColor = '#1e3a8a';
+      const accentColor = '#f97316';
+      
       const logoHtml = COMPANY_LOGO_URL 
-        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto;" />`
         : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
@@ -2223,8 +2280,10 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0;">
-                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                          Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
+                          <strong>${data.companyName}</strong>
                         </p>
                       </td>
                     </tr>
@@ -2276,8 +2335,11 @@ class EmailService {
     }
 
     try {
+      const primaryColor = '#1e3a8a';
+      const accentColor = '#f97316';
+      
       const logoHtml = COMPANY_LOGO_URL 
-        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto;" />`
         : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
 
       const message = data.isCreator 
@@ -2339,8 +2401,10 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0;">
-                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                          Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
+                          <strong>${data.companyName}</strong>
                         </p>
                       </td>
                     </tr>
@@ -2408,8 +2472,11 @@ class EmailService {
     }
 
     try {
+      const primaryColor = '#1e3a8a';
+      const accentColor = '#f97316';
+      
       const logoHtml = COMPANY_LOGO_URL 
-        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 150px; height: auto;" />`
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto;" />`
         : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
 
       const photoHtml = GUEST_PHOTO_URL 
@@ -2516,8 +2583,10 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
+                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0;">
-                          Copyright © ${new Date().getFullYear()} ${data.companyName}. Todos los derechos reservados.
+                          Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
+                          <strong>${data.companyName}</strong>
                         </p>
                       </td>
                     </tr>

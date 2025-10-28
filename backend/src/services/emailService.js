@@ -1733,6 +1733,14 @@ class EmailService {
       console.log('🏢 [REMINDER CREATOR] Sin logo, usando fallback');
     }
 
+    // Fallbacks para variables usadas en la plantilla
+    const creatorName = data.creatorName && typeof data.creatorName === 'string' && data.creatorName.trim()
+      ? data.creatorName
+      : 'Anfitrión';
+    const startTime = data.startTime && typeof data.startTime === 'string' && data.startTime.trim()
+      ? data.startTime
+      : '';
+
     try {
       const primaryColor = '#1e3a8a';
       const accentColor = '#f97316';
@@ -1849,6 +1857,14 @@ class EmailService {
       COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
       console.log('🏢 [REMINDER GUEST] Sin logo, usando fallback');
     }
+
+    // Fallbacks para variables usadas en la plantilla
+    const hostName = data.hostName && typeof data.hostName === 'string' && data.hostName.trim()
+      ? data.hostName
+      : (data.creatorName && typeof data.creatorName === 'string' && data.creatorName.trim() ? data.creatorName : 'Anfitrión');
+    const startTime = data.startTime && typeof data.startTime === 'string' && data.startTime.trim()
+      ? data.startTime
+      : '';
 
     try {
       const primaryColor = '#1e3a8a';
@@ -1989,7 +2005,7 @@ class EmailService {
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
         to: data.creatorEmail,
-        subject: `${data.guestName} se aprobó la entrada de un nuevo visitante`,
+        subject: `Entrada aprobada: ${data.guestName}`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -2007,9 +2023,6 @@ class EmailService {
                     <tr>
                       <td style="padding: 40px; text-align: center; background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); border-radius: 12px 12px 0 0;">
                         ${logoHtml}
-                        <div style="width: 80px; height: 80px; border-radius: 50%; background-color: rgba(255,255,255,0.1); display: inline-flex; align-items: center; justify-content: center; margin-top: 20px;">
-                          <span style="font-size: 40px;">👤</span>
-                        </div>
                       </td>
                     </tr>
 
@@ -2020,16 +2033,17 @@ class EmailService {
                           Hola ${data.creatorName}
                         </h1>
                         
-                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 30px;">
-                          El acceso del visitante ya fue pre-aprobado. Está en espera que se le dé ingreso a tu organización.
+                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
+                          <strong>${data.guestName}</strong> ha completado el escaneo de QR y su <strong>entrada fue aprobada</strong>.
                         </p>
 
                         <!-- Detalles -->
-                        <div style="background-color: #f0fdf4; border-radius: 8px; padding: 25px; margin-bottom: 25px; text-align: left;">
-                          <p style="color: #166534; margin: 0; font-size: 15px; line-height: 1.8;">
-                            <strong>Detalle del acceso</strong><br><br>
-                            <strong>Razón del acceso:</strong> ${data.accessTitle}<br>
-                            <strong>Título:</strong> ${data.accessTitle}
+                        <div style="background-color: #f9fafb; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 25px; text-align: left;">
+                          <p style="color: #1f2937; margin: 0; font-size: 15px; line-height: 1.8;">
+                            <strong style="color: ${primaryColor};">Detalles</strong><br><br>
+                            <strong>Evento/acceso:</strong> ${data.accessTitle}<br>
+                            ${data.location ? `<strong>Lugar:</strong> ${data.location}<br>` : ''}
+                            ${data.checkInTime ? `<strong>Hora de registro:</strong> ${formatFullDate(new Date(data.checkInTime))}` : ''}
                           </p>
                         </div>
 

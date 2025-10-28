@@ -691,6 +691,11 @@ router.post('/check-in/:accessCode', async (req, res) => {
           const company = await Company.findOne({ companyId: access.companyId });
           // No enviar "checked-in" si el invitado fue agregado vía pre-registro público
           if (!guest.addedViaPreRegistration) {
+            console.log('📧 [CHECK-IN] Enviando sendGuestCheckedInEmail (invitación directa o agregado en edición)', {
+              accessId: access._id.toString(),
+              guest: { name: guest.name, email: guest.email || null, phone: guest.phone || null },
+              creatorEmail: access.creatorId.email
+            });
             await emailService.sendGuestCheckedInEmail({
               creatorEmail: access.creatorId.email,
               creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
@@ -700,6 +705,11 @@ router.post('/check-in/:accessCode', async (req, res) => {
               location: access.location,
               companyName: company.name,
               companyLogo: company.logo
+            });
+          } else {
+            console.log('↪️ [CHECK-IN] Omitido sendGuestCheckedInEmail por pre-registro público (se usa sendGuestArrivedEmail en pre-registro)', {
+              accessId: access._id.toString(),
+              guest: { name: guest.name, email: guest.email || null }
             });
           }
         } catch (emailError) {
@@ -900,6 +910,7 @@ router.post('/:accessId/pre-register', async (req, res) => {
           companyId: companyData?._id,
           accessId: access._id.toString() // ✅ AGREGAR accessId
         });
+        console.log('📧 [PRE-REGISTER] Enviado sendAccessInvitationEmail al invitado pre-registrado', { email, accessId: access._id.toString() });
 
         // Notificar al organizador únicamente si es pre-registro público
         if (access?.settings?.sendAccessByEmail !== false && access?.creatorId?.email) {
@@ -916,6 +927,11 @@ router.post('/:accessId/pre-register', async (req, res) => {
               companyName: companyData?.name || 'Empresa',
               companyId: companyData?._id?.toString(),
               companyLogo: companyData?.logo
+            });
+            console.log('📧 [PRE-REGISTER] Enviado sendGuestArrivedEmail al organizador (pre-registro público)', {
+              creatorEmail: access.creatorId.email,
+              guestName: name,
+              accessId: access._id.toString()
             });
           } catch (notifyErr) {
             console.warn('⚠️ Error sending guest arrived (pre-register) email:', notifyErr?.message);

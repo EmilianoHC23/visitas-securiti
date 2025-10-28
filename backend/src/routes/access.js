@@ -9,9 +9,37 @@ const { formatTime } = require('../utils/dateUtils');
 
 const router = express.Router();
 
+// ==================== LAZY FINALIZATION HELPER ====================
+// Marca como 'finalized' todos los accesos activos cuyo endDate ya pasó
+// y cambia invitados 'pendiente' -> 'no-asistio'. Idempotente.
+async function finalizeExpiredAccesses() {
+  try {
+    const now = new Date();
+    const AccessModel = Access; // evitar shadowing
+    const expired = await AccessModel.find({ status: 'active', endDate: { $lt: now } });
+    if (!expired.length) return;
+
+    for (const access of expired) {
+      access.status = 'finalized';
+      let modified = false;
+      for (const guest of access.invitedUsers) {
+        if (guest.attendanceStatus === 'pendiente') {
+          guest.attendanceStatus = 'no-asistio';
+          modified = true;
+        }
+      }
+      await access.save();
+    }
+  } catch (e) {
+    console.warn('⚠️ finalizeExpiredAccesses error:', e?.message || e);
+  }
+}
+
 // ==================== GET ALL ACCESS CODES ====================
 router.get('/', auth, authorize(['admin', 'reception', 'host']), async (req, res) => {
   try {
+    // Lazy finalize before listing
+    await finalizeExpiredAccesses();
     const { status } = req.query;
     const filter = { companyId: req.user.companyId };
 
@@ -39,6 +67,8 @@ router.get('/', auth, authorize(['admin', 'reception', 'host']), async (req, res
 // ==================== GET ACCESS FOR AGENDA/CALENDAR ====================
 router.get('/agenda', auth, authorize(['admin', 'reception', 'host']), async (req, res) => {
   try {
+    // Lazy finalize before agenda
+    await finalizeExpiredAccesses();
     const { start, end } = req.query;
     
     const filter = { 
@@ -73,6 +103,8 @@ router.get('/agenda', auth, authorize(['admin', 'reception', 'host']), async (re
 // ==================== GET SINGLE ACCESS ====================
 router.get('/:id', auth, authorize(['admin', 'reception', 'host']), async (req, res) => {
   try {
+    // Lazy finalize before fetch
+    await finalizeExpiredAccesses();
     const access = await Access.findById(req.params.id)
       .populate('creatorId', 'firstName lastName email')
       .populate('notifyUsers', 'firstName lastName email');
@@ -653,6 +685,8 @@ router.post('/redeem', async (req, res) => {
 // Get public access information (no auth required)
 router.get('/:accessId/public-info', async (req, res) => {
   try {
+    // Ensure up-to-date status for public
+    await finalizeExpiredAccesses();
     const access = await Access.findById(req.params.accessId)
       .select('eventName type startDate endDate location eventImage additionalInfo status settings')
       .lean();
@@ -679,6 +713,8 @@ router.get('/:accessId/public-info', async (req, res) => {
 // Pre-register for an access (no auth required)
 router.post('/:accessId/pre-register', async (req, res) => {
   try {
+    // Ensure up-to-date status before allowing registration
+    await finalizeExpiredAccesses();
     const { name, email, phone, company } = req.body;
 
     if (!name || (!email && !phone)) {

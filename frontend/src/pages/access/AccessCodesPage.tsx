@@ -901,15 +901,14 @@ const EditAccessModal: React.FC<EditAccessModalProps> = ({ access, onClose, onSu
   const [endTime, setEndTime] = useState(
     new Date(access.endDate).toTimeString().slice(0, 5)
   );
+  // Nuevos invitados: solo Nombre y Email (obligatorios)
   const [newInvitedUsers, setNewInvitedUsers] = useState<Array<{
     name: string;
     email: string;
-    phone: string;
-    company: string;
   }>>([]);
 
   const addNewInvitedUser = () => {
-    setNewInvitedUsers([...newInvitedUsers, { name: '', email: '', phone: '', company: '' }]);
+    setNewInvitedUsers([...newInvitedUsers, { name: '', email: '' }]);
   };
 
   const removeNewInvitedUser = (index: number) => {
@@ -935,7 +934,14 @@ const EditAccessModal: React.FC<EditAccessModalProps> = ({ access, onClose, onSu
         updates.endDate = endDateTime;
       }
       if (newInvitedUsers.length > 0) {
-        updates.invitedUsers = newInvitedUsers.filter(u => u.name && (u.email || u.phone));
+        // Validar que todos los nuevos invitados tienen nombre y email
+        const invalid = newInvitedUsers.some(u => !u.name || !u.email);
+        if (invalid) {
+          alert('Por favor ingresa Nombre y Email para todos los nuevos invitados');
+          setLoading(false);
+          return;
+        }
+        updates.invitedUsers = newInvitedUsers.map(u => ({ name: u.name, email: u.email }));
       }
 
       if (Object.keys(updates).length === 0) {
@@ -955,108 +961,124 @@ const EditAccessModal: React.FC<EditAccessModalProps> = ({ access, onClose, onSu
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Editar Acceso</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+      <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="p-8">
+          {/* Header */}
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Editar acceso</h2>
+              <p className="text-sm text-gray-500">Extiende la vigencia y agrega más invitados si lo necesitas</p>
+            </div>
+            <button 
+              onClick={onClose} 
+              className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg"
+            >
               <X className="w-6 h-6" />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Aviso */}
+            <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
               <p className="text-sm text-gray-700">
-                ℹ️ Solo puedes extender la fecha de fin y agregar nuevos invitados.
+                ℹ️ En esta edición puedes extender la fecha de fin y agregar nuevos invitados.
               </p>
             </div>
 
             {/* Fecha de fin */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nueva fecha fin (extender)
-                </label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  min={new Date(access.endDate).toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hora fin
-                </label>
-                <input
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
-                />
+            <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center mr-3">
+                  <Clock className="w-5 h-5 text-white" />
+                </div>
+                Nueva fecha y hora de finalización
+              </h3>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha fin</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    min={new Date(access.endDate).toISOString().split('T')[0]}
+                    className="w-full pl-4 pr-3 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Hora fin</label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="w-full pl-4 pr-3 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                  />
+                </div>
               </div>
             </div>
 
             {/* Agregar nuevos invitados */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Agregar nuevos invitados
-                </label>
+            <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center mr-3">
+                  <Users className="w-5 h-5 text-white" />
+                </div>
+                Agregar nuevos invitados
+              </h3>
+
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-sm text-gray-600">Añade nuevos invitados con su nombre y correo electrónico</p>
                 <button
                   type="button"
                   onClick={addNewInvitedUser}
-                  className="text-sm text-gray-900 hover:text-gray-700 font-medium"
+                  className="text-sm font-semibold text-gray-900 hover:text-gray-700"
                 >
                   + Agregar invitado
                 </button>
               </div>
+
               {newInvitedUsers.length > 0 && (
                 <div className="space-y-3">
                   {newInvitedUsers.map((user, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
-                      <div className="grid grid-cols-2 gap-2 mb-2">
-                        <input
-                          type="text"
-                          placeholder="Nombre *"
-                          value={user.name}
-                          onChange={(e) => updateNewInvitedUser(index, 'name', e.target.value)}
-                          className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
-                        />
-                        <input
-                          type="email"
-                          placeholder="Email"
-                          value={user.email}
-                          onChange={(e) => updateNewInvitedUser(index, 'email', e.target.value)}
-                          className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="tel"
-                          placeholder="Teléfono"
-                          value={user.phone}
-                          onChange={(e) => updateNewInvitedUser(index, 'phone', e.target.value)}
-                          className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
-                        />
-                        <div className="flex space-x-2">
+                    <div key={index} className="flex items-center gap-3 bg-white p-4 rounded-lg border-2 border-gray-200 hover:border-gray-400 transition-all">
+                      {/* Email */}
+                      <div className="flex-1">
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                           <input
-                            type="text"
-                            placeholder="Empresa"
-                            value={user.company}
-                            onChange={(e) => updateNewInvitedUser(index, 'company', e.target.value)}
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-gray-900"
+                            type="email"
+                            placeholder="correo@ejemplo.com"
+                            value={user.email}
+                            onChange={(e) => updateNewInvitedUser(index, 'email', e.target.value)}
+                            required
+                            className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
                           />
-                          <button
-                            type="button"
-                            onClick={() => removeNewInvitedUser(index)}
-                            className="px-2 text-red-600 hover:text-red-700"
-                          >
-                            <X className="w-5 h-5" />
-                          </button>
                         </div>
                       </div>
+
+                      {/* Nombre */}
+                      <div className="flex-1">
+                        <div className="relative">
+                          <UserCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <input
+                            type="text"
+                            placeholder="Nombre del invitado"
+                            value={user.name}
+                            onChange={(e) => updateNewInvitedUser(index, 'name', e.target.value)}
+                            required
+                            className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Remove */}
+                      <button
+                        type="button"
+                        onClick={() => removeNewInvitedUser(index)}
+                        className="p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Eliminar invitado"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
                     </div>
                   ))}
                 </div>

@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Mail, Phone, Building2, User, CheckCircle } from 'lucide-react';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const isDevelopment = import.meta.env.VITE_ENVIRONMENT === 'development';
+const API_BASE_URL = isDevelopment 
+  ? import.meta.env.VITE_API_URL || 'http://localhost:3001'
+  : ''; // Ruta relativa en producción (sin /api, se agrega abajo)
 
 interface AccessInfo {
   _id: string;

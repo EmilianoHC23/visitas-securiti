@@ -199,7 +199,9 @@ router.post('/', auth, async (req, res) => {
       status: initialStatus,
       checkInTime: checkInTime,
       qrToken: autoApproval ? require('crypto').randomBytes(16).toString('hex') : null,
-      approvedAt: autoApproval ? new Date() : null
+      approvedAt: autoApproval ? new Date() : null,
+      visitType: req.body.visitType || 'spontaneous', // Guardar visitType para identificar visitas de acceso
+      accessCode: req.body.accessCode || null // Guardar accessCode para buscar el acceso luego
     });
 
     await visit.save();

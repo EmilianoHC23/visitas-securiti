@@ -118,42 +118,63 @@ const ConfirmDialog: React.FC<{
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-xl w-full shadow-2xl overflow-hidden">
-                <div className="p-6 flex flex-col items-center text-center">
-                    <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-4">
-                        {icon || (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12A9 9 0 1112 3a9 9 0 019 9z" />
-                            </svg>
-                        )}
+            <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden">
+                {/* Header: gradient like other modals */}
+                <div className="p-6 bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 border-b border-gray-700 flex items-start justify-between text-white">
+                    <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
+                            {/* Warning icon */}
+                            {icon || (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 9v2m0 4h.01M21 12A9 9 0 1112 3a9 9 0 019 9z" />
+                                </svg>
+                            )}
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-white">{title}</h3>
+                            <p className="text-sm text-indigo-100">{/* small subtitle if needed */}</p>
+                        </div>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
-                    <p className="text-sm text-gray-600 mb-6 whitespace-pre-line">{message}</p>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-200 hover:text-white p-2 rounded-lg transition-colors"
+                        aria-label="Cerrar"
+                    >
+                        ✕
+                    </button>
+                </div>
 
-                    <div className="w-full flex justify-center gap-3">
-                        <button
-                            onClick={() => { onClose(); }}
-                            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                        >
-                            {secondaryLabel}
-                        </button>
-                        <button
-                            onClick={() => { onPrimary(); }}
-                            className="px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors"
-                        >
-                            {primaryLabel}
-                        </button>
-                    </div>
-                    {showSecondary && onSecondary && (
-                        <div className="w-full mt-3 flex justify-center">
+                <div className="p-6">
+                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm text-center">
+                        <p className="text-sm text-gray-700 mb-6 whitespace-pre-line">{message}</p>
+
+                        <div className="flex items-center justify-center gap-3">
                             <button
-                                onClick={() => { onSecondary(); }}
-                                className="px-4 py-2 text-red-600 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition-colors"
+                                onClick={() => { onClose(); }}
+                                className="px-4 py-2 min-w-[120px] text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                             >
-                                Eliminar permanentemente
+                                {secondaryLabel}
+                            </button>
+
+                            <button
+                                onClick={() => { onPrimary(); }}
+                                className="px-4 py-2 min-w-[120px] text-white bg-gradient-to-r from-gray-900 to-gray-600 rounded-lg shadow hover:from-gray-800 hover:to-gray-500"
+                            >
+                                {primaryLabel}
                             </button>
                         </div>
-                    )}
+
+                        {showSecondary && onSecondary && (
+                            <div className="mt-6">
+                                <button
+                                    onClick={() => { onSecondary(); }}
+                                    className="w-full px-4 py-3 text-red-700 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition-colors"
+                                >
+                                    Eliminar permanentemente
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

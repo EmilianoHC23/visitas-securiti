@@ -147,9 +147,15 @@ router.put('/config', auth, authorize('admin'), async (req, res) => {
     
     if (location) {
       updateData.location = {
-        address: location.address || '',
+        street: location.street || '',
+        colony: location.colony || '',
+        postalCode: location.postalCode || '',
         city: location.city || '',
-        country: location.country || 'México',
+        state: location.state || '',
+        country: location.country || '',
+        googleMapsUrl: location.googleMapsUrl || '',
+        photo: location.photo || null,
+        arrivalInstructions: location.arrivalInstructions || '',
         coordinates: location.coordinates || null
       };
     }

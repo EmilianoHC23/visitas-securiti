@@ -62,19 +62,19 @@ const UserPreviewModal: React.FC<{
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-gray-700">
                                     <div>
                                         <span className="font-semibold block">Nombre</span>
-                                        <div className="mt-1 p-3 bg-white rounded-lg border border-gray-100 shadow-sm text-sm">{user.firstName}</div>
+                                        <div className="mt-1 text-sm text-gray-800">{user.firstName}</div>
                                     </div>
                                     <div>
                                         <span className="font-semibold block">Apellido</span>
-                                        <div className="mt-1 p-3 bg-white rounded-lg border border-gray-100 shadow-sm text-sm">{user.lastName}</div>
+                                        <div className="mt-1 text-sm text-gray-800">{user.lastName}</div>
                                     </div>
                                     <div>
                                         <span className="font-semibold block">Correo electrónico</span>
-                                        <div className="mt-1 p-3 bg-white rounded-lg border border-gray-100 shadow-sm text-sm break-words max-w-full">{user.email}</div>
+                                        <div className="mt-1 text-sm text-gray-800 break-words">{user.email}</div>
                                     </div>
                                     <div>
                                         <span className="font-semibold block">Rol de usuario</span>
-                                        <div className="mt-1 p-1"><RoleBadge role={user.role} /></div>
+                                        <div className="mt-1"><RoleBadge role={user.role} /></div>
                                     </div>
                                     <div className="md:col-span-2 mt-4">
                                         <h5 className="text-sm font-semibold text-gray-700 mb-2">Permisos</h5>

@@ -224,7 +224,18 @@ export const AgendaPage: React.FC = () => {
           <CalendarMonth
             year={new Date().getFullYear()}
             month={new Date().getMonth()}
-            events={agendaItems.map(it => ({ id: it.id, title: it.title, date: it.startDate.slice(0,10), color: it.type === 'visit' ? '#60a5fa' : '#34d399' }))}
+            events={agendaItems.map(it => ({
+              id: it.id,
+              title: it.title,
+              // send full startDate so CalendarMonth can show time if present
+              date: it.startDate,
+              color: it.accessType === 'reunion' ? '#60a5fa' : (it.accessType === 'proyecto' ? '#a78bfa' : '#f97316'),
+              description: it.reason,
+              location: it.location,
+              hostName: it.hostName,
+              preRegLink: it.preRegLink,
+              accessType: it.accessType,
+            }))}
           />
         </div>
       )}

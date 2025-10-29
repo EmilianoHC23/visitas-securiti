@@ -5,8 +5,15 @@ import { createPortal } from 'react-dom';
 interface CalendarEvent {
   id: string;
   title: string;
-  date: string; // ISO date YYYY-MM-DD
+  // date can be full ISO datetime or date-only (YYYY-MM-DD)
+  date: string;
   color?: string;
+  // optional extended fields (provided by callers when available)
+  description?: string;
+  location?: string;
+  hostName?: string;
+  preRegLink?: string;
+  accessType?: string;
 }
 
 interface Props {
@@ -114,7 +121,8 @@ export const CalendarMonth: React.FC<Props> = ({ year, month, events = [] }) => 
 
   const eventsByDate = new Map<string, CalendarEvent[]>();
   for (const ev of events) {
-    const key = ev.date.slice(0, 10);
+    // normalize key to YYYY-MM-DD even if ev.date includes time
+    const key = new Date(ev.date).toISOString().slice(0, 10);
     if (!eventsByDate.has(key)) eventsByDate.set(key, []);
     eventsByDate.get(key)!.push(ev);
   }
@@ -295,12 +303,25 @@ export const CalendarMonth: React.FC<Props> = ({ year, month, events = [] }) => 
                   )}
 
                   <div className="mt-2 space-y-1">
-                    {dayEvents.slice(0, 3).map(ev => (
-                      <button key={ev.id} onClick={() => setSelectedEvent(ev)} className="flex items-center gap-2 text-xs w-full text-left">
-                        <span style={{ background: ev.color || '#60a5fa' }} className="w-2 h-2 rounded-full inline-block" />
-                        <span className="truncate">{ev.title}</span>
-                      </button>
-                    ))}
+                    {dayEvents.slice(0, 3).map(ev => {
+                      // derive time if available
+                      let timeLabel = '';
+                      try {
+                        const d = new Date(ev.date);
+                        if (!isNaN(d.getTime())) {
+                          timeLabel = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                        }
+                      } catch (e) { /* ignore */ }
+                      return (
+                        <button key={ev.id} onClick={() => setSelectedEvent(ev)} className="flex items-center gap-2 text-xs w-full text-left">
+                          <span style={{ background: ev.color || '#60a5fa' }} className="w-2 h-2 rounded-full inline-block" />
+                          <div className="flex-1">
+                            <div className="truncate">{ev.title}</div>
+                            {timeLabel && <div className="text-2xs text-gray-400">{timeLabel}</div>}
+                          </div>
+                        </button>
+                      );
+                    })}
                     {dayEvents.length > 3 && (
                       <div className="text-xs text-gray-400">+{dayEvents.length - 3} más</div>
                     )}
@@ -317,14 +338,48 @@ export const CalendarMonth: React.FC<Props> = ({ year, month, events = [] }) => 
           <div className="fixed inset-0 z-40" onClick={closeDetail} />
           <div ref={modalRef} style={modalPos ? { position: 'absolute', left: modalPos.left, top: modalPos.top } : { position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }} role="dialog" aria-modal="true" aria-labelledby="event-detail-title" className="z-50 w-full max-w-md mx-4 shadow-lg">
             <div className="bg-white rounded-lg p-6">
-              <h3 id="event-detail-title" className="text-lg font-semibold">{selectedEvent.title}</h3>
-              <p className="text-sm text-gray-600 mt-2">{selectedEvent.date}</p>
-              <div className="mt-4 flex items-center gap-2">
-                <span style={{ background: selectedEvent.color || '#60a5fa' }} className="w-3 h-3 rounded-full inline-block" />
-                <span className="text-sm text-gray-700">ID: {selectedEvent.id}</span>
+              <div className="flex items-start gap-3">
+                <span style={{ background: selectedEvent.color || '#60a5fa' }} className="w-3 h-3 rounded-full inline-block mt-1" />
+                <div className="flex-1">
+                  <h3 id="event-detail-title" className="text-lg font-semibold">{selectedEvent.title}</h3>
+                  <div className="text-sm text-gray-600 mt-1">
+                    {(() => {
+                      try {
+                        const d = new Date(selectedEvent.date);
+                        const dateStr = d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+                        const timeStr = d && !isNaN(d.getTime()) ? ' — ' + d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+                        return dateStr + timeStr;
+                      } catch (e) { return selectedEvent.date; }
+                    })()}
+                  </div>
+                </div>
               </div>
-              <div className="mt-6 flex justify-end">
-                <button onClick={closeDetail} className="px-3 py-1 bg-gray-200 rounded">Cerrar</button>
+
+              {selectedEvent.description && (
+                <div className="mt-4 text-sm text-gray-700">{selectedEvent.description}</div>
+              )}
+
+              <div className="mt-3 space-y-2 text-sm text-gray-700">
+                {selectedEvent.location && <div><strong>Ubicación:</strong> {selectedEvent.location}</div>}
+                {selectedEvent.hostName && <div><strong>Anfitrión:</strong> {selectedEvent.hostName}</div>}
+                {selectedEvent.accessType && <div><strong>Tipo:</strong> {selectedEvent.accessType}</div>}
+                <div className="flex items-center gap-3 mt-2">
+                  <span className="text-sm text-gray-500">ID: {selectedEvent.id}</span>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  {selectedEvent.preRegLink && (
+                    <>
+                      <button onClick={async () => { try { await navigator.clipboard.writeText(selectedEvent.preRegLink!); } catch {} }} className="px-3 py-1 bg-securiti-blue-600 text-white rounded">Copiar enlace</button>
+                      <a href={selectedEvent.preRegLink} target="_blank" rel="noreferrer" className="text-sm text-gray-600 underline">Abrir enlace</a>
+                    </>
+                  )}
+                </div>
+                <div>
+                  <button onClick={closeDetail} className="px-3 py-1 bg-gray-200 rounded">Cerrar</button>
+                </div>
               </div>
             </div>
           </div>

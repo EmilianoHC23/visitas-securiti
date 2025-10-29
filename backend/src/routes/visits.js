@@ -491,10 +491,13 @@ router.put('/:id/status', auth, async (req, res) => {
     }
 
     // 📧 Enviar sendGuestCheckedInEmail si es check-in de acceso/evento (NO pre-registro)
-    if (status === 'checked-in' && updated.accessId) {
+    if (status === 'checked-in' && (updated.accessId || updated.visitType === 'access-code' || updated.accessCode)) {
       try {
         const Access = require('../models/Access');
-        const access = await Access.findById(updated.accessId).populate('creatorId', 'firstName lastName email');
+        // Buscar por accessId si existe, sino por accessCode
+        const access = updated.accessId 
+          ? await Access.findById(updated.accessId).populate('creatorId', 'firstName lastName email')
+          : await Access.findOne({ accessCode: updated.accessCode }).populate('creatorId', 'firstName lastName email');
         
         if (access && access.creatorId?.email) {
           // Buscar el invitado en la lista para verificar si fue pre-registrado
@@ -522,6 +525,8 @@ router.put('/:id/status', auth, async (req, res) => {
               companyId: company?.companyId || null,
               companyLogo: company?.logo || null
             });
+            
+            console.log('✅ [VISIT CHECK-IN] sendGuestCheckedInEmail enviado exitosamente');
           } else {
             console.log('ℹ️ [VISIT CHECK-IN] Omitido sendGuestCheckedInEmail:', {
               reason: !guest ? 'invitado no encontrado en access' : 
@@ -530,6 +535,8 @@ router.put('/:id/status', auth, async (req, res) => {
               visitId: updated._id.toString()
             });
           }
+        } else {
+          console.log('⚠️ [VISIT CHECK-IN] No se encontró acceso o creador sin email');
         }
       } catch (emailError) {
         console.error('❌ [VISIT CHECK-IN] Error enviando sendGuestCheckedInEmail:', emailError.message);

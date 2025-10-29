@@ -94,10 +94,10 @@ const UserPreviewModal: React.FC<{
     );
 };
 import React, { useState, useEffect } from 'react';
-import { LogoutIcon, SettingsIcon, UsersIcon } from '../../components/common/icons';
+import { LogoutIcon, SettingsIcon } from '../../components/common/icons';
 import { FaUser } from 'react-icons/fa';
 import { MdEditNote } from 'react-icons/md';
-import { FaRegUser } from 'react-icons/fa6';
+import { FaRegUser, FaUsers } from 'react-icons/fa6';
 import { FiShield, FiMail } from 'react-icons/fi';
 import { User, UserRole } from '../../types';
 import * as api from '../../services/api';
@@ -730,7 +730,12 @@ export const UserManagementPage: React.FC = () => {
     return (
         <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-gray-800">Gestión de Usuarios</h2>
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-md">
+                        <FaUsers className="w-6 h-6 text-white" />
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-800">Gestión de Usuarios</h2>
+                </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
                     className="px-4 py-2 font-semibold text-white bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 rounded-lg shadow-md hover:from-gray-800 hover:via-gray-700 hover:to-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-900 transition-transform"

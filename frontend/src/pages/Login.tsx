@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '../components/common/Toast';
 
 // Fixed emailError undefined issue - all variables properly declared
 export const LoginPage: React.FC = () => {
@@ -12,6 +14,8 @@ export const LoginPage: React.FC = () => {
     const [emailError, setEmailError] = useState<string | null>(null);
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const { login, loading } = useAuth();
+    const navigate = useNavigate();
+    const { showToast } = useToast();
     // Eliminado: área de subir imagen
 
     const validateEmail = (email: string): boolean => {
@@ -73,6 +77,9 @@ export const LoginPage: React.FC = () => {
 
         try {
             await login(email, password);
+            // show success toast and navigate to dashboard
+            try { showToast('Inicio de sesión iniciada correctamente', 'success'); } catch {}
+            try { navigate('/'); } catch {}
         } catch (err: any) {
             setError('Email o contraseña incorrectos.');
         }

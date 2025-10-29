@@ -7,14 +7,20 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  // loading: true during login/logout actions
   loading: boolean;
+  // initializing: true while performing initial token check on app startup
+  initializing: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // 'initializing' is true while we check local token on startup
+  const [initializing, setInitializing] = useState(true);
+  // 'loading' indicates an auth action in progress (login/logout)
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -29,7 +35,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setUser(null);
         }
       }
-      setLoading(false);
+      setInitializing(false);
     };
 
     checkUser();
@@ -59,8 +65,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isAuthenticated: !!user,
     login,
     logout,
-    loading
-  };
+    // expose both flags: 'initializing' for app startup, 'loading' for auth actions
+    initializing,
+    loading,
+  } as any;
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

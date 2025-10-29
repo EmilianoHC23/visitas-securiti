@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
 import { useAuth } from '../contexts/AuthContext';
 
 // Fixed emailError undefined issue - all variables properly declared
@@ -57,8 +59,9 @@ export const LoginPage: React.FC = () => {
 
     // Eliminado: función para subir imagen
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+        // support being called from form onSubmit or button onClick
+        try { e && (e as any).preventDefault(); } catch {};
         setError(null);
 
         const isEmailValid = validateEmail(email);
@@ -95,9 +98,7 @@ export const LoginPage: React.FC = () => {
                     <h1 className="text-3xl font-bold text-gray-800 mb-6">Inicia sesión en Visitas SecuriTI</h1>
                     <form onSubmit={handleSubmit} className="w-full space-y-6">
                         {error && (
-                            <div className="p-2 bg-red-100 border border-red-300 text-red-700 rounded text-sm text-center">
-                                {error}
-                            </div>
+                            <Alert severity="error">{error}</Alert>
                         )}
                         <div>
                             <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1">
@@ -181,11 +182,20 @@ export const LoginPage: React.FC = () => {
                             )}
                         </div>
                         <button
-                            type="submit"
+                            type="button"
+                            onClick={handleSubmit}
                             disabled={loading || !!emailError || !!passwordError}
-                            className="w-full py-3 rounded-lg text-white font-semibold text-base transition-colors bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed mt-6 shadow"
+                            aria-busy={loading}
+                            className="w-full py-3 rounded-lg text-white font-semibold text-base transition-colors bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed mt-6 shadow flex items-center justify-center"
                         >
-                            {loading ? 'Ingresando...' : 'Iniciar Sesión'}
+                            {loading ? (
+                                <>
+                                    <CircularProgress size={18} color="inherit" className="mr-3" />
+                                    Ingresando...
+                                </>
+                            ) : (
+                                'Iniciar Sesión'
+                            )}
                         </button>
                     </form>
                 </div>

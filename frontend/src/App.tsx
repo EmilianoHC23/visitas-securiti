@@ -33,9 +33,10 @@ const PublicRegistrationWrapper: React.FC = () => {
 
 
 const AppRoutes: React.FC = () => {
-    const { isAuthenticated, user, loading } = useAuth();
-    
-    if (loading) {
+    const { isAuthenticated, user, initializing } = useAuth();
+
+    // Only block rendering while we're performing the initial auth check on app startup.
+    if (initializing) {
         return <div className="flex justify-center items-center h-screen">Cargando...</div>;
     }
 

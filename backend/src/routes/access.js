@@ -35,11 +35,105 @@ async function finalizeExpiredAccesses() {
   }
 }
 
+// Envía recordatorios cuando da la hora/fecha de inicio del acceso/evento.
+// Lazy/On-demand: se ejecuta al consultar la lista de accesos.
+// Usa reminderSent como candado permanente para evitar duplicados.
+async function sendDueReminders() {
+  try {
+    const now = new Date();
+    const AccessModel = Access;
+    const due = await AccessModel.find({
+      status: 'active',
+      startDate: { $lte: now },
+      reminderSent: { $ne: true }
+    }).populate('creatorId', 'firstName lastName email');
+
+    if (!due.length) return;
+
+    console.log(`📨 [LAZY REMINDERS] Enviando recordatorios para ${due.length} acceso(s)`);
+
+    for (const access of due) {
+      try {
+        // Respetar configuración de envío de correos
+        if (access?.settings?.sendAccessByEmail !== false) {
+          const company = await Company.findOne({ companyId: access.companyId });
+          const startTimeStr = formatTime(access.startDate);
+
+          // Recordatorio al creador
+          if (access.creatorId?.email) {
+            try {
+              await emailService.sendAccessReminderToCreatorEmail({
+                creatorEmail: access.creatorId.email,
+                creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+                accessTitle: access.eventName,
+                startDate: access.startDate,
+                startTime: startTimeStr,
+                location: access.location,
+                companyName: company?.name || 'Empresa',
+                companyId: company?.companyId || null,
+                companyLogo: company?.logo || null
+              });
+              console.log(`✅ [LAZY REMINDERS] Recordatorio enviado al creador: ${access.creatorId.email}`);
+            } catch (e) {
+              console.warn('⚠️ [LAZY REMINDERS] Error enviando recordatorio al creador:', e?.message);
+            }
+          }
+
+          // Recordatorio a invitados
+          for (const guest of access.invitedUsers || []) {
+            if (!guest?.email) continue;
+            try {
+              // Reutilizar el mismo payload de QR que se envió en la invitación
+              const qrData = {
+                type: 'access-invitation',
+                accessId: access._id.toString(),
+                accessCode: access.accessCode,
+                guestName: guest.name,
+                guestEmail: guest.email || '',
+                eventName: access.eventName,
+                eventDate: access.startDate
+              };
+              await emailService.sendAccessReminderToGuestEmail({
+                invitedEmail: guest.email,
+                invitedName: guest.name,
+                hostName: `${access.creatorId?.firstName || ''} ${access.creatorId?.lastName || ''}`.trim(),
+                accessTitle: access.eventName,
+                startDate: access.startDate,
+                startTime: startTimeStr,
+                location: access.location,
+                qrData: JSON.stringify(qrData),
+                additionalInfo: access.additionalInfo || '',
+                companyName: company?.name || 'Empresa',
+                companyId: company?.companyId || null,
+                companyLogo: company?.logo || null
+              });
+              console.log(`✅ [LAZY REMINDERS] Recordatorio enviado al invitado: ${guest.email}`);
+            } catch (e) {
+              console.warn('⚠️ [LAZY REMINDERS] Error enviando recordatorio al invitado:', guest.email, e?.message);
+            }
+          }
+        }
+
+        // Marcar recordatorio como enviado para evitar duplicados
+        access.reminderSent = true;
+        await access.save();
+        console.log(`✅ [LAZY REMINDERS] Recordatorio marcado como enviado para: ${access.eventName}`);
+      } catch (inner) {
+        console.warn('⚠️ [LAZY REMINDERS] Error procesando acceso:', inner?.message);
+      }
+    }
+  } catch (e) {
+    console.warn('⚠️ [LAZY REMINDERS] Error general:', e?.message);
+  }
+}
+
 // ==================== GET ALL ACCESS CODES ====================
 router.get('/', auth, authorize(['admin', 'reception', 'host']), async (req, res) => {
   try {
     // Lazy finalize before listing
     await finalizeExpiredAccesses();
+    // Lazy reminders at access start
+    await sendDueReminders();
     const { status } = req.query;
     const filter = { companyId: req.user.companyId };
 
@@ -69,6 +163,8 @@ router.get('/agenda', auth, authorize(['admin', 'reception', 'host']), async (re
   try {
     // Lazy finalize before agenda
     await finalizeExpiredAccesses();
+    // Lazy reminders at access start
+    await sendDueReminders();
     const { start, end } = req.query;
     
     const filter = { 
@@ -105,6 +201,8 @@ router.get('/:id', auth, authorize(['admin', 'reception', 'host']), async (req, 
   try {
     // Lazy finalize before fetch
     await finalizeExpiredAccesses();
+    // Lazy reminders at access start
+    await sendDueReminders();
     const access = await Access.findById(req.params.id)
       .populate('creatorId', 'firstName lastName email')
       .populate('notifyUsers', 'firstName lastName email');

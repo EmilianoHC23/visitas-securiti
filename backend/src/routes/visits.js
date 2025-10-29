@@ -7,6 +7,7 @@ const Company = require('../models/Company');
 const { auth, authorize } = require('../middleware/auth');
 const Approval = require('../models/Approval');
 const VisitEvent = require('../models/VisitEvent');
+const emailService = require('../services/emailService');
 
 const router = express.Router();
 

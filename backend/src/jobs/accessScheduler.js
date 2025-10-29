@@ -70,6 +70,16 @@ async function sendDueReminders() {
           for (const guest of access.invitedUsers || []) {
             if (!guest?.email) continue;
             try {
+              // Reutilizar el mismo payload de QR que se envió en la invitación
+              const qrData = {
+                type: 'access-invitation',
+                accessId: access._id.toString(),
+                accessCode: access.accessCode,
+                guestName: guest.name,
+                guestEmail: guest.email || '',
+                eventName: access.eventName,
+                eventDate: access.startDate
+              };
               await emailService.sendAccessReminderToGuestEmail({
                 invitedEmail: guest.email,
                 invitedName: guest.name,
@@ -78,6 +88,7 @@ async function sendDueReminders() {
                 startDate: access.startDate,
                 startTime: startTimeStr,
                 location: access.location,
+                qrData: JSON.stringify(qrData),
                 additionalInfo: access.additionalInfo || '',
                 companyName: company?.name || 'Empresa',
                 companyLogo: company?.logo

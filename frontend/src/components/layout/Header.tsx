@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../common/Toast';
 import { ChevronDownIcon, LogoutIcon } from '../common/icons';
 import { FaX } from 'react-icons/fa6';
 import { useLocation } from 'react-router-dom';
@@ -24,6 +25,7 @@ const getPageTitle = (pathname: string): string => {
 
 export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: (collapsed: boolean) => void }> = ({ sidebarCollapsed, setSidebarCollapsed }) => {
     const { user, logout } = useAuth();
+    const { showToast } = useToast();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [btnHover, setBtnHover] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -177,10 +179,23 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                         <div className="dropdown-menu dropdown-menu-end show mt-2 shadow" style={{ minWidth: 200, right: 0 }}>
                             <a href="#profile" className="dropdown-item">Mi Perfil</a>
                             <button
-                                onClick={logout}
+                                onClick={() => {
+                                    try {
+                                        logout();
+                                        // show confirmation toast
+                                        showToast('Sesión cerrada correctamente', 'success');
+                                    } catch (err) {
+                                        // if something goes wrong, show an error toast
+                                        try {
+                                            showToast('No se pudo cerrar la sesión', 'error');
+                                        } catch (_) {
+                                            // swallow
+                                        }
+                                    }
+                                }}
                                 className="dropdown-item d-flex align-items-center"
                             >
-                                    <LogoutIcon className="me-2 w-5 h-5" />
+                                <LogoutIcon className="me-2 w-5 h-5" />
                                 Cerrar Sesión
                             </button>
                         </div>

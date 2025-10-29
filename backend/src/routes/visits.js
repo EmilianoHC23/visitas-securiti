@@ -205,6 +205,7 @@ router.post('/', auth, async (req, res) => {
     await visit.populate('host', 'firstName lastName email profileImage');
 
     // Si es una visita de acceso/evento, enviar email al organizador notificando que el invitado llegó
+    // PERO SOLO si fue agregado vía pre-registro público (no si fue invitado directamente)
     if ((req.body.visitType === 'access-code' || req.body.fromAccessEvent === true) && initialStatus === 'approved') {
       try {
         // Buscar el acceso para obtener el creador
@@ -212,20 +213,30 @@ router.post('/', auth, async (req, res) => {
         const access = await Access.findOne({ accessCode: req.body.accessCode }).populate('creatorId', 'firstName lastName email');
         
         if (access && access.creatorId) {
-          await require('../services/emailService').sendGuestArrivedEmail({
-            visitId: visit._id,
-            creatorEmail: access.creatorId.email,
-            creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-            guestName: visitorName,
-            guestEmail: visitorEmail || 'No proporcionado',
-            guestCompany: visitorCompany || 'No proporcionado',
-            guestPhoto: req.body.visitorPhoto,
-            accessTitle: access.eventName,
-            companyName: (company && company.name) || 'SecurITI',
-            companyId: company?.companyId || null,
-            companyLogo: company?.logo || null
-          });
-          console.log('✅ Email de llegada de invitado enviado al organizador:', access.creatorId.email);
+          // Buscar al invitado en el acceso para verificar si fue pre-registrado
+          const guest = access.invitedUsers.find(u => 
+            u.email === visitorEmail || u.phone === req.body.visitorPhone
+          );
+          
+          // SOLO enviar sendGuestArrivedEmail si fue agregado vía pre-registro público
+          if (guest && guest.addedViaPreRegistration === true) {
+            await require('../services/emailService').sendGuestArrivedEmail({
+              visitId: visit._id,
+              creatorEmail: access.creatorId.email,
+              creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+              guestName: visitorName,
+              guestEmail: visitorEmail || 'No proporcionado',
+              guestCompany: visitorCompany || 'No proporcionado',
+              guestPhoto: req.body.visitorPhoto,
+              accessTitle: access.eventName,
+              companyName: (company && company.name) || 'SecurITI',
+              companyId: company?.companyId || null,
+              companyLogo: company?.logo || null
+            });
+            console.log('✅ [PRE-REGISTRO] Email de llegada enviado al organizador (pre-registro público):', access.creatorId.email);
+          } else {
+            console.log('ℹ️ [INVITADO DIRECTO] Omitido sendGuestArrivedEmail para invitado agregado manualmente (se enviará sendGuestCheckedInEmail en check-in)');
+          }
         }
       } catch (emailError) {
         console.error('⚠️ Error enviando email de llegada:', emailError);

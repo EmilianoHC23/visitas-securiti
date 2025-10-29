@@ -145,6 +145,30 @@ class EmailService {
     return imageUrl;
   }
 
+  /**
+   * Genera URL temporal para foto de ubicación de empresa
+   * @param {string} companyId - ID de la empresa
+   * @returns {string} URL pública temporal con token JWT
+   */
+  generateLocationPhotoUrl(companyId) {
+    // Generar token JWT que expira en 90 días (fotos de ubicación cambian con menos frecuencia)
+    const token = jwt.sign(
+      { 
+        companyId: companyId,
+        type: 'location-photo'
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '90d' }
+    );
+    
+    // Construir URL pública
+    const baseUrl = process.env.API_URL || 'http://localhost:5000';
+    const photoUrl = `${baseUrl}/api/company/location-photo/${companyId}/${token}`;
+    
+    console.log(`📍 URL temporal generada para foto de ubicación de empresa ${companyId}`);
+    return photoUrl;
+  }
+
   async sendTestEmail(to) {
     if (!this.isEnabled()) {
       return { success: false, error: 'Email service not configured' };
@@ -1382,6 +1406,23 @@ class EmailService {
       console.log('🏢 [ACCESS CREATED] Sin logo, usando fallback');
     }
 
+    // Generar URL temporal para la imagen del evento si existe y es Base64
+    let EVENT_IMAGE_URL;
+    if (data.eventImage && data.eventImage.startsWith('data:image')) {
+      if (data.accessId) {
+        EVENT_IMAGE_URL = this.generateEventImageUrl(data.accessId);
+        console.log('🖼️ [ACCESS CREATED] Imagen del evento: URL temporal generada');
+      } else {
+        EVENT_IMAGE_URL = null;
+        console.warn('⚠️ [ACCESS CREATED] No accessId para imagen temporal');
+      }
+    } else if (data.eventImage) {
+      EVENT_IMAGE_URL = data.eventImage;
+      console.log('🖼️ [ACCESS CREATED] Imagen del evento: URL pública');
+    } else {
+      EVENT_IMAGE_URL = null;
+    }
+
     try {
       const primaryColor = '#1e3a8a';
       const accentColor = '#f97316';
@@ -1450,6 +1491,12 @@ class EmailService {
                         <!-- Detalles del acceso -->
                         <div style="background-color: #f9fafb; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
                           <h2 style="color: #1f2937; font-size: 18px; margin: 0 0 20px 0; font-weight: 600;">Detalles del acceso</h2>
+                          
+                          ${EVENT_IMAGE_URL ? `
+                          <div style="text-align: center; margin-bottom: 20px;">
+                            <img src="${EVENT_IMAGE_URL}" alt="Imagen del evento" style="max-width: 200px; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" />
+                          </div>
+                          ` : ''}
                           
                           <table style="width: 100%; border-collapse: collapse;">
                             <tr>
@@ -1569,6 +1616,23 @@ class EmailService {
       EVENT_IMAGE_URL = null;
     }
 
+    // Generar URL temporal para la foto de ubicación si existe y es Base64
+    let LOCATION_PHOTO_URL;
+    if (data.companyLocation?.photo && data.companyLocation.photo.startsWith('data:image')) {
+      if (data.companyId) {
+        LOCATION_PHOTO_URL = this.generateLocationPhotoUrl(data.companyId);
+        console.log('📍 [ACCESS INVITATION] Foto de ubicación: URL temporal generada');
+      } else {
+        LOCATION_PHOTO_URL = null;
+        console.warn('⚠️ [ACCESS INVITATION] No companyId para foto de ubicación');
+      }
+    } else if (data.companyLocation?.photo) {
+      LOCATION_PHOTO_URL = data.companyLocation.photo;
+      console.log('📍 [ACCESS INVITATION] Foto de ubicación: URL pública');
+    } else {
+      LOCATION_PHOTO_URL = null;
+    }
+
     // Fallback para hostName
     const hostName = data.hostName && typeof data.hostName === 'string' && data.hostName.trim() ? data.hostName : (data.creatorName && typeof data.creatorName === 'string' && data.creatorName.trim() ? data.creatorName : 'Anfitrión');
     // Fallback para hora de inicio/fin
@@ -1661,11 +1725,42 @@ class EmailService {
                           <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.qrData)}" alt="QR Code" style="width: 200px; height: 200px; display: block; margin: 0 auto;" />
                         </div>
                         ` : ''}
+
+                        ${data.companyLocation && (data.companyLocation.street || LOCATION_PHOTO_URL) ? `
+                        <!-- Dirección de la empresa -->
+                        <div style="background-color: #f0f9ff; border: 2px solid #bae6fd; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+                          <div style="flex items-center gap-2 mb-3">
+                            <h3 style="color: #0c4a6e; font-size: 15px; font-weight: 600; margin: 0 0 12px 0;">📍 Ubicación</h3>
+                          </div>
+                          
+                          ${data.companyLocation.street ? `
+                          <p style="color: #0c4a6e; margin: 0 0 12px 0; font-size: 14px; line-height: 1.6; text-align: center;">
+                            ${data.companyLocation.googleMapsUrl ? `<a href="${data.companyLocation.googleMapsUrl}" target="_blank" style="color: #0c4a6e; text-decoration: none; font-weight: 500;">` : ''}
+                            ${[
+                              data.companyLocation.street,
+                              data.companyLocation.colony,
+                              data.companyLocation.postalCode,
+                              data.companyLocation.city,
+                              data.companyLocation.state,
+                              data.companyLocation.country
+                            ].filter(Boolean).join(', ')}
+                            ${data.companyLocation.googleMapsUrl ? `</a>` : ''}
+                          </p>
+                          ` : ''}
+                          
+                          ${LOCATION_PHOTO_URL ? `
+                          <div style="text-align: center; margin-top: 15px;">
+                            <img src="${LOCATION_PHOTO_URL}" alt="Foto de la empresa" style="max-width: 100%; max-height: 200px; height: auto; border-radius: 8px; border: 1px solid #bae6fd;" />
+                          </div>
+                          ` : ''}
+                        </div>
+                        ` : ''}
+
                         <!-- Al llegar -->
                         <div style="background-color: #fef3c7; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                           <p style="color: #92400e; margin: 0; font-size: 14px; line-height: 1.6; text-align: center;">
                             <strong>📱 Al llegar</strong><br>
-                            Muestra este mensaje con una identificación y ¡Dirígete a las filas!
+                            ${data.companyLocation?.arrivalInstructions || 'Muestra este mensaje con una identificación y ¡Dirígete a las filas!'}
                           </p>
                         </div>
                         ${data.companyAddress || data.companyEmail ? `
@@ -1704,7 +1799,7 @@ class EmailService {
 
   /**
    * Email 3: Recordatorio de acceso (al creador cuando el acceso inicia)
-   * @param {Object} data - { creatorEmail, creatorName, accessTitle, startDate, startTime, location, companyName, companyLogo }
+   * @param {Object} data - { creatorEmail, creatorName, accessTitle, startDate, startTime, location, companyName, companyLogo, eventImage, accessId, companyId, additionalInfo }
    */
   async sendAccessReminderToCreatorEmail(data) {
     if (!this.isEnabled()) {
@@ -1730,6 +1825,23 @@ class EmailService {
       console.log('🏢 [REMINDER CREATOR] Sin logo, usando fallback');
     }
 
+    // Generar URL temporal para la imagen del evento si existe y es Base64
+    let EVENT_IMAGE_URL;
+    if (data.eventImage && data.eventImage.startsWith('data:image')) {
+      if (data.accessId) {
+        EVENT_IMAGE_URL = this.generateEventImageUrl(data.accessId);
+        console.log('🖼️ [REMINDER CREATOR] Imagen del evento: URL temporal generada');
+      } else {
+        EVENT_IMAGE_URL = null;
+        console.warn('⚠️ [REMINDER CREATOR] No accessId para imagen temporal');
+      }
+    } else if (data.eventImage) {
+      EVENT_IMAGE_URL = data.eventImage;
+      console.log('🖼️ [REMINDER CREATOR] Imagen del evento: URL pública');
+    } else {
+      EVENT_IMAGE_URL = null;
+    }
+
     // Fallbacks para variables usadas en la plantilla
     const creatorName = data.creatorName && typeof data.creatorName === 'string' && data.creatorName.trim()
       ? data.creatorName
@@ -1744,7 +1856,7 @@ class EmailService {
       
       const logoHtml = COMPANY_LOGO_URL 
         ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto;" />`
-        : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
+        : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
@@ -1765,14 +1877,14 @@ class EmailService {
                     
                     <!-- Header -->
                     <tr>
-                      <td style="padding: 40px; text-align: center;">
+                      <td style="padding: 40px; text-align: center; background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); border-radius: 12px 12px 0 0;">
                         ${logoHtml}
                       </td>
                     </tr>
 
                     <!-- Body -->
                     <tr>
-                      <td style="padding: 0 40px 40px 40px;">
+                      <td style="padding: 40px;">
                         <h1 style="color: #1f2937; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">
                           Hola ${creatorName}
                         </h1>
@@ -1782,19 +1894,25 @@ class EmailService {
                         </p>
 
                         <!-- Detalles -->
-                        <div style="background-color: #fef3c7; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
-                          <p style="color: #92400e; margin: 0; font-size: 15px; line-height: 1.8;">
-                            <strong>Detalles del acceso</strong><br><br>
+                        <div style="background-color: #f9fafb; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
+                          <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 16px; font-weight: 600;">Detalles del acceso</h3>
+                          
+                          ${EVENT_IMAGE_URL ? `
+                          <div style="text-align: center; margin-bottom: 20px;">
+                            <img src="${EVENT_IMAGE_URL}" alt="Imagen del evento" style="max-width: 200px; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" />
+                          </div>
+                          ` : ''}
+                          
+                          <p style="color: #4b5563; margin: 8px 0; font-size: 14px; line-height: 1.8;">
                             <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}
                             ${data.location ? `<br><strong>Lugar:</strong> ${data.location}` : ''}
+                            ${data.additionalInfo ? `<br><strong>Información adicional:</strong> ${data.additionalInfo}` : ''}
                           </p>
                         </div>
 
-                        ${data.companyAddress || data.companyEmail ? `
                         <p style="color: #6b7280; font-size: 13px; line-height: 1.6; text-align: center; margin-top: 25px;">
                           Si tienes alguna duda, visita nuestro Centro de Ayuda o ponte en contacto con nosotros.
                         </p>
-                        ` : ''}
                       </td>
                     </tr>
 
@@ -1829,7 +1947,7 @@ class EmailService {
 
   /**
    * Email 4: Recordatorio de acceso (al invitado cuando el acceso inicia)
-   * @param {Object} data - { invitedEmail, invitedName, hostName, accessTitle, startDate, startTime, location, qrCode, companyName, companyLogo }
+   * @param {Object} data - { invitedEmail, invitedName, hostName, accessTitle, startDate, startTime, location, qrCode, companyName, companyLogo, eventImage, accessId, companyId, additionalInfo }
    */
   async sendAccessReminderToGuestEmail(data) {
     if (!this.isEnabled()) {
@@ -1855,6 +1973,23 @@ class EmailService {
       console.log('🏢 [REMINDER GUEST] Sin logo, usando fallback');
     }
 
+    // Generar URL temporal para la imagen del evento si existe y es Base64
+    let EVENT_IMAGE_URL;
+    if (data.eventImage && data.eventImage.startsWith('data:image')) {
+      if (data.accessId) {
+        EVENT_IMAGE_URL = this.generateEventImageUrl(data.accessId);
+        console.log('🖼️ [REMINDER GUEST] Imagen del evento: URL temporal generada');
+      } else {
+        EVENT_IMAGE_URL = null;
+        console.warn('⚠️ [REMINDER GUEST] No accessId para imagen temporal');
+      }
+    } else if (data.eventImage) {
+      EVENT_IMAGE_URL = data.eventImage;
+      console.log('🖼️ [REMINDER GUEST] Imagen del evento: URL pública');
+    } else {
+      EVENT_IMAGE_URL = null;
+    }
+
     // Fallbacks para variables usadas en la plantilla
     const hostName = data.hostName && typeof data.hostName === 'string' && data.hostName.trim()
       ? data.hostName
@@ -1869,7 +2004,7 @@ class EmailService {
       
       const logoHtml = COMPANY_LOGO_URL 
         ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto;" />`
-        : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
+        : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
@@ -1889,13 +2024,13 @@ class EmailService {
                   <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
                     <!-- Header -->
                     <tr>
-                      <td style="padding: 40px; text-align: center;">
+                      <td style="padding: 40px; text-align: center; background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); border-radius: 12px 12px 0 0;">
                         ${logoHtml}
                       </td>
                     </tr>
                     <!-- Body -->
                     <tr>
-                      <td style="padding: 0 40px 40px 40px;">
+                      <td style="padding: 40px;">
                         <h1 style="color: #1f2937; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">
                           Hola ${data.invitedName}
                         </h1>
@@ -1903,12 +2038,19 @@ class EmailService {
                           ${hostName} de <strong>${data.companyName}</strong> te espera para <strong>${data.accessTitle}</strong>
                         </p>
                         <!-- Detalles -->
-                        <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
-                          <p style="color: #1f2937; margin: 0; font-size: 14px; line-height: 1.8;">
-                            <strong>Detalles del acceso</strong><br><br>
-                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}<br>
-                            ${data.location ? `<strong>Lugar:</strong> ${data.location}<br>` : ''}
-                            <strong>Información adicional:</strong> ${data.additionalInfo || 'N/A'}
+                        <div style="background-color: #f9fafb; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
+                          <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 16px; font-weight: 600;">Detalles del acceso</h3>
+                          
+                          ${EVENT_IMAGE_URL ? `
+                          <div style="text-align: center; margin-bottom: 20px;">
+                            <img src="${EVENT_IMAGE_URL}" alt="Imagen del evento" style="max-width: 200px; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" />
+                          </div>
+                          ` : ''}
+                          
+                          <p style="color: #4b5563; margin: 8px 0; font-size: 14px; line-height: 1.8;">
+                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}
+                            ${data.location ? `<br><strong>Lugar:</strong> ${data.location}` : ''}
+                            ${data.additionalInfo ? `<br><strong>Información adicional:</strong> ${data.additionalInfo}` : ''}
                           </p>
                         </div>
 
@@ -2080,8 +2222,8 @@ class EmailService {
   }
 
   /**
-   * Email 6: Modificación de acceso (al creador)
-   * @param {Object} data - { creatorEmail, creatorName, accessTitle, startDate, companyName, companyLogo }
+   * Email 6: Modificación de acceso (al creador) - SOLO si endDate fue extendida
+   * @param {Object} data - { creatorEmail, creatorName, accessTitle, startDate, endDate, companyName, companyLogo, companyId }
    */
   async sendAccessModifiedToCreatorEmail(data) {
     if (!this.isEnabled()) {
@@ -2113,12 +2255,12 @@ class EmailService {
       
       const logoHtml = COMPANY_LOGO_URL 
         ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto;" />`
-        : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
+        : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
         to: data.creatorEmail,
-        subject: `Modificación del acceso`,
+        subject: `Fecha de fin extendida: ${data.accessTitle}`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -2134,27 +2276,28 @@ class EmailService {
                     
                     <!-- Header -->
                     <tr>
-                      <td style="padding: 40px; text-align: center;">
+                      <td style="padding: 40px; text-align: center; background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); border-radius: 12px 12px 0 0;">
                         ${logoHtml}
                       </td>
                     </tr>
 
                     <!-- Body -->
                     <tr>
-                      <td style="padding: 0 40px 40px 40px;">
+                      <td style="padding: 40px;">
                         <h1 style="color: #1f2937; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">
                           Hola ${data.creatorName}
                         </h1>
                         
                         <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
-                          El acceso <strong>${data.accessTitle}</strong> ha sido modificado, se ha notificado a los demás usuarios y visitantes.
+                          La fecha de fin del acceso <strong>${data.accessTitle}</strong> ha sido extendida. Se ha notificado a los invitados.
                         </p>
 
                         <!-- Detalles -->
-                        <div style="background-color: #fef3c7; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
-                          <p style="color: #92400e; margin: 0; font-size: 14px; line-height: 1.8;">
-                            <strong>Detalle del acceso</strong><br><br>
-                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}
+                        <div style="background-color: #eff6ff; border-left: 4px solid ${primaryColor}; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
+                          <h3 style="color: ${primaryColor}; margin: 0 0 15px 0; font-size: 16px; font-weight: 600;">Nueva fecha de fin</h3>
+                          <p style="color: #1f2937; margin: 0; font-size: 15px; line-height: 1.8;">
+                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}<br>
+                            <strong style="color: ${accentColor};">Nueva fecha y hora de fin:</strong> ${formatFullDate(new Date(data.endDate))}
                           </p>
                         </div>
 
@@ -2325,7 +2468,7 @@ class EmailService {
 
   /**
    * Email 8: Cancelación de acceso (al creador y a los invitados)
-   * @param {Object} data - { recipientEmail, recipientName, accessTitle, startDate, companyName, companyLogo, isCreator }
+   * @param {Object} data - { recipientEmail, recipientName, accessTitle, startDate, endDate, startTime, endTime, eventImage, additionalInfo, companyName, companyId, companyLogo, isCreator }
    */
   async sendAccessCancelledEmail(data) {
     if (!this.isEnabled()) {
@@ -2349,6 +2492,22 @@ class EmailService {
     } else {
       COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
       console.log('🏢 [CANCELLED] Sin logo, usando fallback');
+    }
+
+    // Generar URL temporal para la imagen del evento si existe y es Base64
+    let EVENT_IMAGE_URL;
+    if (data.eventImage && data.eventImage.startsWith('data:image')) {
+      if (data.accessId) {
+        EVENT_IMAGE_URL = this.generateEventImageUrl(data.accessId);
+        console.log('🖼️ [CANCELLED] Imagen del evento: URL temporal generada');
+      } else {
+        EVENT_IMAGE_URL = null;
+        console.warn('⚠️ [CANCELLED] No accessId para imagen temporal');
+      }
+    } else if (data.eventImage) {
+      EVENT_IMAGE_URL = data.eventImage;
+    } else {
+      EVENT_IMAGE_URL = null;
     }
 
     try {
@@ -2383,9 +2542,6 @@ class EmailService {
                     <tr>
                       <td style="padding: 40px; text-align: center; background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); border-radius: 12px 12px 0 0;">
                         ${logoHtml}
-                        <div style="width: 80px; height: 80px; border-radius: 50%; background-color: #fee2e2; display: inline-flex; align-items: center; justify-content: center; margin-top: 20px; border: 3px solid ${accentColor};">
-                          <span style="font-size: 40px; color: #dc2626;">🏢</span>
-                        </div>
                       </td>
                     </tr>
                     <!-- Body -->
@@ -2397,13 +2553,24 @@ class EmailService {
                         <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
                           ${message}
                         </p>
+
+                        ${EVENT_IMAGE_URL ? `
+                        <!-- Imagen del evento -->
+                        <div style="margin-bottom: 25px;">
+                          <img src="${EVENT_IMAGE_URL}" alt="${data.accessTitle}" style="width: 100%; max-width: 520px; height: auto; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);" />
+                        </div>
+                        ` : ''}
+
                         <!-- Detalles -->
                         <div style="background-color: #fef2f2; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 25px; text-align: left;">
                           <p style="color: #991b1b; margin: 0; font-size: 14px; line-height: 1.8;">
-                            <strong style="color: ${accentColor};">Detalles del acceso</strong><br><br>
-                            <strong>Fecha y hora de inicio:</strong> <span style="color: ${primaryColor};">${formatFullDate(new Date(data.startDate))}</span>
+                            <strong style="color: ${accentColor};">Detalles del acceso cancelado</strong><br><br>
+                            <strong>Fecha y hora de inicio:</strong> <span style="color: ${primaryColor};">${formatFullDate(new Date(data.startDate))}</span><br>
+                            ${data.endDate ? `<strong>Fecha y hora de fin:</strong> <span style="color: ${primaryColor};">${formatFullDate(new Date(data.endDate))}</span><br>` : ''}
+                            ${data.additionalInfo ? `<br><strong>Información adicional:</strong> ${data.additionalInfo}` : ''}
                           </p>
                         </div>
+
                         <p style="color: #6b7280; font-size: 13px; line-height: 1.6;">
                           Si tienes alguna duda, visita nuestro Centro de Ayuda o ponte en contacto con nosotros.
                         </p>

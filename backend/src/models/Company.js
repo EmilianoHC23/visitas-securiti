@@ -17,7 +17,15 @@ const companySchema = new mongoose.Schema({
     default: null
   },
   location: {
-    address: {
+    street: {
+      type: String,
+      default: ''
+    },
+    colony: {
+      type: String,
+      default: ''
+    },
+    postalCode: {
       type: String,
       default: ''
     },
@@ -25,7 +33,23 @@ const companySchema = new mongoose.Schema({
       type: String,
       default: ''
     },
+    state: {
+      type: String,
+      default: ''
+    },
     country: {
+      type: String,
+      default: ''
+    },
+    googleMapsUrl: {
+      type: String,
+      default: ''
+    },
+    photo: {
+      type: String,
+      default: null
+    },
+    arrivalInstructions: {
       type: String,
       default: ''
     },

@@ -366,7 +366,8 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
               companyName: company.name,
               companyLogo: company.logo,
               companyId: company._id,
-              accessId: access._id.toString() // ✅ AGREGAR accessId
+              accessId: access._id.toString(), // ✅ AGREGAR accessId
+              companyLocation: company.location // ✅ AGREGAR location para mostrar dirección
             });
           } catch (emailError) {
             console.error(`Error sending invitation to ${guest.email}:`, emailError);
@@ -401,6 +402,7 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
   const { endDate, eventImage, invitedUsers, additionalInfo } = req.body;
 
     let modified = false;
+    let endDateExtended = false; // Track si la fecha de fin fue extendida
     const oldData = { ...access.toObject() };
 
     // Update endDate (can only extend, not reduce)
@@ -409,6 +411,8 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
       if (newEndDate > access.endDate) {
         access.endDate = newEndDate;
         modified = true;
+        endDateExtended = true; // ✅ Marcar que la fecha fue extendida
+        console.log('📅 [UPDATE ACCESS] endDate extendida:', { old: access.endDate, new: newEndDate });
       }
     }
 
@@ -502,7 +506,8 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
                 companyName: company.name,
                 companyLogo: company.logo,
                 companyId: company._id,
-                accessId: access._id.toString() // ✅ AGREGAR accessId
+                accessId: access._id.toString(), // ✅ AGREGAR accessId
+                companyLocation: company.location // ✅ AGREGAR location para mostrar dirección
               });
             } catch (emailError) {
               console.error(`Error sending invitation to ${guest.email}:`, emailError);
@@ -518,8 +523,8 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
 
     await access.save();
 
-    // Send modification email to creator
-    if (access.settings.sendAccessByEmail) {
+    // Send modification email to creator SOLO si endDate fue extendida
+    if (access.settings.sendAccessByEmail && endDateExtended) {
       try {
         const company = await Company.findOne({ companyId: access.companyId });
         await emailService.sendAccessModifiedToCreatorEmail({
@@ -534,13 +539,19 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
           location: access.location,
           changes: [],
           companyName: company.name,
-          companyLogo: company.logo
+          companyLogo: company.logo,
+          companyId: company._id
         });
+        console.log('📧 [UPDATE ACCESS] Email de modificación enviado al creador (endDate extendida)');
       } catch (emailError) {
         console.error('Error sending modification email to creator:', emailError);
       }
+    } else if (!endDateExtended) {
+      console.log('ℹ️ [UPDATE ACCESS] Email de modificación omitido - solo se agregaron invitados o se cambió imagen/info');
+    }
 
-      // Send modification email to all guests
+    // Send modification email to all guests SOLO si endDate fue extendida
+    if (access.settings.sendAccessByEmail && endDateExtended) {
       for (const guest of access.invitedUsers) {
         if (guest.email) {
           try {
@@ -622,9 +633,13 @@ router.delete('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
           startTime: formatTime(access.startDate),
           endTime: formatTime(access.endDate),
           location: access.location,
+          eventImage: access.eventImage,
+          additionalInfo: access.additionalInfo,
           companyName: company.name,
           companyLogo: company.logo,
-          companyId: company._id.toString()
+          companyId: company._id.toString(),
+          accessId: access._id.toString(),
+          isCreator: true
         });
       } catch (emailError) {
         console.error('Error sending cancellation email to creator:', emailError);
@@ -644,9 +659,13 @@ router.delete('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
               startTime: formatTime(access.startDate),
               endTime: formatTime(access.endDate),
               location: access.location,
+              eventImage: access.eventImage,
+              additionalInfo: access.additionalInfo,
               companyName: company.name,
               companyLogo: company.logo,
-              companyId: company._id.toString()
+              companyId: company._id.toString(),
+              accessId: access._id.toString(),
+              isCreator: false
             });
           } catch (emailError) {
             console.error(`Error sending cancellation email to ${guest.email}:`, emailError);
@@ -927,35 +946,13 @@ router.post('/:accessId/pre-register', async (req, res) => {
           companyName: companyData?.name || 'Empresa',
           companyLogo: companyData?.logo,
           companyId: companyData?._id,
-          accessId: access._id.toString() // ✅ AGREGAR accessId
+          accessId: access._id.toString(), // ✅ AGREGAR accessId
+          companyLocation: companyData?.location // ✅ AGREGAR location para mostrar dirección
         });
         console.log('📧 [PRE-REGISTER] Enviado sendAccessInvitationEmail al invitado pre-registrado', { email, accessId: access._id.toString() });
-
-        // Notificar al organizador únicamente si es pre-registro público
-        if (access?.settings?.sendAccessByEmail !== false && access?.creatorId?.email) {
-          try {
-            await emailService.sendGuestArrivedEmail({
-              visitId: access._id.toString(),
-              creatorEmail: access.creatorId.email,
-              creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-              guestName: name,
-              guestEmail: email,
-              guestCompany: company,
-              guestPhoto: '',
-              accessTitle: access.eventName,
-              companyName: companyData?.name || 'Empresa',
-              companyId: companyData?._id?.toString(),
-              companyLogo: companyData?.logo
-            });
-            console.log('📧 [PRE-REGISTER] Enviado sendGuestArrivedEmail al organizador (pre-registro público)', {
-              creatorEmail: access.creatorId.email,
-              guestName: name,
-              accessId: access._id.toString()
-            });
-          } catch (notifyErr) {
-            console.warn('⚠️ Error sending guest arrived (pre-register) email:', notifyErr?.message);
-          }
-        }
+        
+        // NO enviar sendGuestArrivedEmail aquí - se enviará cuando el invitado escanee QR y complete el registro
+        // para pasar a la tabla "Respuesta recibida" (ver routes/visits.js POST /)
       } catch (emailError) {
         console.error('Error sending confirmation email:', emailError);
         // Don't fail the registration if email fails

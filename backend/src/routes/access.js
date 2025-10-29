@@ -930,32 +930,9 @@ router.post('/:accessId/pre-register', async (req, res) => {
           accessId: access._id.toString() // ✅ AGREGAR accessId
         });
         console.log('📧 [PRE-REGISTER] Enviado sendAccessInvitationEmail al invitado pre-registrado', { email, accessId: access._id.toString() });
-
-        // Notificar al organizador únicamente si es pre-registro público
-        if (access?.settings?.sendAccessByEmail !== false && access?.creatorId?.email) {
-          try {
-            await emailService.sendGuestArrivedEmail({
-              visitId: access._id.toString(),
-              creatorEmail: access.creatorId.email,
-              creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-              guestName: name,
-              guestEmail: email,
-              guestCompany: company,
-              guestPhoto: '',
-              accessTitle: access.eventName,
-              companyName: companyData?.name || 'Empresa',
-              companyId: companyData?._id?.toString(),
-              companyLogo: companyData?.logo
-            });
-            console.log('📧 [PRE-REGISTER] Enviado sendGuestArrivedEmail al organizador (pre-registro público)', {
-              creatorEmail: access.creatorId.email,
-              guestName: name,
-              accessId: access._id.toString()
-            });
-          } catch (notifyErr) {
-            console.warn('⚠️ Error sending guest arrived (pre-register) email:', notifyErr?.message);
-          }
-        }
+        
+        // NO enviar sendGuestArrivedEmail aquí - se enviará cuando el invitado escanee QR y complete el registro
+        // para pasar a la tabla "Respuesta recibida" (ver routes/visits.js POST /)
       } catch (emailError) {
         console.error('Error sending confirmation email:', emailError);
         // Don't fail the registration if email fails

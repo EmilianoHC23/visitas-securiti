@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { User, Visit, Access } from '../../types';
+import { User, Access } from '../../types';
 import * as api from '../../services/api';
 import CalendarMonth from '../../components/visits/CalendarMonth';
 
@@ -25,11 +25,12 @@ export const AgendaPage: React.FC = () => {
   const [hostId, setHostId] = useState('');
   const [q, setQ] = useState('');
   const [hosts, setHosts] = useState<User[]>([]);
-  const [visits, setVisits] = useState<Visit[]>([]);
+  // visits are not shown in the agenda — only accesses/events
   const [accesses, setAccesses] = useState<Access[]>([]);
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
-  const [filterType, setFilterType] = useState<'all' | 'visits' | 'accesses'>('all');
+  // Agenda should show only accesses/events by default
+  const [filterType, setFilterType] = useState<'all' | 'visits' | 'accesses'>('accesses');
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => { api.getHosts().then(setHosts).catch(console.error); }, []);
@@ -43,10 +44,6 @@ export const AgendaPage: React.FC = () => {
       if (hostId) params.hostId = hostId;
       if (q) params.q = q;
       
-      // Fetch visits
-      const visitsData = await api.getAgenda(params);
-      setVisits(visitsData || []);
-
       // Fetch accesses using new API
       const accessesData = await api.getAccessesForAgenda(
         from ? new Date(from).toISOString() : undefined,
@@ -75,19 +72,7 @@ export const AgendaPage: React.FC = () => {
   const agendaItems: AgendaItem[] = useMemo(() => {
     const items: AgendaItem[] = [];
     
-    // Add visits if filter allows
-    if (filterType === 'all' || filterType === 'visits') {
-      visits.forEach(v => items.push({ 
-        id: v._id, 
-        type: 'visit', 
-        title: v.visitorName, 
-        startDate: v.scheduledDate, 
-        reason: v.reason, 
-        company: v.visitorCompany, 
-        hostName: `${v.host.firstName} ${v.host.lastName}`, 
-        visitorName: v.visitorName 
-      }));
-    }
+    // Note: visits are intentionally omitted — agenda shows only accesses/events
     
     // Add accesses if filter allows
     if (filterType === 'all' || filterType === 'accesses') {
@@ -108,7 +93,7 @@ export const AgendaPage: React.FC = () => {
     }
     
     return items.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-  }, [visits, accesses, filterType]);
+  }, [accesses, filterType]);
 
   const copyLink = async (link: string) => {
     try { await navigator.clipboard.writeText(link); setToast('Enlace copiado al portapapeles'); setTimeout(() => setToast(null), 2000); }
@@ -152,33 +137,7 @@ export const AgendaPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filtro de tipo */}
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700">Mostrar:</span>
-          <button 
-            onClick={() => setFilterType('all')} 
-            className={`px-3 py-1.5 rounded-md text-sm font-medium ${filterType === 'all' ? 'bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-          >
-            Todos
-          </button>
-          <button 
-            onClick={() => setFilterType('visits')} 
-            className={`px-3 py-1.5 rounded-md text-sm font-medium ${filterType === 'visits' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-          >
-            Solo Visitas
-          </button>
-          <button 
-            onClick={() => setFilterType('accesses')} 
-            className={`px-3 py-1.5 rounded-md text-sm font-medium ${filterType === 'accesses' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-          >
-            Solo Accesos/Eventos
-          </button>
-          <span className="ml-auto text-sm text-gray-600">
-            {agendaItems.length} {agendaItems.length === 1 ? 'item' : 'items'}
-          </span>
-        </div>
-      </div>
+      {/* Removed type filter UI: agenda shows only accesos/eventos */}
 
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">

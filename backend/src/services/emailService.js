@@ -1425,9 +1425,6 @@ class EmailService {
                     <tr>
                       <td style="padding: 40px 40px 20px 40px; text-align: center; background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); border-radius: 12px 12px 0 0;">
                         ${logoHtml}
-                          <div style="background-color: #10b981; width: 60px; height: 60px; border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center;">
-                            <span style="color: white; font-size: 32px;">✓</span>
-                          </div>
                       </td>
                     </tr>
 
@@ -1461,11 +1458,11 @@ class EmailService {
                             </tr>
                             <tr>
                               <td style="padding: 8px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Fecha y hora de inicio:</td>
-                              <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">${formatFullDate(new Date(data.startDate))}${startTime ? ` ${startTime}` : ''}</td>
+                              <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">${formatFullDate(new Date(data.startDate))}</td>
                             </tr>
                             <tr>
                               <td style="padding: 8px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Fecha y hora de fin:</td>
-                              <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">${formatFullDate(new Date(data.endDate))}${endTime ? ` ${endTime}` : ''}</td>
+                              <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">${formatFullDate(new Date(data.endDate))}</td>
                             </tr>
                             ${data.location ? `
                             <tr>
@@ -1631,11 +1628,11 @@ class EmailService {
                           <table style="width: 100%; border-collapse: collapse;">
                             <tr>
                               <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Fecha y hora de inicio:</td>
-                              <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${formatFullDate(new Date(data.startDate))}${startTime ? ` ${startTime}` : ''}</td>
+                              <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${formatFullDate(new Date(data.startDate))}</td>
                             </tr>
                             <tr>
                               <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Fecha y hora de fin:</td>
-                              <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${formatFullDate(new Date(data.endDate))}${endTime ? ` ${endTime}` : ''}</td>
+                              <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${formatFullDate(new Date(data.endDate))}</td>
                             </tr>
                             ${data.location ? `
                             <tr>
@@ -1788,7 +1785,7 @@ class EmailService {
                         <div style="background-color: #fef3c7; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
                           <p style="color: #92400e; margin: 0; font-size: 15px; line-height: 1.8;">
                             <strong>Detalles del acceso</strong><br><br>
-                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}${startTime ? ` ${startTime}` : ''}
+                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}
                             ${data.location ? `<br><strong>Lugar:</strong> ${data.location}` : ''}
                           </p>
                         </div>
@@ -1909,7 +1906,7 @@ class EmailService {
                         <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
                           <p style="color: #1f2937; margin: 0; font-size: 14px; line-height: 1.8;">
                             <strong>Detalles del acceso</strong><br><br>
-                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}${startTime ? ` ${startTime}` : ''}<br>
+                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}<br>
                             ${data.location ? `<strong>Lugar:</strong> ${data.location}<br>` : ''}
                             <strong>Información adicional:</strong> ${data.additionalInfo || 'N/A'}
                           </p>
@@ -2157,7 +2154,7 @@ class EmailService {
                         <div style="background-color: #fef3c7; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
                           <p style="color: #92400e; margin: 0; font-size: 14px; line-height: 1.8;">
                             <strong>Detalle del acceso</strong><br><br>
-                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))} ${data.startTime}
+                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}
                           </p>
                         </div>
 
@@ -2271,7 +2268,7 @@ class EmailService {
                         <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
                           <p style="color: #1f2937; margin: 0; font-size: 14px; line-height: 1.8;">
                             <strong>Detalles del acceso</strong><br><br>
-                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))} ${data.startTime}
+                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}
                           </p>
                         </div>
 
@@ -2404,7 +2401,7 @@ class EmailService {
                         <div style="background-color: #fef2f2; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 25px; text-align: left;">
                           <p style="color: #991b1b; margin: 0; font-size: 14px; line-height: 1.8;">
                             <strong style="color: ${accentColor};">Detalles del acceso</strong><br><br>
-                            <strong>Fecha y hora de inicio:</strong> <span style="color: ${primaryColor};">${formatFullDate(new Date(data.startDate))}${data.startTime ? ` ${data.startTime}` : ''}</span>
+                            <strong>Fecha y hora de inicio:</strong> <span style="color: ${primaryColor};">${formatFullDate(new Date(data.startDate))}</span>
                           </p>
                         </div>
                         <p style="color: #6b7280; font-size: 13px; line-height: 1.6;">

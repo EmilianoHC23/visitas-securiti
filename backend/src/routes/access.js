@@ -401,6 +401,7 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
   const { endDate, eventImage, invitedUsers, additionalInfo } = req.body;
 
     let modified = false;
+    let endDateExtended = false; // Track si la fecha de fin fue extendida
     const oldData = { ...access.toObject() };
 
     // Update endDate (can only extend, not reduce)
@@ -409,6 +410,8 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
       if (newEndDate > access.endDate) {
         access.endDate = newEndDate;
         modified = true;
+        endDateExtended = true; // ✅ Marcar que la fecha fue extendida
+        console.log('📅 [UPDATE ACCESS] endDate extendida:', { old: access.endDate, new: newEndDate });
       }
     }
 
@@ -518,8 +521,8 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
 
     await access.save();
 
-    // Send modification email to creator
-    if (access.settings.sendAccessByEmail) {
+    // Send modification email to creator SOLO si endDate fue extendida
+    if (access.settings.sendAccessByEmail && endDateExtended) {
       try {
         const company = await Company.findOne({ companyId: access.companyId });
         await emailService.sendAccessModifiedToCreatorEmail({
@@ -534,13 +537,19 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
           location: access.location,
           changes: [],
           companyName: company.name,
-          companyLogo: company.logo
+          companyLogo: company.logo,
+          companyId: company._id
         });
+        console.log('📧 [UPDATE ACCESS] Email de modificación enviado al creador (endDate extendida)');
       } catch (emailError) {
         console.error('Error sending modification email to creator:', emailError);
       }
+    } else if (!endDateExtended) {
+      console.log('ℹ️ [UPDATE ACCESS] Email de modificación omitido - solo se agregaron invitados o se cambió imagen/info');
+    }
 
-      // Send modification email to all guests
+    // Send modification email to all guests SOLO si endDate fue extendida
+    if (access.settings.sendAccessByEmail && endDateExtended) {
       for (const guest of access.invitedUsers) {
         if (guest.email) {
           try {
@@ -622,9 +631,13 @@ router.delete('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
           startTime: formatTime(access.startDate),
           endTime: formatTime(access.endDate),
           location: access.location,
+          eventImage: access.eventImage,
+          additionalInfo: access.additionalInfo,
           companyName: company.name,
           companyLogo: company.logo,
-          companyId: company._id.toString()
+          companyId: company._id.toString(),
+          accessId: access._id.toString(),
+          isCreator: true
         });
       } catch (emailError) {
         console.error('Error sending cancellation email to creator:', emailError);
@@ -644,9 +657,13 @@ router.delete('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
               startTime: formatTime(access.startDate),
               endTime: formatTime(access.endDate),
               location: access.location,
+              eventImage: access.eventImage,
+              additionalInfo: access.additionalInfo,
               companyName: company.name,
               companyLogo: company.logo,
-              companyId: company._id.toString()
+              companyId: company._id.toString(),
+              accessId: access._id.toString(),
+              isCreator: false
             });
           } catch (emailError) {
             console.error(`Error sending cancellation email to ${guest.email}:`, emailError);

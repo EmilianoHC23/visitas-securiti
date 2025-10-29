@@ -3,6 +3,7 @@ import { User } from '../../types';
 import { X, Camera, QrCode, User as UserIcon } from 'lucide-react';
 import jsQR from 'jsqr';
 import * as api from '../../services/api';
+import { useToast } from '../../components/common/Toast';
 
 interface VisitRegistrationSidePanelProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
   onSubmit,
   hosts
 }) => {
+  const { showToast } = useToast();
   const [mode, setMode] = useState<RegistrationMode>(null);
   const [formData, setFormData] = useState({
     visitorEmail: '',
@@ -196,26 +198,26 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.visitorEmail || !formData.visitorName || !formData.host || !formData.reason) {
-      alert('Por favor completa todos los campos obligatorios');
+      showToast('Por favor completa todos los campos obligatorios', 'warning');
       return;
     }
 
     // Si hay un acceso pendiente de QR escaneado, registrar el check-in y crear visita con auto check-in
     const pendingAccess = (window as any).__pendingAccessCheckIn;
-    
+
     // Crear objeto de datos con los flags necesarios
     const visitDataToSubmit = { ...formData };
-    
+
     if (pendingAccess) {
       // Marcar que esta visita viene de un acceso/evento para auto check-in ANTES de intentar el fetch
       // Esto garantiza que la visita vaya a "Dentro" incluso si falla la actualización de asistencia
       (visitDataToSubmit as any).fromAccessEvent = true;
       (visitDataToSubmit as any).accessCode = pendingAccess.accessCode;
-      
+
       console.log('🎫 Visita marcada como fromAccessEvent con código:', pendingAccess.accessCode);
-      
+
       try {
         // Hacer check-in en el acceso usando el servicio API
         await api.publicAccessCheckIn({
@@ -223,9 +225,9 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
           guestEmail: pendingAccess.guestEmail || formData.visitorEmail,
           guestName: pendingAccess.guestName || formData.visitorName
         });
-        
+
         console.log('✅ Asistencia actualizada en el acceso');
-        
+
         // Limpiar el acceso pendiente
         delete (window as any).__pendingAccessCheckIn;
       } catch (error) {
@@ -234,8 +236,16 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
       }
     }
 
-    onSubmit(visitDataToSubmit);
-    onClose();
+    try {
+      // onSubmit puede ser síncrono o devolver una promesa
+      await Promise.resolve(onSubmit(visitDataToSubmit));
+      showToast('Visita registrada correctamente', 'success');
+      onClose();
+    } catch (error: any) {
+      console.error('Error al registrar visita:', error);
+      const serverMessage = error?.response?.data?.message || error?.message;
+      showToast(serverMessage ? `No se pudo registrar la visita: ${serverMessage}` : 'No se pudo registrar la visita', 'error');
+    }
   };
 
   const handleModeSelection = (selectedMode: RegistrationMode) => {

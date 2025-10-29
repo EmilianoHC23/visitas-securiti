@@ -7,6 +7,7 @@ const Company = require('../models/Company');
 const { auth, authorize } = require('../middleware/auth');
 const Approval = require('../models/Approval');
 const VisitEvent = require('../models/VisitEvent');
+const emailService = require('../services/emailService');
 
 const router = express.Router();
 
@@ -943,7 +944,7 @@ router.post('/checkin/:id', auth, async (req, res) => {
     if (visit.visitType === 'access-code' && visit.accessCode) {
       try {
         const Access = require('../models/Access');
-        const access = await Access.findOne({ accessCode: visit.accessCode });
+        const access = await Access.findOne({ accessCode: visit.accessCode }).populate('creatorId', 'firstName lastName email');
         
         console.log(`🔍 [CHECK-IN] Buscando acceso con código: ${visit.accessCode}`);
         console.log(`🔍 [CHECK-IN] Email del visitante: ${visit.visitorEmail}`);
@@ -967,6 +968,42 @@ router.post('/checkin/:id', auth, async (req, res) => {
             await access.save();
             
             console.log(`✅ [CHECK-IN] Asistencia actualizada a "asistio" para ${visit.visitorName} en acceso ${access.eventName}`);
+            
+            // 📧 Enviar sendGuestCheckedInEmail al creador si NO fue pre-registrado
+            if (!invitedUser.addedViaPreRegistration && access.settings?.sendAccessByEmail !== false && access.creatorId?.email) {
+              try {
+                const Company = require('../models/Company');
+                const company = await Company.findOne({ companyId: access.companyId });
+                
+                console.log('📧 [CHECK-IN] Enviando sendGuestCheckedInEmail al creador', {
+                  creatorEmail: access.creatorId.email,
+                  guestName: visit.visitorName,
+                  accessTitle: access.eventName
+                });
+                
+                await emailService.sendGuestCheckedInEmail({
+                  creatorEmail: access.creatorId.email,
+                  creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+                  guestName: visit.visitorName,
+                  accessTitle: access.eventName,
+                  checkInTime: visit.checkInTime,
+                  location: access.location,
+                  companyName: company?.name || 'Empresa',
+                  companyId: company?.companyId || null,
+                  companyLogo: company?.logo || null
+                });
+                
+                console.log('✅ [CHECK-IN] sendGuestCheckedInEmail enviado exitosamente');
+              } catch (emailError) {
+                console.error('❌ [CHECK-IN] Error enviando sendGuestCheckedInEmail:', emailError.message);
+              }
+            } else {
+              console.log('ℹ️ [CHECK-IN] Omitido sendGuestCheckedInEmail:', {
+                reason: invitedUser.addedViaPreRegistration ? 'pre-registro público' : 
+                        !access.settings?.sendAccessByEmail ? 'emails deshabilitados' :
+                        !access.creatorId?.email ? 'sin email de creador' : 'desconocido'
+              });
+            }
           } else {
             console.warn(`⚠️ [CHECK-IN] No se encontró invitado con email ${visit.visitorEmail} en el acceso`);
             console.warn(`📋 [CHECK-IN] Emails en la lista:`, access.invitedUsers.map(u => u.email));

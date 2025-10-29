@@ -315,7 +315,7 @@ export const CalendarMonth: React.FC<Props> = ({ year, month, events = [] }) => 
                       return (
                         <button key={ev.id} onClick={() => setSelectedEvent(ev)} className="flex items-center gap-2 text-xs w-full text-left">
                           <span style={{ background: ev.color || '#60a5fa' }} className="w-2 h-2 rounded-full inline-block" />
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <div className="truncate">{ev.title}</div>
                             {timeLabel && <div className="text-2xs text-gray-400">{timeLabel}</div>}
                           </div>

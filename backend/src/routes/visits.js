@@ -489,6 +489,52 @@ router.put('/:id/status', auth, async (req, res) => {
       await new VisitEvent({ visitId: updated._id, type: eventType }).save();
     }
 
+    // 📧 Enviar sendGuestCheckedInEmail si es check-in de acceso/evento (NO pre-registro)
+    if (status === 'checked-in' && updated.accessId) {
+      try {
+        const Access = require('../models/Access');
+        const access = await Access.findById(updated.accessId).populate('creatorId', 'firstName lastName email');
+        
+        if (access && access.creatorId?.email) {
+          // Buscar el invitado en la lista para verificar si fue pre-registrado
+          const guest = access.invitedUsers.find(u => 
+            u.email === updated.visitorEmail || u.phone === updated.visitorPhone
+          );
+          
+          // Solo enviar si NO fue agregado via pre-registro (manual o editado)
+          if (guest && !guest.addedViaPreRegistration && access.settings?.sendAccessByEmail !== false) {
+            console.log('📧 [VISIT CHECK-IN] Enviando sendGuestCheckedInEmail (invitado directo pasó a Dentro)', {
+              visitId: updated._id.toString(),
+              accessId: access._id.toString(),
+              guestName: updated.visitorName,
+              creatorEmail: access.creatorId.email
+            });
+            
+            await emailService.sendGuestCheckedInEmail({
+              creatorEmail: access.creatorId.email,
+              creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+              guestName: updated.visitorName,
+              accessTitle: access.eventName,
+              checkInTime: updated.checkInTime,
+              location: access.location,
+              companyName: company?.name || 'Empresa',
+              companyId: company?.companyId || null,
+              companyLogo: company?.logo || null
+            });
+          } else {
+            console.log('ℹ️ [VISIT CHECK-IN] Omitido sendGuestCheckedInEmail:', {
+              reason: !guest ? 'invitado no encontrado en access' : 
+                      guest.addedViaPreRegistration ? 'pre-registro público' : 
+                      'emails deshabilitados',
+              visitId: updated._id.toString()
+            });
+          }
+        }
+      } catch (emailError) {
+        console.error('❌ [VISIT CHECK-IN] Error enviando sendGuestCheckedInEmail:', emailError.message);
+      }
+    }
+
     // Enviar notificaciones al visitante cuando corresponda
     // Aprobada: siempre envía. Rechazada: solo si viene con razón (para cumplir flujo de "respuesta recibida").
     const hasRejectReasonNow = Boolean(reason || updated.rejectionReason);

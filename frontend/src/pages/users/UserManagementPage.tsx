@@ -102,6 +102,78 @@ import { FiShield, FiMail } from 'react-icons/fi';
 import { User, UserRole } from '../../types';
 import * as api from '../../services/api';
 
+// Reusable confirm dialog (Tailwind based, styled like example)
+const ConfirmDialog: React.FC<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    primaryLabel?: string;
+    secondaryLabel?: string;
+    showSecondary?: boolean;
+    onClose: () => void;
+    onPrimary: () => void;
+    onSecondary?: () => void;
+    icon?: React.ReactNode;
+}> = ({ isOpen, title, message, primaryLabel = 'Confirmar', secondaryLabel = 'Cancelar', showSecondary = false, onClose, onPrimary, onSecondary, icon }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-xl w-full shadow-2xl overflow-hidden">
+                <div className="p-6 flex flex-col items-center text-center">
+                    <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+                        {icon || (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12A9 9 0 1112 3a9 9 0 019 9z" />
+                            </svg>
+                        )}
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+                    <p className="text-sm text-gray-600 mb-6 whitespace-pre-line">{message}</p>
+
+                    <div className="w-full flex justify-center gap-3">
+                        <button
+                            onClick={() => { onClose(); }}
+                            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                        >
+                            {secondaryLabel}
+                        </button>
+                        <button
+                            onClick={() => { onPrimary(); }}
+                            className="px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors"
+                        >
+                            {primaryLabel}
+                        </button>
+                    </div>
+                    {showSecondary && onSecondary && (
+                        <div className="w-full mt-3 flex justify-center">
+                            <button
+                                onClick={() => { onSecondary(); }}
+                                className="px-4 py-2 text-red-600 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition-colors"
+                            >
+                                Eliminar permanentemente
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Simple notification banner (top-center)
+const NotificationBanner: React.FC<{ message: string; type: 'success' | 'error' | 'info'; onClose: () => void }> = ({ message, type, onClose }) => {
+    const bg = type === 'success' ? 'bg-green-50 border-green-200' : type === 'error' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200';
+    const text = type === 'success' ? 'text-green-800' : type === 'error' ? 'text-red-800' : 'text-blue-800';
+    return (
+        <div className={`fixed left-1/2 -translate-x-1/2 top-6 z-[60] ${bg} border p-3 rounded-md shadow-md`}> 
+            <div className={`flex items-start gap-3 ${text}`}>
+                <div className="flex-1 text-sm">{message}</div>
+                <button onClick={onClose} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+        </div>
+    );
+};
+
 interface NewUserData {
     email: string;
     firstName: string;
@@ -523,6 +595,13 @@ export const UserManagementPage: React.FC = () => {
     const [editLoading, setEditLoading] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
 
+    // Confirm dialog state
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmData, setConfirmData] = useState<any>(null);
+
+    // Notification/banner state
+    const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
     // We'll use CSS :hover for row highlight (no JS state needed)
 
     // Estado para la vista previa
@@ -557,10 +636,10 @@ export const UserManagementPage: React.FC = () => {
             setIsModalOpen(false);
             // Refrescar la lista de usuarios para mostrar el nuevo usuario invitado
             await fetchUsers();
-            alert('Invitación enviada exitosamente. El usuario aparecerá en la tabla con estatus "Pendiente".');
+            setNotification({ message: 'Invitación enviada exitosamente. El usuario aparecerá en la tabla con estatus "Pendiente".', type: 'success' });
         } catch (error) {
             console.error('Error sending invitation:', error);
-            alert('Error al enviar invitación. Revisa la consola para más detalles.');
+            setNotification({ message: 'Error al enviar invitación. Revisa la consola para más detalles.', type: 'error' });
         } finally {
             setInviteLoading(false);
         }
@@ -582,72 +661,69 @@ export const UserManagementPage: React.FC = () => {
             ));
             setIsEditModalOpen(false);
             setEditingUser(null);
-            alert('Usuario actualizado exitosamente');
+            setNotification({ message: 'Usuario actualizado exitosamente', type: 'success' });
         } catch (error) {
             console.error('Error updating user:', error);
-            alert('Error al actualizar usuario');
+            setNotification({ message: 'Error al actualizar usuario', type: 'error' });
         } finally {
             setEditLoading(false);
         }
     };
+    // Open a confirm dialog with data describing the action
+    const openConfirm = (data: any) => {
+        setConfirmData(data);
+        setConfirmOpen(true);
+    };
 
-    const handleResendInvitation = async (userId: string) => {
-        if (!confirm('¿Estás seguro de que quieres reenviar la invitación a este usuario?')) {
-            return;
-        }
+    const closeConfirm = () => {
+        setConfirmOpen(false);
+        setConfirmData(null);
+    };
 
+    const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+        setNotification({ message, type });
+        window.setTimeout(() => setNotification(null), 4500);
+    };
+
+    const handleConfirmPrimary = async () => {
+        if (!confirmData) return closeConfirm();
+        const { type, user } = confirmData;
         try {
-            await api.resendInvitation(userId);
-            alert('Invitación reenviada exitosamente');
-        } catch (error) {
-            console.error('Error resending invitation:', error);
-            alert('Error al reenviar invitación');
+            if (type === 'resend') {
+                await api.resendInvitation(user._id);
+                showNotification('Invitación reenviada exitosamente', 'success');
+            } else if (type === 'delete-invite') {
+                await api.deleteInvitation(user._id);
+                showNotification('Invitación eliminada exitosamente. Puedes reutilizar este correo.', 'success');
+            } else if (type === 'deactivate') {
+                await api.deactivateUser(user._id);
+                showNotification('Usuario desactivado exitosamente.', 'success');
+            } else if (type === 'delete') {
+                await api.deleteUser(user._id);
+                showNotification('Usuario eliminado completamente del sistema.', 'success');
+            }
+            await fetchUsers();
+        } catch (err) {
+            console.error('Error performing action:', err);
+            showNotification('Ocurrió un error. Revisa la consola.', 'error');
+        } finally {
+            closeConfirm();
         }
     };
 
-    const handleDeleteUser = async (user: User) => {
-        let message = '';
-        let forceDelete = false;
-
-        if (user.invitationStatus === 'pending' || user.invitationStatus === 'none') {
-            message = '¿Estás seguro de que quieres eliminar esta invitación? El usuario será eliminado permanentemente y podrás reutilizar este correo.';
-        } else if (user.invitationStatus === 'registered') {
-            message = '¿Quieres desactivar este usuario o eliminarlo completamente del sistema?\n\n- Desactivar: El usuario quedará inactivo pero podrá ser reactivado\n- Eliminar: El usuario será removido permanentemente del sistema';
-            
-            const choice = confirm(message + '\n\nPresiona Aceptar para DESACTIVAR o Cancelar para ELIMINAR COMPLETAMENTE');
-            if (choice) {
-                // Desactivar (comportamiento actual)
-                message = '¿Estás seguro de que quieres desactivar este usuario?';
-            } else {
-                // Eliminar completamente
-                forceDelete = true;
-                message = '¿Estás seguro de que quieres eliminar completamente este usuario del sistema? Esta acción no se puede deshacer.';
-            }
-        }
-        
-        if (!confirm(message)) {
-            return;
-        }
-
+    const handleConfirmSecondary = async () => {
+        // Used for explicit "Eliminar permanentemente" button on the dialog
+        if (!confirmData) return closeConfirm();
+        const { user } = confirmData;
         try {
-            if (user.invitationStatus === 'pending' || user.invitationStatus === 'none') {
-                await api.deleteInvitation(user._id);
-                alert('Invitación eliminada exitosamente. Puedes reutilizar este correo para invitar a un nuevo usuario.');
-            } else {
-                if (forceDelete) {
-                    await api.deleteUser(user._id);
-                    alert('Usuario eliminado completamente del sistema.');
-                } else {
-                    await api.deactivateUser(user._id);
-                    alert('Usuario desactivado exitosamente.');
-                }
-            }
-            // Recargar la lista de usuarios
-            fetchUsers();
-        } catch (error) {
-            console.error('Error deleting user:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-            alert(`Error al eliminar usuario: ${errorMessage}`);
+            await api.deleteUser(user._id);
+            showNotification('Usuario eliminado completamente del sistema.', 'success');
+            await fetchUsers();
+        } catch (err) {
+            console.error('Error deleting user permanently:', err);
+            showNotification('Error al eliminar usuario.', 'error');
+        } finally {
+            closeConfirm();
         }
     };
 
@@ -727,7 +803,15 @@ export const UserManagementPage: React.FC = () => {
                                         <div className="flex justify-end items-center space-x-2">
                                             {user.invitationStatus === 'pending' && (
                                                 <button 
-                                                    onClick={e => { e.stopPropagation(); handleResendInvitation(user._id); }}
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        openConfirm({
+                                                            type: 'resend',
+                                                            title: 'Reenviar invitación',
+                                                            message: '¿Estás seguro de que quieres reenviar la invitación a este usuario?',
+                                                            user
+                                                        });
+                                                    }}
                                                     className="p-2 text-blue-600 hover:text-blue-800 rounded hover:bg-gray-100 transition"
                                                     title="Reenviar invitación"
                                                 >
@@ -753,7 +837,26 @@ export const UserManagementPage: React.FC = () => {
                                                 </svg>
                                             </button>
                                             <button 
-                                                onClick={e => { e.stopPropagation(); handleDeleteUser(user); }}
+                                                onClick={e => { 
+                                                    e.stopPropagation();
+                                                    // Decide dialog type based on invitationStatus
+                                                    if (user.invitationStatus === 'pending' || user.invitationStatus === 'none') {
+                                                        openConfirm({
+                                                            type: 'delete-invite',
+                                                            title: 'Eliminar invitación',
+                                                            message: '¿Estás seguro de que quieres eliminar esta invitación? El usuario será eliminado permanentemente y podrás reutilizar este correo.',
+                                                            user
+                                                        });
+                                                    } else {
+                                                        // For registered users, ask whether deactivate or delete
+                                                        openConfirm({
+                                                            type: 'deactivate',
+                                                            title: '¿Qué deseas hacer con este usuario?',
+                                                            message: 'Puedes desactivar al usuario (será inactivable y podrá reactivarse) o eliminarlo completamente. Usa "Confirmar" para desactivar o "Eliminar permanentemente" para borrarlo.',
+                                                            user
+                                                        });
+                                                    }
+                                                }}
                                                 className="p-2 text-red-600 hover:text-red-800 rounded hover:bg-gray-100 transition"
                                                 title="Eliminar usuario"
                                             >
@@ -783,6 +886,23 @@ export const UserManagementPage: React.FC = () => {
                 onInvite={handleInviteUser}
                 loading={inviteLoading}
             />
+
+            {/* Confirm dialog used for delete/resend actions */}
+            <ConfirmDialog
+                isOpen={confirmOpen}
+                title={confirmData?.title || ''}
+                message={confirmData?.message || ''}
+                primaryLabel={confirmData?.type === 'deactivate' ? 'Desactivar' : confirmData?.type === 'resend' ? 'Reenviar' : 'Confirmar'}
+                secondaryLabel="Cancelar"
+                showSecondary={confirmData?.type === 'deactivate'}
+                onClose={() => closeConfirm()}
+                onPrimary={() => handleConfirmPrimary()}
+                onSecondary={() => handleConfirmSecondary()}
+            />
+
+            {notification && (
+                <NotificationBanner message={notification.message} type={notification.type} onClose={() => setNotification(null)} />
+            )}
 
             <EditUserModal
                 isOpen={isEditModalOpen}

@@ -145,6 +145,30 @@ class EmailService {
     return imageUrl;
   }
 
+  /**
+   * Genera URL temporal para foto de ubicación de empresa
+   * @param {string} companyId - ID de la empresa
+   * @returns {string} URL pública temporal con token JWT
+   */
+  generateLocationPhotoUrl(companyId) {
+    // Generar token JWT que expira en 90 días (fotos de ubicación cambian con menos frecuencia)
+    const token = jwt.sign(
+      { 
+        companyId: companyId,
+        type: 'location-photo'
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '90d' }
+    );
+    
+    // Construir URL pública
+    const baseUrl = process.env.API_URL || 'http://localhost:5000';
+    const photoUrl = `${baseUrl}/api/company/location-photo/${companyId}/${token}`;
+    
+    console.log(`📍 URL temporal generada para foto de ubicación de empresa ${companyId}`);
+    return photoUrl;
+  }
+
   async sendTestEmail(to) {
     if (!this.isEnabled()) {
       return { success: false, error: 'Email service not configured' };
@@ -1592,6 +1616,23 @@ class EmailService {
       EVENT_IMAGE_URL = null;
     }
 
+    // Generar URL temporal para la foto de ubicación si existe y es Base64
+    let LOCATION_PHOTO_URL;
+    if (data.companyLocation?.photo && data.companyLocation.photo.startsWith('data:image')) {
+      if (data.companyId) {
+        LOCATION_PHOTO_URL = this.generateLocationPhotoUrl(data.companyId);
+        console.log('📍 [ACCESS INVITATION] Foto de ubicación: URL temporal generada');
+      } else {
+        LOCATION_PHOTO_URL = null;
+        console.warn('⚠️ [ACCESS INVITATION] No companyId para foto de ubicación');
+      }
+    } else if (data.companyLocation?.photo) {
+      LOCATION_PHOTO_URL = data.companyLocation.photo;
+      console.log('📍 [ACCESS INVITATION] Foto de ubicación: URL pública');
+    } else {
+      LOCATION_PHOTO_URL = null;
+    }
+
     // Fallback para hostName
     const hostName = data.hostName && typeof data.hostName === 'string' && data.hostName.trim() ? data.hostName : (data.creatorName && typeof data.creatorName === 'string' && data.creatorName.trim() ? data.creatorName : 'Anfitrión');
     // Fallback para hora de inicio/fin
@@ -1684,11 +1725,42 @@ class EmailService {
                           <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data.qrData)}" alt="QR Code" style="width: 200px; height: 200px; display: block; margin: 0 auto;" />
                         </div>
                         ` : ''}
+
+                        ${data.companyLocation && (data.companyLocation.street || LOCATION_PHOTO_URL) ? `
+                        <!-- Dirección de la empresa -->
+                        <div style="background-color: #f0f9ff; border: 2px solid #bae6fd; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+                          <div style="flex items-center gap-2 mb-3">
+                            <h3 style="color: #0c4a6e; font-size: 15px; font-weight: 600; margin: 0 0 12px 0;">📍 Ubicación</h3>
+                          </div>
+                          
+                          ${data.companyLocation.street ? `
+                          <p style="color: #0c4a6e; margin: 0 0 12px 0; font-size: 14px; line-height: 1.6; text-align: center;">
+                            ${data.companyLocation.googleMapsUrl ? `<a href="${data.companyLocation.googleMapsUrl}" target="_blank" style="color: #0c4a6e; text-decoration: none; font-weight: 500;">` : ''}
+                            ${[
+                              data.companyLocation.street,
+                              data.companyLocation.colony,
+                              data.companyLocation.postalCode,
+                              data.companyLocation.city,
+                              data.companyLocation.state,
+                              data.companyLocation.country
+                            ].filter(Boolean).join(', ')}
+                            ${data.companyLocation.googleMapsUrl ? `</a>` : ''}
+                          </p>
+                          ` : ''}
+                          
+                          ${LOCATION_PHOTO_URL ? `
+                          <div style="text-align: center; margin-top: 15px;">
+                            <img src="${LOCATION_PHOTO_URL}" alt="Foto de la empresa" style="max-width: 100%; max-height: 200px; height: auto; border-radius: 8px; border: 1px solid #bae6fd;" />
+                          </div>
+                          ` : ''}
+                        </div>
+                        ` : ''}
+
                         <!-- Al llegar -->
                         <div style="background-color: #fef3c7; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
                           <p style="color: #92400e; margin: 0; font-size: 14px; line-height: 1.6; text-align: center;">
                             <strong>📱 Al llegar</strong><br>
-                            Muestra este mensaje con una identificación y ¡Dirígete a las filas!
+                            ${data.companyLocation?.arrivalInstructions || 'Muestra este mensaje con una identificación y ¡Dirígete a las filas!'}
                           </p>
                         </div>
                         ${data.companyAddress || data.companyEmail ? `

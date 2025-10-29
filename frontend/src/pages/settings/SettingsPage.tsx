@@ -85,9 +85,23 @@ export const SettingsPage: React.FC = () => {
     const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            // Validar tamaño (5MB máximo)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('El archivo es demasiado grande. Máximo 5MB.');
+                return;
+            }
+
+            // Validar tipo
+            if (!file.type.match(/image\/(jpeg|jpg|png|gif|webp)/)) {
+                alert('Solo se permiten archivos de imagen (jpeg, jpg, png, gif, webp)');
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = (event) => {
-                setCompanyPhoto(event.target?.result as string);
+                const base64Photo = event.target?.result as string;
+                setCompanyPhoto(base64Photo);
+                console.log('✅ Foto de empresa cargada como Base64');
             };
             reader.readAsDataURL(file);
         }
@@ -104,6 +118,19 @@ export const SettingsPage: React.FC = () => {
             setBuildingName(config.name || 'SecurITI');
             setCompanyLogo(config.logo || '');
             setAutoCheckout(config.settings?.autoCheckout !== false);
+            
+            // Cargar información de ubicación
+            if (config.location) {
+                setStreet(config.location.street || '');
+                setColony(config.location.colony || '');
+                setPostalCode(config.location.postalCode || '');
+                setCountry(config.location.country || 'México');
+                setState(config.location.state || '');
+                setCity(config.location.city || '');
+                setGoogleMapsUrl(config.location.googleMapsUrl || '');
+                setCompanyPhoto(config.location.photo || '');
+                setArrivalInstructions(config.location.arrivalInstructions || '');
+            }
         } catch (error) {
             console.error('Error loading settings:', error);
         }
@@ -133,10 +160,24 @@ export const SettingsPage: React.FC = () => {
 
     const handleSaveAdditionalInfo = async () => {
         setLoading(true);
+        setSaved(false);
         try {
-            console.log('Saving additional info...');
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            alert('Información adicional guardada exitosamente');
+            await api.updateCompanyConfig({
+                location: {
+                    street,
+                    colony,
+                    postalCode,
+                    country,
+                    state,
+                    city,
+                    googleMapsUrl,
+                    photo: companyPhoto,
+                    arrivalInstructions
+                }
+            } as any);
+            
+            setSaved(true);
+            setTimeout(() => setSaved(false), 3000);
         } catch (error) {
             console.error('Error saving additional info:', error);
             alert('Error al guardar la información');
@@ -481,9 +522,26 @@ export const SettingsPage: React.FC = () => {
                                                     onChange={(e) => setCountry(e.target.value)}
                                                     className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
                                                 >
+                                                    <option value="">Seleccionar país</option>
                                                     <option>México</option>
                                                     <option>Estados Unidos</option>
                                                     <option>Canadá</option>
+                                                    <option>Argentina</option>
+                                                    <option>Brasil</option>
+                                                    <option>Chile</option>
+                                                    <option>Colombia</option>
+                                                    <option>Costa Rica</option>
+                                                    <option>Ecuador</option>
+                                                    <option>España</option>
+                                                    <option>Guatemala</option>
+                                                    <option>Honduras</option>
+                                                    <option>Nicaragua</option>
+                                                    <option>Panamá</option>
+                                                    <option>Paraguay</option>
+                                                    <option>Perú</option>
+                                                    <option>El Salvador</option>
+                                                    <option>Uruguay</option>
+                                                    <option>Venezuela</option>
                                                 </select>
                                             </div>
                                             <div>
@@ -493,10 +551,39 @@ export const SettingsPage: React.FC = () => {
                                                     onChange={(e) => setState(e.target.value)}
                                                     className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
                                                 >
-                                                    <option value="">Seleccionar</option>
+                                                    <option value="">Seleccionar estado</option>
+                                                    <option>Aguascalientes</option>
+                                                    <option>Baja California</option>
+                                                    <option>Baja California Sur</option>
+                                                    <option>Campeche</option>
+                                                    <option>Chiapas</option>
+                                                    <option>Chihuahua</option>
                                                     <option>Ciudad de México</option>
+                                                    <option>Coahuila</option>
+                                                    <option>Colima</option>
+                                                    <option>Durango</option>
+                                                    <option>Estado de México</option>
+                                                    <option>Guanajuato</option>
+                                                    <option>Guerrero</option>
+                                                    <option>Hidalgo</option>
                                                     <option>Jalisco</option>
+                                                    <option>Michoacán</option>
+                                                    <option>Morelos</option>
+                                                    <option>Nayarit</option>
                                                     <option>Nuevo León</option>
+                                                    <option>Oaxaca</option>
+                                                    <option>Puebla</option>
+                                                    <option>Querétaro</option>
+                                                    <option>Quintana Roo</option>
+                                                    <option>San Luis Potosí</option>
+                                                    <option>Sinaloa</option>
+                                                    <option>Sonora</option>
+                                                    <option>Tabasco</option>
+                                                    <option>Tamaulipas</option>
+                                                    <option>Tlaxcala</option>
+                                                    <option>Veracruz</option>
+                                                    <option>Yucatán</option>
+                                                    <option>Zacatecas</option>
                                                 </select>
                                             </div>
                                             <div>

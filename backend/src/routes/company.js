@@ -308,4 +308,96 @@ router.get('/logo/:companyId/:token', async (req, res) => {
   }
 });
 
+/**
+ * Endpoint público para servir foto de ubicación de empresa con token JWT
+ * GET /api/company/location-photo/:companyId/:token
+ */
+router.get('/location-photo/:companyId/:token', async (req, res) => {
+  try {
+    const { companyId, token } = req.params;
+    
+    console.log(`📍 [LOCATION PHOTO] Solicitud de foto de ubicación para empresa: ${companyId}`);
+    
+    // Verificar el token JWT
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log(`✅ [LOCATION PHOTO] Token válido:`, decoded);
+    } catch (jwtError) {
+      console.error('❌ [LOCATION PHOTO] Token inválido o expirado:', jwtError.message);
+      return res.status(401).json({ message: 'Token inválido o expirado' });
+    }
+    
+    // Verificar que el token sea del tipo correcto
+    if (decoded.type !== 'location-photo') {
+      console.error('❌ [LOCATION PHOTO] Tipo de token incorrecto:', decoded.type);
+      return res.status(403).json({ message: 'Token no válido para este recurso' });
+    }
+    
+    // Verificar que el companyId coincida
+    if (decoded.companyId !== companyId) {
+      console.error('❌ [LOCATION PHOTO] CompanyId no coincide. Token:', decoded.companyId, 'URL:', companyId);
+      return res.status(403).json({ message: 'Token no corresponde a esta empresa' });
+    }
+    
+    // Buscar la empresa por _id (ObjectId) o por companyId (string tenant)
+    let company = null;
+    if (mongoose.Types.ObjectId.isValid(companyId)) {
+      company = await Company.findById(companyId);
+    }
+    if (!company) {
+      // Fallback: buscar por campo companyId (multi-tenant id)
+      company = await Company.findOne({ companyId });
+    }
+    
+    if (!company) {
+      console.error('❌ [LOCATION PHOTO] Empresa no encontrada:', companyId);
+      return res.status(404).json({ message: 'Empresa no encontrada' });
+    }
+    
+    // Verificar que la empresa tenga foto de ubicación
+    if (!company.location?.photo) {
+      console.log('⚠️ [LOCATION PHOTO] Empresa sin foto de ubicación configurada:', companyId);
+      return res.status(404).json({ message: 'Foto de ubicación no disponible' });
+    }
+    
+    // Verificar que la foto sea Base64
+    if (!company.location.photo.startsWith('data:image')) {
+      console.error('❌ [LOCATION PHOTO] Foto no es Base64:', companyId);
+      return res.status(400).json({ message: 'Formato de foto inválido' });
+    }
+    
+    // Extraer tipo MIME y datos Base64
+    const matches = company.location.photo.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/);
+    
+    if (!matches || matches.length !== 3) {
+      console.error('❌ [LOCATION PHOTO] Formato Base64 inválido');
+      return res.status(400).json({ message: 'Formato de imagen inválido' });
+    }
+    
+    const mimeType = `image/${matches[1]}`;
+    const base64Data = matches[2];
+    
+    // Convertir Base64 a Buffer
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+    
+    console.log(`✅ [LOCATION PHOTO] Foto servida exitosamente. Tamaño: ${imageBuffer.length} bytes, Tipo: ${mimeType}`);
+    
+    // Configurar headers para caché y tipo de contenido
+    res.set({
+      'Content-Type': mimeType,
+      'Content-Length': imageBuffer.length,
+      'Cache-Control': 'public, max-age=604800', // 7 días de caché
+      'ETag': `"${companyId}-location-${Date.now()}"` // ETag para validación de caché
+    });
+    
+    // Enviar la imagen
+    res.send(imageBuffer);
+    
+  } catch (error) {
+    console.error('❌ [LOCATION PHOTO] Error al servir foto de ubicación:', error);
+    res.status(500).json({ message: 'Error al obtener foto de ubicación', error: error.message });
+  }
+});
+
 module.exports = router;

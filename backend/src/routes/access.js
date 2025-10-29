@@ -366,7 +366,8 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
               companyName: company.name,
               companyLogo: company.logo,
               companyId: company._id,
-              accessId: access._id.toString() // ✅ AGREGAR accessId
+              accessId: access._id.toString(), // ✅ AGREGAR accessId
+              companyLocation: company.location // ✅ AGREGAR location para mostrar dirección
             });
           } catch (emailError) {
             console.error(`Error sending invitation to ${guest.email}:`, emailError);
@@ -505,7 +506,8 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
                 companyName: company.name,
                 companyLogo: company.logo,
                 companyId: company._id,
-                accessId: access._id.toString() // ✅ AGREGAR accessId
+                accessId: access._id.toString(), // ✅ AGREGAR accessId
+                companyLocation: company.location // ✅ AGREGAR location para mostrar dirección
               });
             } catch (emailError) {
               console.error(`Error sending invitation to ${guest.email}:`, emailError);
@@ -944,7 +946,8 @@ router.post('/:accessId/pre-register', async (req, res) => {
           companyName: companyData?.name || 'Empresa',
           companyLogo: companyData?.logo,
           companyId: companyData?._id,
-          accessId: access._id.toString() // ✅ AGREGAR accessId
+          accessId: access._id.toString(), // ✅ AGREGAR accessId
+          companyLocation: companyData?.location // ✅ AGREGAR location para mostrar dirección
         });
         console.log('📧 [PRE-REGISTER] Enviado sendAccessInvitationEmail al invitado pre-registrado', { email, accessId: access._id.toString() });
         

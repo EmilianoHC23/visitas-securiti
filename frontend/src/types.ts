@@ -60,6 +60,17 @@ export interface Company {
   _id: string;
   name: string;
   logo?: string;
+  location?: {
+    street?: string;
+    colony?: string;
+    postalCode?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    googleMapsUrl?: string;
+    photo?: string;
+    arrivalInstructions?: string;
+  };
   settings: {
     autoApproval: boolean;
     autoCheckIn: boolean;

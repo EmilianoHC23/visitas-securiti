@@ -527,6 +527,8 @@ router.put('/:id/status', auth, async (req, res) => {
               accessTitle: access.eventName,
               checkInTime: updated.checkInTime,
               location: access.location,
+              eventImage: access.eventImage || null,
+              accessId: access._id.toString(),
               companyName: company?.name || 'Empresa',
               companyId: company?.companyId || null,
               companyLogo: company?.logo || null
@@ -1005,6 +1007,8 @@ router.post('/checkin/:id', auth, async (req, res) => {
                   accessTitle: access.eventName,
                   checkInTime: visit.checkInTime,
                   location: access.location,
+                  eventImage: access.eventImage || null,
+                  accessId: access._id.toString(),
                   companyName: company?.name || 'Empresa',
                   companyId: company?.companyId || null,
                   companyLogo: company?.logo || null

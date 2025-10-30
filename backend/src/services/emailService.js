@@ -2154,6 +2154,23 @@ class EmailService {
       GUEST_PHOTO_URL = null;
     }
 
+    // Generar URL temporal para la imagen del evento si existe
+    let EVENT_IMAGE_URL;
+    if (data.eventImage && data.eventImage.startsWith('data:image')) {
+      if (data.accessId) {
+        EVENT_IMAGE_URL = this.generateEventImageUrl(data.accessId);
+        console.log('🖼️ [GUEST CHECKED IN] Imagen del evento: URL temporal generada');
+      } else {
+        EVENT_IMAGE_URL = null;
+        console.warn('⚠️ [GUEST CHECKED IN] No accessId para imagen temporal');
+      }
+    } else if (data.eventImage) {
+      EVENT_IMAGE_URL = data.eventImage;
+      console.log('🖼️ [GUEST CHECKED IN] Imagen del evento: URL pública');
+    } else {
+      EVENT_IMAGE_URL = null;
+    }
+
     try {
       const primaryColor = '#1e3a8a';
       const accentColor = '#f97316';
@@ -2196,6 +2213,13 @@ class EmailService {
                         <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
                           <strong>${data.guestName}</strong> ha completado el escaneo de QR y su <strong>entrada fue aprobada</strong>.
                         </p>
+
+                        ${EVENT_IMAGE_URL ? `
+                        <!-- Imagen del evento -->
+                        <div style="text-align: center; margin-bottom: 25px;">
+                          <img src="${EVENT_IMAGE_URL}" alt="Imagen del evento" style="max-width: 100%; max-height: 200px; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" />
+                        </div>
+                        ` : ''}
 
                         <!-- Información del Invitado -->
                         ${GUEST_PHOTO_URL ? `
@@ -2407,7 +2431,7 @@ class EmailService {
       
       const logoHtml = COMPANY_LOGO_URL 
         ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto;" />`
-        : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
+        : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
@@ -2428,14 +2452,14 @@ class EmailService {
                     
                     <!-- Header -->
                     <tr>
-                      <td style="padding: 40px; text-align: center;">
+                      <td style="padding: 40px; text-align: center; background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); border-radius: 12px 12px 0 0;">
                         ${logoHtml}
                       </td>
                     </tr>
 
                     <!-- Body -->
                     <tr>
-                      <td style="padding: 0 40px 40px 40px;">
+                      <td style="padding: 40px;">
                         <h1 style="color: #1f2937; margin: 0 0 20px 0; font-size: 22px; font-weight: 600;">
                           Hola ${data.invitedName}
                         </h1>
@@ -2604,7 +2628,7 @@ class EmailService {
                             <strong style="color: ${accentColor};">Detalles del acceso cancelado</strong><br><br>
                             <strong>Fecha y hora de inicio:</strong> <span style="color: ${primaryColor};">${formatFullDate(new Date(data.startDate))}</span><br>
                             ${data.endDate ? `<strong>Fecha y hora de fin:</strong> <span style="color: ${primaryColor};">${formatFullDate(new Date(data.endDate))}</span><br>` : ''}
-                            ${data.additionalInfo ? `<br><strong>Información adicional:</strong> ${data.additionalInfo}` : ''}
+                            ${data.hostName ? `<strong>Host encargado:</strong> <span style="color: ${primaryColor};">${data.hostName}</span>` : ''}
                           </p>
                         </div>
 

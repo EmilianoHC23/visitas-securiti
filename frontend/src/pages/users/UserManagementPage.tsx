@@ -99,6 +99,10 @@ import { FaUser } from 'react-icons/fa';
 import { MdEditNote } from 'react-icons/md';
 import { FaRegUser, FaUsers } from 'react-icons/fa6';
 import { FiShield, FiMail } from 'react-icons/fi';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import { User, UserRole } from '../../types';
 import * as api from '../../services/api';
 
@@ -182,12 +186,18 @@ const ConfirmDialog: React.FC<{
 };
 
 // Simple notification banner (top-center)
-const NotificationBanner: React.FC<{ message: string; type: 'success' | 'error' | 'info'; onClose: () => void }> = ({ message, type, onClose }) => {
-    const bg = type === 'success' ? 'bg-green-50 border-green-200' : type === 'error' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200';
-    const text = type === 'success' ? 'text-green-800' : type === 'error' ? 'text-red-800' : 'text-blue-800';
+const NotificationBanner: React.FC<{ message: string; type: 'success' | 'error' | 'info' | 'warning'; onClose: () => void }> = ({ message, type, onClose }) => {
+    const bg = type === 'success' ? 'bg-green-50 border-green-200' : type === 'error' ? 'bg-red-50 border-red-200' : type === 'warning' ? 'bg-yellow-50 border-yellow-200' : 'bg-blue-50 border-blue-200';
+    const text = type === 'success' ? 'text-green-800' : type === 'error' ? 'text-red-800' : type === 'warning' ? 'text-yellow-800' : 'text-blue-800';
     return (
         <div className={`fixed left-1/2 -translate-x-1/2 top-6 z-[60] ${bg} border p-3 rounded-md shadow-md`}> 
             <div className={`flex items-start gap-3 ${text}`}>
+                <span className="flex-shrink-0 mt-0.5">
+                    {type === 'success' && <CheckCircleOutlineIcon fontSize="small" className="text-green-600" />}
+                    {type === 'error' && <ErrorOutlineIcon fontSize="small" className="text-red-600" />}
+                    {type === 'warning' && <WarningAmberOutlinedIcon fontSize="small" className="text-yellow-600" />}
+                    {type === 'info' && <InfoOutlinedIcon fontSize="small" className="text-blue-600" />}
+                </span>
                 <div className="flex-1 text-sm">{message}</div>
                 <button onClick={onClose} className="text-gray-500 hover:text-gray-700">✕</button>
             </div>

@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/common/Toast';
@@ -105,7 +109,17 @@ export const LoginPage: React.FC = () => {
                     <h1 className="text-3xl font-bold text-gray-800 mb-6">Inicia sesión en Visitas SecuriTI</h1>
                     <form onSubmit={handleSubmit} className="w-full space-y-6">
                         {error && (
-                            <Alert severity="error">{error}</Alert>
+                            <Alert
+                                severity="error"
+                                iconMapping={{
+                                    error: <ErrorOutlineIcon fontSize="inherit" />, 
+                                    warning: <WarningAmberOutlinedIcon fontSize="inherit" />, 
+                                    info: <InfoOutlinedIcon fontSize="inherit" />, 
+                                    success: <CheckCircleOutlineIcon fontSize="inherit" />
+                                }}
+                            >
+                                {error}
+                            </Alert>
                         )}
                         <div>
                             <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1">

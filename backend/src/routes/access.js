@@ -738,10 +738,15 @@ router.post('/check-in/:accessCode', async (req, res) => {
               creatorEmail: access.creatorId.email,
               creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
               guestName: guest.name,
+              guestEmail: guest.email || null,
+              guestCompany: null,
+              guestPhoto: null,
+              visitId: null,
               accessTitle: access.eventName,
               checkInTime: guest.checkInTime,
               location: access.location,
               companyName: company.name,
+              companyId: company.companyId || null,
               companyLogo: company.logo
             });
           } else {

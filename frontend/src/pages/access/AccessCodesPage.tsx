@@ -583,7 +583,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
             <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center mr-3">
-                  <Calendar className="w-5 h-5 text-white" />
+                  <IoQrCodeOutline className="w-5 h-5 text-white" />
                 </div>
                 Información del Acceso
               </h3>

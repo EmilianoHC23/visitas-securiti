@@ -259,6 +259,80 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
     }
   };
 
+  /* Custom host selector: shows avatar + name + email in dropdown list */
+  const HostSelect: React.FC<{
+    hosts: User[];
+    value: string;
+    onChange: (id: string) => void;
+  }> = ({ hosts, value, onChange }) => {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+      const handleClickOutside = (e: MouseEvent) => {
+        if (ref.current && !ref.current.contains(e.target as Node)) {
+          setOpen(false);
+        }
+      };
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selected = hosts.find(h => h._id === value) || null;
+
+    const renderAvatar = (host: User) => {
+      const src = (host as any).photo || (host as any).avatar || (host as any).picture || '';
+      if (src) return <img src={src} alt={host.firstName} className="w-8 h-8 rounded-full object-cover" />;
+      const initials = `${host.firstName?.[0] || ''}${host.lastName?.[0] || ''}`.toUpperCase();
+      return (
+        <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-semibold">{initials}</div>
+      );
+    };
+
+    return (
+      <div className="relative" ref={ref}>
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          className="w-full text-left px-4 py-2 border border-gray-300 rounded-lg flex items-center gap-3 bg-white"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+        >
+          <div className="flex items-center gap-3">
+            {selected ? renderAvatar(selected) : <div className="w-8 h-8 rounded-full bg-gray-100" />}
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-gray-800 truncate">{selected ? `${selected.firstName} ${selected.lastName}` : 'Selecciona un anfitrión'}</div>
+              <div className="text-xs text-gray-500 truncate">{selected ? ((selected as any).email || '') : ''}</div>
+            </div>
+          </div>
+          <svg className="ml-auto w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd" /></svg>
+        </button>
+
+        {open && (
+          <div className="absolute z-50 mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-56 overflow-auto">
+            {hosts.map(host => (
+              <button
+                key={host._id}
+                type="button"
+                onClick={() => { onChange(host._id); setOpen(false); }}
+                className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left"
+              >
+                {renderAvatar(host)}
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-gray-800 truncate">{host.firstName} {host.lastName}</div>
+                  <div className="text-xs text-gray-500 truncate">{(host as any).email || ''}</div>
+                </div>
+              </button>
+            ))}
+            {hosts.length === 0 && (
+              <div className="p-3 text-sm text-gray-500">No hay anfitriones disponibles</div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       {/* Overlay */}
@@ -444,19 +518,11 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   A quién visita *
                 </label>
-                <select
-                  required
+                <HostSelect
+                  hosts={hosts}
                   value={formData.host}
-                  onChange={(e) => setFormData({ ...formData, host: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                >
-                  <option value="">Selecciona un anfitrión</option>
-                  {hosts.map((host) => (
-                    <option key={host._id} value={host._id}>
-                      {host.firstName} {host.lastName} {host.role === 'admin' ? '(Administrador)' : ''}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(id) => setFormData({ ...formData, host: id })}
+                />
               </div>
 
               <div>

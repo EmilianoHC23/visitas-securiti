@@ -10,6 +10,7 @@ import { CheckedInVisitModal } from './CheckedInVisitModal';
 import { VisitRegistrationSidePanel } from './VisitRegistrationSidePanel';
 import { ExitRegistrationSidePanel } from './ExitRegistrationSidePanel';
 import { CheckCircleIcon, LogoutIcon, LoginIcon, ClockIcon } from '../../components/common/icons';
+import { VscSignIn, VscSignOut } from 'react-icons/vsc';
 import { useNavigate } from 'react-router-dom';
 import jsQR from 'jsqr';
 
@@ -1350,7 +1351,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                     }}
                                     className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
                                 >
-                                    <LoginIcon className="w-4 h-4" />
+                                    <VscSignIn className="w-4 h-4" />
                                     Entrada de Visitante
                                 </button>
                                 <button
@@ -1360,7 +1361,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                     }}
                                     className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2 border-t"
                                 >
-                                    <LogoutIcon className="w-4 h-4" />
+                                    <VscSignOut className="w-4 h-4" />
                                     Salida de Visitante
                                 </button>
                             </div>

@@ -98,6 +98,7 @@ import { LogoutIcon, SettingsIcon } from '../../components/common/icons';
 import { FaUser, FaAddressBook, FaShieldAlt } from 'react-icons/fa';
 import { MdEditNote } from 'react-icons/md';
 import { FaRegUser, FaUsers } from 'react-icons/fa6';
+import { BsPersonAdd } from 'react-icons/bs';
 import { FiShield, FiMail } from 'react-icons/fi';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -793,197 +794,141 @@ export const UserManagementPage: React.FC = () => {
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-            <div className="flex justify-between items-center mb-6">
+        <div>
+            {/* Header area: placed outside the main table card so it visually sits above */}
+            <div className="mb-6 flex justify-between items-center px-6">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-md">
                         <FaUsers className="w-6 h-6 text-white" />
                     </div>
-                    <h2 className="text-xl font-semibold text-gray-800">Gestión de Usuarios</h2>
+                    <div>
+                        <h2 className="text-xl font-semibold text-gray-800">Gestión de Usuarios</h2>
+                        <p className="text-sm text-gray-500 mt-1">Gestiona usuarios, roles y permisos; invita, edita o desactiva cuentas dentro del sistema.</p>
+                    </div>
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
                     className="px-4 py-2 font-semibold text-white bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 rounded-lg shadow-md hover:from-gray-800 hover:via-gray-700 hover:to-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-900 transition-transform"
                 >
-                    Invitar Usuario
+                    <span className="inline-flex items-center gap-2">
+                        <BsPersonAdd className="w-5 h-5" />
+                        <span>Invitar Usuario</span>
+                    </span>
                 </button>
             </div>
-            
-            <div className="overflow-x-auto rounded-lg shadow-sm border border-gray-100">
-                {loading ? (
-                     <div className="text-center p-8">Cargando usuarios...</div>
-                ) : (
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-900">
-                            <tr>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Foto</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Nombre</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Email</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Rol</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Estatus</th>
-                                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {users.map((user, rowIndex) => (
-                                <tr
-                                    key={user._id}
-                                    className="group bg-white even:bg-gray-50 border-b cursor-pointer transition-colors hover:bg-blue-100 focus-within:bg-blue-100"
-                                    onClick={e => {
-                                        // Evitar que los botones de acción abran el modal
-                                        if ((e.target as HTMLElement).closest('button')) return;
-                                        setPreviewUser(user);
-                                        setIsPreviewModalOpen(true);
-                                    }}
-                                >
-                                    <td className="px-6 py-4 align-middle transition-colors group-hover:bg-blue-100">
-                                        <span className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-sm ring-1 ring-gray-200">
-                                            <img
-                                                src={user.profileImage || ''}
-                                                alt={`${user.firstName} ${user.lastName}`}
-                                                className="w-10 h-10 object-cover"
-                                                onError={e => {
-                                                    const img = e.target as HTMLImageElement;
-                                                    img.style.display = 'none';
-                                                    const fallback = img.nextElementSibling as HTMLElement;
-                                                    if (fallback) fallback.style.display = 'inline-flex';
-                                                }}
-                                                onLoad={e => {
-                                                    const img = e.target as HTMLImageElement;
-                                                    img.style.display = 'inline';
-                                                    const fallback = img.nextElementSibling as HTMLElement;
-                                                    if (fallback) fallback.style.display = 'none';
-                                                }}
-                                                style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'inline' : 'none' }}
-                                            />
-                                            <FaUser className="w-7 h-7 text-gray-400" style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'none' : 'inline-flex' }} />
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap transition-colors group-hover:bg-blue-100">
-                                        {user.firstName} {user.lastName}
-                                    </td>
-                                    <td className="px-6 py-4 transition-colors group-hover:bg-blue-100">{user.email}</td>
-                                    <td className="px-6 py-4 transition-colors group-hover:bg-blue-100">
-                                        <RoleBadge role={user.role} />
-                                    </td>
-                                    <td className="px-6 py-4 transition-colors group-hover:bg-blue-100">
-                                        <StatusBadge status={user.invitationStatus || 'none'} />
-                                    </td>
-                                    <td className="px-6 py-4 text-right transition-colors group-hover:bg-blue-100">
-                                        <div className="flex justify-end items-center space-x-2">
-                                            {user.invitationStatus === 'pending' && (
-                                                <button 
-                                                    onClick={e => {
-                                                        e.stopPropagation();
-                                                        openConfirm({
-                                                            type: 'resend',
-                                                            title: 'Reenviar invitación',
-                                                            message: '¿Estás seguro de que quieres reenviar la invitación a este usuario?',
-                                                            user
-                                                        });
-                                                    }}
-                                                    className="p-2 text-blue-600 hover:text-blue-800 rounded hover:bg-gray-100 transition"
-                                                    title="Reenviar invitación"
-                                                >
-                                                    {/* Heroicons outline: Envelope + Arrow Right (forward email) */}
-                                                    <span className="relative inline-block w-5 h-5">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="absolute left-0 top-0 w-5 h-5">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-.659 1.591l-7.5 7.5a2.25 2.25 0 01-3.182 0l-7.5-7.5A2.25 2.25 0 012.25 6.993V6.75" />
-                                                        </svg>
-                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="absolute right-0 bottom-0 w-3 h-3">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h8m0 0l-3-3m3 3l-3 3" />
-                                                        </svg>
-                                                    </span>
-                                                </button>
-                                            )}
-                                            <button 
-                                                onClick={e => { e.stopPropagation(); handleEditUser(user); }}
-                                                className="p-2 text-green-600 hover:text-green-800 rounded hover:bg-gray-100 transition"
-                                                title="Editar usuario"
-                                            >
-                                                {/* Heroicons outline: Pencil Square */}
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.313 3 21l1.687-4.5 12.175-13.013z" />
-                                                </svg>
-                                            </button>
-                                            <button 
-                                                onClick={e => { 
-                                                    e.stopPropagation();
-                                                    // Decide dialog type based on invitationStatus
-                                                    if (user.invitationStatus === 'pending' || user.invitationStatus === 'none') {
-                                                        openConfirm({
-                                                            type: 'delete-invite',
-                                                            title: 'Eliminar invitación',
-                                                            message: '¿Estás seguro de que quieres eliminar esta invitación? El usuario será eliminado permanentemente y podrás reutilizar este correo.',
-                                                            user
-                                                        });
-                                                    } else {
-                                                        // For registered users, ask whether deactivate or delete
-                                                        openConfirm({
-                                                            type: 'deactivate',
-                                                            title: '¿Qué deseas hacer con este usuario?',
-                                                            message: 'Puedes desactivar al usuario (será inactivable y podrá reactivarse) o eliminarlo completamente. Usa "Confirmar" para desactivar o "Eliminar permanentemente" para borrarlo.',
-                                                            user
-                                                        });
-                                                    }
-                                                }}
-                                                className="p-2 text-red-600 hover:text-red-800 rounded hover:bg-gray-100 transition"
-                                                title="Eliminar usuario"
-                                            >
-                                                {/* Heroicons outline: X-Mark (tache) */}
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </td>
+
+            {/* Main card containing the table */}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+                <div className="overflow-x-auto rounded-lg shadow-sm border border-gray-100">
+                    {loading ? (
+                        <div className="text-center p-8">Cargando usuarios...</div>
+                    ) : (
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-900">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Foto</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Nombre</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Email</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Rol</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Estatus</th>
+                                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">Acciones</th>
                                 </tr>
-                            ))}
-            {/* Modal de vista previa de usuario */}
-            <UserPreviewModal
-                isOpen={isPreviewModalOpen}
-                onClose={() => setIsPreviewModalOpen(false)}
-                user={previewUser}
-            />
-                        </tbody>
-                    </table>
-                )}
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {users.map((user, rowIndex) => (
+                                    <tr
+                                        key={user._id}
+                                        className="group bg-white even:bg-gray-50 border-b cursor-pointer transition-colors hover:bg-blue-100 focus-within:bg-blue-100"
+                                        onClick={e => {
+                                            if ((e.target as HTMLElement).closest('button')) return;
+                                            setPreviewUser(user);
+                                            setIsPreviewModalOpen(true);
+                                        }}
+                                    >
+                                        <td className="px-6 py-4 align-middle transition-colors group-hover:bg-blue-100">
+                                            <span className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-sm ring-1 ring-gray-200">
+                                                <img
+                                                    src={user.profileImage || ''}
+                                                    alt={`${user.firstName} ${user.lastName}`}
+                                                    className="w-10 h-10 object-cover"
+                                                    onError={e => {
+                                                        const img = e.target as HTMLImageElement;
+                                                        img.style.display = 'none';
+                                                        const fallback = img.nextElementSibling as HTMLElement;
+                                                        if (fallback) fallback.style.display = 'inline-flex';
+                                                    }}
+                                                    onLoad={e => {
+                                                        const img = e.target as HTMLImageElement;
+                                                        img.style.display = 'inline';
+                                                        const fallback = img.nextElementSibling as HTMLElement;
+                                                        if (fallback) fallback.style.display = 'none';
+                                                    }}
+                                                    style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'inline' : 'none' }}
+                                                />
+                                                <FaUser className="w-7 h-7 text-gray-400" style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'none' : 'inline-flex' }} />
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap transition-colors group-hover:bg-blue-100">
+                                            {user.firstName} {user.lastName}
+                                        </td>
+                                        <td className="px-6 py-4 transition-colors group-hover:bg-blue-100">{user.email}</td>
+                                        <td className="px-6 py-4 transition-colors group-hover:bg-blue-100">
+                                            <RoleBadge role={user.role} />
+                                        </td>
+                                        <td className="px-6 py-4 transition-colors group-hover:bg-blue-100">
+                                            <StatusBadge status={user.invitationStatus || 'none'} />
+                                        </td>
+                                        <td className="px-6 py-4 text-right transition-colors group-hover:bg-blue-100">
+                                            <div className="flex justify-end items-center space-x-2">
+                                                {user.invitationStatus === 'pending' && (
+                                                    <button 
+                                                        onClick={e => {
+                                                            e.stopPropagation();
+                                                            openConfirm({ type: 'resend', title: 'Reenviar invitación', message: '¿Estás seguro de que quieres reenviar la invitación a este usuario?', user });
+                                                        }}
+                                                        className="p-2 text-blue-600 hover:text-blue-800 rounded hover:bg-gray-100 transition"
+                                                        title="Reenviar invitación"
+                                                    >
+                                                        <span className="relative inline-block w-5 h-5">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="absolute left-0 top-0 w-5 h-5">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-.659 1.591l-7.5 7.5a2.25 2.25 0 01-3.182 0l-7.5-7.5A2.25 2.25 0 012.25 6.993V6.75" />
+                                                            </svg>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="absolute right-0 bottom-0 w-3 h-3">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h8m0 0l-3-3m3 3l-3 3" />
+                                                            </svg>
+                                                        </span>
+                                                    </button>
+                                                )}
+                                                <button onClick={e => { e.stopPropagation(); handleEditUser(user); }} className="p-2 text-green-600 hover:text-green-800 rounded hover:bg-gray-100 transition" title="Editar usuario">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.313 3 21l1.687-4.5 12.175-13.013z" />
+                                                    </svg>
+                                                </button>
+                                                <button onClick={e => { e.stopPropagation(); if (user.invitationStatus === 'pending' || user.invitationStatus === 'none') { openConfirm({ type: 'delete-invite', title: 'Eliminar invitación', message: '¿Estás seguro de que quieres eliminar esta invitación? El usuario será eliminado permanentemente y podrás reutilizar este correo.', user }); } else { openConfirm({ type: 'deactivate', title: '¿Qué deseas hacer con este usuario?', message: 'Puedes desactivar al usuario (será inactivable y podrá reactivarse) o eliminarlo completamente. Usa "Confirmar" para desactivar o "Eliminar permanentemente" para borrarlo.', user }); } }} className="p-2 text-red-600 hover:text-red-800 rounded hover:bg-gray-100 transition" title="Eliminar usuario">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {/* Modal de vista previa de usuario */}
+                                <UserPreviewModal isOpen={isPreviewModalOpen} onClose={() => setIsPreviewModalOpen(false)} user={previewUser} />
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+
+                <InviteUserModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onInvite={handleInviteUser} loading={inviteLoading} />
+
+                {/* Confirm dialog used for delete/resend actions */}
+                <ConfirmDialog isOpen={confirmOpen} title={confirmData?.title || ''} message={confirmData?.message || ''} primaryLabel={confirmData?.type === 'deactivate' ? 'Desactivar' : confirmData?.type === 'resend' ? 'Reenviar' : 'Confirmar'} secondaryLabel="Cancelar" showSecondary={confirmData?.type === 'deactivate'} onClose={() => closeConfirm()} onPrimary={() => handleConfirmPrimary()} onSecondary={() => handleConfirmSecondary()} />
+
+                {notification && (<NotificationBanner message={notification.message} type={notification.type} onClose={() => setNotification(null)} />)}
+
+                <EditUserModal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setEditingUser(null); }} onUpdate={handleUpdateUser} loading={editLoading} user={editingUser} />
             </div>
-
-            <InviteUserModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onInvite={handleInviteUser}
-                loading={inviteLoading}
-            />
-
-            {/* Confirm dialog used for delete/resend actions */}
-            <ConfirmDialog
-                isOpen={confirmOpen}
-                title={confirmData?.title || ''}
-                message={confirmData?.message || ''}
-                primaryLabel={confirmData?.type === 'deactivate' ? 'Desactivar' : confirmData?.type === 'resend' ? 'Reenviar' : 'Confirmar'}
-                secondaryLabel="Cancelar"
-                showSecondary={confirmData?.type === 'deactivate'}
-                onClose={() => closeConfirm()}
-                onPrimary={() => handleConfirmPrimary()}
-                onSecondary={() => handleConfirmSecondary()}
-            />
-
-            {notification && (
-                <NotificationBanner message={notification.message} type={notification.type} onClose={() => setNotification(null)} />
-            )}
-
-            <EditUserModal
-                isOpen={isEditModalOpen}
-                onClose={() => {
-                    setIsEditModalOpen(false);
-                    setEditingUser(null);
-                }}
-                onUpdate={handleUpdateUser}
-                loading={editLoading}
-                user={editingUser}
-            />
         </div>
     );
 };

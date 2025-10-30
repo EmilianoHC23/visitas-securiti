@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User } from '../../types';
-import { X, Camera, QrCode, User as UserIcon } from 'lucide-react';
+import { X, Camera, User as UserIcon } from 'lucide-react';
+import { MdOutlineQrCodeScanner } from 'react-icons/md';
 import jsQR from 'jsqr';
 import * as api from '../../services/api';
 import { useToast } from '../../components/common/Toast';
@@ -297,7 +298,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
                 className="w-full p-6 border-2 border-gray-200 rounded-xl hover:border-cyan-500 hover:bg-cyan-50 transition-all flex items-center gap-4 group"
               >
                 <div className="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center group-hover:bg-cyan-500 transition-colors">
-                  <QrCode className="w-6 h-6 text-cyan-600 group-hover:text-white" />
+                  <MdOutlineQrCodeScanner className="w-6 h-6 text-cyan-600 group-hover:text-white" />
                 </div>
                 <div className="text-left">
                   <h3 className="font-semibold text-gray-800">Registro Rápido con QR</h3>

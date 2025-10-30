@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Visit } from '../../types';
-import { X, QrCode, Upload, Trash2 } from 'lucide-react';
+import { X, Upload, Trash2 } from 'lucide-react';
+import { MdOutlineQrCodeScanner } from 'react-icons/md';
 import jsQR from 'jsqr';
 
 interface ExitRegistrationSidePanelProps {
@@ -241,7 +242,7 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                   className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-cyan-500 hover:bg-cyan-50 transition-all flex items-center gap-4 group"
                 >
                   <div className="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center group-hover:bg-cyan-500 transition-colors">
-                    <QrCode className="w-6 h-6 text-cyan-600 group-hover:text-white" aria-hidden={true} />
+                    <MdOutlineQrCodeScanner className="w-6 h-6 text-cyan-600 group-hover:text-white" aria-hidden={true} />
                   </div>
                   <div className="text-left">
                     <h3 className="font-semibold text-gray-800">Escanear QR</h3>

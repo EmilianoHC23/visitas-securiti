@@ -3,6 +3,7 @@ import { User } from '../../types';
 import { X, Camera, User as UserIcon } from 'lucide-react';
 import { MdOutlineQrCodeScanner } from 'react-icons/md';
 import { VscSignIn } from 'react-icons/vsc';
+import { FaRegUser } from 'react-icons/fa';
 import jsQR from 'jsqr';
 import * as api from '../../services/api';
 import { useToast } from '../../components/common/Toast';
@@ -315,7 +316,11 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
           aria-expanded={open}
         >
           <div className="flex items-center gap-3">
-            {selected ? renderAvatar(selected) : <div className="w-8 h-8 rounded-full bg-gray-100" />}
+            {selected ? renderAvatar(selected) : (
+              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                <FaRegUser className="w-4 h-4 text-gray-400" />
+              </div>
+            )}
             <div className="min-w-0">
               <div className="text-sm font-medium text-gray-800 truncate">{selected ? `${selected.firstName} ${selected.lastName}` : 'Selecciona un anfitrión'}</div>
               <div className="text-xs text-gray-500 truncate">{selected ? ((selected as any).email || '') : ''}</div>

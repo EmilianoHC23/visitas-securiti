@@ -1893,18 +1893,20 @@ class EmailService {
                           No olvides la cita <strong>${data.accessTitle}</strong> el día de hoy. Te notificaremos la llegada de tus visitantes.
                         </p>
 
+                        ${EVENT_IMAGE_URL ? `
+                        <!-- Imagen del evento -->
+                        <div style="text-align: center; margin-bottom: 25px;">
+                          <img src="${EVENT_IMAGE_URL}" alt="Imagen del evento" style="max-width: 100%; max-height: 250px; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" />
+                        </div>
+                        ` : ''}
+
                         <!-- Detalles -->
                         <div style="background-color: #f9fafb; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
                           <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 16px; font-weight: 600;">Detalles del acceso</h3>
                           
-                          ${EVENT_IMAGE_URL ? `
-                          <div style="text-align: center; margin-bottom: 20px;">
-                            <img src="${EVENT_IMAGE_URL}" alt="Imagen del evento" style="max-width: 200px; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" />
-                          </div>
-                          ` : ''}
-                          
                           <p style="color: #4b5563; margin: 8px 0; font-size: 14px; line-height: 1.8;">
-                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}
+                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}<br>
+                            <strong>Fecha y hora de fin:</strong> ${formatFullDate(new Date(data.endDate))}
                             ${data.location ? `<br><strong>Lugar:</strong> ${data.location}` : ''}
                             ${data.additionalInfo ? `<br><strong>Información adicional:</strong> ${data.additionalInfo}` : ''}
                           </p>
@@ -2037,18 +2039,21 @@ class EmailService {
                         <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
                           ${hostName} de <strong>${data.companyName}</strong> te espera para <strong>${data.accessTitle}</strong>
                         </p>
+
+                        ${EVENT_IMAGE_URL ? `
+                        <!-- Imagen del evento -->
+                        <div style="text-align: center; margin-bottom: 25px;">
+                          <img src="${EVENT_IMAGE_URL}" alt="Imagen del evento" style="max-width: 100%; max-height: 250px; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" />
+                        </div>
+                        ` : ''}
+
                         <!-- Detalles -->
                         <div style="background-color: #f9fafb; border-radius: 8px; padding: 25px; margin-bottom: 25px;">
                           <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 16px; font-weight: 600;">Detalles del acceso</h3>
                           
-                          ${EVENT_IMAGE_URL ? `
-                          <div style="text-align: center; margin-bottom: 20px;">
-                            <img src="${EVENT_IMAGE_URL}" alt="Imagen del evento" style="max-width: 200px; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" />
-                          </div>
-                          ` : ''}
-                          
                           <p style="color: #4b5563; margin: 8px 0; font-size: 14px; line-height: 1.8;">
-                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}
+                            <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}<br>
+                            <strong>Fecha y hora de fin:</strong> ${formatFullDate(new Date(data.endDate))}
                             ${data.location ? `<br><strong>Lugar:</strong> ${data.location}` : ''}
                             ${data.additionalInfo ? `<br><strong>Información adicional:</strong> ${data.additionalInfo}` : ''}
                           </p>
@@ -2107,7 +2112,7 @@ class EmailService {
 
   /**
    * Email 5: Notificación de check-in completado (al creador)
-   * @param {Object} data - { creatorEmail, creatorName, guestName, accessTitle, companyName, companyLogo }
+   * @param {Object} data - { creatorEmail, creatorName, guestName, guestEmail, guestCompany, guestPhoto, visitId, accessTitle, checkInTime, location, companyName, companyId, companyLogo }
    */
   async sendGuestCheckedInEmail(data) {
     if (!this.isEnabled()) {
@@ -2131,6 +2136,22 @@ class EmailService {
     } else {
       COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
       console.log('🏢 [GUEST CHECKED IN] Sin logo, usando fallback');
+    }
+
+    // Generar URL temporal para la foto del visitante si existe
+    let GUEST_PHOTO_URL;
+    if (data.guestPhoto && data.guestPhoto.startsWith('data:image')) {
+      if (data.visitId) {
+        GUEST_PHOTO_URL = this.generateVisitorPhotoUrl(data.visitId);
+        console.log('📸 [GUEST CHECKED IN] Foto de visitante: URL temporal generada');
+      } else {
+        GUEST_PHOTO_URL = null;
+        console.warn('⚠️ [GUEST CHECKED IN] No visitId para foto temporal');
+      }
+    } else if (data.guestPhoto) {
+      GUEST_PHOTO_URL = data.guestPhoto;
+    } else {
+      GUEST_PHOTO_URL = null;
     }
 
     try {
@@ -2176,10 +2197,26 @@ class EmailService {
                           <strong>${data.guestName}</strong> ha completado el escaneo de QR y su <strong>entrada fue aprobada</strong>.
                         </p>
 
-                        <!-- Detalles -->
+                        <!-- Información del Invitado -->
+                        ${GUEST_PHOTO_URL ? `
+                        <div style="margin-bottom: 25px;">
+                          <img src="${GUEST_PHOTO_URL}" alt="Foto del invitado" style="max-width: 120px; max-height: 120px; border-radius: 50%; border: 3px solid ${accentColor}; object-fit: cover;" />
+                        </div>
+                        ` : ''}
+                        
+                        <div style="background-color: #eff6ff; border-left: 4px solid ${primaryColor}; border-radius: 8px; padding: 20px; margin-bottom: 25px; text-align: left;">
+                          <p style="color: #1f2937; margin: 0; font-size: 15px; line-height: 1.8;">
+                            <strong style="color: ${primaryColor};">Información del Invitado</strong><br><br>
+                            <strong>Nombre:</strong> ${data.guestName}<br>
+                            ${data.guestEmail ? `<strong>Email:</strong> ${data.guestEmail}<br>` : ''}
+                            ${data.guestCompany ? `<strong>Empresa:</strong> ${data.guestCompany}` : ''}
+                          </p>
+                        </div>
+
+                        <!-- Detalles del Evento -->
                         <div style="background-color: #f9fafb; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 25px; text-align: left;">
                           <p style="color: #1f2937; margin: 0; font-size: 15px; line-height: 1.8;">
-                            <strong style="color: ${primaryColor};">Detalles</strong><br><br>
+                            <strong style="color: ${primaryColor};">Detalles del Evento</strong><br><br>
                             <strong>Evento/acceso:</strong> ${data.accessTitle}<br>
                             ${data.location ? `<strong>Lugar:</strong> ${data.location}<br>` : ''}
                             ${data.checkInTime ? `<strong>Hora de registro:</strong> ${formatFullDate(new Date(data.checkInTime))}` : ''}
@@ -2681,11 +2718,8 @@ class EmailService {
                     
                     <!-- Header -->
                     <tr>
-                      <td style="padding: 40px; text-align: center; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px 12px 0 0;">
+                      <td style="padding: 40px; text-align: center; background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); border-radius: 12px 12px 0 0;">
                         ${logoHtml}
-                        <div style="width: 80px; height: 80px; border-radius: 50%; background-color: rgba(255,255,255,0.2); display: inline-flex; align-items: center; justify-content: center; margin-top: 20px;">
-                          <span style="font-size: 40px;">✅</span>
-                        </div>
                       </td>
                     </tr>
 

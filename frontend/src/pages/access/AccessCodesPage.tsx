@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  Users, 
-  Plus, 
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  Users,
+  Plus,
   Search,
   Edit2,
   Trash2,
@@ -23,6 +23,7 @@ import {
   Copy,
   Download
 } from 'lucide-react';
+import { IoQrCodeOutline } from 'react-icons/io5';
 import { getAccesses, createAccess, updateAccess, cancelAccess, getUsers } from '../../services/api';
 import { Access, InvitedUser } from '../../types';
 import { formatDate, formatDateTime } from '../../utils/dateUtils';
@@ -150,7 +151,7 @@ export const AccessCodesPage: React.FC = () => {
         <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-white" />
+              <IoQrCodeOutline className="w-6 h-6 text-white" />
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Accesos / Eventos</h1>

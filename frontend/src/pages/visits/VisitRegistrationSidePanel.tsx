@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { User } from '../../types';
 import { X, Camera, User as UserIcon } from 'lucide-react';
 import { MdOutlineQrCodeScanner } from 'react-icons/md';
+import { VscSignIn } from 'react-icons/vsc';
 import jsQR from 'jsqr';
 import * as api from '../../services/api';
 import { useToast } from '../../components/common/Toast';
@@ -276,7 +277,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 bg-gradient-to-r from-gray-900 via-cyan-600 to-blue-600">
-          <h2 className="text-xl font-bold text-white">Registrar Entrada</h2>
+          <h2 className="text-xl font-bold text-white flex items-center gap-2"><VscSignIn className="w-5 h-5" />Registrar Entrada</h2>
           <button
             onClick={onClose}
             aria-label="Cerrar panel"

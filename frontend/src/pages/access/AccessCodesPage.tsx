@@ -275,11 +275,6 @@ export const AccessCodesPage: React.FC = () => {
                         <div>
                           <div className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                             {access.eventName}
-                            {access.status !== 'active' && (
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${access.status === 'finalized' ? 'bg-gray-200 text-gray-800' : 'bg-red-100 text-red-700'}`}>
-                                {access.status === 'finalized' ? 'Finalizado' : 'Cancelado'}
-                              </span>
-                            )}
                           </div>
                           <div className="text-xs text-gray-500 mt-1 flex items-center">
                             <Users className="w-3 h-3 mr-1" />

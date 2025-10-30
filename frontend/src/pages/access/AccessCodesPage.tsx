@@ -163,22 +163,24 @@ export const AccessCodesPage: React.FC = () => {
       <div className="flex space-x-1 mb-6 border-b-2 border-gray-200">
         <button
           onClick={() => setActiveTab('active')}
-          className={`px-6 py-3 font-semibold transition-colors ${
+          className={`px-6 py-3 font-semibold flex items-center transition-colors ${
             activeTab === 'active'
               ? 'text-gray-900 border-b-2 border-gray-900'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
+          <Clock className={`w-4 h-4 mr-2 ${activeTab === 'active' ? 'text-gray-900' : 'text-gray-400'}`} />
           Activos
         </button>
         <button
           onClick={() => setActiveTab('finalized')}
-          className={`px-6 py-3 font-semibold transition-colors ${
+          className={`px-6 py-3 font-semibold flex items-center transition-colors ${
             activeTab === 'finalized'
               ? 'text-gray-900 border-b-2 border-gray-900'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
+          <CheckCircle className={`w-4 h-4 mr-2 ${activeTab === 'finalized' ? 'text-gray-900' : 'text-gray-400'}`} />
           Finalizados
         </button>
       </div>

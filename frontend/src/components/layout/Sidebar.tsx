@@ -13,7 +13,7 @@ import {
     BarChart3, 
     Settings 
 } from 'lucide-react';
-import { BsQrCode } from 'react-icons/bs';
+import { IoQrCodeOutline } from 'react-icons/io5';
 
 type NavItemProps = { to: string; icon: React.ReactNode; label: string; collapsed: boolean };
 const NavItem: React.FC<NavItemProps> = ({ to, icon, label, collapsed }) => {
@@ -66,7 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
         { to: "/visits", label: "Visitas", icon: <ClipboardList className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
         { to: "/agenda", label: "Agenda", icon: <Calendar className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
         { to: "/users", label: "Usuarios", icon: <Users className="w-5 h-5" />, roles: [UserRole.ADMIN] },
-        { to: "/access-codes", label: "Accesos/Eventos", icon: <BsQrCode className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
+        { to: "/access-codes", label: "Accesos/Eventos", icon: <IoQrCodeOutline className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
         { to: "/public-registration", label: "Auto-registro", icon: <UserPlus className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
         { to: "/blacklist", label: "Lista Negra", icon: <UserX className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
         { to: "/reports", label: "Reportes", icon: <BarChart3 className="w-5 h-5" />, roles: [UserRole.ADMIN] },

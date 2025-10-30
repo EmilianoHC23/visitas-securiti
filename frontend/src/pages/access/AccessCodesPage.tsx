@@ -148,15 +148,13 @@ export const AccessCodesPage: React.FC = () => {
     <div className="p-6">
       {/* Header mejorado */}
       <div className="mb-6">
-        <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center">
-              <IoQrCodeOutline className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Accesos / Eventos</h1>
-              <p className="text-gray-600 text-sm md:text-base">Gestiona, filtra y consulta los accesos creados en tu organización</p>
-            </div>
+        <div className="flex items-center gap-4 py-4">
+          <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center">
+            <IoQrCodeOutline className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Accesos / Eventos</h1>
+            <p className="text-gray-600 text-sm md:text-base">Gestiona, filtra y consulta los accesos creados en tu organización</p>
           </div>
         </div>
       </div>

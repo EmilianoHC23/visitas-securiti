@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { User } from '../../types';
 import { X, Camera, User as UserIcon } from 'lucide-react';
 import { MdOutlineQrCodeScanner } from 'react-icons/md';
@@ -282,6 +282,14 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
 
     const selected = hosts.find(h => h._id === value) || null;
 
+    const sortedHosts = useMemo(() => {
+      return [...hosts].sort((a, b) => {
+        const nameA = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
+        const nameB = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+    }, [hosts]);
+
     const renderAvatar = (host: User) => {
       // Try the most common property used across the app first
       const src = (host as any).profileImage || (host as any).photo || (host as any).avatar || (host as any).picture || '';
@@ -331,7 +339,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
 
         {open && (
           <div className="absolute z-50 mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-56 overflow-auto">
-            {hosts.map(host => (
+            {sortedHosts.map(host => (
               <button
                 key={host._id}
                 type="button"

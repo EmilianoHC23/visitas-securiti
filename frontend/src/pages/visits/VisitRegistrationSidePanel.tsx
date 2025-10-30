@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { User } from '../../types';
-import { X, Camera, User as UserIcon } from 'lucide-react';
+import { X, Camera, User as UserIcon, Mail, Briefcase, MapPin, Users, FileText } from 'lucide-react';
 import { MdOutlineQrCodeScanner } from 'react-icons/md';
 import { VscSignIn } from 'react-icons/vsc';
 import { FaRegUser } from 'react-icons/fa';
@@ -491,7 +491,10 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
               {/* Form Fields */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Correo electrónico *
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-gray-400" />
+                    <span>Correo electrónico *</span>
+                  </div>
                 </label>
                 <input
                   type="email"
@@ -505,7 +508,10 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre completo *
+                  <div className="flex items-center gap-2">
+                    <UserIcon className="w-4 h-4 text-gray-400" />
+                    <span>Nombre completo *</span>
+                  </div>
                 </label>
                 <input
                   type="text"
@@ -519,7 +525,10 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Empresa
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-gray-400" />
+                    <span>Empresa</span>
+                  </div>
                 </label>
                 <input
                   type="text"
@@ -532,7 +541,10 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  A dónde se dirige
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    <span>A dónde se dirige</span>
+                  </div>
                 </label>
                 <input
                   type="text"
@@ -545,7 +557,10 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  A quién visita *
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-gray-400" />
+                    <span>A quién visita *</span>
+                  </div>
                 </label>
                 <HostSelect
                   hosts={hosts}
@@ -556,7 +571,10 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Razón de la visita *
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-gray-400" />
+                    <span>Razón de la visita *</span>
+                  </div>
                 </label>
                 <textarea
                   required

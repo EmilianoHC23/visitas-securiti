@@ -252,7 +252,13 @@ export const Dashboard: React.FC = () => {
         <div className="container-fluid px-0">
             {error && (
                 <div className="alert alert-danger d-flex justify-content-between align-items-center mb-4" role="alert">
-                    <span>{error}</span>
+                    <div className="d-flex align-items-center" style={{ gap: 12 }}>
+                        {/* Error icon */}
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ width: 20, height: 20 }} aria-hidden>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12A9 9 0 1112 3a9 9 0 019 9z" />
+                        </svg>
+                        <span>{error}</span>
+                    </div>
                     <button onClick={() => setError(null)} className="btn-close" aria-label="Cerrar"></button>
                 </div>
             )}

@@ -15,6 +15,7 @@ export const LoginPage: React.FC = () => {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [emailError, setEmailError] = useState<string | null>(null);
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const { login, loading } = useAuth();
@@ -81,9 +82,14 @@ export const LoginPage: React.FC = () => {
 
         try {
             await login(email, password);
-            // show success toast and navigate to dashboard
+            // show success toast and local success Alert with icon, then navigate shortly after
             try { showToast('Inicio de sesión iniciada correctamente', 'success'); } catch {}
-            try { navigate('/'); } catch {}
+            setSuccessMessage('Inicio de sesión iniciada correctamente');
+            // auto-dismiss alert after 3.5s and navigate to dashboard
+            setTimeout(() => {
+                setSuccessMessage(null);
+                try { navigate('/'); } catch {}
+            }, 1200);
         } catch (err: any) {
             setError('Email o contraseña incorrectos.');
         }
@@ -108,9 +114,27 @@ export const LoginPage: React.FC = () => {
                     <h2 className="text-lg text-gray-500 mb-1 font-medium">Comienza tu experiencia</h2>
                     <h1 className="text-3xl font-bold text-gray-800 mb-6">Inicia sesión en Visitas SecuriTI</h1>
                     <form onSubmit={handleSubmit} className="w-full space-y-6">
+                        {successMessage && (
+                            <Alert
+                                severity="success"
+                                onClose={() => setSuccessMessage(null)}
+                                icon={<CheckCircleOutlineIcon fontSize="inherit" />}
+                                iconMapping={{
+                                    error: <ErrorOutlineIcon fontSize="inherit" />, 
+                                    warning: <WarningAmberOutlinedIcon fontSize="inherit" />, 
+                                    info: <InfoOutlinedIcon fontSize="inherit" />, 
+                                    success: <CheckCircleOutlineIcon fontSize="inherit" />
+                                }}
+                            >
+                                {successMessage}
+                            </Alert>
+                        )}
+
                         {error && (
                             <Alert
                                 severity="error"
+                                onClose={() => setError(null)}
+                                icon={<ErrorOutlineIcon fontSize="inherit" />}
                                 iconMapping={{
                                     error: <ErrorOutlineIcon fontSize="inherit" />, 
                                     warning: <WarningAmberOutlinedIcon fontSize="inherit" />, 

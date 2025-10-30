@@ -267,6 +267,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
   }> = ({ hosts, value, onChange }) => {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement | null>(null);
+    const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
       const handleClickOutside = (e: MouseEvent) => {
@@ -281,9 +282,24 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
     const selected = hosts.find(h => h._id === value) || null;
 
     const renderAvatar = (host: User) => {
-      const src = (host as any).photo || (host as any).avatar || (host as any).picture || '';
-      if (src) return <img src={src} alt={host.firstName} className="w-8 h-8 rounded-full object-cover" />;
+      // Try the most common property used across the app first
+      const src = (host as any).profileImage || (host as any).photo || (host as any).avatar || (host as any).picture || '';
+
       const initials = `${host.firstName?.[0] || ''}${host.lastName?.[0] || ''}`.toUpperCase();
+
+      // If there is a src and it hasn't previously failed, try to render the image
+      if (src && !failedImages[host._id]) {
+        return (
+          <img
+            src={src}
+            alt={`${host.firstName} ${host.lastName}`}
+            className="w-8 h-8 rounded-full object-cover"
+            onError={() => setFailedImages(prev => ({ ...prev, [host._id]: true }))}
+          />
+        );
+      }
+
+      // Fallback: initials avatar
       return (
         <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-semibold">{initials}</div>
       );

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Camera, Building2, MapPin, Check, AlertCircle, Edit2 } from 'lucide-react';
+import { Upload, Camera, Building2, MapPin, Check, AlertCircle, Edit2, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import * as api from '../../services/api';
 
@@ -107,6 +107,14 @@ export const SettingsPage: React.FC = () => {
         }
     };
 
+    const handleRemoveLogo = async () => {
+        if (!companyLogo) return;
+        // Only update local state — persist when the user clicks "Guardar Cambios"
+        setCompanyLogo('');
+        // Clear any previous saved indicator because there are unsaved changes now
+        setSaved(false);
+    };
+
     // Load settings on mount
     useEffect(() => {
         loadSettings();
@@ -142,6 +150,7 @@ export const SettingsPage: React.FC = () => {
         try {
             await api.updateCompanyConfig({
                 name: buildingName,
+                logo: companyLogo,
                 settings: {
                     autoCheckout,
                     requirePhoto: true,
@@ -271,6 +280,16 @@ export const SettingsPage: React.FC = () => {
                                                 >
                                                     <Edit2 className="w-4 h-4" />
                                                 </button>
+                                                {companyLogo && (
+                                                    <button
+                                                        onClick={handleRemoveLogo}
+                                                        className="absolute -right-12 -bottom-2 bg-white text-red-600 w-9 h-9 rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform border border-red-100"
+                                                        aria-label="Eliminar logo"
+                                                        title="Eliminar logo"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                             </div>
                                             <input
                                                 ref={fileInputRef}

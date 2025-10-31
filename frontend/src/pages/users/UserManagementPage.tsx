@@ -11,8 +11,8 @@ const UserPreviewModal: React.FC<{
             <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden">
                 <div className="p-6 bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 border-b border-gray-700 flex items-start justify-between text-white">
                     <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
-                            <FaUser className="w-6 h-6 text-white" />
+                    <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
+                <FaRegUser className="w-6 h-6 text-white" />
                         </div>
                         <div>
                             <h3 className="text-lg font-bold text-white">Detalle de usuario</h3>
@@ -53,7 +53,7 @@ const UserPreviewModal: React.FC<{
                                         }}
                                         style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'inline' : 'none' }}
                                     />
-                                    <FaUser className="w-16 h-16 text-blue-300" style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'none' : 'inline-flex' }} />
+                                    <FaRegUser className="w-16 h-16 text-blue-300" style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'none' : 'inline-flex' }} />
                                 </span>
                             </div>
 
@@ -95,9 +95,8 @@ const UserPreviewModal: React.FC<{
 };
 import React, { useState, useEffect } from 'react';
 import { LogoutIcon, SettingsIcon } from '../../components/common/icons';
-import { FaUser, FaAddressBook, FaShieldAlt } from 'react-icons/fa';
+import { FaRegUser, FaAddressBook, FaShieldAlt, FaUsers } from 'react-icons/fa';
 import { MdEditNote } from 'react-icons/md';
-import { FaRegUser, FaUsers } from 'react-icons/fa6';
 import { BsPersonAdd } from 'react-icons/bs';
 import { FiShield, FiMail } from 'react-icons/fi';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
@@ -289,7 +288,7 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
 // RoleSelect: custom dropdown that shows an icon for the selected role and for each option
 const RoleSelect: React.FC<{ value: UserRole; onChange: (r: UserRole) => void }> = ({ value, onChange }) => {
     const options: { value: UserRole; label: string; icon: React.ReactNode }[] = [
-        { value: UserRole.HOST, label: 'Host', icon: <FaUser className="w-4 h-4" /> },
+    { value: UserRole.HOST, label: 'Host', icon: <FaRegUser className="w-4 h-4" /> },
         { value: UserRole.RECEPTION, label: 'Recepcionista', icon: <FaAddressBook className="w-4 h-4" /> },
         { value: UserRole.ADMIN, label: 'Administrador', icon: <FaShieldAlt className="w-4 h-4" /> },
     ];
@@ -379,9 +378,9 @@ const InviteUserModal: React.FC<{
             <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden">
                 <div className="p-6 bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 border-b border-gray-700 flex items-start justify-between text-white">
                     <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
+                            <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
                             {/* Decorative user icon (react-icons) */}
-                            <FaUser className="w-6 h-6 text-white" />
+                            <FaRegUser className="w-6 h-6 text-white" />
                         </div>
                         <div>
                             <h3 className="text-lg font-bold text-white">Invitar Nuevo Usuario</h3>
@@ -865,7 +864,7 @@ export const UserManagementPage: React.FC = () => {
                                                     }}
                                                     style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'inline' : 'none' }}
                                                 />
-                                                <FaUser className="w-7 h-7 text-gray-400" style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'none' : 'inline-flex' }} />
+                                                <FaRegUser className="w-7 h-7 text-gray-400" style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'none' : 'inline-flex' }} />
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap transition-colors group-hover:bg-blue-100">

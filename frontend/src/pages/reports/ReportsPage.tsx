@@ -19,6 +19,19 @@ export default function ReportsPage() {
     loadVisits();
   }, []);
 
+  // Prevent page-level horizontal scrolling while this page is mounted.
+  // We set body/html overflow-x to hidden and restore it on unmount.
+  useEffect(() => {
+    const prevBodyOverflow = document.body.style.overflowX;
+    const prevHtmlOverflow = document.documentElement.style.overflowX;
+    document.body.style.overflowX = 'hidden';
+    document.documentElement.style.overflowX = 'hidden';
+    return () => {
+      document.body.style.overflowX = prevBodyOverflow || '';
+      document.documentElement.style.overflowX = prevHtmlOverflow || '';
+    };
+  }, []);
+
   useEffect(() => {
     filterVisitsByDate();
   }, [visits, selectedDate, searchTerm]);
@@ -86,9 +99,16 @@ export default function ReportsPage() {
     return formatLongDate(date);
   };
 
+  const splitDateTime = (dateStr?: string) => {
+    if (!dateStr) return ['-', '-'];
+    const formatted = formatDateTime(dateStr as any);
+    const parts = formatted.split(',');
+    return [parts[0]?.trim() || '-', parts[1]?.trim() || '-'];
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50 p-6 overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Visitas Recientes</h1>
@@ -191,17 +211,17 @@ export default function ReportsPage() {
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full">
+                <table className="w-full table-auto">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Foto</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Visitante</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Empresa</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Anfitrión</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Entrada</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Salida</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Estatus</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Correo</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Foto</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Visitante</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Empresa</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Anfitrión</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Entrada</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Salida</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Estatus</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Correo</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -225,22 +245,34 @@ export default function ReportsPage() {
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">{v.visitorName}</div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-600">{v.visitorCompany || '-'}</div>
+                      <td className="px-6 py-4 max-w-[12rem]">
+                        <div className="text-sm text-gray-600 truncate">{v.visitorCompany || '-'}</div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">{v.host?.firstName} {v.host?.lastName}</div>
+                      <td className="px-6 py-4 max-w-[12rem]">
+                        <div className="text-sm text-gray-900 truncate">{v.host?.firstName} {v.host?.lastName}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-600">
-                          {v.checkInTime ? formatDateTime(v.checkInTime) : '-'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-600">
-                          {v.checkOutTime ? formatDateTime(v.checkOutTime) : '-'}
-                        </div>
-                      </td>
+                        <td className="px-6 py-4 align-top">
+                          {(() => {
+                            const [date, time] = splitDateTime(v.checkInTime);
+                            return (
+                              <div>
+                                <div className="text-sm text-gray-700">{date}</div>
+                                <div className="text-xs text-gray-500 mt-1">{time !== '-' ? time : '-'}</div>
+                              </div>
+                            );
+                          })()}
+                        </td>
+                        <td className="px-6 py-4 align-top">
+                          {(() => {
+                            const [date, time] = splitDateTime(v.checkOutTime);
+                            return (
+                              <div>
+                                <div className="text-sm text-gray-700">{date}</div>
+                                <div className="text-xs text-gray-500 mt-1">{time !== '-' ? time : '-'}</div>
+                              </div>
+                            );
+                          })()}
+                        </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                           v.status === VisitStatus.COMPLETED 
@@ -250,16 +282,17 @@ export default function ReportsPage() {
                           {v.status === VisitStatus.COMPLETED ? 'Completada' : 'Rechazada'}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-600 max-w-xs truncate">
-                          {v.visitorEmail || '-'}
-                        </div>
-                      </td>
+                        <td className="px-6 py-4">
+                            <div className="text-sm text-gray-600 max-w-[20rem] truncate overflow-hidden whitespace-nowrap">
+                              {v.visitorEmail || '-'}
+                            </div>
+                        </td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
             </div>
+            
           </div>
         )}
 

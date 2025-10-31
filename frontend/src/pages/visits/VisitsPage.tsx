@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { FaRegUser } from 'react-icons/fa';
 import { Visit, VisitStatus, User } from '../../types';
 import * as api from '../../services/api';
 import { CheckoutModal } from './CheckoutModal';
@@ -125,9 +126,7 @@ const VisitCard: React.FC<{
                         {visit.visitorPhoto ? (
                             <img src={visit.visitorPhoto} alt={visit.visitorName} className="w-full h-full object-cover" />
                         ) : (
-                            <svg className={`w-8 h-8 ${getAvatarIconColor(visit.status)}`} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                            </svg>
+                            <FaRegUser className={`w-8 h-8 ${getAvatarIconColor(visit.status)}`} />
                         )}
                     </div>
                     

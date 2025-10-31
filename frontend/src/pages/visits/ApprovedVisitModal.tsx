@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { FaRegUser } from 'react-icons/fa';
 import { Visit } from '../../types';
 import { formatShortDate, formatTime } from '../../utils/dateUtils';
 
@@ -84,9 +85,7 @@ export const ApprovedVisitModal: React.FC<ApprovedVisitModalProps> = ({
                 {visit.visitorPhoto ? (
                   <img src={visit.visitorPhoto} alt={visit.visitorName} className="w-full h-full object-cover object-center" />
                 ) : (
-                  <svg className="w-10 h-10 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
+                  <FaRegUser className="w-10 h-10 text-gray-400" />
                 )}
               </div>
               <p className="font-semibold text-sm text-gray-800 truncate px-1 max-w-[100px] mx-auto">{visit.visitorName}</p>
@@ -108,9 +107,7 @@ export const ApprovedVisitModal: React.FC<ApprovedVisitModalProps> = ({
                 {visit.host.profileImage ? (
                   <img src={visit.host.profileImage} alt={`${visit.host.firstName} ${visit.host.lastName}`} className="w-full h-full object-cover object-center" />
                 ) : (
-                  <svg className="w-10 h-10 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
+                  <FaRegUser className="w-10 h-10 text-gray-400" />
                 )}
               </div>
               <p className="font-semibold text-sm text-gray-800 truncate px-1 max-w-[100px] mx-auto">{visit.host.firstName} {visit.host.lastName}</p>

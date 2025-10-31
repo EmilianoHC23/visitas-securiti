@@ -283,7 +283,7 @@ export const SettingsPage: React.FC = () => {
                                                 {companyLogo && (
                                                     <button
                                                         onClick={handleRemoveLogo}
-                                                        className="absolute -right-12 -bottom-2 bg-white text-red-600 w-9 h-9 rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform border border-red-100"
+                                                        className="absolute -left-3 -top-3 bg-white text-red-600 w-9 h-9 rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform border border-red-100 z-10"
                                                         aria-label="Eliminar logo"
                                                         title="Eliminar logo"
                                                     >

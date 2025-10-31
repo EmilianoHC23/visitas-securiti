@@ -95,7 +95,8 @@ const UserPreviewModal: React.FC<{
 };
 import React, { useState, useEffect } from 'react';
 import { LogoutIcon, SettingsIcon } from '../../components/common/icons';
-import { FaRegUser, FaAddressBook, FaShieldAlt, FaUsers } from 'react-icons/fa';
+import { FaRegUser, FaAddressBook, FaShieldAlt } from 'react-icons/fa';
+import { FiUsers } from 'react-icons/fi';
 import { MdEditNote } from 'react-icons/md';
 import { BsPersonAdd } from 'react-icons/bs';
 import { FiShield, FiMail } from 'react-icons/fi';
@@ -798,7 +799,7 @@ export const UserManagementPage: React.FC = () => {
             <div className="mb-6 flex justify-between items-center px-6">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-md">
-                        <FaUsers className="w-6 h-6 text-white" />
+                        <FiUsers className="w-6 h-6 text-white" />
                     </div>
                     <div>
                         <h2 className="text-xl font-semibold text-gray-800">Gestión de Usuarios</h2>

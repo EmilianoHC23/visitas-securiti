@@ -1,6 +1,7 @@
 import React from 'react';
 import { Visit } from '../../types';
 import { X, Clock, CheckCircle, UserCheck, LogOut, XCircle } from 'lucide-react';
+import { FaRegUser } from 'react-icons/fa';
 import { formatDateTime, formatShortDate, formatTime } from '../../utils/dateUtils';
 
 interface VisitTimelineModalProps {
@@ -110,9 +111,7 @@ export const VisitTimelineModal: React.FC<VisitTimelineModalProps> = ({
                 {visit.visitorPhoto ? (
                   <img src={visit.visitorPhoto} alt={visit.visitorName} className="w-full h-full object-cover" />
                 ) : (
-                  <svg className="w-16 h-16 text-cyan-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
+                  <FaRegUser className="w-16 h-16 text-cyan-600" />
                 )}
               </div>
               <h3 className="text-xl font-bold text-gray-800">{visit.visitorName}</h3>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { FaRegUser } from 'react-icons/fa';
 import { Visit, VisitStatus } from '../../types';
 import * as api from '../../services/api';
 import { formatDateTime, formatLongDate } from '../../utils/dateUtils';
@@ -228,9 +229,7 @@ export default function ReportsPage() {
                           {v.visitorPhoto ? (
                             <img src={v.visitorPhoto} alt={v.visitorName} className="w-full h-full object-cover" />
                           ) : (
-                            <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                            </svg>
+                            <FaRegUser className="w-6 h-6 text-gray-400" />
                           )}
                         </div>
                       </td>

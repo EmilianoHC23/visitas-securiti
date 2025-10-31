@@ -12,6 +12,14 @@ const getPageTitle = (pathname: string): string => {
             return 'Dashboard';
         case '/visits':
             return 'Gestión de Visitas';
+        case '/agenda':
+            return 'Agenda de Visitas y Eventos';
+        case '/access-codes':
+            return 'Códigos de Acceso y Eventos'; 
+        case '/public-registration':
+            return 'Auto-registro de Visitantes';
+        case '/blacklist':
+            return 'Lista Negra de Visitantes';
         case '/users':
             return 'Gestión de Usuarios';
         case '/reports':

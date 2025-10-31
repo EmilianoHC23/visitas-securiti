@@ -19,18 +19,10 @@ export default function ReportsPage() {
     loadVisits();
   }, []);
 
-  // Prevent page-level horizontal scrolling while this page is mounted.
-  // We set body/html overflow-x to hidden and restore it on unmount.
-  useEffect(() => {
-    const prevBodyOverflow = document.body.style.overflowX;
-    const prevHtmlOverflow = document.documentElement.style.overflowX;
-    document.body.style.overflowX = 'hidden';
-    document.documentElement.style.overflowX = 'hidden';
-    return () => {
-      document.body.style.overflowX = prevBodyOverflow || '';
-      document.documentElement.style.overflowX = prevHtmlOverflow || '';
-    };
-  }, []);
+  // NOTE: removed global overflow-x hack. Instead we make the
+  // filters and table layout responsive and use internal
+  // overflow-x on the table card so the page does not gain
+  // a horizontal scrollbar when sidebar toggles.
 
   useEffect(() => {
     filterVisitsByDate();
@@ -107,8 +99,8 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 overflow-x-hidden">
-      <div className="max-w-7xl mx-auto px-4">
+    <div className="min-h-screen bg-gray-50 px-4 md:px-6 overflow-x-hidden">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Visitas Recientes</h1>
@@ -116,10 +108,10 @@ export default function ReportsPage() {
         </div>
 
         {/* Filters Bar */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6 min-w-0">
+          <div className="flex flex-col md:flex-row gap-4 items-center min-w-0">
             {/* Search */}
-            <div className="flex-1 relative">
+            <div className="flex-1 relative min-w-0">
               <input
                 type="text"
                 placeholder="Buscar visitante..."
@@ -133,7 +125,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Date Picker */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <button
                 onClick={() => setShowDatePicker(!showDatePicker)}
                 className="px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 flex items-center gap-2 text-sm font-medium text-gray-700 transition-colors"
@@ -162,7 +154,7 @@ export default function ReportsPage() {
             {/* Download Button */}
             <button
               onClick={handleDownloadReport}
-              className="px-4 py-2.5 bg-gradient-to-r from-cyan-400 to-cyan-500 text-white rounded-lg hover:from-cyan-500 hover:to-cyan-600 flex items-center gap-2 text-sm font-medium transition-all shadow-sm"
+              className="px-4 py-2.5 bg-gradient-to-r from-cyan-400 to-cyan-500 text-white rounded-lg hover:from-cyan-500 hover:to-cyan-600 flex items-center gap-2 text-sm font-medium transition-all shadow-sm whitespace-nowrap flex-shrink-0"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -172,7 +164,7 @@ export default function ReportsPage() {
           </div>
 
           {/* Stats */}
-          <div className="flex gap-4 mt-4 pt-4 border-t border-gray-200">
+          <div className="flex gap-4 mt-4 pt-4 border-t border-gray-200 flex-wrap">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">Total:</span>
               <span className="text-lg font-bold text-gray-900">{filteredVisits.length}</span>
@@ -209,19 +201,19 @@ export default function ReportsPage() {
             <p className="text-gray-500 text-sm">No se encontraron visitas para la fecha seleccionada</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-w-0">
             <div className="overflow-x-auto">
-                <table className="w-full table-auto">
+                <table className="w-full table-auto text-sm min-w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Foto</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Visitante</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Empresa</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Anfitrión</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Entrada</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Salida</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Estatus</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Correo</th>
+                      <th className="px-3 py-3 text-left font-semibold text-gray-600 uppercase tracking-wider">Foto</th>
+                      <th className="px-3 py-3 text-left font-semibold text-gray-600 uppercase tracking-wider">Visitante</th>
+                      <th className="px-3 py-3 text-left font-semibold text-gray-600 uppercase tracking-wider">Empresa</th>
+                      <th className="px-3 py-3 text-left font-semibold text-gray-600 uppercase tracking-wider">Anfitrión</th>
+                      <th className="px-3 py-3 text-left font-semibold text-gray-600 uppercase tracking-wider">Entrada</th>
+                      <th className="px-3 py-3 text-left font-semibold text-gray-600 uppercase tracking-wider">Salida</th>
+                      <th className="px-3 py-3 text-left font-semibold text-gray-600 uppercase tracking-wider">Estatus</th>
+                      <th className="px-3 py-3 text-left font-semibold text-gray-600 uppercase tracking-wider">Correo</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -231,7 +223,7 @@ export default function ReportsPage() {
                       onClick={() => handleVisitClick(v)} 
                       className="hover:bg-gray-50 cursor-pointer transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
                           {v.visitorPhoto ? (
                             <img src={v.visitorPhoto} alt={v.visitorName} className="w-full h-full object-cover" />
@@ -242,16 +234,16 @@ export default function ReportsPage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">{v.visitorName}</div>
+                      <td className="px-3 py-3 min-w-0">
+                        <div className="text-sm font-medium text-gray-900 truncate">{v.visitorName}</div>
                       </td>
-                      <td className="px-6 py-4 max-w-[12rem]">
+                      <td className="px-3 py-3 max-w-[8rem] min-w-0">
                         <div className="text-sm text-gray-600 truncate">{v.visitorCompany || '-'}</div>
                       </td>
-                      <td className="px-6 py-4 max-w-[12rem]">
+                      <td className="px-3 py-3 max-w-[9rem] min-w-0">
                         <div className="text-sm text-gray-900 truncate">{v.host?.firstName} {v.host?.lastName}</div>
                       </td>
-                        <td className="px-6 py-4 align-top">
+                        <td className="px-4 py-3 align-top">
                           {(() => {
                             const [date, time] = splitDateTime(v.checkInTime);
                             return (
@@ -262,7 +254,7 @@ export default function ReportsPage() {
                             );
                           })()}
                         </td>
-                        <td className="px-6 py-4 align-top">
+                        <td className="px-4 py-3 align-top">
                           {(() => {
                             const [date, time] = splitDateTime(v.checkOutTime);
                             return (
@@ -273,7 +265,7 @@ export default function ReportsPage() {
                             );
                           })()}
                         </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                           v.status === VisitStatus.COMPLETED 
                             ? 'bg-green-100 text-green-800' 
@@ -282,10 +274,10 @@ export default function ReportsPage() {
                           {v.status === VisitStatus.COMPLETED ? 'Completada' : 'Rechazada'}
                         </span>
                       </td>
-                        <td className="px-6 py-4">
-                            <div className="text-sm text-gray-600 max-w-[20rem] truncate overflow-hidden whitespace-nowrap">
-                              {v.visitorEmail || '-'}
-                            </div>
+                        <td className="px-4 py-3">
+                              <div className="text-sm text-gray-600 max-w-[12rem] truncate overflow-hidden whitespace-nowrap min-w-0">
+                                {v.visitorEmail || '-'}
+                              </div>
                         </td>
                     </tr>
                   ))}

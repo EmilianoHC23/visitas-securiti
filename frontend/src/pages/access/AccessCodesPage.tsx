@@ -1363,20 +1363,29 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose }) => {
                           )}
                         </td>
                         <td className="px-3 py-4 whitespace-nowrap">
-                          {user.qrCode && (
-                            <button
-                              onClick={() => {
-                                const link = document.createElement('a');
-                                link.href = user.qrCode;
-                                link.download = `QR-${user.name.replace(/\s/g, '_')}.png`;
-                                link.click();
-                              }}
-                              className="flex items-center px-2.5 py-1.5 text-xs text-gray-900 bg-gray-100 rounded-lg border border-gray-200 hover:bg-gray-200"
-                            >
-                              <Download className="w-3 h-3 mr-1" />
-                              Descargar
-                            </button>
-                          )}
+                          {user.qrCode && (() => {
+                            const isActive = access.status === 'active';
+                            const handleDownload = () => {
+                              if (!isActive) return;
+                              const link = document.createElement('a');
+                              link.href = user.qrCode;
+                              link.download = `QR-${user.name.replace(/\s/g, '_')}.png`;
+                              link.click();
+                            };
+
+                            return (
+                              <button
+                                onClick={handleDownload}
+                                disabled={!isActive}
+                                title={isActive ? 'Descargar' : (access.status === 'cancelled' ? 'Acceso cancelado' : 'Acceso finalizado')}
+                                className={`flex items-center px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 transition-colors ${isActive ? 'text-gray-900 bg-gray-100 hover:bg-gray-200' : 'text-gray-400 bg-gray-50 cursor-not-allowed opacity-70'}`}
+                                aria-disabled={!isActive}
+                              >
+                                <Download className="w-3 h-3 mr-1" />
+                                Descargar
+                              </button>
+                            );
+                          })()}
                         </td>
                       </tr>
                     ))}

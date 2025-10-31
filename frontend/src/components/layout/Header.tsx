@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/Toast';
 import { ChevronDownIcon, LogoutIcon } from '../common/icons';
 import { FaX } from 'react-icons/fa6';
+import { FaRegUser } from 'react-icons/fa';
 import { useLocation } from 'react-router-dom';
 
 const getPageTitle = (pathname: string): string => {
@@ -39,6 +40,7 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
     const dropdownRef = useRef<HTMLDivElement>(null);
     const location = useLocation();
     const pageTitle = getPageTitle(location.pathname);
+    const [imgError, setImgError] = useState(false);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -152,31 +154,19 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                         onClick={() => setDropdownOpen(!dropdownOpen)}
                         aria-expanded={dropdownOpen}
                     >
-                        {user.profileImage && user.profileImage.trim() !== '' ? (
-                            <span className="me-2 d-inline-flex align-items-center justify-content-center rounded-circle bg-gray-200 position-relative" style={{ width: 40, height: 40 }}>
-                                <img 
-                                    src={user.profileImage} 
-                                    alt="Perfil" 
-                                    className="rounded-circle position-absolute top-0 start-0" 
+                        <span className="me-2 d-inline-flex align-items-center justify-content-center rounded-circle bg-gray-200 position-relative" style={{ width: 40, height: 40 }}>
+                            {user.profileImage && user.profileImage.trim() !== '' && !imgError ? (
+                                <img
+                                    src={user.profileImage}
+                                    alt="Perfil"
+                                    className="rounded-circle position-absolute top-0 start-0"
                                     style={{ width: 40, height: 40, objectFit: 'cover' }}
-                                    onError={e => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.style.display = 'none';
-                                        const fallback = target.nextElementSibling as HTMLElement;
-                                        if (fallback) fallback.style.display = 'inline';
-                                    }}
+                                    onError={() => setImgError(true)}
                                 />
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-7 h-7 text-gray-400" style={{ display: 'none' }}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                                </svg>
-                            </span>
-                        ) : (
-                            <span className="me-2 d-inline-flex align-items-center justify-content-center rounded-circle bg-gray-200" style={{ width: 40, height: 40 }}>
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-7 h-7 text-gray-400">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                                </svg>
-                            </span>
-                        )}
+                            ) : (
+                                <FaRegUser className="w-7 h-7 text-gray-400" />
+                            )}
+                        </span>
                         <div className="d-none d-md-block text-start me-2">
                             <div className="fw-semibold text-dark">{user.firstName} {user.lastName}</div>
                             <div className="text-muted text-capitalize small">{user.role}</div>

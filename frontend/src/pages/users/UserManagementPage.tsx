@@ -824,14 +824,14 @@ export const UserManagementPage: React.FC = () => {
                         <div className="text-center p-8">Cargando usuarios...</div>
                     ) : (
                         <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-900">
+                            <thead className="bg-gradient-to-r from-gray-900 via-gray-700 to-gray-600 text-white">
                                 <tr>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Foto</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider first:rounded-tl-lg">Foto</th>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Nombre</th>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Email</th>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Rol</th>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Estatus</th>
-                                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">Acciones</th>
+                                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider last:rounded-tr-lg">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">

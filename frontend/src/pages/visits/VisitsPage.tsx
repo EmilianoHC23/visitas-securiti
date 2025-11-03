@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import { FaRegUser } from 'react-icons/fa';
 import { Visit, VisitStatus, User } from '../../types';
 import * as api from '../../services/api';
@@ -1350,6 +1352,25 @@ export const VisitsPage: React.FC = () => {
 
     const navigate = useNavigate();
 
+    // local framer-motion variants for the register dropdown
+    const registerWrapperVariants: Variants = {
+        open: {
+            scaleY: 1,
+            opacity: 1,
+            transition: { when: 'beforeChildren', staggerChildren: 0.06 },
+        },
+        closed: {
+            scaleY: 0,
+            opacity: 0,
+            transition: { when: 'afterChildren', staggerChildren: 0.04 },
+        },
+    };
+
+    const registerItemVariants: Variants = {
+        open: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } },
+        closed: { opacity: 0, y: -8, transition: { duration: 0.12 } },
+    };
+
     // Arrays de visitas por status (asegúrate que estén antes del return)
 const pendingVisits = visits.filter(v => v.status === VisitStatus.PENDING);
 const approvedVisits = visits.filter(v => v.status === VisitStatus.APPROVED);
@@ -1411,30 +1432,42 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                             </svg>
                             Registrar
                         </button>
-                        {registerMenuOpen && (
-                            <div className="absolute top-full right-0 mt-2 bg-white rounded-md shadow-lg border border-gray-200 z-50 min-w-[200px]">
-                                <button
-                                    onClick={() => {
-                                        setIsModalOpen(true);
-                                        setRegisterMenuOpen(false);
-                                    }}
-                                    className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                        <AnimatePresence>
+                            {registerMenuOpen && (
+                                <motion.div
+                                    initial="closed"
+                                    animate="open"
+                                    exit="closed"
+                                    variants={registerWrapperVariants}
+                                    style={{ transformOrigin: 'top', right: 0, minWidth: 200 }}
+                                    className="absolute top-full right-0 mt-2 bg-white rounded-md shadow-lg border border-gray-200 z-50 min-w-[200px] overflow-hidden"
                                 >
-                                    <VscSignIn className="w-4 h-4" />
-                                    Entrada de Visitante
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowExitModal(true);
-                                        setRegisterMenuOpen(false);
-                                    }}
-                                    className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2 border-t"
-                                >
-                                    <VscSignOut className="w-4 h-4" />
-                                    Salida de Visitante
-                                </button>
-                            </div>
-                        )}
+                                    <motion.button
+                                        variants={registerItemVariants}
+                                        onClick={() => {
+                                            setIsModalOpen(true);
+                                            setRegisterMenuOpen(false);
+                                        }}
+                                        className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                                    >
+                                        <VscSignIn className="w-4 h-4" />
+                                        Entrada de Visitante
+                                    </motion.button>
+
+                                    <motion.button
+                                        variants={registerItemVariants}
+                                        onClick={() => {
+                                            setShowExitModal(true);
+                                            setRegisterMenuOpen(false);
+                                        }}
+                                        className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2 border-t"
+                                    >
+                                        <VscSignOut className="w-4 h-4" />
+                                        Salida de Visitante
+                                    </motion.button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
             </div>

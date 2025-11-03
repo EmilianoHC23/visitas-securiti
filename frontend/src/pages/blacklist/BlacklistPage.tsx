@@ -118,13 +118,13 @@ export const BlacklistPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-3 bg-red-100 rounded-xl">
-              <Shield className="w-8 h-8 text-red-600" />
+            <div className="p-3 bg-blue-100 rounded-xl">
+              <Shield className="w-8 h-8 text-blue-600" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Lista Negra</h1>
@@ -145,12 +145,12 @@ export const BlacklistPage: React.FC = () => {
                 placeholder="Buscar por nombre, correo o motivo..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
             </div>
             <button
               onClick={() => setShowAddForm(true)}
-              className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all shadow-lg shadow-red-200 font-semibold flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-200 font-semibold flex items-center justify-center gap-2"
             >
               <UserX className="w-5 h-5" />
               Agregar a Lista Negra
@@ -190,7 +190,7 @@ export const BlacklistPage: React.FC = () => {
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group"
               >
                 {/* Photo Section */}
-                <div className="relative h-48 bg-gradient-to-br from-red-50 to-red-100">
+                <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100">
                   {entry.photo ? (
                     <img
                       src={entry.photo}
@@ -199,25 +199,25 @@ export const BlacklistPage: React.FC = () => {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <div className="p-6 bg-red-200 rounded-full">
-                        <UserX className="w-16 h-16 text-red-600" />
+                      <div className="p-6 bg-gray-200 rounded-full">
+                        <UserX className="w-16 h-16 text-gray-600" />
                       </div>
                     </div>
                   )}
                   <div className="absolute top-3 right-3">
                     <button
                       onClick={() => handleRemove(entry._id)}
-                      className="p-2 bg-white/90 backdrop-blur-sm rounded-lg hover:bg-red-50 transition-colors shadow-lg"
+                      className="p-2 bg-white/90 backdrop-blur-sm rounded-lg hover:bg-gray-100 transition-colors shadow-lg"
                       title="Eliminar de la lista negra"
                     >
-                      <Trash2 className="w-5 h-5 text-red-600" />
+                      <Trash2 className="w-5 h-5 text-gray-600" />
                     </button>
                   </div>
                 </div>
 
                 {/* Content Section */}
                 <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-red-600 transition-colors">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
                     {entry.visitorName}
                   </h3>
                   
@@ -231,7 +231,7 @@ export const BlacklistPage: React.FC = () => {
                     </div>
 
                     <div className="flex items-start gap-2">
-                      <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                      <AlertCircle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
                         <p className="text-sm text-gray-500 mb-1">Motivo</p>
                         <p className="text-sm text-gray-900 leading-relaxed">{entry.reason}</p>
@@ -258,13 +258,13 @@ export const BlacklistPage: React.FC = () => {
       {/* Modal para agregar entrada */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl animate-slideUp">
+          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl animate-slideUp max-h-[90vh] overflow-y-auto">
             {/* Header */}
-            <div className="p-6 border-b border-gray-100">
+            <div className="p-6 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-red-100 rounded-lg">
-                    <UserX className="w-6 h-6 text-red-600" />
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <UserX className="w-6 h-6 text-blue-600" />
                   </div>
                   <h3 className="text-xl font-bold text-gray-900">
                     Agregar a Lista Negra
@@ -280,34 +280,34 @@ export const BlacklistPage: React.FC = () => {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleAdd} className="p-6 space-y-5">
+            <form onSubmit={handleAdd} className="p-6 space-y-6">
               {/* Photo Upload */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Foto del visitante (opcional)
                 </label>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   {newEntry.photo ? (
-                    <div className="relative">
+                    <div className="relative flex-shrink-0">
                       <img
                         src={newEntry.photo}
                         alt="Preview"
-                        className="w-24 h-24 rounded-xl object-cover border-2 border-gray-200"
+                        className="w-32 h-32 rounded-xl object-cover border-2 border-gray-200"
                       />
                       <button
                         type="button"
                         onClick={() => setNewEntry({ ...newEntry, photo: '' })}
-                        className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                        className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
-                    <div className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
-                      <Camera className="w-8 h-8 text-gray-400" />
+                    <div className="w-32 h-32 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 flex-shrink-0">
+                      <Camera className="w-10 h-10 text-gray-400" />
                     </div>
                   )}
-                  <div className="flex-1">
+                  <div className="flex-1 w-full">
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -318,7 +318,7 @@ export const BlacklistPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium flex items-center justify-center gap-2"
+                      className="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium flex items-center justify-center gap-2"
                     >
                       <Upload className="w-5 h-5" />
                       {newEntry.photo ? 'Cambiar foto' : 'Subir foto'}
@@ -339,7 +339,7 @@ export const BlacklistPage: React.FC = () => {
                   type="text"
                   value={newEntry.visitorName}
                   onChange={(e) => setNewEntry({ ...newEntry, visitorName: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="Nombre completo"
                   required
                 />
@@ -354,7 +354,7 @@ export const BlacklistPage: React.FC = () => {
                   type="email"
                   value={newEntry.email}
                   onChange={(e) => setNewEntry({ ...newEntry, email: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="correo@ejemplo.com"
                   required
                 />
@@ -368,7 +368,7 @@ export const BlacklistPage: React.FC = () => {
                 <textarea
                   value={newEntry.reason}
                   onChange={(e) => setNewEntry({ ...newEntry, reason: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
                   rows={4}
                   placeholder="Describe el motivo por el cual se agrega a la lista negra..."
                   required
@@ -376,7 +376,7 @@ export const BlacklistPage: React.FC = () => {
               </div>
 
               {/* Buttons */}
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-3 pt-4 sticky bottom-0 bg-white pb-2">
                 <button
                   type="button"
                   onClick={() => setShowAddForm(false)}
@@ -386,7 +386,7 @@ export const BlacklistPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all shadow-lg shadow-red-200 font-semibold"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-200 font-semibold"
                 >
                   Agregar
                 </button>

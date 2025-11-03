@@ -94,6 +94,8 @@ const UserPreviewModal: React.FC<{
     );
 };
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import { LogoutIcon, SettingsIcon } from '../../components/common/icons';
 import { FaRegUser, FaAddressBook, FaShieldAlt } from 'react-icons/fa';
 import { FiUsers } from 'react-icons/fi';
@@ -309,30 +311,43 @@ const RoleSelect: React.FC<{ value: UserRole; onChange: (r: UserRole) => void }>
 
     const selected = options.find(o => o.value === value) || options[0];
 
+    const wrapper: Variants = {
+        open: { scaleY: 1, opacity: 1, transition: { when: 'beforeChildren', staggerChildren: 0.04 } },
+        closed: { scaleY: 0, opacity: 0, transition: { when: 'afterChildren', staggerChildren: 0.02 } },
+    };
+
+    const item: Variants = {
+        open: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } },
+        closed: { opacity: 0, y: -6, transition: { duration: 0.12 } },
+    };
+
+    const chevron: Variants = { open: { rotate: 180 }, closed: { rotate: 0 } };
+
     return (
         <div className="relative" ref={ref}>
             <button type="button" onClick={() => setOpen(s => !s)} className="w-full text-left pl-10 pr-3 py-3 border border-gray-100 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-blue-400">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">{selected.icon}</span>
                 <span className="flex-1">{selected.label}</span>
-                <svg className="w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <motion.span className="ml-2 inline-block" variants={chevron} animate={open ? 'open' : 'closed'}>
+                    <svg className="w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </motion.span>
             </button>
 
-            {open && (
-                <ul className="absolute left-0 right-0 mt-2 bg-white shadow-lg border border-gray-100 rounded-md overflow-hidden z-50">
-                    {options.map(o => (
-                        <li key={o.value}>
-                            <button
-                                type="button"
-                                onClick={() => { onChange(o.value); setOpen(false); }}
-                                className={`w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-gray-100 ${o.value === value ? 'bg-gray-100' : ''}`}
-                            >
-                                <span className="text-gray-600">{o.icon}</span>
-                                <span className="flex-1 text-sm text-gray-800">{o.label}</span>
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            )}
+            <AnimatePresence>
+                {open && (
+                    <motion.ul initial="closed" animate="open" exit="closed" variants={wrapper} style={{ transformOrigin: 'top' }} className="absolute left-0 right-0 mt-2 bg-white shadow-lg border border-gray-100 rounded-lg overflow-hidden z-50">
+                        {options.map(o => (
+                            <li key={o.value}>
+                                {/* Use same left padding as the control (pl-10) so icons align; keep rounded corners on the container */}
+                                <motion.button type="button" variants={item} onClick={() => { onChange(o.value); setOpen(false); }} className={`w-full text-left pl-10 pr-3 py-2 flex items-center gap-3 hover:bg-gray-100 ${o.value === value ? 'bg-gray-100' : ''}`}>
+                                    <span className="text-gray-600">{o.icon}</span>
+                                    <span className="flex-1 text-sm text-gray-800">{o.label}</span>
+                                </motion.button>
+                            </li>
+                        ))}
+                    </motion.ul>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

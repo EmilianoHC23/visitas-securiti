@@ -166,6 +166,14 @@ export const SelfRegisterEventFormPage: React.FC = () => {
     try {
       setLoading(true);
 
+      // Verificar lista negra ANTES de pre-registrar - BLOQUEAR si está en lista negra
+      const blacklistEntry = await api.checkBlacklist(formData.email);
+      if (blacklistEntry) {
+        alert(`🚫 No es posible completar el registro al evento.\n\nEsta persona se encuentra en la lista de seguridad debido a:\n"${blacklistEntry.reason}"\n\nPor favor contacta al organizador o a un recepcionista para validar tu acceso.`);
+        setLoading(false);
+        return; // BLOQUEAR - no permitir continuar
+      }
+
       // Pre-registrar en el evento
       await api.preRegisterToAccess(accessId, {
         name: formData.name,

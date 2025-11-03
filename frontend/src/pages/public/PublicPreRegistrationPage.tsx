@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Mail, Phone, Building2, User, CheckCircle } from 'lucide-react';
+import { checkBlacklist } from '../../services/api';
 
 // Detectar entorno de desarrollo de forma robusta (Vite) y soportar IPs locales
 const isLocalEnv = typeof window !== 'undefined'
@@ -95,6 +96,14 @@ const PublicPreRegistrationPage: React.FC = () => {
     try {
       setSubmitting(true);
       setError('');
+
+      // Verificar lista negra ANTES de enviar el pre-registro - BLOQUEAR si está en lista negra
+      const blacklistEntry = await checkBlacklist(formData.email);
+      if (blacklistEntry) {
+        setError(`🚫 No es posible completar el pre-registro.\n\nEsta persona se encuentra en la lista de seguridad debido a: "${blacklistEntry.reason}".\n\nPor favor contacta al organizador o a un recepcionista para validar tu acceso.`);
+        setSubmitting(false);
+        return; // BLOQUEAR - no permitir continuar
+      }
 
       // En producción, usar ruta relativa sin agregar API_BASE_URL
       const url = isLocalEnv 

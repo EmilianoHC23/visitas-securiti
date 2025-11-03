@@ -121,15 +121,12 @@ export const PublicVisitRegistrationPage: React.FC = () => {
     try {
       setLoading(true);
       
-      // Check blacklist before registering visit
+      // Check blacklist before registering visit - BLOQUEAR si está en lista negra
       const blacklistEntry = await api.checkBlacklist(visitorEmail);
       if (blacklistEntry) {
-        const confirmMessage = `⚠️ ALERTA DE SEGURIDAD\n\nEl usuario "${blacklistEntry.visitorName || blacklistEntry.identifier}" con correo ${blacklistEntry.identifier} se encuentra en la lista negra debido a:\n\n"${blacklistEntry.reason}"\n\n¿Desea continuar con el registro de la visita de todas formas?`;
-        
-        if (!confirm(confirmMessage)) {
-          setLoading(false);
-          return;
-        }
+        setError(`🚫 No es posible completar el registro automático.\n\nEsta persona se encuentra en la lista de seguridad debido a: "${blacklistEntry.reason}".\n\nPor favor contacta a un recepcionista o host para validar tu acceso.`);
+        setLoading(false);
+        return; // BLOQUEAR - no permitir continuar
       }
       
       await api.createVisit({

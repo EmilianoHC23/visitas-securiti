@@ -389,7 +389,7 @@ router.post('/force-register', auth, async (req, res) => {
       visitorPhone,
       status: initialStatus,
       checkInTime: checkInTime,
-      visitType: req.body.visitType || 'standard',
+      visitType: req.body.visitType || 'spontaneous',
       accessCode: req.body.accessCode || null,
       expectedDuration: req.body.expectedDuration,
       notes: req.body.notes ? `${req.body.notes}\n[ALERTA: Registrado a pesar de estar en lista negra]` : '[ALERTA: Registrado a pesar de estar en lista negra]'

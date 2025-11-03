@@ -419,6 +419,20 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [hosts, setHosts] = useState<Array<{ id: string; name: string; email: string }>>([]);
   
+  // Estado para alerta de lista negra
+  const [blacklistAlert, setBlacklistAlert] = useState<{
+    blacklistedUsers: Array<{
+      _id: string;
+      visitorName: string;
+      identifier: string;
+      email: string;
+      reason: string;
+      photo?: string;
+      createdAt: string;
+    }>;
+    accessData: any;
+  } | null>(null);
+  
   // Calculate default dates/times
   const getDefaultDateTime = () => {
     const now = new Date();
@@ -536,13 +550,37 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
       const blacklistedUsers = blacklistResults.filter(r => r !== null);
 
       if (blacklistedUsers.length > 0) {
-        const blacklistedEmails = blacklistedUsers.map(b => `- ${b!.visitorName || b!.identifier} (${b!.identifier}): ${b!.reason}`).join('\n');
-        const confirmMessage = `⚠️ ALERTA DE SEGURIDAD\n\nLos siguientes usuarios se encuentran en la lista negra:\n\n${blacklistedEmails}\n\n¿Desea continuar con la creación del acceso de todas formas?`;
+        // Mostrar modal de alerta en lugar de confirm
+        const accessData = {
+          eventName: formData.eventName,
+          type: formData.type,
+          startDate: startDateTime,
+          endDate: endDateTime,
+          location: formData.location,
+          eventImage: formData.eventImage,
+          invitedUsers: validInvitedUsers,
+          settings: {
+            sendAccessByEmail: formData.sendEmail,
+            enablePreRegistration: formData.enablePreRegistration,
+            noExpiration: false
+          },
+          additionalInfo: formData.additionalInfo
+        };
         
-        if (!confirm(confirmMessage)) {
-          setLoading(false);
-          return;
-        }
+        setBlacklistAlert({
+          blacklistedUsers: blacklistedUsers.map(b => ({
+            _id: b!._id,
+            visitorName: b!.visitorName || b!.identifier,
+            identifier: b!.identifier,
+            email: b!.identifier || '',
+            reason: b!.reason,
+            photo: b!.photo,
+            createdAt: b!.createdAt
+          })),
+          accessData
+        });
+        setLoading(false);
+        return;
       }
 
       await createAccess({
@@ -561,6 +599,29 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
         additionalInfo: formData.additionalInfo
       });
 
+      onSuccess();
+    } catch (error) {
+      console.error('Error creating access:', error);
+      alert('Error al crear el acceso');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handler para confirmar creación de acceso después de alerta de lista negra
+  const handleBlacklistAction = async (action: 'allow' | 'cancel') => {
+    if (!blacklistAlert) return;
+    
+    if (action === 'cancel') {
+      setBlacklistAlert(null);
+      return;
+    }
+    
+    // Continuar con la creación del acceso
+    setLoading(true);
+    try {
+      await createAccess(blacklistAlert.accessData);
+      setBlacklistAlert(null);
       onSuccess();
     } catch (error) {
       console.error('Error creating access:', error);
@@ -954,6 +1015,113 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
           </form>
         </div>
       </div>
+
+      {/* Modal de Alerta de Lista Negra */}
+      {blacklistAlert && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[60] animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl animate-slideUp overflow-hidden max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="p-5 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white sticky top-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg flex-shrink-0">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold">Visitantes en lista negra detectados</h3>
+                  <p className="text-yellow-100 text-sm mt-1">{blacklistAlert.blacklistedUsers.length} invitado(s) encontrado(s)</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-4">
+              {/* Lista de visitantes en lista negra */}
+              <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                {blacklistAlert.blacklistedUsers.map((user, index) => (
+                  <div key={index} className="bg-yellow-50 border-l-4 border-yellow-500 rounded-lg p-4">
+                    <div className="flex gap-4">
+                      {/* Foto si existe */}
+                      {user.photo && (
+                        <img
+                          src={user.photo}
+                          alt={user.visitorName}
+                          className="w-16 h-16 rounded-lg object-cover border-2 border-yellow-500 flex-shrink-0"
+                        />
+                      )}
+                      {/* Info */}
+                      <div className="flex-1 space-y-1">
+                        <h4 className="font-bold text-yellow-900 text-base">{user.visitorName}</h4>
+                        <p className="text-yellow-800 text-sm">
+                          <strong>Correo:</strong> {user.email}
+                        </p>
+                        <p className="text-yellow-800 text-sm">
+                          <strong>Agregado:</strong> {new Date(user.createdAt).toLocaleDateString('es-MX', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                        {/* Razón */}
+                        <div className="mt-2 pt-2 border-t border-yellow-300">
+                          <p className="text-xs font-semibold text-yellow-900 mb-1">Motivo del registro:</p>
+                          <p className="text-yellow-800 text-sm">{user.reason}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Advertencia */}
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-900 text-sm">
+                  <strong>⚠️ Importante:</strong> Estas personas están registradas en la lista negra. 
+                  ¿Deseas continuar con la creación del acceso de todas formas?
+                </p>
+              </div>
+
+              {/* Botones de Acción */}
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button
+                  onClick={() => handleBlacklistAction('cancel')}
+                  className="px-4 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all shadow-md font-semibold flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Cancelar Creación
+                </button>
+                <button
+                  onClick={() => handleBlacklistAction('allow')}
+                  disabled={loading}
+                  className="px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all shadow-md font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Creando...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Continuar de Todos Modos
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -206,9 +206,9 @@ router.get('/qr-code', auth, async (req, res) => {
       await company.save();
     }
 
-    // Generate QR URL for self-registration
+    // Generate QR URL for self-registration landing page
     const baseUrl = req.protocol + '://' + req.get('host');
-    const qrUrl = `${baseUrl}/register/${company.qrCode}`;
+    const qrUrl = `${baseUrl}/public/self-register`;
     
     res.json({
       qrCode: company.qrCode,

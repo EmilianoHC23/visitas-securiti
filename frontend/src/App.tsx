@@ -24,6 +24,9 @@ import { PublicVisitRegistrationPage } from './pages/public/PublicVisitRegistrat
 import { PublicAccessListPage } from './pages/public/PublicAccessListPage';
 import PublicPreRegistrationPage from './pages/public/PublicPreRegistrationPage';
 import RegistrationSuccessPage from './pages/public/RegistrationSuccessPage';
+import { SelfRegistrationLandingPage } from './pages/public/SelfRegistrationLandingPage';
+import { SelfRegisterVisitPage } from './pages/public/SelfRegisterVisitPage';
+import { SelfRegisterSuccessPage } from './pages/public/SelfRegisterSuccessPage';
 import { ToastProvider } from './components/common/Toast';
 
 const PublicRegistrationWrapper: React.FC = () => {
@@ -55,6 +58,10 @@ const AppRoutes: React.FC = () => {
                 <Route path="/public/access-list" element={<PublicAccessListPage />} />
                 <Route path="/public/register/:accessId" element={<PublicPreRegistrationPage />} />
                 <Route path="/public/registration-success/:accessId" element={<RegistrationSuccessPage />} />
+                {/* Rutas de self-registration con QR */}
+                <Route path="/public/self-register" element={<SelfRegistrationLandingPage />} />
+                <Route path="/public/self-register/visit" element={<SelfRegisterVisitPage />} />
+                <Route path="/public/self-register/success" element={<SelfRegisterSuccessPage />} />
                 <Route path="*" element={<Navigate to="/login" />} />
             </Routes>
         );

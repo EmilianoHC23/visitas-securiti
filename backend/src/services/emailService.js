@@ -1906,9 +1906,9 @@ class EmailService {
                           
                           <p style="color: #4b5563; margin: 8px 0; font-size: 14px; line-height: 1.8;">
                             <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}<br>
-                            <strong>Fecha y hora de fin:</strong> ${formatFullDate(new Date(data.endDate))}
-                            ${data.location ? `<br><strong>Lugar:</strong> ${data.location}` : ''}
-                            ${data.additionalInfo ? `<br><strong>Información adicional:</strong> ${data.additionalInfo}` : ''}
+                            ${data.endDate ? `<strong>Fecha y hora de fin:</strong> ${formatFullDate(new Date(data.endDate))}<br>` : ''}
+                            ${data.location ? `<strong>Lugar:</strong> ${data.location}<br>` : ''}
+                            ${data.additionalInfo ? `<strong>Información adicional:</strong> ${data.additionalInfo}` : ''}
                           </p>
                         </div>
 
@@ -2053,9 +2053,9 @@ class EmailService {
                           
                           <p style="color: #4b5563; margin: 8px 0; font-size: 14px; line-height: 1.8;">
                             <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}<br>
-                            <strong>Fecha y hora de fin:</strong> ${formatFullDate(new Date(data.endDate))}
-                            ${data.location ? `<br><strong>Lugar:</strong> ${data.location}` : ''}
-                            ${data.additionalInfo ? `<br><strong>Información adicional:</strong> ${data.additionalInfo}` : ''}
+                            ${data.endDate ? `<strong>Fecha y hora de fin:</strong> ${formatFullDate(new Date(data.endDate))}<br>` : ''}
+                            ${data.location ? `<strong>Lugar:</strong> ${data.location}<br>` : ''}
+                            ${data.additionalInfo ? `<strong>Información adicional:</strong> ${data.additionalInfo}` : ''}
                           </p>
                         </div>
 
@@ -2221,13 +2221,14 @@ class EmailService {
                           </p>
                           ${GUEST_PHOTO_URL ? `
                           <div style="text-align: center; margin: 15px 0;">
-                            <img src="${GUEST_PHOTO_URL}" alt="Foto del invitado" style="max-width: 120px; max-height: 120px; border-radius: 50%; border: 3px solid ${accentColor}; object-fit: cover;" />
+                            <img src="${GUEST_PHOTO_URL}" alt="Foto del invitado" style="width: 120px; height: 120px; border-radius: 50%; border: 3px solid ${accentColor}; object-fit: cover;" />
                           </div>
                           ` : ''}
                           <p style="color: #1f2937; margin: 0; font-size: 15px; line-height: 1.8;">
                             <strong>Nombre:</strong> ${data.guestName}<br>
                             ${data.guestEmail ? `<strong>Email:</strong> ${data.guestEmail}<br>` : ''}
-                            ${data.guestCompany ? `<strong>Empresa:</strong> ${data.guestCompany}` : ''}
+                            ${data.guestCompany ? `<strong>Empresa:</strong> ${data.guestCompany}<br>` : ''}
+                            ${data.checkInTime ? `<strong>Hora de registro:</strong> ${formatFullDate(new Date(data.checkInTime))}` : ''}
                           </p>
                         </div>
 
@@ -2243,8 +2244,7 @@ class EmailService {
                           ` : ''}
                           <p style="color: #1f2937; margin: 0; font-size: 15px; line-height: 1.8;">
                             <strong>Evento/acceso:</strong> ${data.accessTitle}<br>
-                            ${data.location ? `<strong>Lugar:</strong> ${data.location}<br>` : ''}
-                            ${data.checkInTime ? `<strong>Hora de registro:</strong> ${formatFullDate(new Date(data.checkInTime))}` : ''}
+                            ${data.location ? `<strong>Lugar:</strong> ${data.location}` : ''}
                           </p>
                         </div>
 

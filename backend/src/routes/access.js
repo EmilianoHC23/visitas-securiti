@@ -87,15 +87,19 @@ async function sendDueReminders() {
           for (const guest of access.invitedUsers || []) {
             if (!guest?.email) continue;
             try {
-              // Reutilizar el mismo payload de QR que se envió en la invitación
+              // Reutilizar el mismo payload de QR que se envió en la invitación (completo)
               const qrData = {
                 type: 'access-invitation',
                 accessId: access._id.toString(),
                 accessCode: access.accessCode,
                 guestName: guest.name,
                 guestEmail: guest.email || '',
+                guestCompany: guest.company || '',
                 eventName: access.eventName,
-                eventDate: access.startDate
+                eventDate: access.startDate,
+                location: access.location || '',
+                hostName: access.creatorId ? `${access.creatorId.firstName} ${access.creatorId.lastName}` : '',
+                hostEmail: access.creatorId?.email || ''
               };
               await emailService.sendAccessReminderToGuestEmail({
                 invitedEmail: guest.email,
@@ -298,10 +302,15 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
     // Generar y almacenar QR para cada invitado con email o teléfono (para descarga en UI)
     if (Array.isArray(access.invitedUsers) && access.invitedUsers.length > 0) {
       let modifiedGuestQRCodes = false;
+      // Preparar información del anfitrión para incluir en QR
+      const hostInfo = {
+        name: `${req.user.firstName} ${req.user.lastName}`,
+        email: req.user.email
+      };
       for (const guest of access.invitedUsers) {
         try {
           // Generar QR base64 y guardarlo para permitir descarga desde el panel
-          const qrCode = await generateAccessInvitationQR(access, guest);
+          const qrCode = await generateAccessInvitationQR(access, guest, hostInfo);
           if (qrCode) {
             guest.qrCode = qrCode;
             modifiedGuestQRCodes = true;
@@ -350,8 +359,12 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
               accessCode: access.accessCode,
               guestName: guest.name,
               guestEmail: guest.email || '',
+              guestCompany: guest.company || '',
               eventName: access.eventName,
-              eventDate: access.startDate
+              eventDate: access.startDate,
+              location: access.location || '',
+              hostName: `${req.user.firstName} ${req.user.lastName}`,
+              hostEmail: req.user.email
             };
 
             await emailService.sendAccessInvitationEmail({
@@ -909,10 +922,16 @@ router.post('/:accessId/pre-register', async (req, res) => {
       return res.status(400).json({ message: 'Ya estás registrado para este acceso' });
     }
 
-    // Generate QR code for the new invited user (usar firma correcta)
+    // Generate QR code for the new invited user (incluir toda la información)
+    const hostInfo = access.creatorId ? {
+      name: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+      email: access.creatorId.email
+    } : null;
+    
     const qrCode = await generateAccessInvitationQR(
       access,
-      { name, email: email || '', phone: '', company: company || '' }
+      { name, email: email || '', phone: '', company: company || '' },
+      hostInfo
     );
 
     const newInvitedUser = {
@@ -939,8 +958,12 @@ router.post('/:accessId/pre-register', async (req, res) => {
           accessCode: access.accessCode,
           guestName: name,
           guestEmail: email || '',
+          guestCompany: company || '',
           eventName: access.eventName,
-          eventDate: access.startDate
+          eventDate: access.startDate,
+          location: access.location || '',
+          hostName: access.creatorId ? `${access.creatorId.firstName} ${access.creatorId.lastName}` : '',
+          hostEmail: access.creatorId?.email || ''
         };
 
         await emailService.sendAccessInvitationEmail({

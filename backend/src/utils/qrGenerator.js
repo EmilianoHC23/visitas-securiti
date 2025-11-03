@@ -4,9 +4,10 @@ const QRCode = require('qrcode');
  * Genera un código QR para una invitación de acceso
  * @param {Object} access - Objeto del acceso
  * @param {Object} invitedUser - Usuario invitado
+ * @param {Object} hostInfo - Información del anfitrión (opcional: { name, email })
  * @returns {Promise<String>} - QR code en formato base64
  */
-async function generateAccessInvitationQR(access, invitedUser) {
+async function generateAccessInvitationQR(access, invitedUser, hostInfo = null) {
   try {
     const qrData = {
       type: 'access-invitation',
@@ -15,9 +16,12 @@ async function generateAccessInvitationQR(access, invitedUser) {
       guestName: invitedUser.name,
       guestEmail: invitedUser.email || '',
       guestPhone: invitedUser.phone || '',
+      guestCompany: invitedUser.company || '',
       eventName: access.eventName,
       eventDate: access.startDate,
       location: access.location || '',
+      hostName: hostInfo?.name || '',
+      hostEmail: hostInfo?.email || '',
       createdAt: new Date().toISOString()
     };
 

@@ -91,6 +91,8 @@ export interface Blacklist {
   identifierType: 'document' | 'phone' | 'email';
   reason: string;
   notes?: string;
+  visitorName: string;
+  photo?: string;
   createdBy: string;
   companyId: string;
   isActive: boolean;
@@ -104,6 +106,8 @@ export interface BlacklistEntry {
   identifierType: 'document' | 'phone' | 'email';
   reason: string;
   notes?: string;
+  visitorName: string;
+  photo?: string;
   createdBy: string;
   companyId: string;
   isActive: boolean;

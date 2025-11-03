@@ -126,6 +126,19 @@ export const PublicAccessListPage: React.FC = () => {
     setSubmitting(true);
 
     try {
+      // Check blacklist before registering access
+      if (visitorEmail) {
+        const blacklistEntry = await api.checkBlacklist(visitorEmail);
+        if (blacklistEntry) {
+          const confirmMessage = `⚠️ ALERTA DE SEGURIDAD\n\nEl usuario "${blacklistEntry.visitorName || blacklistEntry.identifier}" con correo ${blacklistEntry.identifier} se encuentra en la lista negra debido a:\n\n"${blacklistEntry.reason}"\n\n¿Desea continuar con el registro del acceso de todas formas?`;
+          
+          if (!confirm(confirmMessage)) {
+            setSubmitting(false);
+            return;
+          }
+        }
+      }
+      
       await api.redeemAccessCode(selectedAccess.accessCode, {
         name: visitorName,
         email: visitorEmail,

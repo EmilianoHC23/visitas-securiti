@@ -152,6 +152,19 @@ export const SelfRegisterVisitPage: React.FC = () => {
     try {
       setLoading(true);
 
+      // Check blacklist before registering visit
+      if (formData.visitorEmail) {
+        const blacklistEntry = await api.checkBlacklist(formData.visitorEmail);
+        if (blacklistEntry) {
+          const confirmMessage = `⚠️ ALERTA DE SEGURIDAD\n\nEl usuario "${blacklistEntry.visitorName || blacklistEntry.identifier}" con correo ${blacklistEntry.identifier} se encuentra en la lista negra debido a:\n\n"${blacklistEntry.reason}"\n\n¿Desea continuar con el registro de la visita de todas formas?`;
+          
+          if (!confirm(confirmMessage)) {
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
       // Crear la visita usando el endpoint de self-register
       await api.selfRegisterVisit({
         visitorName: formData.visitorName,

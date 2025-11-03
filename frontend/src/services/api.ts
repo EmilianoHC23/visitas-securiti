@@ -336,8 +336,9 @@ export const getBlacklist = async (): Promise<Blacklist[]> => {
 
 export const addToBlacklist = async (data: {
   email: string;
-  name: string;
+  visitorName: string;
   reason: string;
+  photo?: string;
 }): Promise<Blacklist> => {
   return apiRequest('/blacklist', {
     method: 'POST',
@@ -349,6 +350,14 @@ export const removeFromBlacklist = async (id: string): Promise<void> => {
   return apiRequest(`/blacklist/${id}`, {
     method: 'DELETE',
   });
+};
+
+export const checkBlacklist = async (email: string): Promise<Blacklist | null> => {
+  try {
+    return apiRequest(`/blacklist/check?email=${encodeURIComponent(email)}`);
+  } catch (error) {
+    return null;
+  }
 };
 
 // --- ACCESS CODES / EVENTS ---

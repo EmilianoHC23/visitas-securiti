@@ -29,8 +29,10 @@ router.post('/', auth, authorize(['admin', 'reception']), async (req, res) => {
     
     const { 
       email, 
+      visitorName,
       name, 
       reason,
+      photo,
       identifierType,
       identifier,
       notes
@@ -44,11 +46,30 @@ router.post('/', auth, authorize(['admin', 'reception']), async (req, res) => {
       return res.status(400).json({ message: 'Configuración de empresa inválida. Contacte al administrador.' });
     }
 
-    // Support both legacy format (email, name, reason) and new format (identifierType, identifier, reason)
+    // Support both legacy format and new format with visitorName
     let finalData;
     
-    if (identifierType && identifier) {
-      // New format
+    if (email && visitorName) {
+      // New format with email and visitorName
+      if (!email || !visitorName || !reason) {
+        return res.status(400).json({ message: 'Email, nombre y razón son requeridos' });
+      }
+      
+      finalData = {
+        identifierType: 'email',
+        identifier: email,
+        visitorName,
+        photo,
+        reason,
+        notes,
+        // Set legacy fields for compatibility
+        email,
+        name: visitorName,
+        addedBy: req.user._id,
+        companyId: req.user.companyId
+      };
+    } else if (identifierType && identifier) {
+      // Old format with identifierType
       if (!identifier || !reason) {
         return res.status(400).json({ message: 'Identificador y razón son requeridos' });
       }
@@ -56,11 +77,13 @@ router.post('/', auth, authorize(['admin', 'reception']), async (req, res) => {
       finalData = {
         identifierType,
         identifier,
+        visitorName: name || identifier,
+        photo,
         reason,
         notes,
         // Set legacy fields for compatibility
         email: identifierType === 'email' ? identifier : null,
-        name: identifierType !== 'email' ? identifier : `Usuario (${identifierType})`,
+        name: name || identifier,
         addedBy: req.user._id,
         companyId: req.user.companyId
       };
@@ -76,6 +99,8 @@ router.post('/', auth, authorize(['admin', 'reception']), async (req, res) => {
       finalData = {
         identifierType: isEmailType ? 'email' : 'document',
         identifier: isEmailType ? email : name,
+        visitorName: name,
+        photo,
         email: isEmailType ? email : null,
         name,
         reason,
@@ -135,7 +160,7 @@ router.delete('/:id', auth, authorize(['admin', 'reception']), async (req, res) 
   }
 });
 
-// Check if email is blacklisted (used internally)
+// Check if email is blacklisted (used internally) - Legacy endpoint
 router.get('/check/:email', async (req, res) => {
   try {
     const { email } = req.params;
@@ -151,6 +176,40 @@ router.get('/check/:email', async (req, res) => {
       isBlacklisted: !!blacklisted,
       reason: blacklisted?.reason || null
     });
+  } catch (error) {
+    console.error('Check blacklist error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Check if email is blacklisted and return full entry - New endpoint
+router.get('/check', async (req, res) => {
+  try {
+    const { email } = req.query;
+    
+    if (!email) {
+      return res.json(null);
+    }
+
+    // Try to get companyId from auth user, or default to checking without company restriction
+    const companyId = req.user?.companyId;
+    
+    const query = { 
+      $or: [
+        { email: email.toLowerCase() },
+        { identifier: email.toLowerCase() }
+      ],
+      isActive: true 
+    };
+
+    if (companyId) {
+      query.companyId = companyId;
+    }
+
+    const blacklisted = await Blacklist.findOne(query);
+
+    // Return the full entry if found, or null if not blacklisted
+    res.json(blacklisted);
   } catch (error) {
     console.error('Check blacklist error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });

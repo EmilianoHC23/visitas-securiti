@@ -15,6 +15,8 @@ interface AgendaItem {
   visitorName?: string;
   location?: string;
   accessType?: string;
+  status?: string;
+  endDate?: string;
 }
 
 export const AgendaPage: React.FC = () => {
@@ -50,15 +52,35 @@ export const AgendaPage: React.FC = () => {
         to ? new Date(to).toISOString() : undefined
       );
       
-      // Filter by search query
-      const filteredAccesses = (accessesData || []).filter((a: Access) => {
+      // Filter by search query first
+      let filteredAccesses = (accessesData || []).filter((a: Access) => {
         if (q && !a.eventName.toLowerCase().includes(q.toLowerCase()) && 
             !a.location?.toLowerCase().includes(q.toLowerCase())) {
           return false;
         }
         return true;
       });
-      
+
+      // Remove events that have already finished (status 'finalized' or expired by endDate)
+      try {
+        const now = new Date();
+        filteredAccesses = filteredAccesses.filter((a: Access) => {
+          if (!a) return false;
+          // Respect explicit status first
+          if (a.status === 'finalized' || a.status === 'expired' || a.status === 'cancelled') return false;
+          // If endDate exists and is in the past, exclude
+          try {
+            const end = a.endDate ? new Date(a.endDate) : null;
+            if (end && !isNaN(end.getTime()) && end.getTime() < now.getTime()) return false;
+          } catch (e) {
+            // ignore parse errors and keep the event
+          }
+          return true;
+        });
+      } catch (e) {
+        console.warn('Error filtering past accesses:', e);
+      }
+
       setAccesses(filteredAccesses);
     } catch (e) {
       console.error(e);
@@ -88,6 +110,7 @@ export const AgendaPage: React.FC = () => {
           preRegLink: a.accessCode ? `${window.location.origin}/redeem/${a.accessCode}` : undefined, 
           location: a.location,
           accessType: a.type
+          , status: a.status, endDate: typeof a.endDate === 'string' ? a.endDate : (a.endDate ? new Date(a.endDate).toISOString() : undefined)
         });
       });
     }
@@ -189,19 +212,22 @@ export const AgendaPage: React.FC = () => {
                   agendaItems.map(item => (
                     <tr key={item.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          item.type === 'visit' 
-                            ? 'bg-green-100 text-green-800' 
-                            : item.accessType === 'reunion' 
-                              ? 'bg-blue-100 text-blue-800'
-                              : item.accessType === 'proyecto'
-                                ? 'bg-purple-100 text-purple-800'
-                                : item.accessType === 'evento'
-                                  ? 'bg-orange-100 text-orange-800'
-                                  : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {item.type === 'visit' ? 'Visita' : item.accessType === 'reunion' ? 'Reunión' : item.accessType === 'proyecto' ? 'Proyecto' : item.accessType === 'evento' ? 'Evento' : 'Otro'}
-                        </span>
+                            {/* Show active events with a green badge, otherwise color by accessType */}
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                              item.status === 'active'
+                                ? 'bg-green-100 text-green-800'
+                                : (item.type === 'visit'
+                                    ? 'bg-gray-100 text-gray-800'
+                                    : item.accessType === 'reunion'
+                                      ? 'bg-blue-100 text-blue-800'
+                                      : item.accessType === 'proyecto'
+                                        ? 'bg-purple-100 text-purple-800'
+                                        : item.accessType === 'evento'
+                                          ? 'bg-orange-100 text-orange-800'
+                                          : 'bg-gray-100 text-gray-800')
+                            }`}>
+                              {item.type === 'visit' ? 'Visita' : item.accessType === 'reunion' ? 'Reunión' : item.accessType === 'proyecto' ? 'Proyecto' : item.accessType === 'evento' ? 'Evento' : 'Otro'}
+                            </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(item.startDate).toLocaleString('es-ES', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -229,7 +255,8 @@ export const AgendaPage: React.FC = () => {
               title: it.title,
               // send full startDate so CalendarMonth can show time if present
               date: it.startDate,
-              color: it.accessType === 'reunion' ? '#60a5fa' : (it.accessType === 'proyecto' ? '#a78bfa' : '#f97316'),
+              // active events -> green; otherwise color by accessType
+              color: it.status === 'active' ? '#34d399' : (it.accessType === 'reunion' ? '#60a5fa' : (it.accessType === 'proyecto' ? '#a78bfa' : '#f97316')),
               description: it.reason,
               location: it.location,
               hostName: it.hostName,

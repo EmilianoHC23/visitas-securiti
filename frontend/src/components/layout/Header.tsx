@@ -187,7 +187,27 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                             className="btn d-flex align-items-center p-0"
                             onClick={() => setDropdownOpen(!dropdownOpen)}
                             aria-expanded={dropdownOpen}
-                            style={{ background: 'transparent' }}
+                            onFocus={(e) => {
+                                const t = e.currentTarget as HTMLButtonElement;
+                                try {
+                                    t.style.outline = 'none';
+                                    t.style.boxShadow = 'none';
+                                    t.style.border = 'none';
+                                } catch (err) {
+                                    // ignore
+                                }
+                            }}
+                            onBlur={(e) => {
+                                const t = e.currentTarget as HTMLButtonElement;
+                                try {
+                                    t.style.outline = '';
+                                    t.style.boxShadow = '';
+                                    t.style.border = '';
+                                } catch (err) {
+                                    // ignore
+                                }
+                            }}
+                            style={{ background: 'transparent', outline: 'none', boxShadow: 'none', border: 'none', WebkitTapHighlightColor: 'transparent' }}
                         >
                             {user.profileImage && user.profileImage.trim() !== '' ? (
                                 <span className="me-2 d-inline-flex align-items-center justify-content-center rounded-circle bg-gray-200 position-relative" style={{ width: 44, height: 44 }}>

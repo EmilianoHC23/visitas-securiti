@@ -55,6 +55,9 @@ export const SelfRegisterVisitPage: React.FC = () => {
 
   const startCamera = async () => {
     try {
+      console.log('🎥 Iniciando cámara...');
+      setShowCamera(true); // Mostrar la UI primero
+      
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: 'user',
@@ -63,15 +66,24 @@ export const SelfRegisterVisitPage: React.FC = () => {
         }
       });
       
+      console.log('✅ Stream obtenido:', stream);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
-        await videoRef.current.play();
-        setShowCamera(true);
+        
+        // Esperar a que el video esté listo
+        videoRef.current.onloadedmetadata = () => {
+          console.log('✅ Metadata cargada, reproduciendo video...');
+          videoRef.current?.play().catch(err => {
+            console.error('Error al reproducir video:', err);
+          });
+        };
       }
     } catch (error) {
       console.error('❌ Error al iniciar cámara:', error);
       alert('No se pudo acceder a la cámara. Verifica los permisos.');
+      setShowCamera(false);
     }
   };
 
@@ -89,20 +101,37 @@ export const SelfRegisterVisitPage: React.FC = () => {
   };
 
   const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-      
-      if (context) {
-        canvas.width = videoRef.current.videoWidth;
-        canvas.height = videoRef.current.videoHeight;
-        context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-        
-        const photoData = canvas.toDataURL('image/jpeg', 0.8);
-        setFormData(prev => ({ ...prev, visitorPhoto: photoData }));
-        stopCamera();
-      }
+    console.log('📸 Capturando foto...');
+    
+    if (!videoRef.current || !canvasRef.current) {
+      console.error('❌ Referencias no disponibles');
+      return;
     }
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    
+    if (!context) {
+      console.error('❌ No se pudo obtener contexto 2D');
+      return;
+    }
+
+    console.log('📐 Dimensiones del video:', video.videoWidth, 'x', video.videoHeight);
+    
+    // Establecer dimensiones del canvas
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Dibujar el frame actual del video en el canvas
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Convertir a base64
+    const photoData = canvas.toDataURL('image/jpeg', 0.8);
+    console.log('✅ Foto capturada, tamaño:', photoData.length, 'bytes');
+    
+    setFormData(prev => ({ ...prev, visitorPhoto: photoData }));
+    stopCamera();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -185,41 +214,33 @@ export const SelfRegisterVisitPage: React.FC = () => {
                 </label>
                 
                 <div className="flex flex-col items-center">
-                  {!showCamera && (
+                  {/* Mostrar foto capturada */}
+                  {formData.visitorPhoto && !showCamera && (
                     <div className="mb-4">
-                      {formData.visitorPhoto ? (
-                        <div className="relative">
-                          <img
-                            src={formData.visitorPhoto}
-                            alt="Foto capturada"
-                            className="w-40 h-40 object-cover rounded-full border-4 border-gray-300 shadow-lg"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setFormData({ ...formData, visitorPhoto: '' })}
-                            className="absolute top-0 right-0 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg transition-colors"
-                          >
-                            <X className="w-5 h-5" />
-                          </button>
-                        </div>
-                      ) : (
+                      <div className="relative">
+                        <img
+                          src={formData.visitorPhoto}
+                          alt="Foto capturada"
+                          className="w-40 h-40 object-cover rounded-full border-4 border-gray-300 shadow-lg"
+                        />
                         <button
                           type="button"
-                          onClick={startCamera}
-                          className="w-40 h-40 rounded-full border-4 border-dashed border-gray-300 hover:border-gray-900 bg-gray-50 hover:bg-gray-100 transition-all flex items-center justify-center cursor-pointer group"
+                          onClick={() => setFormData({ ...formData, visitorPhoto: '' })}
+                          className="absolute top-0 right-0 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg transition-colors"
                         >
-                          <User className="w-16 h-16 text-gray-400 group-hover:text-gray-900 transition-colors" />
+                          <X className="w-5 h-5" />
                         </button>
-                      )}
+                      </div>
                     </div>
                   )}
 
+                  {/* Mostrar vista previa de la cámara */}
                   {showCamera && (
                     <div className="w-full max-w-md mb-4">
-                      <div className="relative">
+                      <div className="relative bg-black rounded-2xl overflow-hidden">
                         <video
                           ref={videoRef}
-                          className="w-full rounded-2xl border-4 border-gray-300 shadow-lg"
+                          className="w-full h-auto"
                           autoPlay
                           playsInline
                           muted
@@ -246,10 +267,20 @@ export const SelfRegisterVisitPage: React.FC = () => {
                     </div>
                   )}
 
+                  {/* Mostrar botón para iniciar cámara */}
                   {!showCamera && !formData.visitorPhoto && (
-                    <p className="text-sm text-gray-500 text-center">
-                      Haz clic en el círculo para capturar tu foto
-                    </p>
+                    <div className="mb-4">
+                      <button
+                        type="button"
+                        onClick={startCamera}
+                        className="w-40 h-40 rounded-full border-4 border-dashed border-gray-300 hover:border-gray-900 bg-gray-50 hover:bg-gray-100 transition-all flex items-center justify-center cursor-pointer group"
+                      >
+                        <User className="w-16 h-16 text-gray-400 group-hover:text-gray-900 transition-colors" />
+                      </button>
+                      <p className="text-sm text-gray-500 text-center mt-3">
+                        Haz clic en el círculo para capturar tu foto
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>

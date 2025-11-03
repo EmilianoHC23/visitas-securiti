@@ -254,12 +254,30 @@ export const Dashboard: React.FC = () => {
                 </div>
             )}
 
+            {/* Hero banner: reemplaza el rectángulo de título por un banner grande y redondeado */}
             <div className="mb-4">
-                <h2 className="h2 fw-semibold text-dark mb-1">
-                    Bienvenido de nuevo, {user?.firstName}!
-                </h2>
-                <div className="text-muted">
-                    Aquí tienes un resumen de la actividad de hoy
+                <div
+                    className="rounded-2xl p-3 p-md-4 mb-3"
+                    style={{
+                        background: 'linear-gradient(90deg, rgba(99,102,241,0.10) 0%, rgba(99,102,241,0.04) 100%)',
+                        border: '1px solid rgba(99,102,241,0.06)'
+                    }}
+                >
+                    <div className="d-flex justify-content-between align-items-start flex-column flex-md-row">
+                        <div>
+                            <h2 className="h2 fw-semibold text-dark mb-1" style={{ fontSize: 20 }}>
+                                Bienvenido de nuevo, {user?.firstName}!
+                            </h2>
+                            <div className="text-muted" style={{ fontSize: 14 }}>
+                                Aquí tienes un resumen de la actividad de hoy
+                            </div>
+                        </div>
+
+                        {/* espacio para botones/avatares o indicadores (opcionales) */}
+                        <div className="mt-2 mt-md-0 d-flex align-items-center">
+                            {/* reservado para futuras acciones */}
+                        </div>
+                    </div>
                 </div>
             </div>
             

@@ -1124,40 +1124,6 @@ router.post('/checkin/:id', auth, async (req, res) => {
     const visit = await Visit.findById(req.params.id).populate('host', 'firstName lastName');
     if (!visit) return res.status(404).json({ message: 'Visita no encontrada' });
     
-    // Verificar lista negra antes de hacer check-in
-    const Blacklist = require('../models/Blacklist');
-    const blacklistEntry = await Blacklist.findOne({
-      $or: [
-        { email: visit.visitorEmail?.toLowerCase() },
-        { identifier: visit.visitorEmail?.toLowerCase() },
-        { visitorName: new RegExp(`^${visit.visitorName}$`, 'i') }
-      ],
-      companyId: req.user.companyId,
-      isActive: true
-    });
-
-    // Si está en lista negra, retornar advertencia (no bloquear)
-    if (blacklistEntry) {
-      console.log('⚠️ [CHECK-IN] Visitante encontrado en lista negra:', {
-        visitorName: visit.visitorName,
-        email: visit.visitorEmail,
-        reason: blacklistEntry.reason
-      });
-      
-      return res.status(200).json({
-        warning: 'blacklist',
-        blacklistInfo: {
-          _id: blacklistEntry._id,
-          visitorName: blacklistEntry.visitorName,
-          email: blacklistEntry.identifier || blacklistEntry.email,
-          reason: blacklistEntry.reason,
-          photo: blacklistEntry.photo,
-          addedAt: blacklistEntry.createdAt
-        },
-        visit: visit
-      });
-    }
-    
     visit.status = 'checked-in';
     visit.checkInTime = new Date();
     if (assignedResource) {
@@ -1252,98 +1218,6 @@ router.post('/checkin/:id', auth, async (req, res) => {
     res.json(visit);
   } catch (e) {
     console.error('Check-in error:', e);
-    res.status(500).json({ message: 'Error interno del servidor' });
-  }
-});
-
-// Force check-in (ignorar alerta de lista negra)
-router.post('/checkin/:id/force', auth, async (req, res) => {
-  try {
-    const { assignedResource, blacklistAction } = req.body; // blacklistAction: 'allow' o 'restrict'
-    const visit = await Visit.findById(req.params.id).populate('host', 'firstName lastName');
-    if (!visit) return res.status(404).json({ message: 'Visita no encontrada' });
-    
-    // Si la acción es restringir, marcar visita como denegada
-    if (blacklistAction === 'restrict') {
-      visit.status = 'denied';
-      visit.deniedReason = 'Visitante en lista negra - acceso restringido por personal';
-      await visit.save();
-      await new VisitEvent({ 
-        visitId: visit._id, 
-        type: 'denied',
-        notes: 'Restringido por lista negra'
-      }).save();
-      
-      console.log('🚫 [CHECK-IN FORCE] Acceso restringido por lista negra:', visit.visitorName);
-      return res.json({ status: 'restricted', visit });
-    }
-    
-    // Si la acción es permitir, continuar con check-in normal
-    visit.status = 'checked-in';
-    visit.checkInTime = new Date();
-    if (assignedResource) {
-      visit.assignedResource = assignedResource;
-    }
-    await visit.save();
-    await new VisitEvent({ 
-      visitId: visit._id, 
-      type: 'check-in',
-      notes: 'Check-in aprobado a pesar de estar en lista negra'
-    }).save();
-    
-    console.log('✅ [CHECK-IN FORCE] Check-in permitido (lista negra ignorada):', visit.visitorName);
-    
-    // Si la visita proviene de un acceso/evento, actualizar la asistencia del invitado
-    if (visit.visitType === 'access-code' && visit.accessCode) {
-      try {
-        const Access = require('../models/Access');
-        const access = await Access.findOne({ accessCode: visit.accessCode }).populate('creatorId', 'firstName lastName email');
-        
-        if (access) {
-          const invitedUser = access.invitedUsers.find(user => user.email === visit.visitorEmail);
-          
-          if (invitedUser) {
-            invitedUser.attendanceStatus = 'asistio';
-            invitedUser.checkInTime = visit.checkInTime;
-            await access.save();
-            
-            // Enviar email al creador si corresponde
-            if (!invitedUser.addedViaPreRegistration && access.settings?.sendAccessByEmail !== false && access.creatorId?.email) {
-              try {
-                const Company = require('../models/Company');
-                const company = await Company.findOne({ companyId: access.companyId });
-                
-                await emailService.sendGuestCheckedInEmail({
-                  creatorEmail: access.creatorId.email,
-                  creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-                  guestName: visit.visitorName,
-                  guestEmail: visit.visitorEmail || null,
-                  guestCompany: visit.visitorCompany || null,
-                  guestPhoto: visit.visitorPhoto || null,
-                  visitId: visit._id.toString(),
-                  accessTitle: access.eventName,
-                  checkInTime: visit.checkInTime,
-                  location: access.location,
-                  eventImage: access.eventImage || null,
-                  accessId: access._id.toString(),
-                  companyName: company?.name || 'Empresa',
-                  companyId: company?.companyId || null,
-                  companyLogo: company?.logo || null
-                });
-              } catch (emailError) {
-                console.error('❌ Error enviando email:', emailError.message);
-              }
-            }
-          }
-        }
-      } catch (accessError) {
-        console.error('⚠️ Error actualizando asistencia:', accessError);
-      }
-    }
-    
-    res.json({ status: 'allowed', visit });
-  } catch (e) {
-    console.error('Force check-in error:', e);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

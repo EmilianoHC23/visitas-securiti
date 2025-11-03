@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Briefcase, MapPin, Users, FileText, Camera, X, ArrowLeft, Building2 } from 'lucide-react';
+import { FaRegUser } from 'react-icons/fa';
 import * as api from '../../services/api';
 
 interface CompanyInfo {
@@ -172,6 +173,110 @@ export const SelfRegisterVisitPage: React.FC = () => {
     }
   };
 
+  // Custom host selector component
+  const HostSelect: React.FC<{
+    hosts: Array<{ _id: string; firstName: string; lastName: string; email: string; role: string; profileImage?: string }>;
+    value: string;
+    onChange: (id: string) => void;
+  }> = ({ hosts, value, onChange }) => {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement | null>(null);
+    const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+
+    useEffect(() => {
+      const handleClickOutside = (e: MouseEvent) => {
+        if (ref.current && !ref.current.contains(e.target as Node)) {
+          setOpen(false);
+        }
+      };
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selected = hosts.find(h => h._id === value) || null;
+
+    const sortedHosts = useMemo(() => {
+      return [...hosts].sort((a, b) => {
+        const nameA = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
+        const nameB = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+    }, [hosts]);
+
+    const renderAvatar = (host: typeof hosts[0]) => {
+      const src = (host as any).profileImage || (host as any).photo || (host as any).avatar || (host as any).picture || '';
+      const initials = `${host.firstName?.[0] || ''}${host.lastName?.[0] || ''}`.toUpperCase();
+
+      if (src && !failedImages[host._id]) {
+        return (
+          <img
+            src={src}
+            alt={`${host.firstName} ${host.lastName}`}
+            className="w-10 h-10 rounded-full object-cover"
+            onError={() => setFailedImages(prev => ({ ...prev, [host._id]: true }))}
+          />
+        );
+      }
+
+      return (
+        <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-semibold text-sm">
+          {initials}
+        </div>
+      );
+    };
+
+    return (
+      <div className="relative" ref={ref}>
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          className="w-full text-left px-4 py-3 border-2 border-gray-300 rounded-xl flex items-center gap-3 bg-white hover:border-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+        >
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {selected ? renderAvatar(selected) : (
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                <FaRegUser className="w-5 h-5 text-gray-400" />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-gray-800 truncate">
+                {selected ? `${selected.firstName} ${selected.lastName}` : 'Selecciona un anfitrión'}
+              </div>
+            </div>
+          </div>
+          <svg className="w-5 h-5 text-gray-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd" />
+          </svg>
+        </button>
+
+        {open && (
+          <div className="absolute z-50 mt-2 w-full bg-white rounded-xl shadow-2xl border-2 border-gray-200 max-h-64 overflow-auto">
+            {sortedHosts.map(host => (
+              <button
+                key={host._id}
+                type="button"
+                onClick={() => { onChange(host._id); setOpen(false); }}
+                className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left transition-colors"
+              >
+                {renderAvatar(host)}
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-gray-800 truncate">
+                    {host.firstName} {host.lastName}
+                  </div>
+                </div>
+              </button>
+            ))}
+            {hosts.length === 0 && (
+              <div className="p-4 text-sm text-gray-500 text-center">No hay anfitriones disponibles</div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
       <div className="max-w-3xl mx-auto">
@@ -269,7 +374,7 @@ export const SelfRegisterVisitPage: React.FC = () => {
 
                   {/* Mostrar botón para iniciar cámara */}
                   {!showCamera && !formData.visitorPhoto && (
-                    <div className="mb-4">
+                    <div className="mb-4 flex flex-col items-center">
                       <button
                         type="button"
                         onClick={startCamera}
@@ -337,20 +442,11 @@ export const SelfRegisterVisitPage: React.FC = () => {
                   <Users className="w-4 h-4 inline mr-2" />
                   A quién visita *
                 </label>
-                <select
-                  required
+                <HostSelect
+                  hosts={hosts}
                   value={formData.host}
-                  onChange={(e) => setFormData({ ...formData, host: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white"
-                >
-                  <option value="">Selecciona un anfitrión</option>
-                  {hosts.map((host) => (
-                    <option key={host._id} value={host._id}>
-                      {host.firstName} {host.lastName}
-                      {host.role === 'admin' ? ' (Administrador)' : ''}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(id) => setFormData({ ...formData, host: id })}
+                />
               </div>
 
               {/* A dónde se dirige */}

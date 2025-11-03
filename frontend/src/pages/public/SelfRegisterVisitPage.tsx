@@ -177,6 +177,83 @@ export const SelfRegisterVisitPage: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 overflow-hidden">
           <form onSubmit={handleSubmit} className="p-6 sm:p-8">
             <div className="space-y-6">
+              {/* Foto del visitante - PRIMERO */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-3 text-center">
+                  <Camera className="w-4 h-4 inline mr-2" />
+                  Foto del visitante
+                </label>
+                
+                <div className="flex flex-col items-center">
+                  {!showCamera && (
+                    <div className="mb-4">
+                      {formData.visitorPhoto ? (
+                        <div className="relative">
+                          <img
+                            src={formData.visitorPhoto}
+                            alt="Foto capturada"
+                            className="w-40 h-40 object-cover rounded-full border-4 border-gray-300 shadow-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, visitorPhoto: '' })}
+                            className="absolute top-0 right-0 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg transition-colors"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={startCamera}
+                          className="w-40 h-40 rounded-full border-4 border-dashed border-gray-300 hover:border-gray-900 bg-gray-50 hover:bg-gray-100 transition-all flex items-center justify-center cursor-pointer group"
+                        >
+                          <User className="w-16 h-16 text-gray-400 group-hover:text-gray-900 transition-colors" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {showCamera && (
+                    <div className="w-full max-w-md mb-4">
+                      <div className="relative">
+                        <video
+                          ref={videoRef}
+                          className="w-full rounded-2xl border-4 border-gray-300 shadow-lg"
+                          autoPlay
+                          playsInline
+                          muted
+                        />
+                        <canvas ref={canvasRef} className="hidden" />
+                      </div>
+                      <div className="mt-4 flex gap-3">
+                        <button
+                          type="button"
+                          onClick={capturePhoto}
+                          className="flex-1 px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-semibold shadow-lg flex items-center justify-center gap-2"
+                        >
+                          <Camera className="w-5 h-5" />
+                          Tomar foto
+                        </button>
+                        <button
+                          type="button"
+                          onClick={stopCamera}
+                          className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors font-semibold"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {!showCamera && !formData.visitorPhoto && (
+                    <p className="text-sm text-gray-500 text-center">
+                      Haz clic en el círculo para capturar tu foto
+                    </p>
+                  )}
+                </div>
+              </div>
+
               {/* Nombre completo */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
@@ -273,70 +350,6 @@ export const SelfRegisterVisitPage: React.FC = () => {
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all resize-none"
                   placeholder="Describe brevemente el motivo de tu visita"
                 />
-              </div>
-
-              {/* Foto del visitante */}
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  <Camera className="w-4 h-4 inline mr-2" />
-                  Foto del visitante
-                </label>
-                
-                {!showCamera && !formData.visitorPhoto && (
-                  <button
-                    type="button"
-                    onClick={startCamera}
-                    className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Camera className="w-5 h-5" />
-                    Capturar foto
-                  </button>
-                )}
-
-                {showCamera && (
-                  <div className="relative">
-                    <video
-                      ref={videoRef}
-                      className="w-full rounded-xl border-2 border-gray-300"
-                      autoPlay
-                      playsInline
-                    />
-                    <canvas ref={canvasRef} className="hidden" />
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        type="button"
-                        onClick={capturePhoto}
-                        className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-semibold"
-                      >
-                        Tomar foto
-                      </button>
-                      <button
-                        type="button"
-                        onClick={stopCamera}
-                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {formData.visitorPhoto && !showCamera && (
-                  <div className="relative inline-block">
-                    <img
-                      src={formData.visitorPhoto}
-                      alt="Foto capturada"
-                      className="w-48 h-48 object-cover rounded-xl border-2 border-gray-300"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, visitorPhoto: '' })}
-                      className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
 

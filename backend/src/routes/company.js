@@ -24,6 +24,31 @@ const upload = multer({
   }
 });
 
+// Get company configuration (PUBLIC - for self-registration pages)
+router.get('/public-config', async (req, res) => {
+  try {
+    // Get the first active company (assuming single-tenant or default company)
+    // You could also pass companyId as query param if multi-tenant
+    const company = await Company.findOne({ isActive: true });
+    
+    if (!company) {
+      return res.status(404).json({ message: 'No se encontró configuración de empresa' });
+    }
+
+    // Return only public-safe information
+    res.json({
+      name: company.name,
+      logo: company.logo,
+      address: company.address || '',
+      email: company.email || '',
+      phone: company.phone || ''
+    });
+  } catch (error) {
+    console.error('Get public company config error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 // Get company configuration
 router.get('/config', auth, async (req, res) => {
   try {
@@ -206,14 +231,28 @@ router.get('/qr-code', auth, async (req, res) => {
       await company.save();
     }
 
-    // Generate QR URL for self-registration
+    // Generate QR URL for self-registration landing page
     const baseUrl = req.protocol + '://' + req.get('host');
-    const qrUrl = `${baseUrl}/register/${company.qrCode}`;
+    const publicUrl = `${baseUrl}/public/self-register`;
+    
+    // Generate QR code image from the URL
+    const QRCode = require('qrcode');
+    const qrCodeImage = await QRCode.toDataURL(publicUrl, {
+      errorCorrectionLevel: 'M',
+      type: 'image/png',
+      quality: 0.92,
+      margin: 2,
+      width: 400,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
     
     res.json({
       qrCode: company.qrCode,
-      qrUrl: qrUrl,
-      publicUrl: qrUrl,
+      qrUrl: qrCodeImage, // Base64 image data
+      publicUrl: publicUrl,
       companyName: company.name
     });
   } catch (error) {

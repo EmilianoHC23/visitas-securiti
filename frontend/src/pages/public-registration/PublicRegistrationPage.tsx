@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Download, QrCode, Check } from 'lucide-react';
 import * as api from '../../services/api';
 
 export const PublicRegistrationPage: React.FC = () => {
@@ -22,23 +23,26 @@ export const PublicRegistrationPage: React.FC = () => {
     loadQRData();
   }, []);
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      alert('Enlace copiado al portapapeles');
-    } catch {
-      // Fallback
-      window.prompt('Copia este enlace:', text);
-    }
+  const handleDownloadQR = () => {
+    if (!qrData?.qrUrl) return;
+    
+    const link = document.createElement('a');
+    link.href = qrData.qrUrl;
+    link.download = 'QR-Auto-Registro.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-securiti-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Cargando QR institucional...</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 lg:p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+              <p className="mt-4 text-gray-600">Cargando QR institucional...</p>
+            </div>
           </div>
         </div>
       </div>
@@ -47,22 +51,22 @@ export const PublicRegistrationPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="text-center">
-            <div className="mb-4">
-              <svg className="mx-auto h-16 w-16 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 lg:p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">⚠️</span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Error al cargar</h2>
+              <p className="text-gray-600 mb-6">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-semibold"
+              >
+                Reintentar
+              </button>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Error al cargar</h2>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-securiti-blue-600 text-white rounded-md hover:bg-securiti-blue-700 transition-colors"
-            >
-              Reintentar
-            </button>
           </div>
         </div>
       </div>
@@ -70,119 +74,81 @@ export const PublicRegistrationPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-md">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-800">Auto-registro de Visitantes</h2>
-          <p className="text-gray-600 mt-2">
-            QR institucional para que los visitantes se registren de forma autónoma
-          </p>
-        </div>
-
-        <div className="p-6">
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* QR Code Display */}
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Código QR Institucional</h3>
-              {qrData?.qrUrl && (
-                <div className="inline-block p-4 bg-white border-2 border-gray-200 rounded-lg shadow-sm">
-                  <img 
-                    src={qrData.qrUrl} 
-                    alt="QR Code para auto-registro" 
-                    className="w-64 h-64 mx-auto"
-                  />
-                </div>
-              )}
-              <div className="mt-4 space-y-2">
-                <p className="text-sm text-gray-600">
-                  Los visitantes pueden escanear este código para acceder al formulario de registro
-                </p>
-                <div className="flex gap-2 justify-center">
-                  <button
-                    onClick={() => window.print()}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
-                  >
-                    Imprimir QR
-                  </button>
-                  <button
-                    onClick={() => qrData?.qrUrl && window.open(qrData.qrUrl, '_blank')}
-                    className="px-4 py-2 bg-securiti-blue-100 text-securiti-blue-700 rounded-md hover:bg-securiti-blue-200 transition-colors"
-                  >
-                    Descargar QR
-                  </button>
-                </div>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="w-14 h-14 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
+              <QrCode className="w-7 h-7 text-white" />
             </div>
-
-            {/* Instructions and Links */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Instrucciones de Uso</h3>
-              <div className="space-y-4">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-2">Para Visitantes:</h4>
-                  <ol className="text-sm text-blue-800 space-y-1">
-                    <li>1. Escanea el código QR con tu teléfono</li>
-                    <li>2. Completa el formulario de registro</li>
-                    <li>3. Tómate una foto para el gafete</li>
-                    <li>4. Espera la aprobación del anfitrión</li>
-                  </ol>
-                </div>
-
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <h4 className="font-medium text-green-900 mb-2">Para Personal de Recepción:</h4>
-                  <ul className="text-sm text-green-800 space-y-1">
-                    <li>• Coloca el QR en un lugar visible</li>
-                    <li>• Los registros aparecerán en "Visitas"</li>
-                    <li>• Puedes aprobar/rechazar desde el dashboard</li>
-                  </ul>
-                </div>
-
-                <div className="border-t pt-4">
-                  <h4 className="font-medium text-gray-800 mb-2">Enlace Directo:</h4>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={qrData?.publicUrl || ''}
-                      readOnly
-                      className="flex-1 px-3 py-2 border rounded-md bg-gray-50 text-sm"
-                    />
-                    <button
-                      onClick={() => qrData?.publicUrl && copyToClipboard(qrData.publicUrl)}
-                      className="px-4 py-2 bg-securiti-blue-600 text-white rounded-md hover:bg-securiti-blue-700 transition-colors"
-                    >
-                      Copiar
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    También puedes compartir este enlace directo para registro
-                  </p>
-                </div>
-
-                <div className="border-t pt-4">
-                  <h4 className="font-medium text-gray-800 mb-2">Vista Previa:</h4>
-                  <button
-                    onClick={() => qrData?.publicUrl && window.open(qrData.publicUrl, '_blank')}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                  >
-                    Probar Formulario
-                  </button>
-                </div>
-              </div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">QR de Auto-Registro</h1>
+              <p className="text-gray-600 text-sm sm:text-base mt-1">Código QR para que visitantes se registren automáticamente</p>
             </div>
           </div>
+        </div>
 
-          {/* Stats Section */}
-          <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-medium text-gray-800 mb-2">Tips de Implementación:</h4>
-            <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-600">
-              <div>
-                <strong>Ubicación:</strong> Coloca el QR en la entrada principal, recepción o áreas de espera
+        {/* Main Card */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+          <div className="p-6 sm:p-8 lg:p-10">
+            {/* QR Code Section */}
+            <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-8 mb-6">
+              <div className="flex flex-col items-center">
+                {/* QR Display */}
+                <div className="bg-white p-6 rounded-2xl shadow-md border-2 border-gray-300 mb-6">
+                  {qrData?.qrUrl && (
+                    <img 
+                      src={qrData.qrUrl} 
+                      alt="QR Code para auto-registro" 
+                      className="w-64 h-64"
+                    />
+                  )}
+                </div>
+
+                {/* Download Button */}
+                <button
+                  onClick={handleDownloadQR}
+                  className="px-8 py-4 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all font-bold shadow-xl hover:shadow-2xl flex items-center gap-3 text-base"
+                >
+                  <Download className="w-5 h-5" />
+                  Descargar QR
+                </button>
               </div>
-              <div>
-                <strong>Tamaño:</strong> Imprime el QR de al menos 5x5 cm para fácil escaneado
+            </div>
+
+            {/* Instructions Section */}
+            <div className="bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-2xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
+                  <Check className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">Instrucciones de Uso</h2>
               </div>
-              <div>
-                <strong>Instrucciones:</strong> Agrega texto explicativo junto al QR para guiar a los visitantes
+              
+              <p className="text-gray-700 mb-4 font-medium">
+                Imprime este código QR para que visitantes se registren automáticamente.
+              </p>
+
+              <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
+                <h3 className="font-bold text-gray-900 mb-3">Pasos:</h3>
+                <ol className="space-y-2 text-gray-700">
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 bg-gray-900 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                    <span>Descarga e imprime el código QR</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 bg-gray-900 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                    <span>Colócalo en recepción para que visitantes lo escaneen</span>
+                  </li>
+                </ol>
+              </div>
+
+              {/* Additional Tips */}
+              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+                <p className="text-sm text-yellow-800">
+                  <strong>💡 Tip:</strong> Para mejor escaneado, imprime el QR de al menos 10×10 cm y colócalo en un lugar visible y bien iluminado.
+                </p>
               </div>
             </div>
           </div>

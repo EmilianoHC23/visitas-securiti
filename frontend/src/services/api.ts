@@ -147,6 +147,28 @@ export const createVisit = async (visitData: {
   });
 };
 
+export const forceCreateVisit = async (visitData: { 
+  visitorName: string; 
+  visitorCompany?: string; 
+  reason: string; 
+  hostId: string; 
+  scheduledDate: string;
+  destination?: string;
+  visitorEmail?: string;
+  visitorPhone?: string;
+  visitorPhoto?: string;
+  qrToken?: string;
+  visitType?: 'spontaneous' | 'pre-registered' | 'access-code';
+  accessCode?: string;
+  fromAccessEvent?: boolean;
+  notes?: string;
+}): Promise<Visit> => {
+  return apiRequest('/visits/force-register', {
+    method: 'POST',
+    body: JSON.stringify(visitData),
+  });
+};
+
 export const selfRegisterVisit = async (visitData: { 
   visitorName: string; 
   visitorCompany?: string; 
@@ -319,9 +341,14 @@ export const getCompanyQR = async (): Promise<{ qrCode: string; qrUrl: string; p
   return apiRequest('/company/qr-code');
 };
 
+// Get public company configuration (no auth required)
+export const getPublicCompanyConfig = async (): Promise<{ name: string; logo?: string; address?: string; email?: string; phone?: string }> => {
+  return apiRequest('/company/public-config');
+};
+
 // Obtener accesos activos públicos (sin autenticación)
 export const getActiveAccesses = async (): Promise<Access[]> => {
-  return apiRequest('/public/access/active');
+  return apiRequest('/access/public/active');
 };
 
 // --- BLACKLIST MANAGEMENT ---
@@ -331,8 +358,9 @@ export const getBlacklist = async (): Promise<Blacklist[]> => {
 
 export const addToBlacklist = async (data: {
   email: string;
-  name: string;
+  visitorName: string;
   reason: string;
+  photo?: string;
 }): Promise<Blacklist> => {
   return apiRequest('/blacklist', {
     method: 'POST',
@@ -344,6 +372,14 @@ export const removeFromBlacklist = async (id: string): Promise<void> => {
   return apiRequest(`/blacklist/${id}`, {
     method: 'DELETE',
   });
+};
+
+export const checkBlacklist = async (email: string): Promise<Blacklist | null> => {
+  try {
+    return apiRequest(`/blacklist/check?email=${encodeURIComponent(email)}`);
+  } catch (error) {
+    return null;
+  }
 };
 
 // --- ACCESS CODES / EVENTS ---
@@ -549,6 +585,25 @@ export const publicAccessCheckIn = async (data: {
   guestName: string;
 }) => {
   return apiRequest('/public/access-check-in', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};
+
+// Get public info for an access/event (no auth required)
+export const getAccessPublicInfo = async (accessId: string) => {
+  return apiRequest(`/access/${accessId}/public-info`);
+};
+
+// Pre-register for an access/event (no auth required)
+export const preRegisterToAccess = async (accessId: string, data: {
+  name: string;
+  email: string;
+  company?: string;
+  phone?: string;
+  photo?: string;
+}) => {
+  return apiRequest(`/access/${accessId}/pre-register`, {
     method: 'POST',
     body: JSON.stringify(data),
   });

@@ -1,17 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BlacklistEntry } from '../../types';
 import * as api from '../../services/api';
+import { Shield, Search, UserX, Mail, AlertCircle, Camera, Upload, Trash2, X } from 'lucide-react';
 
 export const BlacklistPage: React.FC = () => {
   const [blacklistEntries, setBlacklistEntries] = useState<BlacklistEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [newEntry, setNewEntry] = useState({
-    identifierType: 'email' as 'document' | 'phone' | 'email',
-    identifier: '',
+    visitorName: '',
+    email: '',
     reason: '',
-    notes: ''
+    photo: ''
   });
 
   useEffect(() => {
@@ -22,7 +24,7 @@ export const BlacklistPage: React.FC = () => {
     try {
       setLoading(true);
       const entries = await api.getBlacklist();
-      setBlacklistEntries(entries);
+      setBlacklistEntries(entries as BlacklistEntry[]);
     } catch (error) {
       console.error('Error loading blacklist:', error);
     } finally {
@@ -30,37 +32,62 @@ export const BlacklistPage: React.FC = () => {
     }
   };
 
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar tamaño (5MB máximo)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('El archivo es demasiado grande. Máximo 5MB.');
+        return;
+      }
+
+      // Validar tipo
+      if (!file.type.match(/image\/(jpeg|jpg|png|gif|webp)/)) {
+        alert('Solo se permiten archivos de imagen (jpeg, jpg, png, gif, webp)');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64Photo = event.target?.result as string;
+        setNewEntry({ ...newEntry, photo: base64Photo });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newEntry.identifier || !newEntry.reason) {
-      alert('El identificador y la razón son requeridos');
+    if (!newEntry.visitorName || !newEntry.email || !newEntry.reason) {
+      alert('El nombre, correo electrónico y motivo son requeridos');
+      return;
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEntry.email)) {
+      alert('Por favor, ingrese un correo electrónico válido');
       return;
     }
     
     try {
-      console.log('🚫 Adding to blacklist:', newEntry);
+      console.log('� Adding to blacklist:', newEntry);
       
-      // Convert form data to backend format
-      const blacklistData = {
-        email: newEntry.identifierType === 'email' ? newEntry.identifier : '',
-        name: newEntry.identifierType === 'email' 
-          ? `Usuario con email ${newEntry.identifier}` 
-          : `${newEntry.identifier} (${newEntry.identifierType})`,
-        reason: newEntry.reason
-      };
-      
-      console.log('📤 Sending blacklist data:', blacklistData);
-      
-      const entry = await api.addToBlacklist(blacklistData);
+      const entry = await api.addToBlacklist({
+        visitorName: newEntry.visitorName,
+        email: newEntry.email,
+        reason: newEntry.reason,
+        photo: newEntry.photo || undefined
+      });
       console.log('✅ Blacklist entry added:', entry);
       
-      setBlacklistEntries([...blacklistEntries, entry]);
+      setBlacklistEntries([...blacklistEntries, entry as BlacklistEntry]);
       setNewEntry({ 
-        identifierType: 'email' as 'document' | 'phone' | 'email',
-        identifier: '',
+        visitorName: '',
+        email: '',
         reason: '',
-        notes: ''
+        photo: ''
       });
       setShowAddForm(false);
     } catch (error) {
@@ -85,195 +112,316 @@ export const BlacklistPage: React.FC = () => {
   };
 
   const filteredEntries = blacklistEntries.filter(entry =>
+    entry.visitorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     entry.identifier.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (entry.notes && entry.notes.toLowerCase().includes(searchTerm.toLowerCase()))
+    entry.reason.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getIdentifierTypeLabel = (type: string) => {
-    switch (type) {
-      case 'document': return 'Documento';
-      case 'phone': return 'Teléfono';
-      case 'email': return 'Email';
-      default: return type;
-    }
-  };
-
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-md">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-            <h2 className="text-2xl font-bold text-gray-800">Lista Negra</h2>
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-            >
-              Agregar a Lista Negra
-            </button>
-          </div>
-
-          <div className="mt-4">
-            <input
-              type="text"
-              placeholder="Buscar por identificador, razón o notas..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl shadow-sm">
+              <Shield className="w-8 h-8 text-gray-700" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Lista Negra</h1>
+              <p className="text-gray-600 mt-1">
+                Gestiona las personas restringidas de acceso a las instalaciones
+              </p>
+            </div>
           </div>
         </div>
 
-        {loading ? (
-          <div className="p-6 text-center">Cargando lista negra...</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Identificador
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Razón
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fecha
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredEntries.map((entry) => (
-                  <tr key={entry._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{entry.identifier}</div>
-                      {entry.notes && (
-                        <div className="text-sm text-gray-500">{entry.notes}</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                        {getIdentifierTypeLabel(entry.identifierType)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{entry.reason}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(entry.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleRemove(entry._id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Search and Add Button */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4 items-center">
+            <div className="flex-1 w-full relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Buscar por nombre, correo o motivo..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+              />
+            </div>
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-xl hover:from-gray-800 hover:to-gray-900 transition-all shadow-lg font-semibold flex items-center justify-center gap-2"
+            >
+              <UserX className="w-5 h-5" />
+              Agregar a Lista Negra
+            </button>
+          </div>
+        </div>
 
-            {filteredEntries.length === 0 && (
-              <div className="p-6 text-center text-gray-500">
-                {searchTerm ? 'No se encontraron entradas que coincidan con la búsqueda' : 'No hay entradas en la lista negra'}
+        {/* Content */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Cargando lista negra...</p>
+            </div>
+          </div>
+        ) : filteredEntries.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+            <div className="max-w-md mx-auto">
+              <div className="p-4 bg-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                <UserX className="w-10 h-10 text-gray-400" />
               </div>
-            )}
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                {searchTerm ? 'No se encontraron resultados' : 'No hay entradas en la lista negra'}
+              </h3>
+              <p className="text-gray-600">
+                {searchTerm 
+                  ? 'Intenta con otros términos de búsqueda' 
+                  : 'Agrega personas a la lista negra para restringir su acceso'}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredEntries.map((entry) => (
+              <div
+                key={entry._id}
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group"
+              >
+                {/* Photo Section */}
+                <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100">
+                  {entry.photo ? (
+                    <img
+                      src={entry.photo}
+                      alt={entry.visitorName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="p-6 bg-gray-200 rounded-full">
+                        <UserX className="w-16 h-16 text-gray-600" />
+                      </div>
+                    </div>
+                  )}
+                  <div className="absolute top-3 right-3">
+                    <button
+                      onClick={() => handleRemove(entry._id)}
+                      className="p-2 bg-white/90 backdrop-blur-sm rounded-lg hover:bg-gray-100 transition-colors shadow-lg"
+                      title="Eliminar de la lista negra"
+                    >
+                      <Trash2 className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Content Section */}
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-gray-700 transition-colors">
+                    {entry.visitorName}
+                  </h3>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2">
+                      <Mail className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-500 mb-1">Correo electrónico</p>
+                        <p className="text-sm font-medium text-gray-900 break-all">{entry.identifier}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-500 mb-1">Motivo</p>
+                        <p className="text-sm text-gray-900 leading-relaxed">{entry.reason}</p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-gray-100">
+                      <p className="text-xs text-gray-500">
+                        Agregado el {new Date(entry.createdAt).toLocaleDateString('es-MX', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
       {/* Modal para agregar entrada */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              Agregar a Lista Negra
-            </h3>
-
-            <form onSubmit={handleAdd} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tipo de Identificador
-                </label>
-                <select
-                  value={newEntry.identifierType}
-                  onChange={(e) => setNewEntry({ ...newEntry, identifierType: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl animate-slideUp max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="p-6 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg">
+                    <UserX className="w-6 h-6 text-gray-700" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    Agregar a Lista Negra
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowAddForm(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  <option value="document">Documento</option>
-                  <option value="phone">Teléfono</option>
-                  <option value="email">Email</option>
-                </select>
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleAdd} className="p-6 space-y-6">
+              {/* Photo Upload */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Foto del visitante (opcional)
+                </label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  {newEntry.photo ? (
+                    <div className="relative flex-shrink-0">
+                      <img
+                        src={newEntry.photo}
+                        alt="Preview"
+                        className="w-32 h-32 rounded-xl object-cover border-2 border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setNewEntry({ ...newEntry, photo: '' })}
+                        className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-32 h-32 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 flex-shrink-0">
+                      <Camera className="w-10 h-10 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="flex-1 w-full">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium flex items-center justify-center gap-2"
+                    >
+                      <Upload className="w-5 h-5" />
+                      {newEntry.photo ? 'Cambiar foto' : 'Subir foto'}
+                    </button>
+                    <p className="text-xs text-gray-500 mt-2">
+                      JPG, PNG o GIF. Máximo 5MB.
+                    </p>
+                  </div>
+                </div>
               </div>
 
+              {/* Visitor Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Identificador
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Nombre del visitante *
                 </label>
                 <input
                   type="text"
-                  value={newEntry.identifier}
-                  onChange={(e) => setNewEntry({ ...newEntry, identifier: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Número de documento, teléfono o email"
+                  value={newEntry.visitorName}
+                  onChange={(e) => setNewEntry({ ...newEntry, visitorName: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                  placeholder="Nombre completo"
                   required
                 />
               </div>
 
+              {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Razón
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Correo electrónico *
                 </label>
                 <input
-                  type="text"
-                  value={newEntry.reason}
-                  onChange={(e) => setNewEntry({ ...newEntry, reason: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Motivo de inclusión en lista negra"
+                  type="email"
+                  value={newEntry.email}
+                  onChange={(e) => setNewEntry({ ...newEntry, email: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                  placeholder="correo@ejemplo.com"
                   required
                 />
               </div>
 
+              {/* Reason */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Notas (opcional)
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Motivo *
                 </label>
                 <textarea
-                  value={newEntry.notes}
-                  onChange={(e) => setNewEntry({ ...newEntry, notes: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                  placeholder="Información adicional"
+                  value={newEntry.reason}
+                  onChange={(e) => setNewEntry({ ...newEntry, reason: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all resize-none"
+                  rows={4}
+                  placeholder="Describe el motivo por el cual se agrega a la lista negra..."
+                  required
                 />
               </div>
 
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-                >
-                  Agregar
-                </button>
+              {/* Buttons */}
+              <div className="flex gap-3 pt-4 sticky bottom-0 bg-white pb-2">
                 <button
                   type="button"
                   onClick={() => setShowAddForm(false)}
-                  className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-semibold"
                 >
                   Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-xl hover:from-gray-800 hover:to-gray-900 transition-all shadow-lg font-semibold"
+                >
+                  Agregar
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        @keyframes slideUp {
+          from {
+            transform: translateY(20px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.2s ease-out;
+        }
+        .animate-slideUp {
+          animation: slideUp 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 };

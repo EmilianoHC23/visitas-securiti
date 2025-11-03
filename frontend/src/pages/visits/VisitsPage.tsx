@@ -963,6 +963,19 @@ export const VisitsPage: React.FC = () => {
     const [checkedInModalVisit, setCheckedInModalVisit] = useState<Visit | null>(null);
     const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
     const [rejectionVisit, setRejectionVisit] = useState<Visit | null>(null);
+    
+    // Estado para alerta de lista negra en registro
+    const [registerBlacklistAlert, setRegisterBlacklistAlert] = useState<{
+        visitData: any;
+        blacklistInfo: {
+            _id: string;
+            visitorName: string;
+            email: string;
+            reason: string;
+            photo?: string;
+            addedAt: string;
+        };
+    } | null>(null);
 
     // Handler para clicks en las tarjetas
     const handleCardClick = (visit: Visit) => {
@@ -1041,8 +1054,8 @@ export const VisitsPage: React.FC = () => {
     // Handler para check-in con recurso asignado
     const handleCheckInWithResource = async (visitId: string, assignedResource?: string) => {
         try {
-            const updatedVisit = await api.checkInVisit(visitId, assignedResource);
-            setVisits(prevVisits => prevVisits.map(v => v._id === visitId ? updatedVisit : v));
+            const response: any = await api.checkInVisit(visitId, assignedResource);
+            setVisits(prevVisits => prevVisits.map(v => v._id === visitId ? response : v));
             setApprovedModalVisit(null);
         } catch (error) {
             console.error('Failed to check in:', error);
@@ -1129,11 +1142,13 @@ export const VisitsPage: React.FC = () => {
             console.log('📝 Datos de visita recibidos:', visitData);
             console.log('🔍 fromAccessEvent:', visitData.fromAccessEvent);
             
+            let response: any;
+            
             // Si viene de un acceso/evento, crear como aprobada (irá a "Respuesta recibida")
-                        if (visitData.fromAccessEvent) {
+            if (visitData.fromAccessEvent) {
                 console.log('🎫 Procesando visita de ACCESO/EVENTO - irá a "Respuesta recibida"');
                 
-                await api.createVisit({
+                response = await api.createVisit({
                     visitorName: visitData.visitorName,
                     visitorCompany: visitData.visitorCompany,
                     reason: visitData.reason,
@@ -1152,7 +1167,7 @@ export const VisitsPage: React.FC = () => {
                 console.log('👤 Procesando visita REGULAR - flujo normal');
                 
                 // Flujo normal para visitas regulares
-                await api.createVisit({
+                response = await api.createVisit({
                     visitorName: visitData.visitorName,
                     visitorCompany: visitData.visitorCompany,
                     reason: visitData.reason,
@@ -1162,6 +1177,22 @@ export const VisitsPage: React.FC = () => {
                     visitorEmail: visitData.visitorEmail,
                     visitorPhoto: visitData.visitorPhoto || undefined,
                 });
+            }
+            
+            // Verificar si hay alerta de lista negra
+            if (response && response.warning === 'blacklist' && response.blacklistInfo) {
+                console.log('⚠️ [REGISTER] Alerta de lista negra detectada');
+                setRegisterBlacklistAlert({
+                    visitData: {
+                        ...visitData,
+                        scheduledDate,
+                        visitType: visitData.fromAccessEvent ? 'access-code' : undefined,
+                        accessCode: visitData.accessCode,
+                        fromAccessEvent: visitData.fromAccessEvent
+                    },
+                    blacklistInfo: response.blacklistInfo
+                });
+                return; // No continuar con el registro normal
             }
             
             fetchVisits();
@@ -1198,10 +1229,34 @@ export const VisitsPage: React.FC = () => {
 
     const handleCheckIn = async (id: string) => {
         try {
-            const updatedVisit = await api.checkInVisit(id);
-            setVisits(prevVisits => prevVisits.map(v => v._id === id ? updatedVisit : v));
+            const response: any = await api.checkInVisit(id);
+            setVisits(prevVisits => prevVisits.map(v => v._id === id ? response : v));
         } catch (error) {
             console.error('Failed to check in:', error);
+        }
+    };
+
+    // Handler para confirmar registro después de alerta de lista negra
+    const handleRegisterBlacklistAction = async (action: 'allow' | 'cancel') => {
+        if (!registerBlacklistAlert) return;
+        
+        if (action === 'cancel') {
+            setRegisterBlacklistAlert(null);
+            return;
+        }
+        
+        try {
+            const { visitData } = registerBlacklistAlert;
+            
+            // Usar force-register para continuar a pesar de la alerta
+            await api.forceCreateVisit(visitData);
+            
+            setRegisterBlacklistAlert(null);
+            setIsModalOpen(false); // Cerrar el side panel
+            fetchVisits();
+        } catch (error) {
+            console.error('Failed to force register visit:', error);
+            alert('Error al registrar la visita');
         }
     };
 
@@ -1651,6 +1706,101 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                 onClose={() => setCheckedInModalVisit(null)}
                 onCheckout={handleCheckoutFromModal}
             />
+
+
+            {/* Modal de Alerta de Lista Negra en Registro */}
+            {registerBlacklistAlert && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+                    <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl animate-slideUp overflow-hidden">
+                        {/* Header */}
+                        <div className="p-6 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white">
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-white/20 rounded-xl">
+                                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-bold">⚠️ Advertencia de Seguridad</h3>
+                                    <p className="text-yellow-100 mt-1">Visitante encontrado en lista negra al registrar</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-6 space-y-6">
+                            {/* Foto del visitante */}
+                            {registerBlacklistAlert.blacklistInfo.photo && (
+                                <div className="flex justify-center">
+                                    <img
+                                        src={registerBlacklistAlert.blacklistInfo.photo}
+                                        alt={registerBlacklistAlert.blacklistInfo.visitorName}
+                                        className="w-32 h-32 rounded-full object-cover border-4 border-yellow-500 shadow-xl"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Información del visitante */}
+                            <div className="bg-yellow-50 border-l-4 border-yellow-500 rounded-lg p-5">
+                                <h4 className="font-bold text-yellow-900 text-lg mb-3">Información del Visitante</h4>
+                                <div className="space-y-2 text-sm">
+                                    <p className="text-yellow-800">
+                                        <strong>Nombre:</strong> {registerBlacklistAlert.blacklistInfo.visitorName}
+                                    </p>
+                                    <p className="text-yellow-800">
+                                        <strong>Correo:</strong> {registerBlacklistAlert.blacklistInfo.email}
+                                    </p>
+                                    <p className="text-yellow-800">
+                                        <strong>Agregado a lista negra:</strong> {new Date(registerBlacklistAlert.blacklistInfo.addedAt).toLocaleDateString('es-MX', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Razón del bloqueo */}
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+                                <h4 className="font-bold text-gray-900 mb-2">Motivo del Registro</h4>
+                                <p className="text-gray-700 leading-relaxed">{registerBlacklistAlert.blacklistInfo.reason}</p>
+                            </div>
+
+                            {/* Advertencia */}
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <p className="text-red-900 text-sm">
+                                    <strong>⚠️ Importante:</strong> Esta persona está registrada en la lista negra. 
+                                    ¿Deseas continuar con el registro de visita o cancelar?
+                                </p>
+                            </div>
+
+                            {/* Botones de Acción */}
+                            <div className="grid grid-cols-2 gap-4 pt-4">
+                                <button
+                                    onClick={() => handleRegisterBlacklistAction('cancel')}
+                                    className="px-6 py-4 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg font-bold flex items-center justify-center gap-2 group"
+                                >
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    Cancelar Registro
+                                </button>
+                                <button
+                                    onClick={() => handleRegisterBlacklistAction('allow')}
+                                    className="px-6 py-4 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl hover:from-emerald-700 hover:to-emerald-800 transition-all shadow-lg font-bold flex items-center justify-center gap-2 group"
+                                >
+                                    <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Continuar de Todos Modos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -11,6 +11,14 @@ const blacklistSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  visitorName: {
+    type: String,
+    trim: true,
+    required: true
+  },
+  photo: {
+    type: String // Base64 encoded image
+  },
   // Mantener campos legacy para compatibilidad
   email: {
     type: String,

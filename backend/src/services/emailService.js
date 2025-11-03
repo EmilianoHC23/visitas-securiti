@@ -2214,23 +2214,17 @@ class EmailService {
                           <strong>${data.guestName}</strong> ha completado el escaneo de QR y su <strong>entrada fue aprobada</strong>.
                         </p>
 
-                        ${EVENT_IMAGE_URL ? `
-                        <!-- Imagen del evento -->
-                        <div style="text-align: center; margin-bottom: 25px;">
-                          <img src="${EVENT_IMAGE_URL}" alt="Imagen del evento" style="max-width: 100%; max-height: 200px; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" />
-                        </div>
-                        ` : ''}
-
                         <!-- Información del Invitado -->
-                        ${GUEST_PHOTO_URL ? `
-                        <div style="margin-bottom: 25px;">
-                          <img src="${GUEST_PHOTO_URL}" alt="Foto del invitado" style="max-width: 120px; max-height: 120px; border-radius: 50%; border: 3px solid ${accentColor}; object-fit: cover;" />
-                        </div>
-                        ` : ''}
-                        
                         <div style="background-color: #eff6ff; border-left: 4px solid ${primaryColor}; border-radius: 8px; padding: 20px; margin-bottom: 25px; text-align: left;">
                           <p style="color: #1f2937; margin: 0; font-size: 15px; line-height: 1.8;">
                             <strong style="color: ${primaryColor};">Información del Invitado</strong><br><br>
+                          </p>
+                          ${GUEST_PHOTO_URL ? `
+                          <div style="text-align: center; margin: 15px 0;">
+                            <img src="${GUEST_PHOTO_URL}" alt="Foto del invitado" style="max-width: 120px; max-height: 120px; border-radius: 50%; border: 3px solid ${accentColor}; object-fit: cover;" />
+                          </div>
+                          ` : ''}
+                          <p style="color: #1f2937; margin: 0; font-size: 15px; line-height: 1.8;">
                             <strong>Nombre:</strong> ${data.guestName}<br>
                             ${data.guestEmail ? `<strong>Email:</strong> ${data.guestEmail}<br>` : ''}
                             ${data.guestCompany ? `<strong>Empresa:</strong> ${data.guestCompany}` : ''}
@@ -2241,6 +2235,13 @@ class EmailService {
                         <div style="background-color: #f9fafb; border-left: 4px solid ${accentColor}; border-radius: 8px; padding: 20px; margin-bottom: 25px; text-align: left;">
                           <p style="color: #1f2937; margin: 0; font-size: 15px; line-height: 1.8;">
                             <strong style="color: ${primaryColor};">Detalles del Evento</strong><br><br>
+                          </p>
+                          ${EVENT_IMAGE_URL ? `
+                          <div style="text-align: center; margin: 15px 0;">
+                            <img src="${EVENT_IMAGE_URL}" alt="Imagen del evento" style="max-width: 100%; max-height: 200px; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" />
+                          </div>
+                          ` : ''}
+                          <p style="color: #1f2937; margin: 0; font-size: 15px; line-height: 1.8;">
                             <strong>Evento/acceso:</strong> ${data.accessTitle}<br>
                             ${data.location ? `<strong>Lugar:</strong> ${data.location}<br>` : ''}
                             ${data.checkInTime ? `<strong>Hora de registro:</strong> ${formatFullDate(new Date(data.checkInTime))}` : ''}

@@ -24,7 +24,7 @@ import {
   Download
 } from 'lucide-react';
 import { IoQrCodeOutline } from 'react-icons/io5';
-import { getAccesses, createAccess, updateAccess, cancelAccess, getUsers } from '../../services/api';
+import { getAccesses, createAccess, updateAccess, cancelAccess, getUsers, checkBlacklist } from '../../services/api';
 import { Access, InvitedUser } from '../../types';
 import { formatDate, formatDateTime } from '../../utils/dateUtils';
 import { useAuth } from '../../contexts/AuthContext';
@@ -529,6 +529,21 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
           name: u.name || u.email.split('@')[0], // Use email username as name if not provided
           email: u.email
         }));
+
+      // Check for blacklisted emails
+      const blacklistPromises = validInvitedUsers.map(u => checkBlacklist(u.email));
+      const blacklistResults = await Promise.all(blacklistPromises);
+      const blacklistedUsers = blacklistResults.filter(r => r !== null);
+
+      if (blacklistedUsers.length > 0) {
+        const blacklistedEmails = blacklistedUsers.map(b => `- ${b!.visitorName || b!.identifier} (${b!.identifier}): ${b!.reason}`).join('\n');
+        const confirmMessage = `⚠️ ALERTA DE SEGURIDAD\n\nLos siguientes usuarios se encuentran en la lista negra:\n\n${blacklistedEmails}\n\n¿Desea continuar con la creación del acceso de todas formas?`;
+        
+        if (!confirm(confirmMessage)) {
+          setLoading(false);
+          return;
+        }
+      }
 
       await createAccess({
         eventName: formData.eventName,

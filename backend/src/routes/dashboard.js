@@ -13,6 +13,10 @@ router.get('/stats', auth, async (req, res) => {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
+    // Yesterday for trends
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
     const filter = { companyId: req.user.companyId };
 
     // If user is a host, only show their visits
@@ -26,14 +30,26 @@ router.get('/stats', auth, async (req, res) => {
       scheduledDate: { $gte: today, $lt: tomorrow }
     };
 
+    // Get yesterday's visits count by status for trends
+    const yesterdayFilter = {
+      ...filter,
+      scheduledDate: { $gte: yesterday, $lt: today }
+    };
+
     const [
+      // Today's stats
       active,
       pending,
       approved,
       checkedIn,
       completed,
       totalUsers,
-      totalHosts
+      totalHosts,
+      // Yesterday's stats for trends
+      yesterdayCheckedIn,
+      yesterdayPending,
+      yesterdayApproved,
+      yesterdayCompleted
     ] = await Promise.all([
       // Active visits today (checked-in)
       Visit.countDocuments({ ...todayFilter, status: 'checked-in' }),
@@ -54,8 +70,26 @@ router.get('/stats', auth, async (req, res) => {
       req.user.role === 'admin' ? User.countDocuments({ companyId: req.user.companyId, isActive: true }) : 0,
       
       // Total hosts
-      User.countDocuments({ companyId: req.user.companyId, role: 'host', isActive: true })
+      User.countDocuments({ companyId: req.user.companyId, role: 'host', isActive: true }),
+
+      // Yesterday's checked-in
+      Visit.countDocuments({ ...yesterdayFilter, status: 'checked-in' }),
+      
+      // Yesterday's pending
+      Visit.countDocuments({ ...yesterdayFilter, status: 'pending' }),
+      
+      // Yesterday's approved
+      Visit.countDocuments({ ...yesterdayFilter, status: 'approved' }),
+      
+      // Yesterday's completed
+      Visit.countDocuments({ ...yesterdayFilter, status: 'completed' })
     ]);
+
+    // Calculate trends (percentage change from yesterday)
+    const calculateTrend = (today, yesterday) => {
+      if (yesterday === 0) return today > 0 ? 100 : 0;
+      return Math.round(((today - yesterday) / yesterday) * 100);
+    };
 
     res.json({
       active,
@@ -64,7 +98,13 @@ router.get('/stats', auth, async (req, res) => {
       checkedIn,
       completed,
       totalUsers,
-      totalHosts
+      totalHosts,
+      trends: {
+        checkedIn: calculateTrend(checkedIn, yesterdayCheckedIn),
+        pending: calculateTrend(pending, yesterdayPending),
+        approved: calculateTrend(approved, yesterdayApproved),
+        completed: calculateTrend(completed, yesterdayCompleted)
+      }
     });
   } catch (error) {
     console.error('Get dashboard stats error:', error);

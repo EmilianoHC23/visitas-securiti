@@ -147,6 +147,28 @@ export const createVisit = async (visitData: {
   });
 };
 
+export const forceCreateVisit = async (visitData: { 
+  visitorName: string; 
+  visitorCompany?: string; 
+  reason: string; 
+  hostId: string; 
+  scheduledDate: string;
+  destination?: string;
+  visitorEmail?: string;
+  visitorPhone?: string;
+  visitorPhoto?: string;
+  qrToken?: string;
+  visitType?: 'spontaneous' | 'pre-registered' | 'access-code';
+  accessCode?: string;
+  fromAccessEvent?: boolean;
+  notes?: string;
+}): Promise<Visit> => {
+  return apiRequest('/visits/force-register', {
+    method: 'POST',
+    body: JSON.stringify(visitData),
+  });
+};
+
 export const selfRegisterVisit = async (visitData: { 
   visitorName: string; 
   visitorCompany?: string; 

@@ -133,6 +133,41 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ message: 'Todos los campos requeridos deben ser proporcionados' });
     }
 
+    // Verificar lista negra (alerta preventiva)
+    if (visitorEmail) {
+      const Blacklist = require('../models/Blacklist');
+      const blacklistEntry = await Blacklist.findOne({
+        $or: [
+          { email: visitorEmail.toLowerCase() },
+          { identifier: visitorEmail.toLowerCase() },
+          { visitorName: new RegExp(`^${visitorName}$`, 'i') }
+        ],
+        companyId: req.user.companyId,
+        isActive: true
+      });
+
+      if (blacklistEntry) {
+        console.log('⚠️ [REGISTER] Visitante encontrado en lista negra:', {
+          visitorName,
+          email: visitorEmail,
+          reason: blacklistEntry.reason
+        });
+        
+        // Retornar advertencia sin bloquear el registro
+        return res.status(200).json({
+          warning: 'blacklist',
+          blacklistInfo: {
+            _id: blacklistEntry._id,
+            visitorName: blacklistEntry.visitorName,
+            email: blacklistEntry.identifier || blacklistEntry.email,
+            reason: blacklistEntry.reason,
+            photo: blacklistEntry.photo,
+            addedAt: blacklistEntry.createdAt
+          }
+        });
+      }
+    }
+
     // Verify host exists and is active (allow host or admin)
     const host = await User.findById(hostId);
     if (!host || !host.isActive || !['host', 'admin'].includes(host.role)) {
@@ -287,6 +322,148 @@ router.post('/', auth, async (req, res) => {
     res.status(201).json(visit);
   } catch (error) {
     console.error('Create visit error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Force register visit (ignorar alerta de lista negra)
+router.post('/force-register', auth, async (req, res) => {
+  try {
+    console.log('📝 [FORCE REGISTER] Creating visit (blacklist ignored) - User:', req.user?.email);
+    const { visitorName, visitorCompany, reason, hostId, scheduledDate, visitorEmail, visitorPhone } = req.body;
+
+    // Validate required fields
+    if (!visitorName || !reason || !hostId || !scheduledDate) {
+      return res.status(400).json({ message: 'Todos los campos requeridos deben ser proporcionados' });
+    }
+
+    // Verify host exists and is active (allow host or admin)
+    const host = await User.findById(hostId);
+    if (!host || !host.isActive || !['host', 'admin'].includes(host.role)) {
+      return res.status(400).json({ message: 'Host no válido' });
+    }
+
+    // Get company settings for auto-approval
+    let company = null;
+    let autoApproval = false;
+    
+    try {
+      const companyId = req.user.companyId || host.companyId;
+      if (companyId) {
+        company = await Company.findOne({ companyId: companyId });
+        autoApproval = company?.settings?.autoApproval || false;
+      }
+    } catch (error) {
+      console.log('⚠️ Error fetching company settings:', error.message);
+      autoApproval = false;
+    }
+
+    // Determinar estado inicial según configuración
+    let initialStatus = 'pending';
+    let checkInTime = null;
+
+    if (autoApproval) {
+      initialStatus = 'approved';
+      if (company?.settings?.autoCheckIn) {
+        initialStatus = 'checked-in';
+        checkInTime = new Date();
+      }
+    }
+
+    // Forzar aprobación automática cuando proviene de un acceso/evento
+    if (req.body.visitType === 'access-code' || req.body.fromAccessEvent === true) {
+      initialStatus = 'approved';
+      checkInTime = null;
+    }
+
+    const visit = new Visit({
+      visitorName,
+      visitorCompany: visitorCompany || '',
+      visitorPhoto: req.body.visitorPhoto,
+      reason,
+      destination: req.body.destination || 'SecurITI',
+      host: hostId,
+      scheduledDate: new Date(scheduledDate),
+      companyId: req.user.companyId,
+      visitorEmail,
+      visitorPhone,
+      status: initialStatus,
+      checkInTime: checkInTime,
+      visitType: req.body.visitType || 'standard',
+      accessCode: req.body.accessCode || null,
+      expectedDuration: req.body.expectedDuration,
+      notes: req.body.notes ? `${req.body.notes}\n[ALERTA: Registrado a pesar de estar en lista negra]` : '[ALERTA: Registrado a pesar de estar en lista negra]'
+    });
+
+    await visit.save();
+    await visit.populate('host', 'firstName lastName email profileImage');
+
+    // Continuar con la lógica normal (emails, eventos, etc.)
+    if ((req.body.visitType === 'access-code' || req.body.fromAccessEvent === true) && initialStatus === 'approved') {
+      try {
+        const Access = require('../models/Access');
+        const access = await Access.findOne({ accessCode: req.body.accessCode }).populate('creatorId', 'firstName lastName email');
+        
+        if (access && access.creatorId) {
+          const guest = access.invitedUsers.find(u => 
+            u.email === visitorEmail || u.phone === req.body.visitorPhone
+          );
+          
+          if (guest && guest.addedViaPreRegistration === true) {
+            await require('../services/emailService').sendGuestArrivedEmail({
+              visitId: visit._id,
+              creatorEmail: access.creatorId.email,
+              creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+              guestName: visitorName,
+              guestEmail: visitorEmail || 'No proporcionado',
+              guestCompany: visitorCompany || 'No proporcionado',
+              guestPhoto: req.body.visitorPhoto,
+              accessTitle: access.eventName,
+              companyName: (company && company.name) || 'SecurITI',
+              companyId: company?.companyId || null,
+              companyLogo: company?.logo || null
+            });
+          }
+        }
+      } catch (emailError) {
+        console.error('⚠️ Error enviando email de llegada:', emailError);
+      }
+    }
+
+    if (initialStatus === 'checked-in') {
+      await new VisitEvent({ visitId: visit._id, type: 'check-in' }).save();
+    }
+
+    const isAccessEvent = req.body.visitType === 'access-code' || req.body.fromAccessEvent === true;
+    
+    if (!autoApproval && !isAccessEvent) {
+      const approval = Approval.createWithExpiry(visit._id, host._id, 48);
+      await approval.save();
+
+      const FE = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+      const approveUrl = `${FE}/api/visits/approve/${approval.token}`;
+      const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
+      await require('../services/emailService').sendApprovalRequestEmail({
+        visitId: visit._id,
+        hostEmail: host.email,
+        hostName: `${host.firstName} ${host.lastName}`,
+        companyName: (company && company.name) || 'SecurITI',
+        companyId: company?.companyId || null,
+        companyLogo: company?.logo || null,
+        visitorName,
+        visitorCompany,
+        visitorPhoto: req.body.visitorPhoto,
+        reason,
+        scheduledDate,
+        approveUrl,
+        rejectUrl
+      });
+    }
+
+    console.log('✅ [FORCE REGISTER] Visit created (blacklist ignored)');
+    res.status(201).json(visit);
+  } catch (error) {
+    console.error('Force register visit error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

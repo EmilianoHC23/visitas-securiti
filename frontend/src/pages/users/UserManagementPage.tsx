@@ -335,11 +335,10 @@ const RoleSelect: React.FC<{ value: UserRole; onChange: (r: UserRole) => void }>
 
             <AnimatePresence>
                 {open && (
-                    <motion.ul initial="closed" animate="open" exit="closed" variants={wrapper} style={{ transformOrigin: 'top' }} className="absolute left-0 right-0 mt-2 bg-white shadow-lg border border-gray-100 rounded-lg overflow-hidden z-50">
+                    <motion.ul initial="closed" animate="open" exit="closed" variants={wrapper} style={{ transformOrigin: 'top' }} className="absolute left-0 right-0 mt-2 bg-white shadow-lg border border-gray-100 rounded-md overflow-hidden z-50">
                         {options.map(o => (
                             <li key={o.value}>
-                                {/* Use same left padding as the control (pl-10) so icons align; keep rounded corners on the container */}
-                                <motion.button type="button" variants={item} onClick={() => { onChange(o.value); setOpen(false); }} className={`w-full text-left pl-10 pr-3 py-2 flex items-center gap-3 hover:bg-gray-100 ${o.value === value ? 'bg-gray-100' : ''}`}>
+                                <motion.button type="button" variants={item} onClick={() => { onChange(o.value); setOpen(false); }} className={`w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-gray-100 ${o.value === value ? 'bg-gray-100' : ''}`}>
                                     <span className="text-gray-600">{o.icon}</span>
                                     <span className="flex-1 text-sm text-gray-800">{o.label}</span>
                                 </motion.button>

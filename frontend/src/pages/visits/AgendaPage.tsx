@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import { User, Access } from '../../types';
 import * as api from '../../services/api';
 import CalendarMonth from '../../components/visits/CalendarMonth';
@@ -133,6 +135,93 @@ export const AgendaPage: React.FC = () => {
     return Array.from(map.entries()).sort((a,b) => a[0].localeCompare(b[0]));
   }, [agendaItems]);
 
+  // Animated host dropdown component (replaces native select)
+  const HostDropdown: React.FC<{ hosts: User[]; value: string; onChange: (id: string) => void }> = ({ hosts, value, onChange }) => {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+      const handleClickOutside = (e: MouseEvent) => {
+        if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      };
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selected = hosts.find(h => h._id === value) || null;
+
+    const sortedHosts = useMemo(() => {
+      return [...hosts].sort((a, b) => {
+        const nameA = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
+        const nameB = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+    }, [hosts]);
+
+    const renderAvatar = (host: User, sizeClass = 'w-8 h-8') => {
+      const src = (host as any).profileImage || (host as any).photo || '';
+      const initials = `${host.firstName?.[0] || ''}${host.lastName?.[0] || ''}`.toUpperCase();
+      if (src) return <img src={src} alt={`${host.firstName} ${host.lastName}`} className={`${sizeClass} rounded-full object-cover`} />;
+      return <div className={`${sizeClass} rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-semibold`}>{initials}</div>;
+    };
+
+    const wrapper: Variants = {
+      open: { scaleY: 1, opacity: 1, transition: { when: 'beforeChildren', staggerChildren: 0.06 } },
+      closed: { scaleY: 0, opacity: 0, transition: { when: 'afterChildren', staggerChildren: 0.04 } },
+    };
+
+    const item: Variants = {
+      open: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } },
+      closed: { opacity: 0, y: -6, transition: { duration: 0.12 } },
+    };
+
+    const chevron: Variants = { open: { rotate: 180 }, closed: { rotate: 0 } };
+
+    return (
+      <div className="relative" ref={ref}>
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          className="w-full text-left px-3 py-2 border border-gray-300 rounded-lg flex items-center gap-3 bg-white"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+        >
+          <div className="flex items-center gap-3">
+            {selected ? renderAvatar(selected, 'w-6 h-6') : (
+              <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
+                <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 100-10 5 5 0 000 10z" fill="currentColor" /><path d="M3 21a9 9 0 0118 0" fill="currentColor" /></svg>
+              </div>
+            )}
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-gray-800 truncate">{selected ? `${selected.firstName} ${selected.lastName}` : 'Todos'}</div>
+            </div>
+          </div>
+          <motion.span className="ml-auto inline-block" variants={chevron} animate={open ? 'open' : 'closed'}>
+            <svg className="w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd" /></svg>
+          </motion.span>
+        </button>
+
+        <AnimatePresence>
+          {open && (
+            <motion.div initial="closed" animate="open" exit="closed" variants={wrapper} style={{ transformOrigin: 'top' }} className="absolute z-50 mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-56 overflow-auto">
+              {sortedHosts.length > 0 ? sortedHosts.map(h => (
+                <motion.button key={h._id} type="button" variants={item} onClick={() => { onChange(h._id); setOpen(false); }} className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left">
+                  {renderAvatar(h)}
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-gray-800 truncate">{h.firstName} {h.lastName}</div>
+                    <div className="text-xs text-gray-500 truncate">{(h as any).email || ''}</div>
+                  </div>
+                </motion.button>
+              )) : (
+                <div className="p-3 text-sm text-gray-500">No hay anfitriones disponibles</div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
@@ -174,10 +263,7 @@ export const AgendaPage: React.FC = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Anfitrión</label>
-            <select value={hostId} onChange={e => setHostId(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 bg-white">
-              <option value="">Todos</option>
-              {hosts.map(h => <option key={h._id} value={h._id}>{h.firstName} {h.lastName}{h.role === 'admin' ? ' (Administrador)' : ''}</option>)}
-            </select>
+            <HostDropdown hosts={hosts} value={hostId} onChange={setHostId} />
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">Buscar</label>

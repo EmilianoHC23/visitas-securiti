@@ -963,6 +963,20 @@ export const VisitsPage: React.FC = () => {
     const [checkedInModalVisit, setCheckedInModalVisit] = useState<Visit | null>(null);
     const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
     const [rejectionVisit, setRejectionVisit] = useState<Visit | null>(null);
+    
+    // Estado para alerta de lista negra
+    const [blacklistAlert, setBlacklistAlert] = useState<{
+        visit: Visit;
+        blacklistInfo: {
+            _id: string;
+            visitorName: string;
+            email: string;
+            reason: string;
+            photo?: string;
+            addedAt: string;
+        };
+        assignedResource?: string;
+    } | null>(null);
 
     // Handler para clicks en las tarjetas
     const handleCardClick = (visit: Visit) => {
@@ -1041,8 +1055,20 @@ export const VisitsPage: React.FC = () => {
     // Handler para check-in con recurso asignado
     const handleCheckInWithResource = async (visitId: string, assignedResource?: string) => {
         try {
-            const updatedVisit = await api.checkInVisit(visitId, assignedResource);
-            setVisits(prevVisits => prevVisits.map(v => v._id === visitId ? updatedVisit : v));
+            const response: any = await api.checkInVisit(visitId, assignedResource);
+            
+            // Verificar si hay alerta de lista negra
+            if (response.warning === 'blacklist' && response.blacklistInfo) {
+                setBlacklistAlert({
+                    visit: response.visit,
+                    blacklistInfo: response.blacklistInfo,
+                    assignedResource
+                });
+                setApprovedModalVisit(null);
+                return;
+            }
+            
+            setVisits(prevVisits => prevVisits.map(v => v._id === visitId ? response : v));
             setApprovedModalVisit(null);
         } catch (error) {
             console.error('Failed to check in:', error);
@@ -1198,10 +1224,50 @@ export const VisitsPage: React.FC = () => {
 
     const handleCheckIn = async (id: string) => {
         try {
-            const updatedVisit = await api.checkInVisit(id);
-            setVisits(prevVisits => prevVisits.map(v => v._id === id ? updatedVisit : v));
+            const response: any = await api.checkInVisit(id);
+            
+            // Verificar si hay alerta de lista negra
+            if (response.warning === 'blacklist' && response.blacklistInfo) {
+                setBlacklistAlert({
+                    visit: response.visit,
+                    blacklistInfo: response.blacklistInfo
+                });
+                return;
+            }
+            
+            setVisits(prevVisits => prevVisits.map(v => v._id === id ? response : v));
         } catch (error) {
             console.error('Failed to check in:', error);
+        }
+    };
+
+    // Handler para confirmar acción después de alerta de lista negra
+    const handleBlacklistAction = async (action: 'allow' | 'restrict') => {
+        if (!blacklistAlert) return;
+        
+        try {
+            const response = await api.forceCheckInVisit(
+                blacklistAlert.visit._id,
+                action,
+                blacklistAlert.assignedResource
+            );
+            
+            if (action === 'allow') {
+                // Actualizar visita con check-in exitoso
+                setVisits(prevVisits => prevVisits.map(v => 
+                    v._id === blacklistAlert.visit._id ? response.visit : v
+                ));
+            } else {
+                // Actualizar visita como denegada
+                setVisits(prevVisits => prevVisits.map(v => 
+                    v._id === blacklistAlert.visit._id ? response.visit : v
+                ));
+            }
+            
+            setBlacklistAlert(null);
+        } catch (error) {
+            console.error('Failed to process blacklist action:', error);
+            alert('Error al procesar la acción');
         }
     };
 
@@ -1651,6 +1717,100 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                 onClose={() => setCheckedInModalVisit(null)}
                 onCheckout={handleCheckoutFromModal}
             />
+
+            {/* Modal de Alerta de Lista Negra */}
+            {blacklistAlert && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+                    <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl animate-slideUp overflow-hidden">
+                        {/* Header */}
+                        <div className="p-6 bg-gradient-to-r from-red-500 to-red-600 text-white">
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-white/20 rounded-xl">
+                                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-bold">⚠️ Alerta de Seguridad</h3>
+                                    <p className="text-red-100 mt-1">Visitante encontrado en lista negra</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-6 space-y-6">
+                            {/* Foto del visitante */}
+                            {blacklistAlert.blacklistInfo.photo && (
+                                <div className="flex justify-center">
+                                    <img
+                                        src={blacklistAlert.blacklistInfo.photo}
+                                        alt={blacklistAlert.blacklistInfo.visitorName}
+                                        className="w-32 h-32 rounded-full object-cover border-4 border-red-500 shadow-xl"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Información del visitante */}
+                            <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-5">
+                                <h4 className="font-bold text-red-900 text-lg mb-3">Información del Visitante</h4>
+                                <div className="space-y-2 text-sm">
+                                    <p className="text-red-800">
+                                        <strong>Nombre:</strong> {blacklistAlert.blacklistInfo.visitorName}
+                                    </p>
+                                    <p className="text-red-800">
+                                        <strong>Correo:</strong> {blacklistAlert.blacklistInfo.email}
+                                    </p>
+                                    <p className="text-red-800">
+                                        <strong>Agregado a lista negra:</strong> {new Date(blacklistAlert.blacklistInfo.addedAt).toLocaleDateString('es-MX', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Razón del bloqueo */}
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+                                <h4 className="font-bold text-gray-900 mb-2">Motivo del Registro</h4>
+                                <p className="text-gray-700 leading-relaxed">{blacklistAlert.blacklistInfo.reason}</p>
+                            </div>
+
+                            {/* Advertencia */}
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <p className="text-yellow-900 text-sm">
+                                    <strong>⚠️ Importante:</strong> Esta persona ha sido marcada en la lista negra. 
+                                    El personal de seguridad debe evaluar la situación antes de permitir el acceso.
+                                </p>
+                            </div>
+
+                            {/* Botones de Acción */}
+                            <div className="grid grid-cols-2 gap-4 pt-4">
+                                <button
+                                    onClick={() => handleBlacklistAction('restrict')}
+                                    className="px-6 py-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all shadow-lg font-bold flex items-center justify-center gap-2 group"
+                                >
+                                    <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                    </svg>
+                                    Restringir Acceso
+                                </button>
+                                <button
+                                    onClick={() => handleBlacklistAction('allow')}
+                                    className="px-6 py-4 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl hover:from-emerald-700 hover:to-emerald-800 transition-all shadow-lg font-bold flex items-center justify-center gap-2 group"
+                                >
+                                    <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Permitir de Todos Modos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

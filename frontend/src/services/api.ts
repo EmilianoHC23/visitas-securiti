@@ -200,6 +200,17 @@ export const checkInVisit = async (visitId: string, assignedResource?: string): 
   });
 };
 
+export const forceCheckInVisit = async (
+  visitId: string, 
+  blacklistAction: 'allow' | 'restrict', 
+  assignedResource?: string
+): Promise<{ status: string; visit: Visit }> => {
+  return apiRequest(`/visits/checkin/${visitId}/force`, {
+    method: 'POST',
+    body: JSON.stringify({ blacklistAction, assignedResource })
+  });
+};
+
 export const checkOutVisit = async (visitId: string, photos: string[] = []): Promise<{ visit: Visit; elapsedMs: number | null }> => {
   return apiRequest(`/visits/checkout/${visitId}`, { method: 'POST', body: JSON.stringify({ photos }) });
 };

@@ -558,3 +558,22 @@ export const publicAccessCheckIn = async (data: {
     body: JSON.stringify(data),
   });
 };
+
+// Get public info for an access/event (no auth required)
+export const getAccessPublicInfo = async (accessId: string) => {
+  return apiRequest(`/access/${accessId}/public-info`);
+};
+
+// Pre-register for an access/event (no auth required)
+export const preRegisterToAccess = async (accessId: string, data: {
+  name: string;
+  email: string;
+  company?: string;
+  phone?: string;
+  photo?: string;
+}) => {
+  return apiRequest(`/access/${accessId}/pre-register`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};

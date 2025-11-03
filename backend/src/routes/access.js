@@ -891,11 +891,11 @@ router.post('/:accessId/pre-register', async (req, res) => {
   try {
     // Ensure up-to-date status before allowing registration
     await finalizeExpiredAccesses();
-    const { name, email, company } = req.body;
+    const { name, email, company, phone, photo } = req.body;
 
-    // Validación estricta: nombre, email y empresa son obligatorios
-    if (!name || !email || !company) {
-      return res.status(400).json({ message: 'Nombre, email y empresa son requeridos' });
+    // Validación: nombre y email son obligatorios
+    if (!name || !email) {
+      return res.status(400).json({ message: 'Nombre y email son requeridos' });
     }
 
     const access = await Access.findById(req.params.accessId)
@@ -936,9 +936,10 @@ router.post('/:accessId/pre-register', async (req, res) => {
 
     const newInvitedUser = {
       name,
-  email: email || '',
-  phone: '',
-  company: company || '',
+      email: email || '',
+      phone: phone || '',
+      company: company || '',
+      photo: photo || '',
       qrCode,
       attendanceStatus: 'pendiente',
       addedViaPreRegistration: true

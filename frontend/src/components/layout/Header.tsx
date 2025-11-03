@@ -4,7 +4,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/Toast';
 import { ChevronDownIcon, LogoutIcon } from '../common/icons';
 import { FaX } from 'react-icons/fa6';
-import { FaRegUser } from 'react-icons/fa';
 import { useLocation } from 'react-router-dom';
 
 const getPageTitle = (pathname: string): string => {
@@ -13,14 +12,6 @@ const getPageTitle = (pathname: string): string => {
             return 'Dashboard';
         case '/visits':
             return 'Gestión de Visitas';
-        case '/agenda':
-            return 'Agenda de Visitas y Eventos';
-        case '/access-codes':
-            return 'Códigos de Acceso y Eventos'; 
-        case '/public-registration':
-            return 'Auto-registro de Visitantes';
-        case '/blacklist':
-            return 'Lista Negra de Visitantes';
         case '/users':
             return 'Gestión de Usuarios';
         case '/reports':
@@ -40,7 +31,6 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
     const dropdownRef = useRef<HTMLDivElement>(null);
     const location = useLocation();
     const pageTitle = getPageTitle(location.pathname);
-    const [imgError, setImgError] = useState(false);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -55,7 +45,8 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
     if (!user) return null;
 
     return (
-        <nav className="navbar navbar-expand navbar-light bg-white border-bottom px-3" style={{ minHeight: 64 }}>
+        // make header background transparent and remove bottom border so the white "rectangle" disappears
+        <nav className="navbar navbar-expand navbar-light px-3" style={{ minHeight: 64, background: 'transparent', borderBottom: 'none' }}>
             <div className="container-fluid">
                 <div className="d-flex align-items-center">
                     {/* Botón hamburguesa a la izquierda */}
@@ -149,30 +140,53 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                 </div>
                 <span className="navbar-brand fw-semibold fs-4 text-dark mb-0 ms-4 flex-grow-1">{pageTitle}</span>
                 <div className="ms-auto position-relative" ref={dropdownRef}>
-                    <button
-                        className="btn d-flex align-items-center"
-                        onClick={() => setDropdownOpen(!dropdownOpen)}
-                        aria-expanded={dropdownOpen}
+                    {/* Pill container similar to the Horizon UI sample: subtle background, rounded, with a search area and the user block */}
+                    <div
+                        className="d-flex align-items-center gap-2 rounded-pill shadow-sm px-3 py-1"
+                        style={{ background: 'rgba(255,255,255,0.95)', minHeight: 48, maxHeight: 56 }}
                     >
-                        <span className="me-2 d-inline-flex align-items-center justify-content-center rounded-circle bg-gray-200 position-relative" style={{ width: 40, height: 40 }}>
-                            {user.profileImage && user.profileImage.trim() !== '' && !imgError ? (
-                                <img
-                                    src={user.profileImage}
-                                    alt="Perfil"
-                                    className="rounded-circle position-absolute top-0 start-0"
-                                    style={{ width: 40, height: 40, objectFit: 'cover' }}
-                                    onError={() => setImgError(true)}
-                                />
+                        {/* user clickable block only (search & notifications removed as requested) */}
+                        <button
+                            className="btn d-flex align-items-center p-0"
+                            onClick={() => setDropdownOpen(!dropdownOpen)}
+                            aria-expanded={dropdownOpen}
+                            style={{ background: 'transparent' }}
+                        >
+                            {user.profileImage && user.profileImage.trim() !== '' ? (
+                                <span className="me-2 d-inline-flex align-items-center justify-content-center rounded-circle bg-gray-200 position-relative" style={{ width: 44, height: 44 }}>
+                                    <img
+                                        src={user.profileImage}
+                                        alt="Perfil"
+                                        className="rounded-circle position-absolute top-0 start-0"
+                                        style={{ width: 44, height: 44, objectFit: 'cover' }}
+                                        onError={e => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.style.display = 'none';
+                                            const fallback = target.nextElementSibling as HTMLElement;
+                                            if (fallback) fallback.style.display = 'inline';
+                                        }}
+                                    />
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-7 h-7 text-gray-400" style={{ display: 'none' }}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                    </svg>
+                                </span>
                             ) : (
-                                <FaRegUser className="w-7 h-7 text-gray-400" />
+                                <span className="me-2 d-inline-flex align-items-center justify-content-center rounded-circle bg-gray-200" style={{ width: 44, height: 44 }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-7 h-7 text-gray-400">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                    </svg>
+                                </span>
                             )}
-                        </span>
-                        <div className="d-none d-md-block text-start me-2">
-                            <div className="fw-semibold text-dark">{user.firstName} {user.lastName}</div>
-                            <div className="text-muted text-capitalize small">{user.role}</div>
-                        </div>
-                        <ChevronDownIcon className="text-secondary w-5 h-5" />
-                    </button>
+
+                            <div className="d-none d-md-block text-start me-2">
+                                <div className="fw-semibold text-dark" style={{ lineHeight: 1 }}>{user.firstName} {user.lastName}</div>
+                                <div className="text-muted text-capitalize small" style={{ lineHeight: 1 }}>{user.role}</div>
+                            </div>
+                            <ChevronDownIcon className="text-secondary w-5 h-5" />
+                        </button>
+                    </div>
+
+                    {/* Dropdown menu remains the same functionality (logout) */}
                     {dropdownOpen && (
                         <div className="dropdown-menu dropdown-menu-end show mt-2 shadow" style={{ minWidth: 200, right: 0 }}>
                             <a href="#profile" className="dropdown-item">Mi Perfil</a>

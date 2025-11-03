@@ -842,6 +842,30 @@ router.post('/redeem', async (req, res) => {
 // ==================== PUBLIC PRE-REGISTRATION ENDPOINTS ====================
 
 // Get public access information (no auth required)
+// ==================== PUBLIC ENDPOINTS (NO AUTH) ====================
+
+// Get all active accesses with pre-registration enabled (public, no auth)
+router.get('/public/active', async (req, res) => {
+  try {
+    // Ensure up-to-date status before listing
+    await finalizeExpiredAccesses();
+    
+    const accesses = await Access.find({
+      status: 'active',
+      'settings.enablePreRegistration': true
+    })
+      .populate('creatorId', 'firstName lastName email')
+      .select('eventName type startDate endDate location eventImage additionalInfo status settings creatorId')
+      .sort({ startDate: 1 }) // Ordenar por fecha de inicio
+      .lean();
+
+    res.json(accesses);
+  } catch (error) {
+    console.error('Get public active accesses error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 router.get('/:accessId/public-info', async (req, res) => {
   try {
     // Ensure up-to-date status for public

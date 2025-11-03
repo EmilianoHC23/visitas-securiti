@@ -326,7 +326,7 @@ export const getPublicCompanyConfig = async (): Promise<{ name: string; logo?: s
 
 // Obtener accesos activos públicos (sin autenticación)
 export const getActiveAccesses = async (): Promise<Access[]> => {
-  return apiRequest('/public/access/active');
+  return apiRequest('/access/public/active');
 };
 
 // --- BLACKLIST MANAGEMENT ---

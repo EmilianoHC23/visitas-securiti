@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { useQuery } from '@tanstack/react-query';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line, Legend } from 'recharts';
 import { Visit, VisitStatus, DashboardStats } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +8,46 @@ import { CheckCircleIcon, ClockIcon, LoginIcon } from '../components/common/icon
 import { FaRegUser } from 'react-icons/fa';
 import * as api from '../services/api';
 
-const StatCard: React.FC<{ title: string; value: string | number; icon: React.ReactNode; color: string }> = ({ title, value, icon, color }) => {
+const Sparkline: React.FC<{ data: number[]; color?: string; width?: number; height?: number; onClick?: () => void; title?: string }> = ({ data, color = '#6366f1', width = 120, height = 36, onClick, title }) => {
+    if (!data || data.length === 0) return null;
+    const chartData = data.map((v, i) => ({ name: i.toString(), value: v }));
+    const [focused, setFocused] = useState(false);
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (!onClick) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+        }
+    };
+
+    return (
+        <div
+            role={onClick ? 'button' : undefined}
+            tabIndex={onClick ? 0 : -1}
+            aria-label={title}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            style={{ width, height, cursor: onClick ? 'pointer' : 'default', outline: focused ? '3px solid rgba(59,130,246,0.12)' : undefined, borderRadius: 6 }}
+            title={title}
+            onClick={onClick}
+        >
+            <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 2, right: 6, left: 6, bottom: 2 }}>
+                    <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={false} />
+                    <Tooltip
+                        wrapperStyle={{ borderRadius: 8 }}
+                        formatter={(value: any) => [value, 'Visitas']}
+                        labelFormatter={() => ''}
+                    />
+                </LineChart>
+            </ResponsiveContainer>
+        </div>
+    );
+};
+
+const StatCard: React.FC<{ title: string; value: string | number; icon: React.ReactNode; color: string; sparkData?: number[]; sparkColor?: string; deltaPercent?: number | null | undefined; deltaTooltip?: string; onSparkClick?: () => void; sparkTitle?: string; isActive?: boolean }> = ({ title, value, icon, color, sparkData, sparkColor, deltaPercent, deltaTooltip, onSparkClick, sparkTitle, isActive }) => {
     // If color is a hex value (starts with #), apply it as backgroundColor style
     const isHex = color && color.startsWith && color.startsWith('#');
     const bgStyle: React.CSSProperties = isHex
@@ -17,8 +57,8 @@ const StatCard: React.FC<{ title: string; value: string | number; icon: React.Re
     const classNames = isHex ? 'd-flex align-items-center justify-content-center' : `d-flex align-items-center justify-content-center ${color}`;
 
     return (
-        <div className="card shadow-sm border-0 mb-3">
-            <div className="card-body d-flex align-items-center">
+        <div className="card shadow-sm border-0 mb-3 h-100" style={{ minHeight: 96, height: '100%', border: isActive ? '1px solid rgba(59,130,246,0.15)' : undefined, boxShadow: isActive ? '0 6px 18px rgba(59,130,246,0.06)' : undefined }}>
+            <div className="card-body d-flex align-items-center justify-content-between" style={{ gap: 12, height: '100%' }}>
                 {/* Icon square with rounded corners to match design sample */}
                 <div
                     className={classNames}
@@ -28,13 +68,97 @@ const StatCard: React.FC<{ title: string; value: string | number; icon: React.Re
                         {icon}
                     </span>
                 </div>
-                <div className="ms-3">
-                    <div className="h3 mb-0 fw-bold text-dark">{value}</div>
-                    <div className="text-muted small">{title}</div>
+                <div className="ms-3" style={{ flex: 1, minWidth: 0 }}>
+                    <div className="d-flex align-items-center justify-content-between">
+                        {/* Left: number */}
+                        <div style={{ minWidth: 0, flexShrink: 0 }}>
+                            <div className="h3 mb-0 fw-bold text-dark" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {typeof value === 'number' ? (
+                                    <AnimatedNumber value={value} duration={1.2} />
+                                ) : (
+                                    value
+                                )}
+                            </div>
+                            {/* Delta percent / small badge */}
+                            {deltaPercent !== undefined && (
+                                <div className="small mt-1" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    {deltaPercent === null ? (
+                                        <span className="badge bg-success" title={deltaTooltip || "No hubo datos en el periodo anterior"}>Nuevo</span>
+                                    ) : (
+                                        <span className={deltaPercent > 0 ? 'text-success' : (deltaPercent < 0 ? 'text-danger' : 'text-muted')} title={deltaTooltip || `Cambio respecto al periodo anterior`}>
+                                            {deltaPercent > 0 ? '▲' : (deltaPercent < 0 ? '▼' : '–')} {Math.abs(deltaPercent)}%
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Right (md+): sparkline on top, title below */}
+                        <div className="ms-3 d-none d-md-flex" style={{ width: 140, flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                            {sparkData && sparkData.length > 0 ? (
+                                <Sparkline data={sparkData} color={sparkColor || '#6366f1'} width={120} height={36} onClick={onSparkClick} title={sparkTitle} />
+                            ) : (
+                                <div style={{ width: 120, height: 36 }} />
+                            )}
+                            <div className="small mt-2" style={{ color: '#6b7280', textAlign: 'center' }}>{title}</div>
+                        </div>
+                    </div>
+
+                    {/* On small screens, show title under the number */}
+                    <div className="d-md-none mt-2">
+                        <div className="small" style={{ color: '#6b7280' }}>{title}</div>
+                    </div>
                 </div>
             </div>
         </div>
     );
+};
+
+const SkeletonStatCard: React.FC = () => {
+    return (
+        <div className="card shadow-sm border-0 mb-3" style={{ minHeight: 96 }}>
+            <div className="card-body d-flex align-items-center justify-content-between">
+                <div className="bg-gray-200 rounded" style={{ width: 56, height: 56, borderRadius: 12 }} />
+                <div className="ms-3" style={{ flex: 1 }}>
+                    <div className="bg-gray-200 rounded" style={{ width: 120, height: 20, marginBottom: 6 }} />
+                    <div className="bg-gray-100 rounded" style={{ width: 80, height: 12 }} />
+                </div>
+                <div className="d-none d-md-flex" style={{ width: 140, flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 120, height: 36, background: 'rgba(99,102,241,0.06)', borderRadius: 4 }} />
+                    <div style={{ width: 80, height: 12, marginTop: 8, background: 'rgba(0,0,0,0.04)', borderRadius: 4 }} />
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const AnimatedNumber: React.FC<{ value: number; duration?: number }> = ({ value, duration = 1.2 }) => {
+    const [display, setDisplay] = useState<number>(0);
+    const startRef = React.useRef<number | null>(null);
+    const fromRef = React.useRef<number>(0);
+
+    useEffect(() => {
+        // animate from previous displayed value to new value
+        const start = performance.now();
+        startRef.current = start;
+        const from = fromRef.current ?? 0;
+        const to = value;
+
+        let raf = 0;
+        const tick = (now: number) => {
+            const elapsed = (now - start) / 1000;
+            const t = Math.min(1, elapsed / duration);
+            const current = Math.round(from + (to - from) * t);
+            setDisplay(current);
+            if (t < 1) raf = requestAnimationFrame(tick);
+            else fromRef.current = to;
+        };
+
+        raf = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf);
+    }, [value, duration]);
+
+    return <>{display.toLocaleString()}</>;
 };
 
 const RecentActivityItem: React.FC<{ visit: Visit }> = ({ visit }) => {
@@ -100,140 +224,210 @@ export const Dashboard: React.FC = () => {
     const [analyticsStatusData, setAnalyticsStatusData] = useState<any[]>([]);
     const [period, setPeriod] = useState<'week' | 'month'>('week');
     const [chartLoading, setChartLoading] = useState(false);
+    const [prevPeriodSums, setPrevPeriodSums] = useState<{ pending?: number | undefined | null; approved?: number | undefined | null; checkedIn?: number | undefined | null; completed?: number | undefined | null; }>({});
+    const [sparkFilter, setSparkFilter] = useState<'pending' | 'approved' | 'checkedIn' | 'completed' | null>(null);
+    const [visibleSeries, setVisibleSeries] = useState<{ pending: boolean; approved: boolean; checkedIn: boolean; completed: boolean }>({ pending: true, approved: true, checkedIn: true, completed: true });
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setChartLoading(true);
-                setIsLoading(true);
-                setError(null);
-                
-                const [statsData, recentVisitsData, largeRecentVisitsData, analytics] = await Promise.all([
-                    api.getDashboardStats(),
-                    api.getRecentVisits(5),
-                    api.getRecentVisits(200), // fetch more to compute frequent companies
-                    api.getAnalytics(period)
-                ]);
-                
-                if (statsData) setStats(statsData);
-                if (recentVisitsData) setRecentVisits(recentVisitsData);
-                // Build frequent companies list from the larger recent visits sample
-                try {
-                    const visitsForCompanies = (largeRecentVisitsData && largeRecentVisitsData.length > 0) ? largeRecentVisitsData : (recentVisitsData || []);
-                    const map = new Map<string, number>();
-                    visitsForCompanies.forEach((v: Visit) => {
-                        const name = (v.visitorCompany || 'Sin empresa').trim() || 'Sin empresa';
-                        map.set(name, (map.get(name) || 0) + 1);
-                    });
-                    const arr = Array.from(map.entries()).map(([company, count]) => ({ company, count }));
-                    arr.sort((a, b) => b.count - a.count);
-                    setFrequentCompanies(arr.slice(0, 8));
-                } catch (err) {
-                    console.warn('Could not compute frequent companies:', err);
-                }
-                // Build frequent visitors list (top 5)
-                try {
-                    const visitsForVisitors = (largeRecentVisitsData && largeRecentVisitsData.length > 0) ? largeRecentVisitsData : (recentVisitsData || []);
-                    const vmap = new Map<string, { id: string; name: string; company?: string; photo?: string; count: number }>();
-                    visitsForVisitors.forEach((v: Visit) => {
-                        const id = (v.visitorEmail || v.visitorName || v._id) as string;
-                        const name = v.visitorName || (v.visitorEmail ? v.visitorEmail.split('@')[0] : 'Visitante');
-                        const company = v.visitorCompany || '';
-                        const photo = v.visitorPhoto || '';
-                        if (!vmap.has(id)) {
-                            vmap.set(id, { id, name, company, photo, count: 0 });
-                        }
-                        const cur = vmap.get(id)!;
-                        cur.count = (cur.count || 0) + 1;
-                    });
-                    const varr = Array.from(vmap.values());
-                    varr.sort((a, b) => b.count - a.count);
-                    setFrequentVisitors(varr.slice(0, 5));
-                } catch (err) {
-                    console.warn('Could not compute frequent visitors:', err);
-                }
-                if (analytics) {
-                    // Transform analytics data for simple visits chart (kept for compatibility)
-                    const chartData = analytics.map((item: any) => ({
-                        day: new Date(item._id).toLocaleDateString('es-ES', { weekday: 'short' }),
-                        visits: item.total
-                    }));
-                    setAnalyticsData(chartData);
-                }
-
-                // Build time series aggregated by status from recent visits (client-side)
-                try {
-                    const visitsSource: Visit[] = (largeRecentVisitsData && largeRecentVisitsData.length > 0) ? largeRecentVisitsData : (recentVisitsData || []);
-                    const days = period === 'week' ? 7 : 30;
-                    const end = new Date();
-                    end.setHours(0, 0, 0, 0);
-                    const dateKeys: string[] = [];
-                    for (let i = days - 1; i >= 0; i--) {
-                        const d = new Date(end);
-                        d.setDate(end.getDate() - i);
-                        dateKeys.push(d.toISOString().slice(0, 10));
-                    }
-
-                    const seriesMap = new Map<string, any>();
-                    dateKeys.forEach(k => {
-                        const d = new Date(k + 'T00:00:00');
-                        seriesMap.set(k, {
-                            day: d.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit' }),
-                            pending: 0,
-                            approved: 0,
-                            checkedIn: 0,
-                            completed: 0
-                        });
-                    });
-
-                    visitsSource.forEach((v: Visit) => {
-                        const d = new Date(v.scheduledDate || v.createdAt || v._id);
-                        const key = d.toISOString().slice(0, 10);
-                        if (!seriesMap.has(key)) return;
-                        const obj = seriesMap.get(key);
-                        switch (v.status) {
-                            case VisitStatus.PENDING:
-                                obj.pending = (obj.pending || 0) + 1;
-                                break;
-                            case VisitStatus.APPROVED:
-                                obj.approved = (obj.approved || 0) + 1;
-                                break;
-                            case VisitStatus.CHECKED_IN:
-                                obj.checkedIn = (obj.checkedIn || 0) + 1;
-                                break;
-                            case VisitStatus.COMPLETED:
-                                obj.completed = (obj.completed || 0) + 1;
-                                break;
-                            default:
-                                // treat unknown as completed for display purposes
-                                obj.completed = (obj.completed || 0) + 1;
-                                break;
-                        }
-                    });
-
-                    const statusSeries = Array.from(seriesMap.values());
-                    setAnalyticsStatusData(statusSeries);
-                } catch (err) {
-                    console.warn('Could not compute analyticsStatusData:', err);
-                }
-                setChartLoading(false);
-            } catch (error: any) {
-                console.error('Error fetching dashboard data:', error);
-                setError(error.message || 'Error al cargar los datos del dashboard');
-            } finally {
-                setIsLoading(false);
+    // Ensure at least one series remains visible. Prevent toggling off the last visible series.
+    const toggleSeries = (key: keyof typeof visibleSeries) => {
+        setVisibleSeries(s => {
+            const next = { ...s, [key]: !s[key] };
+            // if all would become false, ignore the toggle and keep current state
+            if (!next.pending && !next.approved && !next.checkedIn && !next.completed) {
+                return s;
             }
-        };
+            return next;
+        });
+    };
+    // Use React Query to fetch data and keep it cached/refetched in background
+    const statsQuery = useQuery<DashboardStats, Error>({ queryKey: ['dashboardStats'], queryFn: api.getDashboardStats });
+    const recent5Query = useQuery<Visit[], Error>({ queryKey: ['recentVisits', 5], queryFn: () => api.getRecentVisits(5) });
+    const recentLargeQuery = useQuery<Visit[], Error>({ queryKey: ['recentVisits', 200], queryFn: () => api.getRecentVisits(200) });
+    const analyticsQuery = useQuery<any[], Error>({ queryKey: ['analytics', period], queryFn: () => api.getAnalytics(period) });
 
-        fetchData();
-    }, [period]);
+    const prevAnalyticsQuery = useQuery<any[], Error>({ queryKey: ['prevAdvancedAnalytics', period], queryFn: async () => {
+        const days = period === 'week' ? 7 : 30;
+        const endDate = new Date();
+        endDate.setHours(0, 0, 0, 0);
+        const startDate = new Date(endDate);
+        startDate.setDate(endDate.getDate() - (days - 1));
+
+        const prevEndDate = new Date(startDate);
+        prevEndDate.setDate(startDate.getDate() - 1);
+        const prevStartDate = new Date(prevEndDate);
+        prevStartDate.setDate(prevEndDate.getDate() - (days - 1));
+
+        const prevStartIso = prevStartDate.toISOString().slice(0, 10);
+        const prevEndIso = prevEndDate.toISOString().slice(0, 10);
+
+        return api.getAdvancedAnalytics({ startDate: prevStartIso, endDate: prevEndIso });
+    }, enabled: true });
+
+    // Mirror query results into local state used by the component (keeps UI code stable)
+    useEffect(() => {
+        setIsLoading(statsQuery.isLoading || recent5Query.isLoading || recentLargeQuery.isLoading || analyticsQuery.isLoading || prevAnalyticsQuery.isLoading);
+        setChartLoading(analyticsQuery.isLoading || recentLargeQuery.isLoading);
+        if (statsQuery.data) setStats(statsQuery.data);
+        if (recent5Query.data) setRecentVisits(recent5Query.data);
+
+        // Build frequent companies & visitors from the larger sample when available
+        try {
+            const source = (recentLargeQuery.data && recentLargeQuery.data.length > 0) ? recentLargeQuery.data : (recent5Query.data || []);
+            const map = new Map<string, number>();
+            source.forEach((v: Visit) => {
+                const name = (v.visitorCompany || 'Sin empresa').trim() || 'Sin empresa';
+                map.set(name, (map.get(name) || 0) + 1);
+            });
+            const arr = Array.from(map.entries()).map(([company, count]) => ({ company, count }));
+            arr.sort((a, b) => b.count - a.count);
+            setFrequentCompanies(arr.slice(0, 8));
+
+            const vmap = new Map<string, { id: string; name: string; company?: string; photo?: string; count: number }>();
+            source.forEach((v: Visit) => {
+                const id = (v.visitorEmail || v.visitorName || v._id) as string;
+                const name = v.visitorName || (v.visitorEmail ? v.visitorEmail.split('@')[0] : 'Visitante');
+                const company = v.visitorCompany || '';
+                const photo = v.visitorPhoto || '';
+                if (!vmap.has(id)) {
+                    vmap.set(id, { id, name, company, photo, count: 0 });
+                }
+                const cur = vmap.get(id)!;
+                cur.count = (cur.count || 0) + 1;
+            });
+            const varr = Array.from(vmap.values());
+            varr.sort((a, b) => b.count - a.count);
+            setFrequentVisitors(varr.slice(0, 5));
+        } catch (err) {
+            console.warn('Could not compute frequent lists from queries:', err);
+        }
+
+        // Build analyticsStatusData from the recent visits sample (client-side)
+        try {
+            const visitsSource: Visit[] = (recentLargeQuery.data && recentLargeQuery.data.length > 0) ? recentLargeQuery.data : (recent5Query.data || []);
+            const days = period === 'week' ? 7 : 30;
+            const end = new Date();
+            end.setHours(0, 0, 0, 0);
+            const dateKeys: string[] = [];
+            for (let i = days - 1; i >= 0; i--) {
+                const d = new Date(end);
+                d.setDate(end.getDate() - i);
+                dateKeys.push(d.toISOString().slice(0, 10));
+            }
+
+            const seriesMap = new Map<string, any>();
+            dateKeys.forEach(k => {
+                const d = new Date(k + 'T00:00:00');
+                seriesMap.set(k, {
+                    day: d.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit' }),
+                    pending: 0,
+                    approved: 0,
+                    checkedIn: 0,
+                    completed: 0
+                });
+            });
+
+            visitsSource.forEach((v: Visit) => {
+                const d = new Date(v.scheduledDate || v.createdAt || v._id);
+                const key = d.toISOString().slice(0, 10);
+                if (!seriesMap.has(key)) return;
+                const obj = seriesMap.get(key);
+                switch (v.status) {
+                    case VisitStatus.PENDING:
+                        obj.pending = (obj.pending || 0) + 1;
+                        break;
+                    case VisitStatus.APPROVED:
+                        obj.approved = (obj.approved || 0) + 1;
+                        break;
+                    case VisitStatus.CHECKED_IN:
+                        obj.checkedIn = (obj.checkedIn || 0) + 1;
+                        break;
+                    case VisitStatus.COMPLETED:
+                        obj.completed = (obj.completed || 0) + 1;
+                        break;
+                    default:
+                        obj.completed = (obj.completed || 0) + 1;
+                        break;
+                }
+            });
+
+            const statusSeries = Array.from(seriesMap.values());
+            setAnalyticsStatusData(statusSeries);
+        } catch (err) {
+            console.warn('Could not compute analyticsStatusData from queries:', err);
+        }
+
+        // Compute prevPeriodSums from prevAnalyticsQuery
+        try {
+            const prevAnalytics = prevAnalyticsQuery.data;
+            const computePrev = (key: string): number | undefined => {
+                if (!prevAnalytics) return undefined;
+                if (Array.isArray(prevAnalytics) && prevAnalytics.length > 0) {
+                    const first = prevAnalytics[0] as any;
+                    if (first && first[key] !== undefined) {
+                        return prevAnalytics.reduce((s: number, a: any) => s + (a[key] || 0), 0);
+                    }
+                    if (first && (first.status !== undefined) && (first.total !== undefined || first.count !== undefined)) {
+                        const map = new Map<string, number>();
+                        (prevAnalytics as any[]).forEach(a => {
+                            const st = String(a.status || a._id || '').toLowerCase();
+                            map.set(st, (a.count || a.total || 0));
+                        });
+                        return map.get(key) || 0;
+                    }
+                }
+                return undefined;
+            };
+
+            const prevPending = computePrev('pending');
+            const prevApproved = computePrev('approved');
+            const prevCheckedIn = computePrev('checkedIn');
+            const prevCompleted = computePrev('completed');
+            setPrevPeriodSums({ pending: prevPending, approved: prevApproved, checkedIn: prevCheckedIn, completed: prevCompleted });
+        } catch (err) {
+            console.warn('Could not map prev analytics to prevPeriodSums:', err);
+            setPrevPeriodSums({});
+        }
+
+    }, [statsQuery.data, recent5Query.data, recentLargeQuery.data, analyticsQuery.data, prevAnalyticsQuery.data, statsQuery.isLoading, recent5Query.isLoading, recentLargeQuery.isLoading, analyticsQuery.isLoading, prevAnalyticsQuery.isLoading, period]);
+
+    // Current period sums (derived from analyticsStatusData)
+    const currSums = {
+        pending: analyticsStatusData.reduce((s, d) => s + (d.pending || 0), 0),
+        approved: analyticsStatusData.reduce((s, d) => s + (d.approved || 0), 0),
+        checkedIn: analyticsStatusData.reduce((s, d) => s + (d.checkedIn || 0), 0),
+        completed: analyticsStatusData.reduce((s, d) => s + (d.completed || 0), 0),
+    };
+
+    const calcDelta = (curr: number, prev: number | undefined | null) : number | null | undefined => {
+        if (prev === undefined) return undefined; // cannot compute
+        if (prev === null) return undefined; // cannot compute
+        if (prev === 0) {
+            if (curr === 0) return 0;
+            return null; // indicate "Nuevo" (no data previous period)
+        }
+        return Math.round(((curr - prev) / prev) * 100);
+    };
 
     if (isLoading && stats.active === 0) {
+        // Show skeletons instead of a global spinner for better perceived performance
         return (
-            <div className="flex justify-center items-center h-64">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-securiti-blue-500 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Cargando datos del dashboard...</p>
+            <div className="container-fluid px-0">
+                <div className="mb-4">
+                    <div className="rounded-2xl p-3 p-md-4 mb-3" style={{ background: 'linear-gradient(90deg, rgba(99,102,241,0.05) 0%, rgba(99,102,241,0.02) 100%)', border: '1px solid rgba(99,102,241,0.03)' }}>
+                        <div className="d-flex justify-content-between align-items-start flex-column flex-md-row">
+                            <div>
+                                <div className="bg-gray-200 rounded" style={{ width: 220, height: 20, marginBottom: 6 }} />
+                                <div className="bg-gray-100 rounded" style={{ width: 300, height: 14 }} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <SkeletonStatCard />
+                    <SkeletonStatCard />
+                    <SkeletonStatCard />
+                    <SkeletonStatCard />
                 </div>
             </div>
         );
@@ -281,18 +475,25 @@ export const Dashboard: React.FC = () => {
                 </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6" style={{ alignItems: 'stretch' }}>
                 <div
                     role="button"
                     tabIndex={0}
                     onClick={() => navigate('/visits')}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/visits'); }}
                     aria-label="Ir a Visitas - Visitas Activas"
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer', height: '100%' }}
                 >
-                <StatCard 
-                    title="Visitas Activas" 
-                    value={stats.checkedIn} 
+                <StatCard
+                    title="Visitas Activas"
+                    value={stats.checkedIn}
+                    sparkData={analyticsStatusData && analyticsStatusData.length > 0 ? analyticsStatusData.map(d => d.checkedIn || 0) : []}
+                    sparkColor="#34d399"
+                    deltaPercent={calcDelta(currSums.checkedIn, prevPeriodSums.checkedIn)}
+                    deltaTooltip={`Cambio respecto al periodo anterior: ${period === 'week' ? '7 días previos' : '30 días previos'}`}
+                    onSparkClick={() => setSparkFilter('checkedIn')}
+                    sparkTitle="Haz clic para filtrar actividad: Visitas Activas"
+                    isActive={sparkFilter === 'checkedIn'}
                     icon={
                         <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
@@ -310,11 +511,18 @@ export const Dashboard: React.FC = () => {
                     onClick={() => navigate('/visits')}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/visits'); }}
                     aria-label="Ir a Visitas - Pendientes"
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer', height: '100%' }}
                 >
-                <StatCard 
-                    title="Pendientes" 
-                    value={stats.pending} 
+                <StatCard
+                    title="Pendientes"
+                    value={stats.pending}
+                    sparkData={analyticsStatusData && analyticsStatusData.length > 0 ? analyticsStatusData.map(d => d.pending || 0) : []}
+                    sparkColor="#f6ad55"
+                    deltaPercent={calcDelta(currSums.pending, prevPeriodSums.pending)}
+                    deltaTooltip={`Cambio respecto al periodo anterior: ${period === 'week' ? '7 días previos' : '30 días previos'}`}
+                    onSparkClick={() => setSparkFilter('pending')}
+                    sparkTitle="Haz clic para filtrar actividad: Pendientes"
+                    isActive={sparkFilter === 'pending'}
                     icon={
                         <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3" /><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={2} fill="none" /></svg>
                     }
@@ -327,11 +535,18 @@ export const Dashboard: React.FC = () => {
                     onClick={() => navigate('/visits')}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/visits'); }}
                     aria-label="Ir a Visitas - Pre-aprobadas"
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer', height: '100%' }}
                 >
-                <StatCard 
-                    title="Pre-aprobadas" 
-                    value={stats.approved} 
+                <StatCard
+                    title="Pre-aprobadas"
+                    value={stats.approved}
+                    sparkData={analyticsStatusData && analyticsStatusData.length > 0 ? analyticsStatusData.map(d => d.approved || 0) : []}
+                    sparkColor="#60a5fa"
+                    deltaPercent={calcDelta(currSums.approved, prevPeriodSums.approved)}
+                    deltaTooltip={`Cambio respecto al periodo anterior: ${period === 'week' ? '7 días previos' : '30 días previos'}`}
+                    onSparkClick={() => setSparkFilter('approved')}
+                    sparkTitle="Haz clic para filtrar actividad: Pre-aprobadas"
+                    isActive={sparkFilter === 'approved'}
                     icon={
                         <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     }
@@ -344,11 +559,18 @@ export const Dashboard: React.FC = () => {
                     onClick={() => navigate('/reports')}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/reports'); }}
                     aria-label="Ir a Reportes - Completadas Hoy"
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer', height: '100%' }}
                 >
-                <StatCard 
-                    title="Completadas Hoy" 
-                    value={stats.completed} 
+                <StatCard
+                    title="Completadas Hoy"
+                    value={stats.completed}
+                    sparkData={analyticsStatusData && analyticsStatusData.length > 0 ? analyticsStatusData.map(d => d.completed || 0) : []}
+                    sparkColor="#9ca3af"
+                    deltaPercent={calcDelta(currSums.completed, prevPeriodSums.completed)}
+                    deltaTooltip={`Cambio respecto al periodo anterior: ${period === 'week' ? '7 días previos' : '30 días previos'}`}
+                    onSparkClick={() => setSparkFilter('completed')}
+                    sparkTitle="Haz clic para filtrar actividad: Completadas"
+                    isActive={sparkFilter === 'completed'}
                     icon={
                         <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3" /><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={2} fill="none" /></svg>
                     }
@@ -404,18 +626,39 @@ export const Dashboard: React.FC = () => {
 
             <div className="row g-3">
                 <div className="col-12 col-lg-8">
-                    <div className="card shadow-sm border-0 h-100">
+                    {/* Chart card */}
+                    <div className="card shadow-sm border-0 mb-3">
                         <div className="card-body">
                             <div className="d-flex justify-content-between items-center mb-2">
                                 <h5 className="card-title fw-semibold mb-0">Visitas</h5>
-                                <div className="flex items-center gap-2">
+                            </div>
+
+                            <div className="d-flex justify-content-end align-items-center gap-2 mb-2">
+                                <div className="btn-group me-2" role="group" aria-label="Periodo">
                                     <button onClick={() => setPeriod('week')} className={`px-3 py-1 rounded-lg text-sm ${period === 'week' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700'}`}>7 días</button>
                                     <button onClick={() => setPeriod('month')} className={`px-3 py-1 rounded-lg text-sm ${period === 'month' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700'}`}>30 días</button>
+                                </div>
+
+                                {/* Series toggles */}
+                                <div className="d-none d-sm-flex align-items-center gap-2 me-2" aria-hidden={false}>
+                                    <button className={`btn btn-sm ${visibleSeries.pending ? 'btn-outline-warning' : 'btn-outline-secondary'}`} onClick={() => toggleSeries('pending')} aria-pressed={visibleSeries.pending} aria-label="Alternar pendientes" title="Mostrar/Ocultar Pendientes">
+                                        <span style={{ width: 10, height: 10, background: '#f6ad55', display: 'inline-block', marginRight: 6, borderRadius: 2 }} />Pendientes
+                                    </button>
+                                    <button className={`btn btn-sm ${visibleSeries.approved ? 'btn-outline-primary' : 'btn-outline-secondary'}`} onClick={() => toggleSeries('approved')} aria-pressed={visibleSeries.approved} aria-label="Alternar aprobadas" title="Mostrar/Ocultar Aprobadas">
+                                        <span style={{ width: 10, height: 10, background: '#60a5fa', display: 'inline-block', marginRight: 6, borderRadius: 2 }} />Aprobadas
+                                    </button>
+                                    <button className={`btn btn-sm ${visibleSeries.checkedIn ? 'btn-outline-success' : 'btn-outline-secondary'}`} onClick={() => toggleSeries('checkedIn')} aria-pressed={visibleSeries.checkedIn} aria-label="Alternar check-ins" title="Mostrar/Ocultar Check-ins">
+                                        <span style={{ width: 10, height: 10, background: '#34d399', display: 'inline-block', marginRight: 6, borderRadius: 2 }} />Check-ins
+                                    </button>
+                                    <button className={`btn btn-sm ${visibleSeries.completed ? 'btn-outline-secondary' : 'btn-outline-light'}`} onClick={() => toggleSeries('completed')} aria-pressed={visibleSeries.completed} aria-label="Alternar completadas" title="Mostrar/Ocultar Completadas">
+                                        <span style={{ width: 10, height: 10, background: '#9ca3af', display: 'inline-block', marginRight: 6, borderRadius: 2 }} />Completadas
+                                    </button>
                                 </div>
                             </div>
                             <div style={{ width: '100%', height: 300 }}>
                                 <ResponsiveContainer>
-                                    <BarChart data={analyticsStatusData.length > 0 ? analyticsStatusData : [
+                                    <BarChart
+                                        data={analyticsStatusData.length > 0 ? analyticsStatusData : [
                                         { day: 'Lun', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
                                         { day: 'Mar', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
                                         { day: 'Mié', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
@@ -423,114 +666,166 @@ export const Dashboard: React.FC = () => {
                                         { day: 'Vie', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
                                         { day: 'Sáb', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
                                         { day: 'Dom', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
-                                    ]}>
+                                    ]}
+                                        // visual tweaks to improve bar appearance at different widths
+                                        barCategoryGap="20%" // spacing between categories
+                                        barGap={6} // gap between bars of same category
+                                    >
                                         <CartesianGrid strokeDasharray="3 3" vertical={false}/>
                                         <XAxis dataKey="day" tick={{fontSize: 12}}/>
                                         <YAxis allowDecimals={false} tick={{fontSize: 12}} />
                                         <Tooltip 
-                                            wrapperClassName="shadow rounded border" 
+                                            wrapperClassName="shadow rounded border p-2" 
                                             cursor={{fill: 'rgba(34, 131, 229, 0.06)'}} 
                                             labelFormatter={(label) => `${label}`}
+                                            content={({ active, payload, label }: any) => {
+                                                if (!active || !payload) return null;
+                                                // payload contains items for each visible dataKey
+                                                const items = payload.filter((p: any) => p && p.dataKey && visibleSeries[(p.dataKey as keyof typeof visibleSeries)]);
+                                                if (!items || items.length === 0) return null;
+                                                return (
+                                                    <div className="shadow rounded bg-white p-2" style={{ minWidth: 140 }}>
+                                                        <div className="fw-semibold mb-1">{label}</div>
+                                                        {items.map((p: any) => (
+                                                            <div key={p.dataKey} className="d-flex justify-content-between small" style={{ color: p.fill }}>
+                                                                <div>{p.name || p.dataKey}</div>
+                                                                <div className="fw-bold">{p.value}</div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                );
+                                            }}
                                         />
-                                        {/* Stacked bars: pending (orange), approved (blue), checkedIn (green), completed (gray) */}
-                                        <Bar dataKey="pending" stackId="a" fill="#f6ad55" radius={[4, 4, 0, 0]} />
-                                        <Bar dataKey="approved" stackId="a" fill="#60a5fa" radius={[4, 4, 0, 0]} />
-                                        <Bar dataKey="checkedIn" stackId="a" fill="#34d399" radius={[4, 4, 0, 0]} />
-                                        <Bar dataKey="completed" stackId="a" fill="#9ca3af" radius={[4, 4, 0, 0]} />
+
+                                        {/* Bars with visibility and stacked toggle */}
+                                        <Bar dataKey="pending" name="Pendientes" hide={!visibleSeries.pending} fill="#f6ad55" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                                        <Bar dataKey="approved" name="Aprobadas" hide={!visibleSeries.approved} fill="#60a5fa" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                                        <Bar dataKey="checkedIn" name="Check-ins" hide={!visibleSeries.checkedIn} fill="#34d399" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                                        <Bar dataKey="completed" name="Completadas" hide={!visibleSeries.completed} fill="#9ca3af" radius={[6, 6, 0, 0]} maxBarSize={36} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
-                            {/* Top visitors metric below the chart */}
-                            <div className="mt-4">
-                                <h6 className="mb-3 fw-semibold">Visitantes frecuentes</h6>
-                                {frequentVisitors.length > 0 ? (
-                                    (() => {
-                                        const total = frequentVisitors.reduce((s, v) => s + v.count, 0) || 1;
-                                        return (
-                                            <div className="space-y-3">
-                                                {frequentVisitors.map(v => {
-                                                    const pct = Math.round((v.count / total) * 100);
-                                                    return (
-                                                        <div key={v.id} className="d-flex align-items-center justify-content-between">
-                                                            <div className="d-flex align-items-center">
-                                                                <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center me-3">
-                                                                    {v.photo ? (
-                                                                        <img src={v.photo} alt={v.name} className="w-10 h-10 object-cover" />
-                                                                    ) : (
-                                                                        <FaRegUser className="w-6 h-6 text-gray-400" />
-                                                                    )}
-                                                                </div>
-                                                                <div style={{ maxWidth: 220 }}>
-                                                                    <div className="text-sm fw-medium text-gray-800 truncate">{v.name}</div>
-                                                                    <div className="text-xs text-muted truncate">{v.company}</div>
-                                                                </div>
+                        </div>
+                    </div>
+
+                    {/* Visitantes frecuentes card */}
+                    <div className="card shadow-sm border-0">
+                        <div className="card-body">
+                            <h6 className="mb-3 fw-semibold">Visitantes frecuentes</h6>
+                            {frequentVisitors.length > 0 ? (
+                                (() => {
+                                    const total = frequentVisitors.reduce((s, v) => s + v.count, 0) || 1;
+                                    return (
+                                        <div className="space-y-3">
+                                            {frequentVisitors.map(v => {
+                                                const pct = Math.round((v.count / total) * 100);
+                                                return (
+                                                    <div key={v.id} className="d-flex align-items-center justify-content-between">
+                                                        <div className="d-flex align-items-center">
+                                                            <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center me-3">
+                                                                {v.photo ? (
+                                                                    <img src={v.photo} alt={v.name} className="w-10 h-10 object-cover" />
+                                                                ) : (
+                                                                    <FaRegUser className="w-6 h-6 text-gray-400" />
+                                                                )}
                                                             </div>
-                                                            <div style={{ width: 140 }} className="text-end">
-                                                                <div className="text-sm text-gray-600">{v.count} · {pct}%</div>
-                                                                <div className="w-full bg-gray-100 rounded-full h-2 mt-1 overflow-hidden">
-                                                                    <div className="h-2 bg-gradient-to-r from-purple-500 to-indigo-600" style={{ width: `${pct}%` }} />
-                                                                </div>
+                                                            <div style={{ maxWidth: 220 }}>
+                                                                <div className="text-sm fw-medium text-gray-800 truncate">{v.name}</div>
+                                                                <div className="text-xs text-muted truncate">{v.company}</div>
                                                             </div>
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        );
-                                    })()
-                                ) : (
-                                    <div className="text-center text-muted">No hay visitantes frecuentes</div>
-                                )}
-                            </div>
+                                                        <div style={{ width: 140 }} className="text-end">
+                                                            <div className="text-sm text-gray-600">{v.count} · {pct}%</div>
+                                                            <div className="w-full bg-gray-100 rounded-full h-2 mt-1 overflow-hidden">
+                                                                <div className="h-2 bg-gradient-to-r from-purple-500 to-indigo-600" style={{ width: `${pct}%` }} />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                })()
+                            ) : (
+                                <div className="text-center text-muted">No hay visitantes frecuentes</div>
+                            )}
                         </div>
                     </div>
                 </div>
                 <div className="col-12 col-lg-4">
-                    <div className="card shadow-sm border-0 h-100">
+                    {/* Empresas frecuentes card */}
+                    <div className="card shadow-sm border-0 mb-3">
                         <div className="card-body">
-                            <div className="mb-4">
-                                <h5 className="card-title fw-semibold mb-3">Empresas frecuentes</h5>
-                                {frequentCompanies.length > 0 ? (
-                                    (() => {
-                                        const total = frequentCompanies.reduce((s, c) => s + c.count, 0) || 1;
-                                        return (
-                                            <div className="space-y-3">
-                                                {frequentCompanies.map(fc => {
-                                                    const pct = Math.round((fc.count / total) * 100);
-                                                    return (
-                                                        <div key={fc.company} className="">
-                                                            <div className="d-flex justify-content-between items-center mb-1">
-                                                                <div className="text-sm text-gray-700 font-medium truncate" style={{maxWidth: '65%'}}>{fc.company}</div>
-                                                                <div className="text-sm text-gray-600">{fc.count} · {pct}%</div>
-                                                            </div>
-                                                            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                                                                <div className="h-2 bg-gradient-to-r from-blue-500 to-blue-700" style={{ width: `${pct}%` }} />
-                                                            </div>
+                            <h5 className="card-title fw-semibold mb-3">Empresas frecuentes</h5>
+                            {frequentCompanies.length > 0 ? (
+                                (() => {
+                                    const total = frequentCompanies.reduce((s, c) => s + c.count, 0) || 1;
+                                    return (
+                                        <div className="space-y-3">
+                                            {frequentCompanies.map(fc => {
+                                                const pct = Math.round((fc.count / total) * 100);
+                                                return (
+                                                    <div key={fc.company} className="">
+                                                        <div className="d-flex justify-content-between items-center mb-1">
+                                                            <div className="text-sm text-gray-700 font-medium truncate" style={{maxWidth: '65%'}}>{fc.company}</div>
+                                                            <div className="text-sm text-gray-600">{fc.count} · {pct}%</div>
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        );
-                                    })()
-                                ) : (
-                                    <div className="text-center py-3 text-sm text-muted">No hay datos de empresas frecuentes</div>
-                                )}
-                            </div>
+                                                        <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                                            <div className="h-2 bg-gradient-to-r from-blue-500 to-blue-700" style={{ width: `${pct}%` }} />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                })()
+                            ) : (
+                                <div className="text-center py-3 text-sm text-muted">No hay datos de empresas frecuentes</div>
+                            )}
+                        </div>
+                    </div>
 
-                            <div>
-                                <h5 className="card-title fw-semibold mb-3">Actividad Reciente</h5>
-                                {recentVisits.length > 0 ? (
-                                    <ul className="list-unstyled mb-0">
-                                        {recentVisits.map(visit => (
-                                            <RecentActivityItem key={visit._id} visit={visit} />
-                                        ))}
-                                    </ul>
-                                ) : (
-                                    <div className="text-center py-5">
-                                        <div className="text-muted mb-2">No hay actividad reciente</div>
-                                        <div className="small text-secondary">Las visitas aparecerán aquí cuando se registren</div>
-                                    </div>
-                                )}
-                            </div>
+                    {/* Actividad Reciente card */}
+                    <div className="card shadow-sm border-0">
+                        <div className="card-body">
+                            <h5 className="card-title fw-semibold mb-3">Actividad Reciente</h5>
+
+                            {/* Sparkline filter pill */}
+                            {sparkFilter && (
+                                <div className="mb-2 d-flex align-items-center gap-2">
+                                    <span className="badge bg-primary">Filtrando: {sparkFilter}</span>
+                                    <button className="btn btn-sm btn-outline-secondary" onClick={() => setSparkFilter(null)}>Limpiar</button>
+                                </div>
+                            )}
+
+                            {((sparkFilter ? recentVisits.filter(rv => {
+                                const map: any = {
+                                    pending: VisitStatus.PENDING,
+                                    approved: VisitStatus.APPROVED,
+                                    checkedIn: VisitStatus.CHECKED_IN,
+                                    completed: VisitStatus.COMPLETED
+                                };
+                                return rv.status === map[sparkFilter as keyof typeof map];
+                            }) : recentVisits).length > 0) ? (
+                                <ul className="list-unstyled mb-0">
+                                    {(sparkFilter ? recentVisits.filter(rv => {
+                                        const map: any = {
+                                            pending: VisitStatus.PENDING,
+                                            approved: VisitStatus.APPROVED,
+                                            checkedIn: VisitStatus.CHECKED_IN,
+                                            completed: VisitStatus.COMPLETED
+                                        };
+                                        return rv.status === map[sparkFilter as keyof typeof map];
+                                    }) : recentVisits).map(visit => (
+                                        <RecentActivityItem key={visit._id} visit={visit} />
+                                    ))}
+                                </ul>
+                            ) : (
+                                <div className="text-center py-5">
+                                    <div className="text-muted mb-2">No hay actividad reciente</div>
+                                    <div className="small text-secondary">Las visitas aparecerán aquí cuando se registren</div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

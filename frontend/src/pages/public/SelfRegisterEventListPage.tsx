@@ -15,11 +15,13 @@ interface AccessEvent {
   eventImage?: string;
   startDate: string;
   endDate: string;
-  creatorId: {
+  creatorId?: {
     firstName: string;
     lastName: string;
   };
-  enablePublicRegistration: boolean;
+  settings?: {
+    enablePreRegistration?: boolean;
+  };
 }
 
 export const SelfRegisterEventListPage: React.FC = () => {
@@ -47,7 +49,7 @@ export const SelfRegisterEventListPage: React.FC = () => {
       });
       
       // Filtrar solo accesos con pre-registro habilitado
-      const filteredAccesses = accessesData.filter((access: any) => access.enablePublicRegistration === true);
+      const filteredAccesses = accessesData.filter((access: any) => access.settings?.enablePreRegistration === true);
       setAccesses(filteredAccesses as any);
     } catch (err) {
       console.error('Error loading data:', err);

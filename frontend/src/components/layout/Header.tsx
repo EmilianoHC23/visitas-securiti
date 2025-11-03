@@ -1,5 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/Toast';
 import { ChevronDownIcon, LogoutIcon } from '../common/icons';
@@ -21,6 +23,41 @@ const getPageTitle = (pathname: string): string => {
         default:
             return 'Visitas SecuriTI';
     }
+};
+
+// Animation variants (staggered dropdown + chevron rotation + icons)
+const wrapperVariants: Variants = {
+    open: {
+        scaleY: 1,
+        opacity: 1,
+        transition: {
+            when: 'beforeChildren',
+            staggerChildren: 0.06,
+        },
+    },
+    closed: {
+        scaleY: 0,
+        opacity: 0,
+        transition: {
+            when: 'afterChildren',
+            staggerChildren: 0.04,
+        },
+    },
+};
+
+const itemVariants: Variants = {
+    open: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } },
+    closed: { opacity: 0, y: -8, transition: { duration: 0.12 } },
+};
+
+const actionIconVariants: Variants = {
+    open: { scale: 1, y: 0, opacity: 1 },
+    closed: { scale: 0.8, y: -4, opacity: 0 },
+};
+
+const iconVariants: Variants = {
+    open: { rotate: 180 },
+    closed: { rotate: 0 },
 };
 
 export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: (collapsed: boolean) => void }> = ({ sidebarCollapsed, setSidebarCollapsed }) => {
@@ -182,36 +219,51 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                                 <div className="fw-semibold text-dark" style={{ lineHeight: 1 }}>{user.firstName} {user.lastName}</div>
                                 <div className="text-muted text-capitalize small" style={{ lineHeight: 1 }}>{user.role}</div>
                             </div>
-                            <ChevronDownIcon className="text-secondary w-5 h-5" />
+                            <motion.span variants={iconVariants} animate={dropdownOpen ? 'open' : 'closed'} className="d-inline-block">
+                                <ChevronDownIcon className="text-secondary w-5 h-5" />
+                            </motion.span>
                         </button>
                     </div>
 
-                    {/* Dropdown menu remains the same functionality (logout) */}
-                    {dropdownOpen && (
-                        <div className="dropdown-menu dropdown-menu-end show mt-2 shadow" style={{ minWidth: 200, right: 0 }}>
-                            <a href="#profile" className="dropdown-item">Mi Perfil</a>
-                            <button
-                                onClick={() => {
-                                    try {
-                                        logout();
-                                        // show confirmation toast
-                                        showToast('Sesión cerrada correctamente', 'success');
-                                    } catch (err) {
-                                        // if something goes wrong, show an error toast
-                                        try {
-                                            showToast('No se pudo cerrar la sesión', 'error');
-                                        } catch (_) {
-                                            // swallow
-                                        }
-                                    }
-                                }}
-                                className="dropdown-item d-flex align-items-center"
+                    {/* Animated dropdown menu using framer-motion (staggered items + chevron rotation) */}
+                    <AnimatePresence>
+                        {dropdownOpen && (
+                            <motion.div
+                                initial="closed"
+                                animate="open"
+                                exit="closed"
+                                variants={wrapperVariants}
+                                style={{ transformOrigin: 'top', right: 0, minWidth: 200 }}
+                                className="dropdown-menu dropdown-menu-end show mt-2 shadow position-absolute"
                             >
-                                <LogoutIcon className="me-2 w-5 h-5" />
-                                Cerrar Sesión
-                            </button>
-                        </div>
-                    )}
+                                <motion.a variants={itemVariants} href="#profile" className="dropdown-item">Mi Perfil</motion.a>
+
+                                <motion.button
+                                    variants={itemVariants}
+                                    onClick={() => {
+                                        try {
+                                            logout();
+                                            // show confirmation toast
+                                            showToast('Sesión cerrada correctamente', 'success');
+                                        } catch (err) {
+                                            // if something goes wrong, show an error toast
+                                            try {
+                                                showToast('No se pudo cerrar la sesión', 'error');
+                                            } catch (_) {
+                                                // swallow
+                                            }
+                                        }
+                                    }}
+                                    className="dropdown-item d-flex align-items-center"
+                                >
+                                    <motion.span variants={actionIconVariants} className="me-2 d-inline-flex align-items-center justify-content-center">
+                                        <LogoutIcon />
+                                    </motion.span>
+                                    Cerrar Sesión
+                                </motion.button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
         </nav>

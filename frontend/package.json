@@ -21,6 +21,7 @@
     "@types/qrcode": "^1.5.5",
     "bootstrap": "^5.3.8",
     "date-fns": "^4.1.0",
+    "framer-motion": "^12.23.24",
     "jsqr": "^1.4.0",
     "lucide-react": "^0.546.0",
     "qrcode": "^1.5.4",

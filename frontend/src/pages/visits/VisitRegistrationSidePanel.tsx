@@ -138,14 +138,24 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
       if (data.type === 'access-invitation') {
         console.log('✅ QR de invitación de acceso detectado:', data);
         
+        // Buscar el host por email si viene en el QR
+        let hostId = '';
+        if (data.hostEmail && hosts.length > 0) {
+          const matchedHost = hosts.find(h => h.email === data.hostEmail);
+          if (matchedHost) {
+            hostId = matchedHost._id;
+            console.log('✅ Host encontrado automáticamente:', matchedHost.firstName, matchedHost.lastName);
+          }
+        }
+        
         // Auto-completar formulario con los datos del QR
         setFormData(prev => ({
           ...prev,
           visitorEmail: data.guestEmail || '',
           visitorName: data.guestName || '',
-          visitorCompany: '',
+          visitorCompany: data.guestCompany || '',
           destination: data.location || '',
-          host: '', // Debe seleccionar manualmente
+          host: hostId,
           reason: `Evento: ${data.eventName}`
         }));
         

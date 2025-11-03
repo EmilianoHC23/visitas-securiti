@@ -368,15 +368,7 @@ export const CalendarMonth: React.FC<Props> = ({ year, month, events = [] }) => 
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  {selectedEvent.preRegLink && (
-                    <>
-                      <button onClick={async () => { try { await navigator.clipboard.writeText(selectedEvent.preRegLink!); } catch {} }} className="px-3 py-1 bg-securiti-blue-600 text-white rounded">Copiar enlace</button>
-                      <a href={selectedEvent.preRegLink} target="_blank" rel="noreferrer" className="text-sm text-gray-600 underline">Abrir enlace</a>
-                    </>
-                  )}
-                </div>
+              <div className="mt-6 flex justify-end items-center">
                 <div>
                   <button onClick={closeDetail} className="px-3 py-1 bg-gray-200 rounded">Cerrar</button>
                 </div>

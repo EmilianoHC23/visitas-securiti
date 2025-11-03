@@ -123,8 +123,8 @@ export const BlacklistPage: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <Shield className="w-8 h-8 text-blue-600" />
+            <div className="p-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl shadow-sm">
+              <Shield className="w-8 h-8 text-gray-700" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Lista Negra</h1>
@@ -145,12 +145,12 @@ export const BlacklistPage: React.FC = () => {
                 placeholder="Buscar por nombre, correo o motivo..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
               />
             </div>
             <button
               onClick={() => setShowAddForm(true)}
-              className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-200 font-semibold flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-xl hover:from-gray-800 hover:to-gray-900 transition-all shadow-lg font-semibold flex items-center justify-center gap-2"
             >
               <UserX className="w-5 h-5" />
               Agregar a Lista Negra
@@ -217,7 +217,7 @@ export const BlacklistPage: React.FC = () => {
 
                 {/* Content Section */}
                 <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-gray-700 transition-colors">
                     {entry.visitorName}
                   </h3>
                   
@@ -231,7 +231,7 @@ export const BlacklistPage: React.FC = () => {
                     </div>
 
                     <div className="flex items-start gap-2">
-                      <AlertCircle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                      <AlertCircle className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
                         <p className="text-sm text-gray-500 mb-1">Motivo</p>
                         <p className="text-sm text-gray-900 leading-relaxed">{entry.reason}</p>
@@ -263,8 +263,8 @@ export const BlacklistPage: React.FC = () => {
             <div className="p-6 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <UserX className="w-6 h-6 text-blue-600" />
+                  <div className="p-2 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg">
+                    <UserX className="w-6 h-6 text-gray-700" />
                   </div>
                   <h3 className="text-xl font-bold text-gray-900">
                     Agregar a Lista Negra
@@ -339,7 +339,7 @@ export const BlacklistPage: React.FC = () => {
                   type="text"
                   value={newEntry.visitorName}
                   onChange={(e) => setNewEntry({ ...newEntry, visitorName: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
                   placeholder="Nombre completo"
                   required
                 />
@@ -354,7 +354,7 @@ export const BlacklistPage: React.FC = () => {
                   type="email"
                   value={newEntry.email}
                   onChange={(e) => setNewEntry({ ...newEntry, email: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
                   placeholder="correo@ejemplo.com"
                   required
                 />
@@ -368,7 +368,7 @@ export const BlacklistPage: React.FC = () => {
                 <textarea
                   value={newEntry.reason}
                   onChange={(e) => setNewEntry({ ...newEntry, reason: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all resize-none"
                   rows={4}
                   placeholder="Describe el motivo por el cual se agrega a la lista negra..."
                   required
@@ -386,7 +386,7 @@ export const BlacklistPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-200 font-semibold"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-xl hover:from-gray-800 hover:to-gray-900 transition-all shadow-lg font-semibold"
                 >
                   Agregar
                 </button>

@@ -208,12 +208,26 @@ router.get('/qr-code', auth, async (req, res) => {
 
     // Generate QR URL for self-registration landing page
     const baseUrl = req.protocol + '://' + req.get('host');
-    const qrUrl = `${baseUrl}/public/self-register`;
+    const publicUrl = `${baseUrl}/public/self-register`;
+    
+    // Generate QR code image from the URL
+    const QRCode = require('qrcode');
+    const qrCodeImage = await QRCode.toDataURL(publicUrl, {
+      errorCorrectionLevel: 'M',
+      type: 'image/png',
+      quality: 0.92,
+      margin: 2,
+      width: 400,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
     
     res.json({
       qrCode: company.qrCode,
-      qrUrl: qrUrl,
-      publicUrl: qrUrl,
+      qrUrl: qrCodeImage, // Base64 image data
+      publicUrl: publicUrl,
       companyName: company.name
     });
   } catch (error) {

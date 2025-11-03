@@ -21,7 +21,7 @@ export const SelfRegistrationLandingPage: React.FC = () => {
   const loadCompanyInfo = async () => {
     try {
       setLoading(true);
-      const config = await api.getCompanyConfig();
+      const config = await api.getPublicCompanyConfig();
       setCompanyInfo({
         name: config.name || 'Empresa',
         logo: config.logo || null

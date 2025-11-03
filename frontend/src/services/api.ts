@@ -319,6 +319,11 @@ export const getCompanyQR = async (): Promise<{ qrCode: string; qrUrl: string; p
   return apiRequest('/company/qr-code');
 };
 
+// Get public company configuration (no auth required)
+export const getPublicCompanyConfig = async (): Promise<{ name: string; logo?: string; address?: string; email?: string; phone?: string }> => {
+  return apiRequest('/company/public-config');
+};
+
 // Obtener accesos activos públicos (sin autenticación)
 export const getActiveAccesses = async (): Promise<Access[]> => {
   return apiRequest('/public/access/active');

@@ -18,7 +18,7 @@ export const SelfRegisterSuccessPage: React.FC = () => {
 
   const loadCompanyInfo = async () => {
     try {
-      const config = await api.getCompanyConfig();
+      const config = await api.getPublicCompanyConfig();
       setCompanyInfo({
         name: config.name || 'Empresa',
         logo: config.logo || null

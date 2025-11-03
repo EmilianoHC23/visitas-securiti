@@ -38,8 +38,8 @@ export const SelfRegisterVisitPage: React.FC = () => {
   const loadInitialData = async () => {
     try {
       const [config, hostsData] = await Promise.all([
-        api.getCompanyConfig(),
-        api.getHosts()
+        api.getPublicCompanyConfig(),
+        api.getHostsPublic()
       ]);
       
       setCompanyInfo({

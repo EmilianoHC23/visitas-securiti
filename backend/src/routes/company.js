@@ -24,6 +24,31 @@ const upload = multer({
   }
 });
 
+// Get company configuration (PUBLIC - for self-registration pages)
+router.get('/public-config', async (req, res) => {
+  try {
+    // Get the first active company (assuming single-tenant or default company)
+    // You could also pass companyId as query param if multi-tenant
+    const company = await Company.findOne({ isActive: true });
+    
+    if (!company) {
+      return res.status(404).json({ message: 'No se encontró configuración de empresa' });
+    }
+
+    // Return only public-safe information
+    res.json({
+      name: company.name,
+      logo: company.logo,
+      address: company.address || '',
+      email: company.email || '',
+      phone: company.phone || ''
+    });
+  } catch (error) {
+    console.error('Get public company config error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 // Get company configuration
 router.get('/config', auth, async (req, res) => {
   try {

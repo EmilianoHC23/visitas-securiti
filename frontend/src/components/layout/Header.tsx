@@ -20,6 +20,10 @@ const getPageTitle = (pathname: string): string => {
             return 'Gestión de Usuarios';
         case '/access-codes':
             return 'Gestión de Accesos y Eventos';
+        case '/public-registration':
+            return 'Auto-registro';
+        case '/blacklist':
+            return 'Lista Negra';
         case '/reports':
             return 'Reportes de Visitas';
         case '/settings':

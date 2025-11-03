@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import { User } from '../../types';
 import { X, Camera, User as UserIcon, Mail, Briefcase, MapPin, Users, FileText } from 'lucide-react';
 import { MdOutlineQrCodeScanner } from 'react-icons/md';
@@ -323,6 +325,21 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
         <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-semibold">{initials}</div>
       );
     };
+    // framer-motion variants for host dropdown
+    const hostWrapperVariants: Variants = {
+      open: { scaleY: 1, opacity: 1, transition: { when: 'beforeChildren', staggerChildren: 0.06 } },
+      closed: { scaleY: 0, opacity: 0, transition: { when: 'afterChildren', staggerChildren: 0.04 } },
+    };
+
+    const hostItemVariants: Variants = {
+      open: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } },
+      closed: { opacity: 0, y: -6, transition: { duration: 0.12 } },
+    };
+
+    const chevronVariants: Variants = {
+      open: { rotate: 180 },
+      closed: { rotate: 0 },
+    };
 
     return (
       <div className="relative" ref={ref}>
@@ -344,30 +361,41 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
               <div className="text-xs text-gray-500 truncate">{selected ? ((selected as any).email || '') : ''}</div>
             </div>
           </div>
-          <svg className="ml-auto w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd" /></svg>
+          <motion.span className="ml-auto d-inline-block" variants={chevronVariants} animate={open ? 'open' : 'closed'}>
+            <svg className="w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd" /></svg>
+          </motion.span>
         </button>
 
-        {open && (
-          <div className="absolute z-50 mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-56 overflow-auto">
-            {sortedHosts.map(host => (
-              <button
-                key={host._id}
-                type="button"
-                onClick={() => { onChange(host._id); setOpen(false); }}
-                className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left"
-              >
-                {renderAvatar(host)}
-                <div className="min-w-0">
-                  <div className="text-sm font-medium text-gray-800 truncate">{host.firstName} {host.lastName}</div>
-                  <div className="text-xs text-gray-500 truncate">{(host as any).email || ''}</div>
-                </div>
-              </button>
-            ))}
-            {hosts.length === 0 && (
-              <div className="p-3 text-sm text-gray-500">No hay anfitriones disponibles</div>
-            )}
-          </div>
-        )}
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial="closed"
+              animate="open"
+              exit="closed"
+              variants={hostWrapperVariants}
+              style={{ transformOrigin: 'top' }}
+              className="absolute z-50 mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-56 overflow-auto"
+            >
+              {sortedHosts.length > 0 ? sortedHosts.map(host => (
+                <motion.button
+                  key={host._id}
+                  type="button"
+                  variants={hostItemVariants}
+                  onClick={() => { onChange(host._id); setOpen(false); }}
+                  className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left"
+                >
+                  {renderAvatar(host)}
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-gray-800 truncate">{host.firstName} {host.lastName}</div>
+                    <div className="text-xs text-gray-500 truncate">{(host as any).email || ''}</div>
+                  </div>
+                </motion.button>
+              )) : (
+                <div className="p-3 text-sm text-gray-500">No hay anfitriones disponibles</div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   };

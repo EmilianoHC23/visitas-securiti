@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { User, Mail, Camera, X, ArrowLeft, Building2, Calendar, MapPin } from 'lucide-react';
+import { User, Mail, Camera, X, ArrowLeft, Building2, Calendar, MapPin, XCircle } from 'lucide-react';
 import * as api from '../../services/api';
 
 interface CompanyInfo {
@@ -33,6 +33,9 @@ export const SelfRegisterEventFormPage: React.FC = () => {
     email: '',
     photo: ''
   });
+  // Styled alert modal state (replace native alert)
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
 
   useEffect(() => {
     loadInitialData();
@@ -154,7 +157,9 @@ export const SelfRegisterEventFormPage: React.FC = () => {
     }
 
     if (!formData.photo) {
-      alert('Por favor captura tu foto antes de continuar');
+      // Show styled alert modal instead of native alert
+      setAlertMessage('Por favor captura tu foto antes de continuar');
+      setAlertOpen(true);
       return;
     }
 
@@ -169,7 +174,9 @@ export const SelfRegisterEventFormPage: React.FC = () => {
       // Verificar lista negra ANTES de pre-registrar - BLOQUEAR si está en lista negra
       const blacklistEntry = await api.checkBlacklist(formData.email);
       if (blacklistEntry) {
-        alert(`🚫 No es posible completar el registro al evento.\n\nEsta persona se encuentra en la lista de seguridad debido a:\n"${blacklistEntry.reason}"\n\nPor favor contacta al organizador o a un recepcionista para validar tu acceso.`);
+        // Show styled alert modal, do not include the blacklist reason or emoji
+        setAlertMessage('No es posible completar el registro al evento.\n\nPor favor contacta al organizador o a un recepcionista para validar tu acceso.');
+        setAlertOpen(true);
         setLoading(false);
         return; // BLOQUEAR - no permitir continuar
       }
@@ -270,6 +277,39 @@ export const SelfRegisterEventFormPage: React.FC = () => {
         {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 overflow-hidden">
           <form onSubmit={handleSubmit} className="p-6 sm:p-8">
+            {/* Styled alert modal for photo missing / blacklist */}
+            {alertOpen && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden">
+                  <div className="p-6 bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 border-b border-gray-700 flex items-start justify-between text-white">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
+                        <XCircle className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-white">Atención</h3>
+                        <p className="text-sm text-indigo-100"></p>
+                      </div>
+                    </div>
+                    <button onClick={() => { setAlertOpen(false); setAlertMessage(''); }} className="text-gray-200 hover:text-white p-2 rounded-lg transition-colors">✕</button>
+                  </div>
+
+                  <div className="p-6">
+                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm text-center">
+                      <div className="flex items-center justify-center mb-4">
+                        <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
+                          <XCircle className="w-6 h-6 text-red-600" />
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-700 mb-6 whitespace-pre-line">{alertMessage}</p>
+                      <div className="flex items-center justify-center">
+                        <button onClick={() => { setAlertOpen(false); setAlertMessage(''); }} className="px-4 py-2 min-w-[120px] text-white bg-gradient-to-r from-gray-900 to-gray-600 rounded-lg shadow hover:from-gray-800 hover:to-gray-500">Aceptar</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="space-y-6">
               {/* Foto - PRIMERO Y OBLIGATORIO */}
               <div>

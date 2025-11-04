@@ -510,7 +510,7 @@ const ReasonDropdown: React.FC<{
 
 // Animated Host selector used in advanced options
 const HostDropdown: React.FC<{
-  hosts: Array<{ id: string; name: string; email: string }>;
+  hosts: Array<{ id: string; name: string; email: string; photo?: string; firstName?: string; lastName?: string }>;
   value: string;
   onChange: (id: string) => void;
 }> = ({ hosts, value, onChange }) => {
@@ -552,7 +552,29 @@ const HostDropdown: React.FC<{
         aria-expanded={open}
         className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-white flex items-center justify-between focus:outline-none"
       >
-        <span className="text-gray-700">{selected ? `${selected.name} - ${selected.email}` : 'Seleccionar anfitrión'}</span>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center flex-shrink-0">
+            {selected?.photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={selected.photo} alt={selected?.name || 'host'} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-sm font-medium text-gray-600">
+                {(() => {
+                  const first = selected?.firstName || selected?.name?.split(' ')[0] || '';
+                  const last = selected?.lastName || (selected?.name?.split(' ')[1] || '');
+                  const initials = `${first?.[0] || ''}${last?.[0] || ''}`.toUpperCase();
+                  return initials || 'H';
+                })()}
+              </span>
+            )}
+          </div>
+
+          <div className="text-left">
+            <div className="text-sm font-medium text-gray-700">{selected ? selected.name : 'Seleccionar anfitrión'}</div>
+            <div className="text-xs text-gray-400">{selected ? selected.email : ''}</div>
+          </div>
+        </div>
+
         <motion.span
           className="ml-3 text-gray-500"
           variants={chevronVariants}
@@ -587,7 +609,23 @@ const HostDropdown: React.FC<{
                     }}
                     className="w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700"
                   >
-                    {h.name} - {h.email}
+                    <div className="flex items-center gap-3">
+                      {/* Avatar */}
+                      {h.photo ? (
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+                          <img src={h.photo} alt={h.name} className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-semibold flex-shrink-0">
+                          {((h.firstName || '')[0] || '') + ((h.lastName || '')[0] || '')}
+                        </div>
+                      )}
+
+                      <div className="flex-1 overflow-hidden">
+                        <div className="text-sm font-medium text-gray-900 truncate">{h.name}</div>
+                        <div className="text-xs text-gray-500 truncate">{h.email}</div>
+                      </div>
+                    </div>
                   </button>
                 </motion.li>
               ))
@@ -602,7 +640,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
-  const [hosts, setHosts] = useState<Array<{ id: string; name: string; email: string }>>([]);
+  const [hosts, setHosts] = useState<Array<{ id: string; name: string; email: string; photo?: string; firstName?: string; lastName?: string }>>([]);
   
   // Estado para alerta de lista negra
   const [blacklistAlert, setBlacklistAlert] = useState<{
@@ -671,8 +709,12 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
         const hostUsers = response.filter((u: any) => u.role === 'host' || u.role === 'admin');
         setHosts(hostUsers.map((h: any) => ({
           id: h._id,
+          firstName: h.firstName || '',
+          lastName: h.lastName || '',
           name: `${h.firstName} ${h.lastName}${h.role === 'admin' ? ' (Administrador)' : ''}`,
-          email: h.email
+          email: h.email,
+          // prefer common photo fields if present
+          photo: h.profileImage || h.photo || h.avatar || h.picture || ''
         })));
       } catch (error) {
         console.error('Error loading hosts:', error);

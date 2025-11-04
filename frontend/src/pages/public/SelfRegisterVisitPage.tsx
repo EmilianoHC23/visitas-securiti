@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Briefcase, MapPin, Users, FileText, Camera, X, ArrowLeft, Building2 } from 'lucide-react';
+import { User, Mail, Briefcase, MapPin, Users, FileText, Camera, X, ArrowLeft, Building2, XCircle } from 'lucide-react';
 import { FaRegUser } from 'react-icons/fa';
 import * as api from '../../services/api';
 
@@ -167,7 +167,8 @@ export const SelfRegisterVisitPage: React.FC = () => {
         const blacklistEntry = await api.checkBlacklist(formData.visitorEmail);
         if (blacklistEntry) {
           // Show styled alert modal (do NOT include the blacklist reason per request)
-          setAlertMessage('🚫 No es posible completar el auto-registro.\n\nPor favor contacta a un recepcionista o al anfitrión para validar tu acceso.');
+          // Removed the emoji from the message and render a proper icon in the modal below.
+          setAlertMessage('No es posible completar el auto-registro.\n\nPor favor contacta a un recepcionista o al anfitrión para validar tu acceso.');
           setAlertOpen(true);
           setLoading(false);
           return; // BLOQUEAR - no permitir continuar
@@ -391,6 +392,11 @@ export const SelfRegisterVisitPage: React.FC = () => {
 
                   <div className="p-6">
                     <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm text-center">
+                      <div className="flex items-center justify-center mb-4">
+                        <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
+                          <XCircle className="w-6 h-6 text-red-600" />
+                        </div>
+                      </div>
                       <p className="text-sm text-gray-700 mb-6 whitespace-pre-line">{alertMessage}</p>
                       <div className="flex items-center justify-center">
                         <button onClick={() => { setAlertOpen(false); setAlertMessage(''); }} className="px-4 py-2 min-w-[120px] text-white bg-gradient-to-r from-gray-900 to-gray-600 rounded-lg shadow hover:from-gray-800 hover:to-gray-500">Aceptar</button>

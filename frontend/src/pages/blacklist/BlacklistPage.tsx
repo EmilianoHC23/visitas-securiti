@@ -123,9 +123,9 @@ export const BlacklistPage: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl shadow-sm">
-              <Shield className="w-8 h-8 text-gray-700" />
-            </div>
+              <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Lista Negra</h1>
               <p className="text-gray-600 mt-1">
@@ -263,8 +263,8 @@ export const BlacklistPage: React.FC = () => {
             <div className="p-6 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg">
-                    <UserX className="w-6 h-6 text-gray-700" />
+                  <div className="p-2 bg-gray-900 rounded-lg flex items-center justify-center">
+                    <UserX className="w-6 h-6 text-white" />
                   </div>
                   <h3 className="text-xl font-bold text-gray-900">
                     Agregar a Lista Negra

@@ -5,6 +5,170 @@ import * as api from '../../services/api';
 
 type TabType = 'account' | 'additional-info';
 
+import { motion, AnimatePresence, Variants } from 'framer-motion';
+
+// Animated country dropdown used in Settings > Dirección
+const CountryDropdown: React.FC<{
+    value: string;
+    onChange: (v: string) => void;
+}> = ({ value, onChange }) => {
+    const options = [
+        '', 'México','Estados Unidos','Canadá','Argentina','Brasil','Chile','Colombia','Costa Rica','Ecuador','España','Guatemala','Honduras','Nicaragua','Panamá','Paraguay','Perú','El Salvador','Uruguay','Venezuela'
+    ];
+
+    const [open, setOpen] = React.useState(false);
+    const ref = React.useRef<HTMLDivElement | null>(null);
+
+    React.useEffect(() => {
+        const onDocClick = (e: MouseEvent) => {
+            if (!ref.current) return;
+            if (!(e.target instanceof Node)) return;
+            if (!ref.current.contains(e.target)) setOpen(false);
+        };
+        document.addEventListener('mousedown', onDocClick);
+        return () => document.removeEventListener('mousedown', onDocClick);
+    }, []);
+
+    const wrapperVariants: Variants = {
+        open: { opacity: 1, scaleY: 1, transition: { when: 'beforeChildren', staggerChildren: 0.02 } },
+        closed: { opacity: 0, scaleY: 0, transition: { when: 'afterChildren' } }
+    };
+
+    const itemVariants: Variants = {
+        open: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 400, damping: 30 } },
+        closed: { opacity: 0, y: -6 }
+    };
+
+    const chevronVariants: Variants = {
+        open: { rotate: 180 },
+        closed: { rotate: 0 }
+    };
+
+    return (
+        <div ref={ref} className="relative">
+            <button
+                type="button"
+                onClick={() => setOpen(s => !s)}
+                aria-expanded={open}
+                className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl flex items-center justify-between focus:outline-none"
+            >
+                <span className="text-gray-700">{value || 'Seleccionar país'}</span>
+                <motion.span variants={chevronVariants} animate={open ? 'open' : 'closed'} className="ml-3 text-gray-500">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                </motion.span>
+            </button>
+
+            <AnimatePresence>
+                {open && (
+                    <motion.ul
+                        initial="closed"
+                        animate="open"
+                        exit="closed"
+                        variants={wrapperVariants}
+                        className="absolute left-0 right-0 mt-2 max-h-72 overflow-y-auto bg-white border-2 border-gray-300 rounded-xl shadow-lg origin-top z-20"
+                        style={{ transformOrigin: 'top' }}
+                    >
+                        {options.map((opt, idx) => (
+                            <motion.li key={idx} variants={itemVariants}>
+                                <button
+                                    type="button"
+                                    onClick={() => { onChange(opt); setOpen(false); }}
+                                    className="w-full text-left px-4 py-3 text-base hover:bg-gray-50 text-gray-700"
+                                >
+                                    {opt || 'Seleccionar país'}
+                                </button>
+                            </motion.li>
+                        ))}
+                    </motion.ul>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+    // Animated State dropdown (Estados) used in Settings > Dirección
+    const StateDropdown: React.FC<{
+        value: string;
+        onChange: (v: string) => void;
+    }> = ({ value, onChange }) => {
+        const options = [
+            '', 'Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua','Ciudad de México','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala','Veracruz','Yucatán','Zacatecas'
+        ];
+
+        const [open, setOpen] = React.useState(false);
+        const ref = React.useRef<HTMLDivElement | null>(null);
+
+        React.useEffect(() => {
+            const onDocClick = (e: MouseEvent) => {
+                if (!ref.current) return;
+                if (!(e.target instanceof Node)) return;
+                if (!ref.current.contains(e.target)) setOpen(false);
+            };
+            document.addEventListener('mousedown', onDocClick);
+            return () => document.removeEventListener('mousedown', onDocClick);
+        }, []);
+
+        const wrapperVariants: Variants = {
+            open: { opacity: 1, scaleY: 1, transition: { when: 'beforeChildren', staggerChildren: 0.02 } },
+            closed: { opacity: 0, scaleY: 0, transition: { when: 'afterChildren' } }
+        };
+
+        const itemVariants: Variants = {
+            open: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 400, damping: 30 } },
+            closed: { opacity: 0, y: -6 }
+        };
+
+        const chevronVariants: Variants = {
+            open: { rotate: 180 },
+            closed: { rotate: 0 }
+        };
+
+        return (
+            <div ref={ref} className="relative">
+                <button
+                    type="button"
+                    onClick={() => setOpen(s => !s)}
+                    aria-expanded={open}
+                    className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl flex items-center justify-between focus:outline-none"
+                >
+                    <span className="text-gray-700">{value || 'Seleccionar estado'}</span>
+                    <motion.span variants={chevronVariants} animate={open ? 'open' : 'closed'} className="ml-3 text-gray-500">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </motion.span>
+                </button>
+
+                <AnimatePresence>
+                    {open && (
+                        <motion.ul
+                            initial="closed"
+                            animate="open"
+                            exit="closed"
+                            variants={wrapperVariants}
+                            className="absolute left-0 right-0 mt-2 max-h-72 overflow-y-auto bg-white border-2 border-gray-300 rounded-xl shadow-lg origin-top z-20"
+                            style={{ transformOrigin: 'top' }}
+                        >
+                            {options.map((opt, idx) => (
+                                <motion.li key={idx} variants={itemVariants}>
+                                    <button
+                                        type="button"
+                                        onClick={() => { onChange(opt); setOpen(false); }}
+                                        className="w-full text-left px-4 py-3 text-base hover:bg-gray-50 text-gray-700"
+                                    >
+                                        {opt || 'Seleccionar estado'}
+                                    </button>
+                                </motion.li>
+                            ))}
+                        </motion.ul>
+                    )}
+                </AnimatePresence>
+            </div>
+        );
+    };
+
 export const SettingsPage: React.FC = () => {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<TabType>('account');
@@ -512,74 +676,11 @@ export const SettingsPage: React.FC = () => {
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-700 mb-2">País</label>
-                                                <select
-                                                    value={country}
-                                                    onChange={(e) => setCountry(e.target.value)}
-                                                    className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
-                                                >
-                                                    <option value="">Seleccionar país</option>
-                                                    <option>México</option>
-                                                    <option>Estados Unidos</option>
-                                                    <option>Canadá</option>
-                                                    <option>Argentina</option>
-                                                    <option>Brasil</option>
-                                                    <option>Chile</option>
-                                                    <option>Colombia</option>
-                                                    <option>Costa Rica</option>
-                                                    <option>Ecuador</option>
-                                                    <option>España</option>
-                                                    <option>Guatemala</option>
-                                                    <option>Honduras</option>
-                                                    <option>Nicaragua</option>
-                                                    <option>Panamá</option>
-                                                    <option>Paraguay</option>
-                                                    <option>Perú</option>
-                                                    <option>El Salvador</option>
-                                                    <option>Uruguay</option>
-                                                    <option>Venezuela</option>
-                                                </select>
+                                                    <CountryDropdown value={country} onChange={(v) => setCountry(v)} />
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-700 mb-2">Estado</label>
-                                                <select
-                                                    value={state}
-                                                    onChange={(e) => setState(e.target.value)}
-                                                    className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
-                                                >
-                                                    <option value="">Seleccionar estado</option>
-                                                    <option>Aguascalientes</option>
-                                                    <option>Baja California</option>
-                                                    <option>Baja California Sur</option>
-                                                    <option>Campeche</option>
-                                                    <option>Chiapas</option>
-                                                    <option>Chihuahua</option>
-                                                    <option>Ciudad de México</option>
-                                                    <option>Coahuila</option>
-                                                    <option>Colima</option>
-                                                    <option>Durango</option>
-                                                    <option>Estado de México</option>
-                                                    <option>Guanajuato</option>
-                                                    <option>Guerrero</option>
-                                                    <option>Hidalgo</option>
-                                                    <option>Jalisco</option>
-                                                    <option>Michoacán</option>
-                                                    <option>Morelos</option>
-                                                    <option>Nayarit</option>
-                                                    <option>Nuevo León</option>
-                                                    <option>Oaxaca</option>
-                                                    <option>Puebla</option>
-                                                    <option>Querétaro</option>
-                                                    <option>Quintana Roo</option>
-                                                    <option>San Luis Potosí</option>
-                                                    <option>Sinaloa</option>
-                                                    <option>Sonora</option>
-                                                    <option>Tabasco</option>
-                                                    <option>Tamaulipas</option>
-                                                    <option>Tlaxcala</option>
-                                                    <option>Veracruz</option>
-                                                    <option>Yucatán</option>
-                                                    <option>Zacatecas</option>
-                                                </select>
+                                                <StateDropdown value={state} onChange={(v) => setState(v)} />
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-700 mb-2">Ciudad</label>

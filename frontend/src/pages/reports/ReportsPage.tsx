@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaRegUser } from 'react-icons/fa';
+import { BarChart3 } from 'lucide-react';
 import { Visit, VisitStatus } from '../../types';
 import * as api from '../../services/api';
 import { formatDateTime, formatLongDate } from '../../utils/dateUtils';
@@ -15,6 +16,9 @@ export default function ReportsPage() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showTimelineModal, setShowTimelineModal] = useState(false);
+  // Alert modal state (replace native alert)
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
 
   useEffect(() => {
     loadVisits();
@@ -85,7 +89,9 @@ export default function ReportsPage() {
 
   const handleDownloadReport = () => {
     // Implementar descarga de reporte (CSV/Excel)
-    alert('Descarga de reporte no implementada');
+    // Usar modal estilizado en lugar de alert()
+    setAlertMessage('Descarga de reporte no implementada');
+    setAlertOpen(true);
   };
 
   const formatDateDisplay = (date: Date) => {
@@ -104,8 +110,15 @@ export default function ReportsPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Visitas Recientes</h1>
-          <p className="text-gray-600 capitalize">{formatDateDisplay(selectedDate)}</p>
+          <div className="flex items-center gap-4 py-2">
+            <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center">
+              <BarChart3 className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-1">Visitas Recientes</h1>
+              <p className="text-gray-600 capitalize">{formatDateDisplay(selectedDate)}</p>
+            </div>
+          </div>
         </div>
 
         {/* Filters Bar */}
@@ -155,7 +168,7 @@ export default function ReportsPage() {
             {/* Download Button */}
             <button
               onClick={handleDownloadReport}
-              className="px-4 py-2.5 bg-gradient-to-r from-cyan-400 to-cyan-500 text-white rounded-lg hover:from-cyan-500 hover:to-cyan-600 flex items-center gap-2 text-sm font-medium transition-all shadow-sm whitespace-nowrap flex-shrink-0"
+              className="px-4 py-2.5 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-lg hover:from-gray-800 hover:to-gray-900 flex items-center gap-2 text-sm font-medium transition-all shadow-sm whitespace-nowrap flex-shrink-0"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -297,6 +310,37 @@ export default function ReportsPage() {
           }}
           events={visitEvents}
         />
+
+        {/* Simple alert modal (styled like ConfirmDialog header) */}
+        {alertOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden">
+              <div className="p-6 bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 border-b border-gray-700 flex items-start justify-between text-white">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13 16h-1v-4h-1m1-4h.01M21 12A9 9 0 1112 3a9 9 0 019 9z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Aviso</h3>
+                    <p className="text-sm text-indigo-100"></p>
+                  </div>
+                </div>
+                <button onClick={() => { setAlertOpen(false); setAlertMessage(''); }} className="text-gray-200 hover:text-white p-2 rounded-lg transition-colors">✕</button>
+              </div>
+
+              <div className="p-6">
+                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm text-center">
+                  <p className="text-sm text-gray-700 mb-6 whitespace-pre-line">{alertMessage}</p>
+                  <div className="flex items-center justify-center">
+                    <button onClick={() => { setAlertOpen(false); setAlertMessage(''); }} className="px-4 py-2 min-w-[120px] text-white bg-gradient-to-r from-gray-900 to-gray-600 rounded-lg shadow hover:from-gray-800 hover:to-gray-500">Aceptar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

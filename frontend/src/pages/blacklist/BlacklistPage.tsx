@@ -98,16 +98,42 @@ export const BlacklistPage: React.FC = () => {
   };
 
   const handleRemove = async (id: string) => {
-    if (!confirm('¿Está seguro de que desea eliminar esta entrada de la lista negra?')) {
-      return;
-    }
+    // legacy: kept for reference but we now use the styled confirm dialog
+    openConfirmById(id);
+  };
 
+  // Confirm dialog state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmEntry, setConfirmEntry] = useState<BlacklistEntry | null>(null);
+
+  const openConfirm = (entry: BlacklistEntry) => {
+    setConfirmEntry(entry);
+    setConfirmOpen(true);
+  };
+
+  const openConfirmById = (id: string) => {
+    const entry = blacklistEntries.find(e => e._id === id) || null;
+    setConfirmEntry(entry);
+    setConfirmOpen(true);
+  };
+
+  const closeConfirm = () => {
+    setConfirmOpen(false);
+    setConfirmEntry(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmEntry) return closeConfirm();
     try {
-      await api.removeFromBlacklist(id);
-      setBlacklistEntries(blacklistEntries.filter(entry => entry._id !== id));
+      setLoading(true);
+      await api.removeFromBlacklist(confirmEntry._id);
+      setBlacklistEntries(prev => prev.filter(e => e._id !== confirmEntry._id));
+      closeConfirm();
     } catch (error) {
       console.error('Error removing from blacklist:', error);
       alert('Error al eliminar de la lista negra');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -206,7 +232,7 @@ export const BlacklistPage: React.FC = () => {
                   )}
                   <div className="absolute top-3 right-3">
                     <button
-                      onClick={() => handleRemove(entry._id)}
+                      onClick={() => openConfirm(entry)}
                       className="p-2 bg-white/90 backdrop-blur-sm rounded-lg hover:bg-gray-100 transition-colors shadow-lg"
                       title="Eliminar de la lista negra"
                     >
@@ -254,6 +280,57 @@ export const BlacklistPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Confirm dialog (copied/adapted from UserManagementPage ConfirmDialog) */}
+      {confirmOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden">
+            {/* Header: gradient like other modals */}
+            <div className="p-6 bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 border-b border-gray-700 flex items-start justify-between text-white">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 9v2m0 4h.01M21 12A9 9 0 1112 3a9 9 0 019 9z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Eliminar entrada</h3>
+                  <p className="text-sm text-indigo-100">Confirmación</p>
+                </div>
+              </div>
+              <button
+                onClick={closeConfirm}
+                className="text-gray-200 hover:text-white p-2 rounded-lg transition-colors"
+                aria-label="Cerrar"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm text-center">
+                <p className="text-sm text-gray-700 mb-6 whitespace-pre-line">{`¿Está seguro de que desea eliminar esta entrada de la lista negra?\n${confirmEntry?.visitorName || ''}`}</p>
+
+                <div className="flex items-center justify-center gap-3">
+                  <button
+                    onClick={() => { closeConfirm(); }}
+                    className="px-4 py-2 min-w-[120px] text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    onClick={() => { confirmDelete(); }}
+                    className="px-4 py-2 min-w-[120px] text-white bg-gradient-to-r from-gray-900 to-gray-600 rounded-lg shadow hover:from-gray-800 hover:to-gray-500"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal para agregar entrada */}
       {showAddForm && (

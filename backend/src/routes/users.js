@@ -143,14 +143,14 @@ router.delete('/:id', auth, authorize('admin'), async (req, res) => {
   }
 });
 
-// Get hosts publicly (for visitor registration) - Incluye hosts y admins
+  // Get hosts publicly (for visitor registration) - Incluye hosts y admins
 router.get('/public/hosts', async (req, res) => {
   try {
     // Get hosts and admins from all companies for general registration
     const hosts = await User.find({ 
       role: { $in: ['host', 'admin'] }, 
       isActive: true 
-    }).select('firstName lastName email _id companyId');
+    }).select('firstName lastName email _id companyId profileImage');
     res.json(hosts);
   } catch (error) {
     console.error('Get public hosts error:', error);

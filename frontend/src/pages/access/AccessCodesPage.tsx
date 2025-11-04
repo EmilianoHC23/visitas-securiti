@@ -507,6 +507,97 @@ const ReasonDropdown: React.FC<{
     </div>
   );
 };
+
+// Animated Host selector used in advanced options
+const HostDropdown: React.FC<{
+  hosts: Array<{ id: string; name: string; email: string }>;
+  value: string;
+  onChange: (id: string) => void;
+}> = ({ hosts, value, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const ref = React.useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (!ref.current) return;
+      if (!(e.target instanceof Node)) return;
+      if (!ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
+
+  const wrapperVariants: Variants = {
+    open: { opacity: 1, scaleY: 1, transition: { when: 'beforeChildren', staggerChildren: 0.02 } },
+    closed: { opacity: 0, scaleY: 0, transition: { when: 'afterChildren' } }
+  };
+
+  const itemVariants: Variants = {
+    open: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 400, damping: 30 } },
+    closed: { opacity: 0, y: -6 }
+  };
+
+  const chevronVariants: Variants = {
+    open: { rotate: 180 },
+    closed: { rotate: 0 }
+  };
+
+  const selected = hosts.find((h) => h.id === value);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((s) => !s)}
+        aria-expanded={open}
+        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-white flex items-center justify-between focus:outline-none"
+      >
+        <span className="text-gray-700">{selected ? `${selected.name} - ${selected.email}` : 'Seleccionar anfitrión'}</span>
+        <motion.span
+          className="ml-3 text-gray-500"
+          variants={chevronVariants}
+          animate={open ? 'open' : 'closed'}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </motion.span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.ul
+            initial="closed"
+            animate="open"
+            exit="closed"
+            variants={wrapperVariants}
+            className="absolute left-0 right-0 mt-2 max-h-56 overflow-y-auto bg-white border-2 border-gray-200 rounded-lg shadow-lg origin-top z-20"
+            style={{ transformOrigin: 'top' }}
+          >
+            {hosts.length === 0 ? (
+              <motion.li variants={itemVariants} className="px-4 py-3 text-gray-500">No hay anfitriones</motion.li>
+            ) : (
+              hosts.map((h) => (
+                <motion.li key={h.id} variants={itemVariants}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange(h.id);
+                      setOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700"
+                  >
+                    {h.name} - {h.email}
+                  </button>
+                </motion.li>
+              ))
+            )}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSuccess }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -976,17 +1067,12 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                       <UserCircle className="w-5 h-5 mr-2 text-gray-600" />
                       Anfitrión responsable
                     </label>
-                    <select 
-                      value={formData.hostId}
-                      onChange={(e) => setFormData({ ...formData, hostId: e.target.value })}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent bg-white transition-all"
-                    >
-                      {hosts.map((host) => (
-                        <option key={host.id} value={host.id}>
-                          {host.name} - {host.email}
-                        </option>
-                      ))}
-                    </select>
+                      {/* Animated host dropdown */}
+                      <HostDropdown
+                        hosts={hosts}
+                        value={formData.hostId}
+                        onChange={(v) => setFormData({ ...formData, hostId: v })}
+                      />
                     <p className="text-xs text-gray-500 mt-2">
                       Este usuario recibirá las notificaciones del acceso
                     </p>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import {
   Calendar,
   Clock,
@@ -413,6 +414,99 @@ interface CreateAccessModalProps {
   onSuccess: () => void;
 }
 
+// Reusable small animated dropdown for Razón del acceso
+const ReasonDropdown: React.FC<{
+  value: 'reunion' | 'proyecto' | 'evento' | 'visita' | 'otro';
+  onChange: (v: 'reunion' | 'proyecto' | 'evento' | 'visita' | 'otro') => void;
+}> = ({ value, onChange }) => {
+  const options = [
+    { value: 'reunion', label: 'Reunión' },
+    { value: 'proyecto', label: 'Proyecto' },
+    { value: 'evento', label: 'Evento' },
+    { value: 'visita', label: 'Visita' },
+    { value: 'otro', label: 'Otro' }
+  ] as const;
+
+  const [open, setOpen] = useState(false);
+  const ref = React.useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (!ref.current) return;
+      if (!(e.target instanceof Node)) return;
+      if (!ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
+
+  const wrapperVariants: Variants = {
+    open: { opacity: 1, scaleY: 1, transition: { when: 'beforeChildren', staggerChildren: 0.03 } },
+    closed: { opacity: 0, scaleY: 0, transition: { when: 'afterChildren' } }
+  };
+
+  const itemVariants: Variants = {
+    open: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 400, damping: 30 } },
+    closed: { opacity: 0, y: -6 }
+  };
+
+  const chevronVariants: Variants = {
+    open: { rotate: 180 },
+    closed: { rotate: 0 }
+  };
+
+  const selectedLabel = options.find((o) => o.value === value)?.label || 'Seleccionar';
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((s) => !s)}
+        aria-expanded={open}
+        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-white flex items-center justify-between focus:outline-none"
+      >
+        <span className="text-gray-700">{selectedLabel}</span>
+        <motion.span
+          className="ml-3 text-gray-500"
+          variants={chevronVariants}
+          animate={open ? 'open' : 'closed'}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </motion.span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.ul
+            initial="closed"
+            animate="open"
+            exit="closed"
+            variants={wrapperVariants}
+            className="absolute left-0 right-0 mt-2 bg-white border-2 border-gray-200 rounded-lg shadow-lg origin-top z-20 overflow-hidden"
+            style={{ transformOrigin: 'top' }}
+          >
+            {options.map((opt) => (
+              <motion.li key={opt.value} variants={itemVariants}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(opt.value as any);
+                    setOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700"
+                >
+                  {opt.label}
+                </button>
+              </motion.li>
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSuccess }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -665,18 +759,11 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                     <Building2 className="w-4 h-4 mr-2 text-gray-900" />
                     Razón del acceso <span className="text-red-500 ml-1">*</span>
                   </label>
-                  <select
+                  {/* Animated dropdown for reason */}
+                  <ReasonDropdown
                     value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent bg-white transition-all"
-                    required
-                  >
-                    <option value="reunion">Reunión</option>
-                    <option value="proyecto">Proyecto</option>
-                    <option value="evento">Evento</option>
-                    <option value="visita">Visita</option>
-                    <option value="otro">Otro</option>
-                  </select>
+                    onChange={(value) => setFormData({ ...formData, type: value })}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">

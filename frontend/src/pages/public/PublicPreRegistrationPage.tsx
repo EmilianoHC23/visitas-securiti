@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, Clock, MapPin, Mail, Phone, Building2, User, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, MapPin, Mail, Phone, Building2, User, CheckCircle, XCircle } from 'lucide-react';
 import { checkBlacklist } from '../../services/api';
 
 // Detectar entorno de desarrollo de forma robusta (Vite) y soportar IPs locales
@@ -100,7 +100,8 @@ const PublicPreRegistrationPage: React.FC = () => {
       // Verificar lista negra ANTES de enviar el pre-registro - BLOQUEAR si está en lista negra
       const blacklistEntry = await checkBlacklist(formData.email);
       if (blacklistEntry) {
-        setError(`🚫 No es posible completar el pre-registro.\n\nEsta persona se encuentra en la lista de seguridad debido a: "${blacklistEntry.reason}".\n\nPor favor contacta al organizador o a un recepcionista para validar tu acceso.`);
+        // Do not expose the blacklist reason or emoji in the public UI.
+        setError('No es posible completar el pre-registro.\n\nPor favor contacta al organizador o a un recepcionista para validar tu acceso.');
         setSubmitting(false);
         return; // BLOQUEAR - no permitir continuar
       }
@@ -269,8 +270,11 @@ const PublicPreRegistrationPage: React.FC = () => {
           
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-sm text-red-800">{error}</p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center mt-0.5">
+                  <XCircle className="w-4 h-4 text-red-600" />
+                </div>
+                <p className="text-sm text-red-800 whitespace-pre-line">{error}</p>
               </div>
             )}
 

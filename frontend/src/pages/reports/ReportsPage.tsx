@@ -322,7 +322,24 @@ export default function ReportsPage() {
   };
 
   const formatDateDisplay = (date: Date) => {
-    return formatLongDate(date);
+    // Formatear la fecha usando los componentes locales para evitar desfase de zona horaria
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
+    
+    // Crear fecha en formato ISO local (YYYY-MM-DD)
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    
+    // Crear una nueva fecha a medianoche local para evitar problemas de zona horaria
+    const localDate = new Date(year, month, day);
+    
+    // Formatear usando toLocaleDateString con opciones en español
+    return localDate.toLocaleDateString('es-MX', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
   };
 
   const splitDateTime = (dateStr?: string) => {

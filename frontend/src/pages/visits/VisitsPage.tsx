@@ -959,6 +959,22 @@ export const VisitsPage: React.FC = () => {
     const [showExitModal, setShowExitModal] = useState(false);
     const [exitVisitorSearch, setExitVisitorSearch] = useState('');
     
+    // Estado para controlar qué columna se muestra en móvil
+    const [mobileActiveTab, setMobileActiveTab] = useState<'pending' | 'responded' | 'checkedIn'>('pending');
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Detectar si estamos en móvil
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+    
     // Nuevos modales
     const [pendingModalVisit, setPendingModalVisit] = useState<Visit | null>(null);
     const [approvedModalVisit, setApprovedModalVisit] = useState<Visit | null>(null);
@@ -1398,34 +1414,34 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
 
 // Agrega el botón de Agenda en el header
     return (
-        <div className="p-6">
+        <div className={isMobile ? "p-3" : "p-6"}>
             {/* Header con contador total y botones al mismo nivel */}
-            <div className="mb-6 flex justify-between items-center">
+            <div className={`mb-${isMobile ? '4' : '6'} flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-center'}`}>
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col items-center">
-                        <div className="text-5xl font-bold text-gray-900">{todayVisits.length}</div>
+                        <div className={`${isMobile ? 'text-3xl' : 'text-5xl'} font-bold text-gray-900`}>{todayVisits.length}</div>
                         <div className="text-xs text-gray-600 mt-1">Total de registros hoy</div>
                         <div className="text-xs text-gray-500 capitalize">{formattedDate}</div>
                     </div>
                 </div>
 
                 {/* Botones de acción */}
-                <div className="flex gap-3 items-center">
+                <div className={`flex gap-3 ${isMobile ? 'w-full' : 'items-center'}`}>
                     <button
                         onClick={() => navigate('/visits/agenda')}
-                        className="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium flex items-center gap-2 transition-colors"
+                        className={`${isMobile ? 'flex-1' : ''} px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium flex items-center ${isMobile ? 'justify-center' : ''} gap-2 transition-colors`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        Ver agenda
+                        {!isMobile && 'Ver agenda'}
                     </button>
                     
                     {/* Botón Registrar con submenú */}
-                    <div className="relative">
+                    <div className={`relative ${isMobile ? 'flex-1' : ''}`}>
                         <button
                             onClick={() => setRegisterMenuOpen(!registerMenuOpen)}
-                            className="px-4 py-2.5 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white rounded-lg hover:from-gray-800 hover:to-gray-600 font-medium flex items-center gap-2 transition-all shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-700"
+                            className={`${isMobile ? 'w-full justify-center' : ''} px-4 py-2.5 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white rounded-lg hover:from-gray-800 hover:to-gray-600 font-medium flex items-center gap-2 transition-all shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-700`}
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1475,8 +1491,55 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
             {loading ? (
                 <div className="text-center p-8">Cargando visitas...</div>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5">
+                <>
+                    {/* Tabs para móvil */}
+                    {isMobile && (
+                        <div className="mb-4 flex gap-2 overflow-x-auto pb-2">
+                            <button
+                                onClick={() => setMobileActiveTab('pending')}
+                                className={`flex-1 min-w-[100px] px-3 py-2.5 rounded-lg font-medium text-sm transition-all ${
+                                    mobileActiveTab === 'pending'
+                                        ? 'bg-gradient-to-br from-gray-900 via-orange-600 to-orange-400 text-white shadow-lg'
+                                        : 'bg-white border border-gray-300 text-gray-700'
+                                }`}
+                            >
+                                <div className="flex flex-col items-center gap-1">
+                                    <span className="text-lg font-bold">{pendingVisits.length}</span>
+                                    <span className="text-xs">En espera</span>
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => setMobileActiveTab('responded')}
+                                className={`flex-1 min-w-[100px] px-3 py-2.5 rounded-lg font-medium text-sm transition-all ${
+                                    mobileActiveTab === 'responded'
+                                        ? 'bg-gradient-to-br from-gray-900 via-green-600 to-green-400 text-white shadow-lg'
+                                        : 'bg-white border border-gray-300 text-gray-700'
+                                }`}
+                            >
+                                <div className="flex flex-col items-center gap-1">
+                                    <span className="text-lg font-bold">{respondedVisits.length}</span>
+                                    <span className="text-xs">Respondidas</span>
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => setMobileActiveTab('checkedIn')}
+                                className={`flex-1 min-w-[100px] px-3 py-2.5 rounded-lg font-medium text-sm transition-all ${
+                                    mobileActiveTab === 'checkedIn'
+                                        ? 'bg-gradient-to-br from-gray-900 via-cyan-600 to-cyan-400 text-white shadow-lg'
+                                        : 'bg-white border border-gray-300 text-gray-700'
+                                }`}
+                            >
+                                <div className="flex flex-col items-center gap-1">
+                                    <span className="text-lg font-bold">{checkedInVisits.length}</span>
+                                    <span className="text-xs">Dentro</span>
+                                </div>
+                            </button>
+                        </div>
+                    )}
+
+                    <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'} gap-4 lg:gap-5`}>
                     {/* Columna 1: En espera */}
+                    {(!isMobile || mobileActiveTab === 'pending') && (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
                         <div className="bg-gradient-to-br from-orange-50 to-white p-5 border-b border-gray-200">
                             <div className="flex items-start justify-between mb-4">
@@ -1515,7 +1578,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
-                            <div className="space-y-2.5 overflow-y-auto flex-1 pr-1" style={{ maxHeight: 'calc(100vh - 380px)' }}>
+                            <div className="space-y-2.5 overflow-y-auto flex-1 pr-1" style={{ maxHeight: isMobile ? 'calc(100vh - 420px)' : 'calc(100vh - 380px)' }}>
                                 {pendingVisits.length > 0 ? (
                                     pendingVisits.map(visit => (
                                         <VisitCard key={visit._id} visit={visit} onCardClick={handleCardClick} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
@@ -1531,8 +1594,10 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                             </div>
                         </div>
                     </div>
+                    )}
 
                     {/* Columna 2: Respuesta recibida */}
+                    {(!isMobile || mobileActiveTab === 'responded') && (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
                         <div className="bg-gradient-to-br from-green-50 to-white p-5 border-b border-gray-200">
                             <div className="flex items-start justify-between mb-4">
@@ -1574,7 +1639,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
-                            <div className="space-y-2.5 overflow-y-auto flex-1 pr-1" style={{ maxHeight: 'calc(100vh - 380px)' }}>
+                            <div className="space-y-2.5 overflow-y-auto flex-1 pr-1" style={{ maxHeight: isMobile ? 'calc(100vh - 420px)' : 'calc(100vh - 380px)' }}>
                                 {respondedVisits.length > 0 ? (
                                     respondedVisits.map(visit => (
                                         <VisitCard key={visit._id} visit={visit} onCardClick={handleCardClick} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
@@ -1590,8 +1655,10 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                             </div>
                         </div>
                     </div>
+                    )}
 
                     {/* Columna 3: Dentro */}
+                    {(!isMobile || mobileActiveTab === 'checkedIn') && (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
                         <div className="bg-gradient-to-br from-cyan-50 to-white p-5 border-b border-gray-200">
                             <div className="flex items-start justify-between mb-4">
@@ -1618,7 +1685,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
-                            <div className="space-y-2.5 overflow-y-auto flex-1 pr-1" style={{ maxHeight: 'calc(100vh - 380px)' }}>
+                            <div className="space-y-2.5 overflow-y-auto flex-1 pr-1" style={{ maxHeight: isMobile ? 'calc(100vh - 420px)' : 'calc(100vh - 380px)' }}>
                                 {checkedInVisits.length > 0 ? (
                                     checkedInVisits.map(visit => (
                                         <VisitCard key={visit._id} visit={visit} onCardClick={handleCardClick} onApprove={handleApprove} onReject={openRejectModal} onCheckIn={handleCheckIn} onCheckout={openCheckoutModal} />
@@ -1634,7 +1701,9 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                             </div>
                         </div>
                     </div>
+                    )}
                 </div>
+                </>
             )}
 
             <VisitRegistrationSidePanel

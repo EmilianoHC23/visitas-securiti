@@ -1,87 +1,92 @@
-// Modal de vista previa de usuario
+// Modal de vista previa de usuario - Modernizado
 const UserPreviewModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
     user: User | null;
-}> = ({ isOpen, onClose, user }) => {
+}> = memo(({ isOpen, onClose, user }) => {
     if (!isOpen || !user) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden">
-                <div className="p-6 bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 border-b border-gray-700 flex items-start justify-between text-white">
-                    <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
-                <FaRegUser className="w-6 h-6 text-white" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden"
+            >
+                <div className="relative p-6 bg-gradient-to-br from-gray-900 to-gray-700">
+                    <div className="absolute inset-0 bg-black/10"></div>
+                    <div className="relative flex items-start justify-between text-white">
+                        <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-1 ring-white/30">
+                                <UserIcon className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-white">Detalle de usuario</h3>
+                                <p className="text-sm text-white/90">Información básica del usuario</p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-white">Detalle de usuario</h3>
-                            <p className="text-sm text-gray-200">Información básica del usuario</p>
-                        </div>
+                        <button
+                            onClick={onClose}
+                            className="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-all"
+                            aria-label="Cerrar"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-200 hover:text-white p-2 rounded-lg transition-colors"
-                        title="Cerrar"
-                    >
-                        ✕
-                    </button>
                 </div>
 
                 <div className="p-6">
-                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-6 border border-gray-200/50 shadow-sm">
                         <div className="flex flex-col md:flex-row gap-6 items-start">
+                            {/* Avatar */}
                             <div className="flex-shrink-0">
-                                <span className="w-28 h-28 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden border-4 border-blue-200">
-                                    {/* Always render both image and fallback. Control visibility via inline styles and handlers. */}
-                                    <img
-                                        src={user.profileImage || ''}
-                                        alt={`${user.firstName} ${user.lastName}`}
-                                        className="w-28 h-28 object-cover"
-                                        onError={e => {
-                                            const img = e.target as HTMLImageElement;
-                                            img.style.display = 'none';
-                                            const fallback = img.nextElementSibling as HTMLElement;
-                                            if (fallback) fallback.style.display = 'inline-flex';
-                                        }}
-                                        onLoad={e => {
-                                            const img = e.target as HTMLImageElement;
-                                            // If loaded successfully, ensure img is visible and fallback hidden
-                                            img.style.display = 'inline';
-                                            const fallback = img.nextElementSibling as HTMLElement;
-                                            if (fallback) fallback.style.display = 'none';
-                                        }}
-                                        style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'inline' : 'none' }}
-                                    />
-                                    <FaRegUser className="w-16 h-16 text-blue-300" style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'none' : 'inline-flex' }} />
-                                </span>
+                                <div className="w-28 h-28 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg ring-2 ring-gray-200">
+                                    {user.profileImage ? (
+                                        <img
+                                            src={user.profileImage}
+                                            alt={`${user.firstName} ${user.lastName}`}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <UserIcon className="w-14 h-14 text-gray-400" />
+                                    )}
+                                </div>
                             </div>
 
+                            {/* Información */}
                             <div className="flex-1">
-                                <h4 className="text-sm font-semibold text-blue-900 mb-3">Datos generales</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-gray-700">
-                                    <div>
-                                        <span className="font-semibold block">Nombre</span>
-                                        <div className="mt-1 text-sm text-gray-800">{user.firstName}</div>
+                                <h4 className="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                    <FileText className="w-4 h-4" />
+                                    Datos generales
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-white rounded-lg p-3 border border-gray-200">
+                                        <span className="text-xs font-medium text-gray-500 block mb-1">Nombre completo</span>
+                                        <div className="text-sm text-gray-900 font-medium">{user.firstName} {user.lastName}</div>
                                     </div>
-                                    <div>
-                                        <span className="font-semibold block">Apellido</span>
-                                        <div className="mt-1 text-sm text-gray-800">{user.lastName}</div>
+                                    <div className="bg-white rounded-lg p-3 border border-gray-200">
+                                        <span className="text-xs font-medium text-gray-500 block mb-1">Correo electrónico</span>
+                                        <div className="text-sm text-gray-900 font-medium break-words">{user.email}</div>
                                     </div>
-                                    <div>
-                                        <span className="font-semibold block">Correo electrónico</span>
-                                        <div className="mt-1 text-sm text-gray-800 break-words">{user.email}</div>
-                                    </div>
-                                    <div>
-                                        <span className="font-semibold block">Rol de usuario</span>
+                                    <div className="bg-white rounded-lg p-3 border border-gray-200">
+                                        <span className="text-xs font-medium text-gray-500 block mb-1">Rol de usuario</span>
                                         <div className="mt-1"><RoleBadge role={user.role} /></div>
                                     </div>
-                                    <div className="md:col-span-2 mt-4">
-                                        <h5 className="text-sm font-semibold text-gray-700 mb-2">Permisos</h5>
-                                        <div className="flex flex-wrap">
-                                            {ROLE_PERMISSIONS[user.role]?.map(p => (
-                                                <PermissionBadge key={p} permission={p} />
+                                    <div className="bg-white rounded-lg p-3 border border-gray-200 md:col-span-1">
+                                        <span className="text-xs font-medium text-gray-500 block mb-2">Permisos</span>
+                                        <div className="flex flex-wrap gap-1">
+                                            {ROLE_PERMISSIONS[user.role]?.slice(0, 2).map(p => (
+                                                <span key={p} className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
+                                                    <CheckCircle className="w-3 h-3" />
+                                                    {p.split(':')[1]}
+                                                </span>
                                             ))}
+                                            {(ROLE_PERMISSIONS[user.role]?.length || 0) > 2 && (
+                                                <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+                                                    +{(ROLE_PERMISSIONS[user.role]?.length || 0) - 2}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -89,24 +94,13 @@ const UserPreviewModal: React.FC<{
                         </div>
                     </div>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
-};
-import React, { useState, useEffect, useRef } from 'react';
+});
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { Variants } from 'framer-motion';
-import { LogoutIcon, SettingsIcon } from '../../components/common/icons';
-import { FaRegUser, FaAddressBook, FaShieldAlt } from 'react-icons/fa';
-import { FiUsers } from 'react-icons/fi';
-import { MdEditNote } from 'react-icons/md';
-import { BsPersonAdd } from 'react-icons/bs';
-import { FiShield, FiMail } from 'react-icons/fi';
-import { Upload, Camera, Trash2, X } from 'lucide-react';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
+import { User as UserIcon, Users, FileText, UserPlus, Mail, Upload, Trash2, X, Shield, ChevronDown, CheckCircle, AlertCircle, Info, AlertTriangle, Camera } from 'lucide-react';
 import { User, UserRole } from '../../types';
 import * as api from '../../services/api';
 
@@ -193,25 +187,33 @@ const ConfirmDialog: React.FC<{
     );
 };
 
-// Simple notification banner (top-center)
-const NotificationBanner: React.FC<{ message: string; type: 'success' | 'error' | 'info' | 'warning'; onClose: () => void }> = ({ message, type, onClose }) => {
-    const bg = type === 'success' ? 'bg-green-50 border-green-200' : type === 'error' ? 'bg-red-50 border-red-200' : type === 'warning' ? 'bg-yellow-50 border-yellow-200' : 'bg-blue-50 border-blue-200';
-    const text = type === 'success' ? 'text-green-800' : type === 'error' ? 'text-red-800' : type === 'warning' ? 'text-yellow-800' : 'text-blue-800';
+// Simple notification banner (top-center) - Optimizado con memo
+const NotificationBanner: React.FC<{ message: string; type: 'success' | 'error' | 'info' | 'warning'; onClose: () => void }> = memo(({ message, type, onClose }) => {
+    const config = {
+        success: { bg: 'bg-green-50 border-green-200', text: 'text-green-800', icon: <CheckCircle className="w-5 h-5 text-green-600" /> },
+        error: { bg: 'bg-red-50 border-red-200', text: 'text-red-800', icon: <AlertCircle className="w-5 h-5 text-red-600" /> },
+        warning: { bg: 'bg-yellow-50 border-yellow-200', text: 'text-yellow-800', icon: <AlertTriangle className="w-5 h-5 text-yellow-600" /> },
+        info: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-800', icon: <Info className="w-5 h-5 text-blue-600" /> }
+    };
+    const { bg, text, icon } = config[type];
+    
     return (
-        <div className={`fixed left-1/2 -translate-x-1/2 top-6 z-[60] ${bg} border p-3 rounded-md shadow-md`}> 
-            <div className={`flex items-start gap-3 ${text}`}>
-                <span className="flex-shrink-0 mt-0.5">
-                    {type === 'success' && <CheckCircleOutlineIcon fontSize="small" className="text-green-600" />}
-                    {type === 'error' && <ErrorOutlineIcon fontSize="small" className="text-red-600" />}
-                    {type === 'warning' && <WarningAmberOutlinedIcon fontSize="small" className="text-yellow-600" />}
-                    {type === 'info' && <InfoOutlinedIcon fontSize="small" className="text-blue-600" />}
-                </span>
-                <div className="flex-1 text-sm">{message}</div>
-                <button onClick={onClose} className="text-gray-500 hover:text-gray-700">✕</button>
+        <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={`fixed left-1/2 -translate-x-1/2 top-6 z-[60] ${bg} border px-4 py-3 rounded-xl shadow-lg`}
+        > 
+            <div className={`flex items-center gap-3 ${text}`}>
+                {icon}
+                <div className="flex-1 text-sm font-medium">{message}</div>
+                <button onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors">
+                    <X className="w-4 h-4" />
+                </button>
             </div>
-        </div>
+        </motion.div>
     );
-};
+});
 
 interface NewUserData {
     email: string;
@@ -295,22 +297,21 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
     return <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusStyles[status] || statusStyles.none}`}>{statusLabels[status] || 'Sin Invitar'}</span>
 };
 
-// RoleSelect: custom dropdown that shows an icon for the selected role and for each option
-const RoleSelect: React.FC<{ value: UserRole; onChange: (r: UserRole) => void }> = ({ value, onChange }) => {
+// RoleSelect: optimizado sin animaciones pesadas
+const RoleSelect: React.FC<{ value: UserRole; onChange: (r: UserRole) => void }> = memo(({ value, onChange }) => {
     const options: { value: UserRole; label: string; icon: React.ReactNode }[] = [
-    { value: UserRole.HOST, label: 'Host', icon: <FaRegUser className="w-4 h-4" /> },
-        { value: UserRole.RECEPTION, label: 'Recepcionista', icon: <FaAddressBook className="w-4 h-4" /> },
-        { value: UserRole.ADMIN, label: 'Administrador', icon: <FaShieldAlt className="w-4 h-4" /> },
+        { value: UserRole.HOST, label: 'Host', icon: <UserIcon className="w-4 h-4" /> },
+        { value: UserRole.RECEPTION, label: 'Recepcionista', icon: <Users className="w-4 h-4" /> },
+        { value: UserRole.ADMIN, label: 'Administrador', icon: <Shield className="w-4 h-4" /> },
     ];
 
     const [open, setOpen] = useState(false);
-    const ref = React.useRef<HTMLDivElement | null>(null);
+    const ref = useRef<HTMLDivElement | null>(null);
 
-    React.useEffect(() => {
+    useEffect(() => {
         const onDoc = (e: MouseEvent) => {
-            if (!ref.current) return;
-            if (!(e.target instanceof Node)) return;
-            if (!ref.current.contains(e.target)) setOpen(false);
+            if (!ref.current || !(e.target instanceof Node) || ref.current.contains(e.target)) return;
+            setOpen(false);
         };
         document.addEventListener('click', onDoc);
         return () => document.removeEventListener('click', onDoc);
@@ -318,45 +319,37 @@ const RoleSelect: React.FC<{ value: UserRole; onChange: (r: UserRole) => void }>
 
     const selected = options.find(o => o.value === value) || options[0];
 
-    const wrapper: Variants = {
-        open: { scaleY: 1, opacity: 1, transition: { when: 'beforeChildren', staggerChildren: 0.04 } },
-        closed: { scaleY: 0, opacity: 0, transition: { when: 'afterChildren', staggerChildren: 0.02 } },
-    };
-
-    const item: Variants = {
-        open: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } },
-        closed: { opacity: 0, y: -6, transition: { duration: 0.12 } },
-    };
-
-    const chevron: Variants = { open: { rotate: 180 }, closed: { rotate: 0 } };
-
     return (
         <div className="relative" ref={ref}>
-            <button type="button" onClick={() => setOpen(s => !s)} className="w-full text-left pl-10 pr-3 py-3 border border-gray-100 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-blue-400">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">{selected.icon}</span>
-                <span className="flex-1">{selected.label}</span>
-                <motion.span className="ml-2 inline-block" variants={chevron} animate={open ? 'open' : 'closed'}>
-                    <svg className="w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </motion.span>
+            <button 
+                type="button" 
+                onClick={() => setOpen(s => !s)} 
+                className="w-full text-left pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent shadow-sm text-sm flex items-center gap-3 transition-all"
+            >
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">{selected.icon}</span>
+                <span className="flex-1 text-gray-900 font-medium">{selected.label}</span>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
 
-            <AnimatePresence>
-                {open && (
-                    <motion.ul initial="closed" animate="open" exit="closed" variants={wrapper} style={{ transformOrigin: 'top' }} className="absolute left-0 right-0 mt-2 bg-white shadow-lg border border-gray-100 rounded-md overflow-hidden z-50">
-                        {options.map(o => (
-                            <li key={o.value}>
-                                <motion.button type="button" variants={item} onClick={() => { onChange(o.value); setOpen(false); }} className={`w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-gray-100 ${o.value === value ? 'bg-gray-100' : ''}`}>
-                                    <span className="text-gray-600">{o.icon}</span>
-                                    <span className="flex-1 text-sm text-gray-800">{o.label}</span>
-                                </motion.button>
-                            </li>
-                        ))}
-                    </motion.ul>
-                )}
-            </AnimatePresence>
+            {open && (
+                <div className="absolute left-0 right-0 mt-2 bg-white shadow-xl border border-gray-200 rounded-xl overflow-hidden z-50 animate-fadeIn">
+                    {options.map(o => (
+                        <button 
+                            key={o.value}
+                            type="button" 
+                            onClick={() => { onChange(o.value); setOpen(false); }} 
+                            className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors ${o.value === value ? 'bg-gray-50 text-gray-900' : 'text-gray-700'}`}
+                        >
+                            <span className="text-gray-500">{o.icon}</span>
+                            <span className="flex-1 text-sm font-medium">{o.label}</span>
+                            {o.value === value && <CheckCircle className="w-4 h-4 text-gray-900" />}
+                        </button>
+                    ))}
+                </div>
+            )}
         </div>
     );
-};
+});
 
 const InviteUserModal: React.FC<{
     isOpen: boolean;
@@ -447,7 +440,7 @@ const InviteUserModal: React.FC<{
                     <div className="relative flex items-start justify-between text-white">
                         <div className="flex items-start gap-4">
                             <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-1 ring-white/30">
-                                <BsPersonAdd className="w-7 h-7 text-white" />
+                                <UserPlus className="w-7 h-7 text-white" />
                             </div>
                             <div>
                                 <h3 className="text-2xl font-bold text-white mb-1">Invitar Nuevo Usuario</h3>
@@ -480,7 +473,7 @@ const InviteUserModal: React.FC<{
                                             className="w-full h-full object-cover"
                                         />
                                     ) : (
-                                        <FaRegUser className="w-10 h-10 text-gray-400" />
+                                        <UserIcon className="w-10 h-10 text-gray-400" />
                                     )}
                                 </div>
                                 {previewImage && (
@@ -521,7 +514,7 @@ const InviteUserModal: React.FC<{
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-6 border border-gray-200/50 shadow-sm mb-6">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center text-white">
-                                <MdEditNote className="w-5 h-5" />
+                                <FileText className="w-5 h-5" />
                             </div>
                             <div>
                                 <h4 className="text-sm font-semibold text-gray-800">Información del usuario</h4>
@@ -534,7 +527,7 @@ const InviteUserModal: React.FC<{
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
                                 <div className="relative">
                                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                        <FaRegUser className="w-4 h-4" />
+                                        <UserIcon className="w-4 h-4" />
                                     </span>
                                     <input
                                         type="text"
@@ -566,7 +559,7 @@ const InviteUserModal: React.FC<{
                             <label className="block text-sm font-medium text-gray-700 mb-2">Correo electrónico</label>
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                    <FiMail className="w-4 h-4" />
+                                    <Mail className="w-4 h-4" />
                                 </span>
                                 <input
                                     type="email"
@@ -709,7 +702,7 @@ const EditUserModal: React.FC<{
                     <div className="relative flex items-start justify-between text-white">
                         <div className="flex items-start gap-4">
                             <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-1 ring-white/30">
-                                <MdEditNote className="w-7 h-7 text-white" />
+                                <FileText className="w-7 h-7 text-white" />
                             </div>
                             <div>
                                 <h3 className="text-2xl font-bold text-white mb-1">Editar Usuario</h3>
@@ -742,7 +735,7 @@ const EditUserModal: React.FC<{
                                             className="w-full h-full object-cover"
                                         />
                                     ) : (
-                                        <FaRegUser className="w-10 h-10 text-gray-400" />
+                                        <UserIcon className="w-10 h-10 text-gray-400" />
                                     )}
                                 </div>
                                 {previewImage && (
@@ -783,7 +776,7 @@ const EditUserModal: React.FC<{
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-6 border border-gray-200/50 shadow-sm mb-6">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center text-white">
-                                <MdEditNote className="w-5 h-5" />
+                                <FileText className="w-5 h-5" />
                             </div>
                             <div>
                                 <h4 className="text-sm font-semibold text-gray-800">Información del usuario</h4>
@@ -796,7 +789,7 @@ const EditUserModal: React.FC<{
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
                                 <div className="relative">
                                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                        <FaRegUser className="w-4 h-4" />
+                                        <UserIcon className="w-4 h-4" />
                                     </span>
                                     <input
                                         type="text"
@@ -826,7 +819,7 @@ const EditUserModal: React.FC<{
                             <label className="block text-sm font-medium text-gray-700 mb-2">Correo electrónico</label>
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                    <FiMail className="w-4 h-4" />
+                                    <Mail className="w-4 h-4" />
                                 </span>
                                 <input
                                     type="email"
@@ -900,7 +893,7 @@ export const UserManagementPage: React.FC = () => {
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [previewUser, setPreviewUser] = useState<User | null>(null);
 
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         try {
             setLoading(true);
             const usersData = await api.getUsers();
@@ -910,13 +903,13 @@ export const UserManagementPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchUsers();
-    }, []);
+    }, [fetchUsers]);
 
-    const handleInviteUser = async (userData: NewUserData) => {
+    const handleInviteUser = useCallback(async (userData: NewUserData) => {
         try {
             setInviteLoading(true);
             await api.sendInvitation({
@@ -927,7 +920,6 @@ export const UserManagementPage: React.FC = () => {
                 profileImage: userData.profileImage
             });
             setIsModalOpen(false);
-            // Refrescar la lista de usuarios para mostrar el nuevo usuario invitado
             await fetchUsers();
             setNotification({ message: '✅ Invitación enviada exitosamente. El usuario aparecerá en la tabla con estatus "Pendiente".', type: 'success' });
         } catch (error) {
@@ -936,14 +928,14 @@ export const UserManagementPage: React.FC = () => {
         } finally {
             setInviteLoading(false);
         }
-    };
+    }, [fetchUsers]);
 
-    const handleEditUser = (user: User) => {
+    const handleEditUser = useCallback((user: User) => {
         setEditingUser(user);
         setIsEditModalOpen(true);
-    };
+    }, []);
 
-    const handleUpdateUser = async (userData: EditUserData) => {
+    const handleUpdateUser = useCallback(async (userData: EditUserData) => {
         if (!editingUser) return;
 
         try {
@@ -961,24 +953,24 @@ export const UserManagementPage: React.FC = () => {
         } finally {
             setEditLoading(false);
         }
-    };
-    // Open a confirm dialog with data describing the action
-    const openConfirm = (data: any) => {
+    }, [editingUser]);
+
+    const openConfirm = useCallback((data: any) => {
         setConfirmData(data);
         setConfirmOpen(true);
-    };
+    }, []);
 
-    const closeConfirm = () => {
+    const closeConfirm = useCallback(() => {
         setConfirmOpen(false);
         setConfirmData(null);
-    };
+    }, []);
 
-    const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
         setNotification({ message, type });
         window.setTimeout(() => setNotification(null), 4500);
-    };
+    }, []);
 
-    const handleConfirmPrimary = async () => {
+    const handleConfirmPrimary = useCallback(async () => {
         if (!confirmData) return closeConfirm();
         const { type, user } = confirmData;
         try {
@@ -1002,10 +994,9 @@ export const UserManagementPage: React.FC = () => {
         } finally {
             closeConfirm();
         }
-    };
+    }, [confirmData, closeConfirm, fetchUsers, showNotification]);
 
-    const handleConfirmSecondary = async () => {
-        // Used for explicit "Eliminar permanentemente" button on the dialog
+    const handleConfirmSecondary = useCallback(async () => {
         if (!confirmData) return closeConfirm();
         const { user } = confirmData;
         try {
@@ -1018,7 +1009,7 @@ export const UserManagementPage: React.FC = () => {
         } finally {
             closeConfirm();
         }
-    };
+    }, [confirmData, closeConfirm, fetchUsers, showNotification]);
 
     return (
         <div>
@@ -1026,7 +1017,7 @@ export const UserManagementPage: React.FC = () => {
             <div className="mb-8 flex justify-between items-start px-6">
                 <div className="flex items-start gap-5">
                     <div className="w-16 h-16 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
-                        <FiUsers className="w-8 h-8 text-white" />
+                        <Users className="w-8 h-8 text-white" />
                     </div>
                     <div>
                         <h2 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Usuarios</h2>
@@ -1040,7 +1031,7 @@ export const UserManagementPage: React.FC = () => {
                     className="group relative px-6 py-3 font-semibold text-white bg-gradient-to-br from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 rounded-xl shadow-lg hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-900 transition-all duration-200 transform hover:scale-105"
                 >
                     <span className="inline-flex items-center gap-2">
-                        <BsPersonAdd className="w-5 h-5" />
+                        <UserPlus className="w-5 h-5" />
                         <span>Invitar Usuario</span>
                     </span>
                 </button>
@@ -1079,25 +1070,15 @@ export const UserManagementPage: React.FC = () => {
                                     >
                                         <td className="px-6 py-4 align-middle transition-all duration-200 group-hover:bg-transparent">
                                             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden shadow-md ring-2 ring-white group-hover:ring-gray-300 transition-all">
-                                                <img
-                                                    src={user.profileImage || ''}
-                                                    alt={`${user.firstName} ${user.lastName}`}
-                                                    className="w-12 h-12 object-cover"
-                                                    onError={e => {
-                                                        const img = e.target as HTMLImageElement;
-                                                        img.style.display = 'none';
-                                                        const fallback = img.nextElementSibling as HTMLElement;
-                                                        if (fallback) fallback.style.display = 'inline-flex';
-                                                    }}
-                                                    onLoad={e => {
-                                                        const img = e.target as HTMLImageElement;
-                                                        img.style.display = 'inline';
-                                                        const fallback = img.nextElementSibling as HTMLElement;
-                                                        if (fallback) fallback.style.display = 'none';
-                                                    }}
-                                                    style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'inline' : 'none' }}
-                                                />
-                                                <FaRegUser className="w-6 h-6 text-gray-400" style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'none' : 'inline-flex' }} />
+                                                {user.profileImage ? (
+                                                    <img
+                                                        src={user.profileImage}
+                                                        alt={`${user.firstName} ${user.lastName}`}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <UserIcon className="w-6 h-6 text-gray-400" />
+                                                )}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap transition-all duration-200 group-hover:bg-transparent">
@@ -1218,6 +1199,17 @@ export const UserManagementPage: React.FC = () => {
                 onClose={() => setIsPreviewModalOpen(false)}
                 user={previewUser}
             />
+
+            {/* Estilos inline para animaciones */}
+            <style>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                .animate-fadeIn {
+                    animation: fadeIn 0.15s ease-out;
+                }
+            `}</style>
         </div>
     );
 };

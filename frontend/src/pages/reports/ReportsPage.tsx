@@ -17,9 +17,19 @@ export default function ReportsPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [searchTerm, setSearchTerm] = useState('');
   const [showTimelineModal, setShowTimelineModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   // Alert modal state (replace native alert)
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     loadVisits();
@@ -356,33 +366,35 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 px-4 md:px-6 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 px-3 sm:px-4 md:px-6 py-4 sm:py-6">
       <div className="max-w-7xl mx-auto">
         {/* Header Moderno */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
-              <BarChart3 className="w-8 h-8 text-white" />
+        <div className={isMobile ? "mb-4" : "mb-8"}>
+          <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-4'}`}>
+            <div className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0`}>
+              <BarChart3 className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-white`} />
             </div>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-1">Reportes de Visitas</h1>
-              <p className="text-gray-600 text-lg capitalize">{formatDateDisplay(selectedDate)}</p>
+            <div className="min-w-0">
+              <h1 className={`${isMobile ? 'text-xl' : 'text-4xl'} font-bold text-gray-900 mb-1`}>
+                {isMobile ? 'Reportes' : 'Reportes de Visitas'}
+              </h1>
+              <p className={`text-gray-600 ${isMobile ? 'text-xs' : 'text-lg'} capitalize`}>{formatDateDisplay(selectedDate)}</p>
             </div>
           </div>
         </div>
 
         {/* Filters Card - Moderno */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 mb-6">
-          <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
+        <div className={`bg-white rounded-2xl shadow-xl border border-gray-200 ${isMobile ? 'p-4 mb-4' : 'p-6 mb-6'}`}>
+          <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 items-stretch lg:items-center">
             {/* Search */}
             <div className="flex-1 lg:max-w-md relative">
-              <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
+              <Search className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-gray-400 absolute ${isMobile ? 'left-3' : 'left-4'} top-1/2 transform -translate-y-1/2`} />
               <input
                 type="text"
-                placeholder="Buscar por visitante, empresa, anfitrión..."
+                placeholder={isMobile ? "Buscar..." : "Buscar por visitante, empresa, anfitrión..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                className={`w-full ${isMobile ? 'pl-10 pr-3 py-2.5 text-sm' : 'pl-12 pr-4 py-3.5'} border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all`}
               />
             </div>
 
@@ -402,51 +414,51 @@ export default function ReportsPage() {
             {/* Download Button */}
             <button
               onClick={handleDownloadReport}
-              className="px-6 py-3.5 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:from-gray-800 hover:to-gray-600 flex items-center justify-center gap-3 text-sm font-bold transition-all shadow-lg hover:shadow-xl whitespace-nowrap flex-shrink-0"
+              className={`${isMobile ? 'px-4 py-2.5 text-sm' : 'px-6 py-3.5 text-sm'} bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:from-gray-800 hover:to-gray-600 flex items-center justify-center ${isMobile ? 'gap-2' : 'gap-3'} font-bold transition-all shadow-lg hover:shadow-xl whitespace-nowrap flex-shrink-0`}
             >
-              <Download className="w-5 h-5" />
-              Descargar PDF
+              <Download className={isMobile ? "w-4 h-4" : "w-5 h-5"} />
+              {isMobile ? 'Descargar' : 'Descargar PDF'}
             </button>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-200">
-            <div className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl border-2 border-gray-200">
+          <div className={`grid grid-cols-1 sm:grid-cols-3 ${isMobile ? 'gap-3 mt-4 pt-4' : 'gap-4 mt-6 pt-6'} border-t border-gray-200`}>
+            <div className={`bg-gradient-to-br from-gray-50 to-white ${isMobile ? 'p-3' : 'p-4'} rounded-xl border-2 border-gray-200`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Total Visitas</p>
-                  <p className="text-3xl font-bold text-gray-900">{filteredVisits.length}</p>
+                  <p className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-600 mb-1`}>Total Visitas</p>
+                  <p className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-gray-900`}>{filteredVisits.length}</p>
                 </div>
-                <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-white" />
+                <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} bg-gray-900 rounded-xl flex items-center justify-center`}>
+                  <FileText className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
                 </div>
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-green-50 to-white p-4 rounded-xl border-2 border-green-200">
+            <div className={`bg-gradient-to-br from-green-50 to-white ${isMobile ? 'p-3' : 'p-4'} rounded-xl border-2 border-green-200`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Completadas</p>
-                  <p className="text-3xl font-bold text-green-600">
+                  <p className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-600 mb-1`}>Completadas</p>
+                  <p className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-green-600`}>
                     {filteredVisits.filter(v => v.status === VisitStatus.COMPLETED).length}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-white" />
+                <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} bg-green-600 rounded-xl flex items-center justify-center`}>
+                  <CheckCircle className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
                 </div>
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-red-50 to-white p-4 rounded-xl border-2 border-red-200">
+            <div className={`bg-gradient-to-br from-red-50 to-white ${isMobile ? 'p-3' : 'p-4'} rounded-xl border-2 border-red-200`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Rechazadas</p>
-                  <p className="text-3xl font-bold text-red-600">
+                  <p className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-600 mb-1`}>Rechazadas</p>
+                  <p className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-red-600`}>
                     {filteredVisits.filter(v => v.status === VisitStatus.REJECTED).length}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-red-600 rounded-xl flex items-center justify-center">
-                  <XCircle className="w-6 h-6 text-white" />
+                <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} bg-red-600 rounded-xl flex items-center justify-center`}>
+                  <XCircle className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
                 </div>
               </div>
             </div>
@@ -455,19 +467,79 @@ export default function ReportsPage() {
 
         {/* Table */}
         {loading ? (
-          <div className="text-center py-20 bg-white rounded-2xl shadow-xl border border-gray-200">
-            <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-gray-900"></div>
-            <p className="mt-6 text-gray-600 text-lg font-medium">Cargando visitas...</p>
+          <div className={`text-center ${isMobile ? 'py-12' : 'py-20'} bg-white rounded-2xl shadow-xl border border-gray-200`}>
+            <div className={`inline-block animate-spin rounded-full ${isMobile ? 'h-12 w-12 border-4' : 'h-16 w-16 border-4'} border-gray-200 border-t-gray-900`}></div>
+            <p className={`${isMobile ? 'mt-4 text-base' : 'mt-6 text-lg'} text-gray-600 font-medium`}>Cargando visitas...</p>
           </div>
         ) : filteredVisits.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl shadow-xl border border-gray-200">
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-              <FileText className="w-12 h-12 text-gray-400" />
+          <div className={`text-center ${isMobile ? 'py-12' : 'py-20'} bg-white rounded-2xl shadow-xl border border-gray-200`}>
+            <div className={`${isMobile ? 'w-16 h-16' : 'w-24 h-24'} mx-auto ${isMobile ? 'mb-4' : 'mb-6'} rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center`}>
+              <FileText className={`${isMobile ? 'w-8 h-8' : 'w-12 h-12'} text-gray-400`} />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">No hay visitas registradas</h3>
-            <p className="text-gray-500 text-base">No se encontraron visitas para la fecha seleccionada</p>
+            <h3 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-gray-900 ${isMobile ? 'mb-2' : 'mb-3'}`}>No hay visitas registradas</h3>
+            <p className={`text-gray-500 ${isMobile ? 'text-sm' : 'text-base'}`}>No se encontraron visitas para la fecha seleccionada</p>
+          </div>
+        ) : isMobile ? (
+          /* Mobile Card View */
+          <div className="space-y-3">
+            {filteredVisits.map(v => (
+              <div
+                key={v._id}
+                onClick={() => handleVisitClick(v)}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all cursor-pointer"
+              >
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-sm flex-shrink-0">
+                    {v.visitorPhoto ? (
+                      <img src={v.visitorPhoto} alt={v.visitorName} className="w-full h-full object-cover" />
+                    ) : (
+                      <FaRegUser className="w-6 h-6 text-gray-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-bold text-gray-900 truncate">{v.visitorName}</h3>
+                    {v.visitorCompany && (
+                      <p className="text-xs text-gray-600 truncate">{v.visitorCompany}</p>
+                    )}
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold mt-1 ${
+                      v.status === VisitStatus.COMPLETED 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {v.status === VisitStatus.COMPLETED ? 'Completada' : 'Rechazada'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">Anfitrión:</span>
+                    <span className="text-gray-900 font-medium">{v.host?.firstName} {v.host?.lastName}</span>
+                  </div>
+                  {v.checkInTime && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-500">Entrada:</span>
+                      <span className="text-gray-900">{splitDateTime(v.checkInTime)[1]}</span>
+                    </div>
+                  )}
+                  {v.checkOutTime && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-500">Salida:</span>
+                      <span className="text-gray-900">{splitDateTime(v.checkOutTime)[1]}</span>
+                    </div>
+                  )}
+                  {v.visitorEmail && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-500">Email:</span>
+                      <span className="text-gray-900 truncate ml-2">{v.visitorEmail}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
+          /* Desktop Table View */
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full table-auto text-sm min-w-full">
@@ -566,16 +638,16 @@ export default function ReportsPage() {
         {/* Simple alert modal (styled like ConfirmDialog header) */}
         {alertOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-200">
-              <div className="p-6 bg-gradient-to-r from-gray-900 to-gray-700 flex items-start justify-between text-white">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <div className={`bg-white rounded-2xl ${isMobile ? 'max-w-sm' : 'max-w-md'} w-full shadow-2xl overflow-hidden border border-gray-200`}>
+              <div className={`${isMobile ? 'p-4' : 'p-6'} bg-gradient-to-r from-gray-900 to-gray-700 flex items-start justify-between text-white`}>
+                <div className={`flex items-start ${isMobile ? 'gap-2' : 'gap-4'}`}>
+                  <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} rounded-xl bg-white/20 flex items-center justify-center shadow-sm`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} viewBox="0 0 24 24" fill="none" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12A9 9 0 1112 3a9 9 0 019 9z" />
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white">Aviso</h3>
+                    <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-bold text-white`}>Aviso</h3>
                   </div>
                 </div>
                 <button 
@@ -586,12 +658,12 @@ export default function ReportsPage() {
                 </button>
               </div>
 
-              <div className="p-6">
-                <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border-2 border-gray-200 text-center">
-                  <p className="text-sm text-gray-700 mb-6 whitespace-pre-line">{alertMessage}</p>
+              <div className={isMobile ? "p-4" : "p-6"}>
+                <div className={`bg-gradient-to-br from-gray-50 to-white rounded-xl ${isMobile ? 'p-4' : 'p-6'} border-2 border-gray-200 text-center`}>
+                  <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-700 ${isMobile ? 'mb-4' : 'mb-6'} whitespace-pre-line`}>{alertMessage}</p>
                   <button 
                     onClick={() => { setAlertOpen(false); setAlertMessage(''); }} 
-                    className="px-6 py-3 min-w-[120px] text-white bg-gradient-to-r from-gray-900 to-gray-700 rounded-xl shadow-lg hover:from-gray-800 hover:to-gray-600 font-bold transition-all"
+                    className={`${isMobile ? 'px-4 py-2 min-w-[100px] text-sm' : 'px-6 py-3 min-w-[120px]'} text-white bg-gradient-to-r from-gray-900 to-gray-700 rounded-xl shadow-lg hover:from-gray-800 hover:to-gray-600 font-bold transition-all`}
                   >
                     Aceptar
                   </button>

@@ -1129,20 +1129,26 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                 <span className="text-sm sm:text-base">Horario del Acceso</span>
               </h3>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                {/* Inicio */}
-                <div>
-                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3 flex items-center">
-                    <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-900" />
-                    Fecha y hora de inicio <span className="text-red-500 ml-1">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-4">
+                {/* Fecha y hora de inicio */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                      <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-900 flex-shrink-0" />
+                      Fecha de inicio <span className="text-red-500 ml-1">*</span>
+                    </label>
                     <DatePicker
                       value={formData.startDate}
                       onChange={(value) => setFormData({ ...formData, startDate: value })}
                       min={new Date().toISOString().split('T')[0]}
                       required
                     />
+                  </div>
+                  <div>
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                      <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-900 flex-shrink-0" />
+                      Hora de inicio <span className="text-red-500 ml-1">*</span>
+                    </label>
                     <TimePicker
                       value={formData.startTime}
                       onChange={(value) => setFormData({ ...formData, startTime: value })}
@@ -1150,19 +1156,25 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                   </div>
                 </div>
 
-                {/* Fin */}
-                <div>
-                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3 flex items-center">
-                    <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-900" />
-                    Fecha y hora de finalización <span className="text-red-500 ml-1">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
+                {/* Fecha y hora de finalización */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                      <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-900 flex-shrink-0" />
+                      Fecha de finalización <span className="text-red-500 ml-1">*</span>
+                    </label>
                     <DatePicker
                       value={formData.endDate}
                       onChange={(value) => setFormData({ ...formData, endDate: value })}
                       min={formData.startDate || new Date().toISOString().split('T')[0]}
                       required
                     />
+                  </div>
+                  <div>
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                      <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-900 flex-shrink-0" />
+                      Hora de finalización <span className="text-red-500 ml-1">*</span>
+                    </label>
                     <TimePicker
                       value={formData.endTime}
                       onChange={(value) => setFormData({ ...formData, endTime: value })}

@@ -281,9 +281,9 @@ export const AgendaPage: React.FC = () => {
 
         {/* Filtros modernos */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {/* DateRangePicker */}
-            <div className="md:col-span-2 xl:col-span-1">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {/* DateRangePicker - ocupa toda la fila en móvil, 2 columnas en lg */}
+            <div className="lg:col-span-2 xl:col-span-1">
               <DateRangePicker
                 startValue={from}
                 endValue={to}
@@ -304,7 +304,7 @@ export const AgendaPage: React.FC = () => {
             </div>
             
             {/* Buscar */}
-            <div className="md:col-span-2 xl:col-span-1">
+            <div className="lg:col-span-2 xl:col-span-1">
               <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
                 <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

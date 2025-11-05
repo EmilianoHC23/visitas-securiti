@@ -260,47 +260,51 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           {required && <span className="text-red-500 ml-1">*</span>}
         </Label>
         
-        <Group className="relative inline-flex w-full items-center gap-2">
-          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none z-10">
-            <CalendarIcon className="w-4 h-4 text-gray-400 group-focus-within:text-gray-900 transition-colors" />
-          </div>
-          
-          <DateInput
-            slot="start"
-            className="flex-1 pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-lg 
-                     focus-within:outline-none focus-within:ring-2 focus-within:ring-gray-900 focus-within:border-transparent 
-                     hover:border-gray-300 transition-all duration-200
-                     text-gray-900 text-sm font-medium flex items-center gap-0.5"
-          >
-            {(segment) => (
-              <DateSegment
-                segment={segment}
-                className="px-0.5 tabular-nums outline-none rounded-sm focus:bg-gray-900 focus:text-white data-[placeholder]:text-gray-400 text-sm"
-              />
-            )}
-          </DateInput>
+        <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+          <Group className="relative flex-1 inline-flex items-center">
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none z-10">
+              <CalendarIcon className="w-4 h-4 text-gray-400" />
+            </div>
+            
+            <DateInput
+              slot="start"
+              className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-lg 
+                       focus-within:outline-none focus-within:ring-2 focus-within:ring-gray-900 focus-within:border-transparent 
+                       hover:border-gray-300 transition-all duration-200
+                       text-gray-900 text-sm font-medium flex items-center gap-0.5"
+            >
+              {(segment) => (
+                <DateSegment
+                  segment={segment}
+                  className="px-0.5 tabular-nums outline-none rounded-sm focus:bg-gray-900 focus:text-white data-[placeholder]:text-gray-400 text-sm"
+                />
+              )}
+            </DateInput>
+          </Group>
 
-          <span className="text-gray-500 text-sm font-medium">-</span>
+          <span className="text-gray-500 text-sm font-medium text-center sm:text-left hidden sm:block">-</span>
 
-          <DateInput
-            slot="end"
-            className="flex-1 pl-4 pr-12 py-2.5 border-2 border-gray-200 rounded-lg 
-                     focus-within:outline-none focus-within:ring-2 focus-within:ring-gray-900 focus-within:border-transparent 
-                     hover:border-gray-300 transition-all duration-200
-                     text-gray-900 text-sm font-medium flex items-center gap-0.5"
-          >
-            {(segment) => (
-              <DateSegment
-                segment={segment}
-                className="px-0.5 tabular-nums outline-none rounded-sm focus:bg-gray-900 focus:text-white data-[placeholder]:text-gray-400 text-sm"
-              />
-            )}
-          </DateInput>
+          <Group className="relative flex-1 inline-flex items-center">
+            <DateInput
+              slot="end"
+              className="w-full pl-4 pr-12 py-2.5 border-2 border-gray-200 rounded-lg 
+                       focus-within:outline-none focus-within:ring-2 focus-within:ring-gray-900 focus-within:border-transparent 
+                       hover:border-gray-300 transition-all duration-200
+                       text-gray-900 text-sm font-medium flex items-center gap-0.5"
+            >
+              {(segment) => (
+                <DateSegment
+                  segment={segment}
+                  className="px-0.5 tabular-nums outline-none rounded-sm focus:bg-gray-900 focus:text-white data-[placeholder]:text-gray-400 text-sm"
+                />
+              )}
+            </DateInput>
 
-          <Button className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors">
-            <CalendarIcon className="w-3.5 h-3.5 text-gray-600" />
-          </Button>
-        </Group>
+            <Button className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors">
+              <CalendarIcon className="w-3.5 h-3.5 text-gray-600" />
+            </Button>
+          </Group>
+        </div>
 
         <Popover className="bg-white rounded-xl shadow-2xl border-2 border-gray-200 p-4 z-50 mt-2">
           <Dialog className="outline-none">

@@ -44,6 +44,22 @@ export const AccessCodesPage: React.FC = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedAccess, setSelectedAccess] = useState<Access | null>(null);
 
+  // Toast / Alert flotante (global dentro de esta página)
+  const [toast, setToast] = useState<{ show: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({ show: false, message: '', severity: 'success' });
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail || {};
+      const message = detail.message || '';
+      const severity = detail.severity || 'success';
+      setToast({ show: true, message, severity });
+      window.setTimeout(() => setToast((s) => ({ ...s, show: false })), 3500);
+    };
+
+    window.addEventListener('app-toast', handler as EventListener);
+    return () => window.removeEventListener('app-toast', handler as EventListener);
+  }, []);
+
   // Cargar accesos
   useEffect(() => {
     loadAccesses();
@@ -159,6 +175,22 @@ export const AccessCodesPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Toast flotante */}
+      <AnimatePresence>
+        {toast.show && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="fixed top-6 right-6 z-50"
+          >
+            <div className={`max-w-sm w-full px-4 py-3 rounded-lg shadow-lg text-sm ${toast.severity === 'success' ? 'bg-emerald-600 text-white' : toast.severity === 'error' ? 'bg-red-600 text-white' : 'bg-gray-800 text-white'}`}>
+              {toast.message}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Tabs */}
       <div className="flex space-x-1 mb-6 border-b-2 border-gray-200">
@@ -339,8 +371,9 @@ export const AccessCodesPage: React.FC = () => {
                           <button
                             onClick={() => {
                               const link = `${window.location.origin}/public/register/${access._id}`;
-                              navigator.clipboard.writeText(link);
-                              alert('Enlace de pre-registro copiado al portapapeles');
+                              navigator.clipboard.writeText(link)
+                                .then(() => window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Enlace de pre-registro copiado al portapapeles', severity: 'success' } })))
+                                .catch(() => window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Error al copiar enlace', severity: 'error' } })));
                             }}
                             className="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium"
                             title="Copiar enlace de pre-registro"
@@ -1839,13 +1872,14 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose }) => {
                     Deshabilitado ({access.status === 'cancelled' ? 'acceso cancelado' : 'acceso finalizado'})
                   </p>
                 ) : access.settings?.enablePreRegistration ? (
-                  <div className="flex items-center justify-between bg-gray-50 border-2 border-gray-200 rounded-xl p-3 mt-1">
+                    <div className="flex items-center justify-between bg-gray-50 border-2 border-gray-200 rounded-xl p-3 mt-1">
                     <p className="text-sm text-gray-700">Habilitado</p>
                     <button
                       onClick={() => {
                         const link = `${window.location.origin}/public/register/${access._id}`;
-                        navigator.clipboard.writeText(link);
-                        alert('Enlace copiado al portapapeles');
+                        navigator.clipboard.writeText(link)
+                          .then(() => window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Enlace copiado al portapapeles', severity: 'success' } })))
+                          .catch(() => window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Error al copiar enlace', severity: 'error' } })));
                       }}
                       className="flex items-center px-3 py-1.5 text-xs text-gray-900 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-100"
                     >

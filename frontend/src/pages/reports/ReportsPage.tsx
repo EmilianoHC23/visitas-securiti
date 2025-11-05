@@ -53,8 +53,11 @@ export default function ReportsPage() {
   };
 
   const filterVisitsByDate = () => {
-    // Obtener la fecha seleccionada en formato YYYY-MM-DD (sin zona horaria)
-    const selectedDateStr = selectedDate.toISOString().split('T')[0];
+    // Obtener la fecha seleccionada en formato YYYY-MM-DD usando componentes locales
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth() + 1;
+    const day = selectedDate.getDate();
+    const selectedDateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
     let filtered = visits.filter(v => {
       const visitDatetime = v.checkOutTime || v.checkInTime || v.scheduledDate;
@@ -310,8 +313,11 @@ export default function ReportsPage() {
       const footerWidth = pdf.getTextWidth(footerText);
       pdf.text(footerText, (pageWidth - footerWidth) / 2, pageHeight - 10);
 
-      // Guardar PDF
-      const fileName = `Reporte-Visitas-${selectedDate.toISOString().split('T')[0]}.pdf`;
+      // Guardar PDF con nombre usando fecha local
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const fileName = `Reporte-Visitas-${year}-${month}-${day}.pdf`;
       pdf.save(fileName);
       
     } catch (error) {
@@ -383,8 +389,12 @@ export default function ReportsPage() {
             {/* Date Picker */}
             <div className="flex-shrink-0 w-full lg:w-52">
               <DatePicker
-                value={selectedDate.toISOString().split('T')[0]}
-                onChange={(value) => setSelectedDate(new Date(value))}
+                value={`${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`}
+                onChange={(value) => {
+                  // Parsear la fecha en formato YYYY-MM-DD como fecha local, no UTC
+                  const [year, month, day] = value.split('-').map(Number);
+                  setSelectedDate(new Date(year, month - 1, day));
+                }}
                 showClearButton={false}
               />
             </div>

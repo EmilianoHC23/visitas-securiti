@@ -53,14 +53,20 @@ export default function ReportsPage() {
   };
 
   const filterVisitsByDate = () => {
-    const startOfDay = new Date(selectedDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(selectedDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Obtener la fecha seleccionada en formato YYYY-MM-DD (sin zona horaria)
+    const selectedDateStr = selectedDate.toISOString().split('T')[0];
 
     let filtered = visits.filter(v => {
-      const visitDate = new Date(v.checkOutTime || v.checkInTime || v.scheduledDate);
-      return visitDate >= startOfDay && visitDate <= endOfDay;
+      const visitDatetime = v.checkOutTime || v.checkInTime || v.scheduledDate;
+      if (!visitDatetime) return false;
+      
+      // Convertir la fecha de la visita a formato local YYYY-MM-DD
+      const visitDate = new Date(visitDatetime);
+      const visitDateStr = visitDate.getFullYear() + '-' + 
+                          String(visitDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                          String(visitDate.getDate()).padStart(2, '0');
+      
+      return visitDateStr === selectedDateStr;
     });
 
     // Aplicar búsqueda

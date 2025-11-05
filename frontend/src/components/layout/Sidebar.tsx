@@ -115,14 +115,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <div 
                                 className="fw-bold" 
                                 style={{ 
-                                    background: 'linear-gradient(135deg, #ffffff 0%, #e5e7eb 100%)',
+                                    background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 50%, #e5e7eb 100%)',
                                     WebkitBackgroundClip: 'text',
                                     WebkitTextFillColor: 'transparent',
                                     backgroundClip: 'text',
-                                    letterSpacing: 1.5,
-                                    fontSize: '1.1rem',
-                                    fontWeight: 700,
-                                    textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                    letterSpacing: 1.8,
+                                    fontSize: '1.15rem',
+                                    fontWeight: 800,
+                                    filter: 'brightness(1.2) contrast(1.1)',
+                                    textShadow: '0 0 10px rgba(255,255,255,0.3), 0 0 20px rgba(255,255,255,0.2), 0 2px 8px rgba(0,0,0,0.3)',
+                                    position: 'relative' as const,
+                                    WebkitFilter: 'brightness(1.2) contrast(1.1)'
                                 }}
                             >
                                 VISITAS
@@ -130,10 +133,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <div 
                                 className="small" 
                                 style={{ 
-                                    color: 'rgba(255,255,255,0.75)',
-                                    letterSpacing: 2,
-                                    fontWeight: 500,
-                                    fontSize: '0.75rem'
+                                    background: 'linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(229,231,235,0.75) 100%)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    backgroundClip: 'text',
+                                    letterSpacing: 2.5,
+                                    fontWeight: 600,
+                                    fontSize: '0.7rem',
+                                    filter: 'brightness(1.15)',
+                                    textShadow: '0 0 8px rgba(255,255,255,0.2), 0 1px 4px rgba(0,0,0,0.2)',
+                                    WebkitFilter: 'brightness(1.15)'
                                 }}
                             >
                                 SECURITI

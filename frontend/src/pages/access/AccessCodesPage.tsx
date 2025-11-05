@@ -28,6 +28,7 @@ import { IoQrCodeOutline } from 'react-icons/io5';
 import { getAccesses, createAccess, updateAccess, cancelAccess, getUsers, checkBlacklist } from '../../services/api';
 import { Access, InvitedUser } from '../../types';
 import { formatDate, formatDateTime } from '../../utils/dateUtils';
+import { DatePicker, TimePicker } from '../../components/common/DatePicker';
 import { useAuth } from '../../contexts/AuthContext';
 
 export const AccessCodesPage: React.FC = () => {
@@ -231,25 +232,12 @@ export const AccessCodesPage: React.FC = () => {
           />
         </div>
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="pl-10 pr-10 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
-            />
-            {selectedDate && (
-              <button
-                type="button"
-                onClick={() => setSelectedDate('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                title="Limpiar fecha"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
+          <DatePicker
+            value={selectedDate}
+            onChange={setSelectedDate}
+            showClearButton={true}
+            placeholder="Seleccionar fecha"
+          />
           <button
             onClick={handleCreate}
             className="flex items-center px-5 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-semibold shadow-md hover:shadow-lg"
@@ -995,24 +983,16 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                     Fecha y hora de inicio <span className="text-red-500 ml-1">*</span>
                   </label>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={formData.startDate}
-                        min={new Date().toISOString().split('T')[0]}
-                        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                        className="w-full pl-4 pr-3 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
-                        required
-                      />
-                    </div>
-                    <div className="relative">
-                      <input
-                        type="time"
-                        value={formData.startTime}
-                        onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                        className="w-full pl-4 pr-3 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
-                      />
-                    </div>
+                    <DatePicker
+                      value={formData.startDate}
+                      onChange={(value) => setFormData({ ...formData, startDate: value })}
+                      min={new Date().toISOString().split('T')[0]}
+                      required
+                    />
+                    <TimePicker
+                      value={formData.startTime}
+                      onChange={(value) => setFormData({ ...formData, startTime: value })}
+                    />
                   </div>
                 </div>
 
@@ -1023,24 +1003,16 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                     Fecha y hora de finalización <span className="text-red-500 ml-1">*</span>
                   </label>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={formData.endDate}
-                        min={formData.startDate || new Date().toISOString().split('T')[0]}
-                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                        className="w-full pl-4 pr-3 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
-                        required
-                      />
-                    </div>
-                    <div className="relative">
-                      <input
-                        type="time"
-                        value={formData.endTime}
-                        onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                        className="w-full pl-4 pr-3 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
-                      />
-                    </div>
+                    <DatePicker
+                      value={formData.endDate}
+                      onChange={(value) => setFormData({ ...formData, endDate: value })}
+                      min={formData.startDate || new Date().toISOString().split('T')[0]}
+                      required
+                    />
+                    <TimePicker
+                      value={formData.endTime}
+                      onChange={(value) => setFormData({ ...formData, endTime: value })}
+                    />
                   </div>
                 </div>
               </div>
@@ -1544,25 +1516,17 @@ const EditAccessModal: React.FC<EditAccessModalProps> = ({ access, onClose, onSu
                 Nueva fecha y hora de finalización
               </h3>
               <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha fin</label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    min={new Date(access.endDate).toISOString().split('T')[0]}
-                    className="w-full pl-4 pr-3 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Hora fin</label>
-                  <input
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full pl-4 pr-3 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
-                  />
-                </div>
+                <DatePicker
+                  label="Fecha fin"
+                  value={endDate}
+                  onChange={setEndDate}
+                  min={new Date(access.endDate).toISOString().split('T')[0]}
+                />
+                <TimePicker
+                  label="Hora fin"
+                  value={endTime}
+                  onChange={setEndTime}
+                />
               </div>
             </div>
 

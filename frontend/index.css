@@ -97,3 +97,72 @@ body {
   box-shadow: 0 6px 18px rgba(2, 6, 23, 0.06);
 }
 
+/* React Aria Components Styling */
+.react-aria-DatePicker {
+  width: 100%;
+}
+
+.react-aria-Popover {
+  z-index: 9999 !important;
+}
+
+.react-aria-Calendar {
+  width: 100%;
+  max-width: 280px;
+}
+
+.react-aria-CalendarGrid {
+  width: 100%;
+}
+
+.react-aria-CalendarGridHeader {
+  display: contents;
+}
+
+.react-aria-CalendarHeaderCell {
+  width: 2.5rem;
+  height: 2.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  padding: 0.25rem;
+}
+
+.react-aria-CalendarGridBody {
+  display: contents;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 300ms ease-out;
+}
+
+.react-aria-Popover[data-entering] {
+  animation: fadeIn 200ms ease-out;
+}
+
+.react-aria-Popover[data-exiting] {
+  animation: fadeIn 150ms ease-in reverse;
+}

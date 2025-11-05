@@ -1,3 +1,9 @@
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { User as UserIcon, Users, FileText, UserPlus, Mail, Upload, Trash2, X, Shield, ChevronDown, CheckCircle, AlertCircle, Info, AlertTriangle, Camera } from 'lucide-react';
+import { User, UserRole } from '../../types';
+import * as api from '../../services/api';
+
 // Modal de vista previa de usuario - Modernizado
 const UserPreviewModal: React.FC<{
     isOpen: boolean;
@@ -98,11 +104,6 @@ const UserPreviewModal: React.FC<{
         </div>
     );
 });
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { User as UserIcon, Users, FileText, UserPlus, Mail, Upload, Trash2, X, Shield, ChevronDown, CheckCircle, AlertCircle, Info, AlertTriangle, Camera } from 'lucide-react';
-import { User, UserRole } from '../../types';
-import * as api from '../../services/api';
 
 // Reusable confirm dialog - Colores consistentes con SettingsPage
 const ConfirmDialog: React.FC<{
@@ -116,7 +117,8 @@ const ConfirmDialog: React.FC<{
     onPrimary: () => void;
     onSecondary?: () => void;
     icon?: React.ReactNode;
-}> = ({ isOpen, title, message, primaryLabel = 'Confirmar', secondaryLabel = 'Cancelar', showSecondary = false, onClose, onPrimary, onSecondary, icon }) => {
+    variant?: 'dark' | 'danger';
+}> = ({ isOpen, title, message, primaryLabel = 'Confirmar', secondaryLabel = 'Cancelar', showSecondary = false, onClose, onPrimary, onSecondary, icon, variant = 'dark' }) => {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -126,20 +128,21 @@ const ConfirmDialog: React.FC<{
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden"
             >
-                {/* Header con gradiente rojo para acciones destructivas */}
-                <div className="relative p-6 bg-gradient-to-br from-red-600 to-red-700">
-                    <div className="absolute inset-0 bg-black/10"></div>
+                {/* Header: dark by default, danger for destructive actions */}
+                <div className={"relative p-8 rounded-t-2xl " + (variant === 'danger' ? 'bg-gradient-to-br from-red-600 to-red-700' : 'bg-gradient-to-br from-gray-900 to-gray-700')}>
+                    {/* Ensure overlay respects header rounding to avoid visual artefacts */}
+                    <div className="absolute inset-0 rounded-t-2xl bg-black/10 pointer-events-none"></div>
                     <div className="relative flex items-start justify-between text-white">
                         <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-1 ring-white/30">
+                            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-1 ring-white/30">
                                 {icon || (
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 9v2m0 4h.01M21 12A9 9 0 1112 3a9 9 0 019 9z" />
                                     </svg>
                                 )}
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-white">{title}</h3>
+                                <h3 className="text-xl md:text-2xl font-bold text-white">{title}</h3>
                             </div>
                         </div>
                         <button
@@ -152,10 +155,10 @@ const ConfirmDialog: React.FC<{
                     </div>
                 </div>
 
-                <div className="p-6">
+                <div className="p-6 rounded-b-2xl bg-white">
                     <p className="text-sm text-gray-700 mb-6 whitespace-pre-line leading-relaxed">{message}</p>
 
-                    <div className="flex items-center justify-end gap-3">
+                    <div className="flex items-center justify-center gap-3">
                         <button
                             onClick={() => { onClose(); }}
                             className="px-6 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all font-medium"
@@ -165,7 +168,7 @@ const ConfirmDialog: React.FC<{
 
                         <button
                             onClick={() => { onPrimary(); }}
-                            className="px-6 py-2.5 text-white bg-gradient-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl shadow-md hover:shadow-lg transition-all font-medium"
+                            className={"px-6 py-2.5 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium " + (variant === 'danger' ? 'bg-gradient-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800' : 'bg-gradient-to-br from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600')}
                         >
                             {primaryLabel}
                         </button>
@@ -187,31 +190,36 @@ const ConfirmDialog: React.FC<{
     );
 };
 
-// Simple notification banner (top-center) - Optimizado con memo
+// Floating toast notification (top-right) - unified with other pages
 const NotificationBanner: React.FC<{ message: string; type: 'success' | 'error' | 'info' | 'warning'; onClose: () => void }> = memo(({ message, type, onClose }) => {
     const config = {
-        success: { bg: 'bg-green-50 border-green-200', text: 'text-green-800', icon: <CheckCircle className="w-5 h-5 text-green-600" /> },
-        error: { bg: 'bg-red-50 border-red-200', text: 'text-red-800', icon: <AlertCircle className="w-5 h-5 text-red-600" /> },
-        warning: { bg: 'bg-yellow-50 border-yellow-200', text: 'text-yellow-800', icon: <AlertTriangle className="w-5 h-5 text-yellow-600" /> },
-        info: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-800', icon: <Info className="w-5 h-5 text-blue-600" /> }
+        success: { bg: 'bg-emerald-600', iconBg: 'bg-emerald-700', text: 'text-white', icon: <CheckCircle className="w-5 h-5 text-white" /> },
+        error: { bg: 'bg-red-600', iconBg: 'bg-red-700', text: 'text-white', icon: <AlertCircle className="w-5 h-5 text-white" /> },
+        warning: { bg: 'bg-yellow-600', iconBg: 'bg-yellow-700', text: 'text-white', icon: <AlertTriangle className="w-5 h-5 text-white" /> },
+        info: { bg: 'bg-blue-600', iconBg: 'bg-blue-700', text: 'text-white', icon: <Info className="w-5 h-5 text-white" /> }
     };
-    const { bg, text, icon } = config[type];
-    
+    const { bg, iconBg, text, icon } = config[type];
+
+    useEffect(() => {
+        const t = setTimeout(() => onClose(), 4500);
+        return () => clearTimeout(t);
+    }, [onClose]);
+
     return (
-        <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className={`fixed left-1/2 -translate-x-1/2 top-6 z-[60] ${bg} border px-4 py-3 rounded-xl shadow-lg`}
-        > 
-            <div className={`flex items-center gap-3 ${text}`}>
-                {icon}
-                <div className="flex-1 text-sm font-medium">{message}</div>
-                <button onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors">
-                    <X className="w-4 h-4" />
-                </button>
-            </div>
-        </motion.div>
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="fixed top-4 right-4 z-[9999]"
+            >
+                <div className={`flex items-center gap-3 ${bg} rounded-lg px-4 py-3 shadow-lg max-w-md`}>
+                    <div className={`${iconBg} w-8 h-8 rounded-full flex items-center justify-center`}>{icon}</div>
+                    <div className={`text-sm font-medium ${text} flex-1`}>{message}</div>
+                    <button onClick={onClose} className="text-white/90 hover:text-white ml-3">✕</button>
+                </div>
+            </motion.div>
+        </AnimatePresence>
     );
 });
 
@@ -1183,6 +1191,8 @@ export const UserManagementPage: React.FC = () => {
                 onClose={() => closeConfirm()}
                 onPrimary={() => handleConfirmPrimary()}
                 onSecondary={() => handleConfirmSecondary()}
+                /* Use dark variant for all confirms (including delete) to match other alerts */
+                variant={'dark'}
             />
 
             {notification && (

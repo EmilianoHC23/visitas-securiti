@@ -1029,42 +1029,42 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200"
+        className="bg-white rounded-2xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200"
       >
-        <div className="p-8">
+        <div className="p-4 sm:p-6 md:p-8">
           {/* Header */}
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Crear acceso</h2>
-              <p className="text-sm text-gray-600">Configura los detalles del acceso para tus visitantes</p>
+          <div className="flex justify-between items-start mb-6 sm:mb-8">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Crear acceso</h2>
+              <p className="text-xs sm:text-sm text-gray-600">Configura los detalles del acceso para tus visitantes</p>
             </div>
             <button 
               onClick={onClose} 
-              className="text-gray-400 hover:text-gray-700 transition-colors p-2 hover:bg-gray-100 rounded-xl"
+              className="text-gray-400 hover:text-gray-700 transition-colors p-2 hover:bg-gray-100 rounded-xl ml-2 flex-shrink-0"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {/* Información básica */}
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <div className="w-10 h-10 bg-gradient-to-br from-gray-900 to-gray-700 rounded-xl flex items-center justify-center mr-3 shadow-md">
-                  <IoQrCodeOutline className="w-5 h-5 text-white" />
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-gray-900 to-gray-700 rounded-xl flex items-center justify-center mr-2 sm:mr-3 shadow-md flex-shrink-0">
+                  <IoQrCodeOutline className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                Información del Acceso
+                <span className="text-sm sm:text-base">Información del Acceso</span>
               </h3>
               
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                    <Building2 className="w-4 h-4 mr-2 text-gray-900" />
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                    <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-900" />
                     Razón del acceso <span className="text-red-500 ml-1">*</span>
                   </label>
                   {/* Animated dropdown for reason */}
@@ -1074,30 +1074,30 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                    <Edit2 className="w-4 h-4 mr-2 text-gray-900" />
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                    <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-900" />
                     Título <span className="text-red-500 ml-1">*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.eventName}
                     onChange={(e) => setFormData({ ...formData, eventName: e.target.value })}
-                    placeholder="Ej: Reunión de proyecto Q4"
-                    className="w-full px-4 py-3.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white text-base"
+                    placeholder="Ej: Reunión de proyecto"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white text-sm sm:text-base"
                     required
                   />
                 </div>
               </div>
               
               {/* Toggle Pre-registro */}
-              <div className="bg-white border-2 border-gray-300 rounded-xl p-5 hover:border-gray-400 hover:shadow-md transition-all">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
+              <div className="bg-white border-2 border-gray-300 rounded-xl p-3 sm:p-5 hover:border-gray-400 hover:shadow-md transition-all">
+                <div className="flex items-start justify-between gap-3 sm:gap-4">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center mb-1">
-                      <LinkIcon className="w-4 h-4 mr-2 text-gray-900" />
-                      <h4 className="text-base font-bold text-gray-900">Crear enlace de pre-registro</h4>
+                      <LinkIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-900 flex-shrink-0" />
+                      <h4 className="text-sm sm:text-base font-bold text-gray-900">Crear enlace de pre-registro</h4>
                     </div>
-                    <p className="text-sm text-gray-600 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                       Genera un enlace público para que las personas puedan registrarse al evento sin necesidad de invitación directa
                     </p>
                   </div>
@@ -1106,13 +1106,13 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                     onClick={() => setFormData({ ...formData, enablePreRegistration: !formData.enablePreRegistration })}
                     role="switch"
                     aria-checked={formData.enablePreRegistration}
-                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors flex-shrink-0 ${
+                    className={`relative inline-flex h-6 w-11 sm:h-7 sm:w-14 items-center rounded-full transition-colors flex-shrink-0 ${
                       formData.enablePreRegistration ? 'bg-gray-900' : 'bg-gray-300'
                     }`}
                   >
                     <span
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-md ${
-                        formData.enablePreRegistration ? 'translate-x-7' : 'translate-x-1'
+                      className={`inline-block h-4 w-4 sm:h-5 sm:w-5 transform rounded-full bg-white transition-transform shadow-md ${
+                        formData.enablePreRegistration ? 'translate-x-6 sm:translate-x-7' : 'translate-x-1'
                       }`}
                     />
                   </button>
@@ -1121,19 +1121,19 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
             </div>
 
             {/* Fechas y Horas */}
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <div className="w-10 h-10 bg-gradient-to-br from-gray-900 to-gray-700 rounded-xl flex items-center justify-center mr-3 shadow-md">
-                  <Clock className="w-5 h-5 text-white" />
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-gray-900 to-gray-700 rounded-xl flex items-center justify-center mr-2 sm:mr-3 shadow-md flex-shrink-0">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                Horario del Acceso
+                <span className="text-sm sm:text-base">Horario del Acceso</span>
               </h3>
               
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 {/* Inicio */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <Calendar className="w-4 h-4 mr-2 text-gray-900" />
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3 flex items-center">
+                    <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-900" />
                     Fecha y hora de inicio <span className="text-red-500 ml-1">*</span>
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -1152,8 +1152,8 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
 
                 {/* Fin */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <Calendar className="w-4 h-4 mr-2 text-gray-900" />
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3 flex items-center">
+                    <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-900" />
                     Fecha y hora de finalización <span className="text-red-500 ml-1">*</span>
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -1173,32 +1173,32 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
             </div>
 
             {/* Invitados */}
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <div className="w-10 h-10 bg-gradient-to-br from-gray-900 to-gray-700 rounded-xl flex items-center justify-center mr-3 shadow-md">
-                  <Users className="w-5 h-5 text-white" />
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-gray-900 to-gray-700 rounded-xl flex items-center justify-center mr-2 sm:mr-3 shadow-md flex-shrink-0">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                Visitantes Invitados
+                <span className="text-sm sm:text-base">Visitantes Invitados</span>
               </h3>
               
-              <p className="text-sm text-gray-600 mb-4 flex items-center">
-                <Mail className="w-4 h-4 mr-2 text-gray-900" />
+              <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 flex items-center">
+                <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-900" />
                 Ingresa el correo electrónico y nombre de tus visitantes
               </p>
 
               <div className="space-y-3">
                 {invitedUsers.map((user, index) => (
-                  <div key={index} className="flex items-center gap-3 bg-white p-4 rounded-xl border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all">
+                  <div key={index} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 bg-white p-3 sm:p-4 rounded-xl border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all">
                     {/* Email input */}
                     <div className="flex-1">
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                         <input
                           type="email"
                           placeholder="correo@ejemplo.com"
                           value={user.email}
                           onChange={(e) => updateInvitedUser(index, 'email', e.target.value)}
-                          className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white"
+                          className="w-full pl-9 sm:pl-11 pr-3 sm:pr-4 py-2.5 sm:py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white text-sm sm:text-base"
                         />
                       </div>
                     </div>
@@ -1207,13 +1207,13 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                     {user.email && (
                       <div className="flex-1">
                         <div className="relative">
-                          <UserCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <UserCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                           <input
                             type="text"
                             placeholder="Nombre del visitante"
                             value={user.name}
                             onChange={(e) => updateInvitedUser(index, 'name', e.target.value)}
-                            className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white"
+                            className="w-full pl-9 sm:pl-11 pr-3 sm:pr-4 py-2.5 sm:py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white text-sm sm:text-base"
                           />
                         </div>
                       </div>
@@ -1224,10 +1224,10 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                       <button
                         type="button"
                         onClick={() => removeInvitedUser(index)}
-                        className="p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2.5 sm:p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors self-end sm:self-auto"
                         title="Eliminar visitante"
                       >
-                        <X className="w-5 h-5" />
+                        <X className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
                     )}
                   </div>
@@ -1237,7 +1237,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                 <button
                   type="button"
                   onClick={addInvitedUser}
-                  className="w-full py-3.5 text-sm font-semibold text-gray-900 border-2 border-dashed border-gray-300 rounded-xl hover:border-gray-900 hover:bg-gradient-to-r hover:from-gray-50 hover:to-transparent transition-all flex items-center justify-center shadow-sm"
+                  className="w-full py-3 sm:py-3.5 text-xs sm:text-sm font-semibold text-gray-900 border-2 border-dashed border-gray-300 rounded-xl hover:border-gray-900 hover:bg-gradient-to-r hover:from-gray-50 hover:to-transparent transition-all flex items-center justify-center shadow-sm"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Agregar otro visitante
@@ -1246,13 +1246,13 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
             </div>
 
             {/* Opciones avanzadas */}
-            <div className="border-t-2 border-gray-200 pt-6">
+            <div className="border-t-2 border-gray-200 pt-4 sm:pt-6">
               <button
                 type="button"
                 onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                className="flex items-center text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors group"
+                className="flex items-center text-xs sm:text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors group"
               >
-                <svg className={`w-5 h-5 mr-2 transition-transform ${showAdvancedOptions ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-4 h-4 sm:w-5 sm:h-5 mr-2 transition-transform ${showAdvancedOptions ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
                 <span className="group-hover:underline">Opciones avanzadas</span>
@@ -1260,12 +1260,12 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
               </button>
 
               {showAdvancedOptions && (
-                <div className="mt-6 space-y-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 shadow-sm">
+                <div className="mt-4 sm:mt-6 space-y-4 sm:space-y-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm">
                   
                   {/* Anfitrión */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
-                      <UserCircle className="w-5 h-5 mr-2 text-gray-900" />
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-800 mb-2 sm:mb-3 flex items-center">
+                      <UserCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 text-gray-900" />
                       Anfitrión responsable
                     </label>
                       {/* Animated host dropdown */}
@@ -1281,40 +1281,40 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
 
                   {/* Lugar */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
-                      <MapPin className="w-5 h-5 mr-2 text-gray-900" />
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-800 mb-2 sm:mb-3 flex items-center">
+                      <MapPin className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 text-gray-900" />
                       Ubicación específica
                     </label>
                     <input
                       type="text"
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      placeholder="Ej. Sala de juntas, Edificio A, Piso 3"
-                      className="w-full px-4 py-3.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white text-base"
+                      placeholder="Ej. Sala de juntas, Edificio A"
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white text-sm sm:text-base"
                     />
                   </div>
 
                   {/* Imagen del evento */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
-                      <Upload className="w-5 h-5 mr-2 text-gray-900" />
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-800 mb-2 sm:mb-3 flex items-center">
+                      <Upload className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 text-gray-900" />
                       Imagen del evento
                     </label>
-                    <div className="flex items-start space-x-4">
+                    <div className="flex flex-col sm:flex-row items-start space-y-3 sm:space-y-0 sm:space-x-4">
                       {formData.eventImage ? (
-                        <div className="relative w-32 h-32 rounded-xl overflow-hidden border-2 border-gray-300 shadow-md">
+                        <div className="relative w-full sm:w-32 h-32 rounded-xl overflow-hidden border-2 border-gray-300 shadow-md">
                           <img src={formData.eventImage} alt="Preview" className="w-full h-full object-cover" />
                           <button
                             type="button"
                             onClick={() => setFormData({ ...formData, eventImage: '' })}
                             className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg transition-colors"
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </button>
                         </div>
                       ) : (
-                        <label className="w-32 h-32 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-gray-900 hover:bg-gray-100 transition-all group">
-                          <Upload className="w-8 h-8 text-gray-400 group-hover:text-gray-900 mb-2 transition-colors" />
+                        <label className="w-full sm:w-32 h-32 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-gray-900 hover:bg-gray-100 transition-all group">
+                          <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 group-hover:text-gray-900 mb-2 transition-colors" />
                           <span className="text-xs text-gray-500 group-hover:text-gray-900 font-medium">Subir imagen</span>
                           <input
                             type="file"
@@ -1334,16 +1334,16 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
 
                   {/* Información adicional */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
-                      <Edit2 className="w-5 h-5 mr-2 text-gray-900" />
+                    <label className="block text-xs sm:text-sm font-semibold text-gray-800 mb-2 sm:mb-3 flex items-center">
+                      <Edit2 className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 text-gray-900" />
                       Notas adicionales
                     </label>
                     <textarea
                       value={formData.additionalInfo}
                       onChange={(e) => setFormData({ ...formData, additionalInfo: e.target.value })}
                       rows={4}
-                      placeholder="Agrega instrucciones especiales, requisitos de entrada, código de vestimenta, etc."
-                      className="w-full px-4 py-3.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all resize-none bg-white text-base"
+                      placeholder="Agrega instrucciones especiales, requisitos de entrada..."
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all resize-none bg-white text-sm sm:text-base"
                     />
                   </div>
                 </div>
@@ -1351,35 +1351,35 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
             </div>
 
             {/* Botones de acción */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 border-t-2 border-gray-200">
-              <div className="flex items-center text-sm text-gray-600 font-medium">
-                <Bell className="w-4 h-4 mr-2 text-gray-900" />
-                Los invitados recibirán un correo con QR de acceso
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 pt-6 sm:pt-8 border-t-2 border-gray-200">
+              <div className="flex items-center text-xs sm:text-sm text-gray-600 font-medium order-2 sm:order-1">
+                <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-900" />
+                Los invitados recibirán un correo con QR
               </div>
-              <div className="flex space-x-3">
+              <div className="flex flex-col sm:flex-row w-full sm:w-auto space-y-2 sm:space-y-0 sm:space-x-3 order-1 sm:order-2">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all font-semibold shadow-sm"
+                  className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all font-semibold shadow-sm text-sm sm:text-base"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-8 py-3 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:from-gray-800 hover:to-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center font-semibold shadow-lg hover:shadow-xl"
+                  className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:from-gray-800 hover:to-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center font-semibold shadow-lg hover:shadow-xl text-sm sm:text-base"
                 >
                   {loading ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin -ml-1 mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 text-white" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Creando acceso...
+                      Creando...
                     </>
                   ) : (
                     <>
-                      <CheckCircle className="w-5 h-5 mr-2" />
+                      <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       Crear acceso
                     </>
                   )}

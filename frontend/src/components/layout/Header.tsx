@@ -8,7 +8,34 @@ import { ChevronDownIcon, LogoutIcon } from '../common/icons';
 import { FaX } from 'react-icons/fa6';
 import { useLocation } from 'react-router-dom';
 
-const getPageTitle = (pathname: string): string => {
+const getPageTitle = (pathname: string, isMobile: boolean = false): string => {
+    if (isMobile) {
+        // Títulos cortos para móvil
+        switch (pathname) {
+            case '/':
+                return 'Dashboard';
+            case '/visits':
+                return 'Visitas';
+            case '/agenda':
+                return 'Agenda';
+            case '/users':
+                return 'Usuarios';
+            case '/access-codes':
+                return 'Accesos';
+            case '/public-registration':
+                return 'Auto-registro';
+            case '/blacklist':
+                return 'Lista Negra';
+            case '/reports':
+                return 'Reportes';
+            case '/settings':
+                return 'Configuración';
+            default:
+                return 'SecuriTI';
+        }
+    }
+    
+    // Títulos completos para desktop
     switch (pathname) {
         case '/':
             return 'Dashboard';
@@ -80,7 +107,7 @@ export const Header: React.FC<{
     const [btnHover, setBtnHover] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const location = useLocation();
-    const pageTitle = getPageTitle(location.pathname);
+    const pageTitle = getPageTitle(location.pathname, isMobile);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -96,8 +123,14 @@ export const Header: React.FC<{
 
     return (
         // make header background transparent and remove bottom border so the white "rectangle" disappears
-        <nav className="navbar navbar-expand navbar-light px-3" style={{ minHeight: 64, background: 'transparent', borderBottom: 'none' }}>
-            <div className="container-fluid">
+        <nav className="navbar navbar-expand navbar-light" style={{ 
+            minHeight: 64, 
+            background: 'transparent', 
+            borderBottom: 'none',
+            paddingLeft: isMobile ? '1rem' : '1.5rem',
+            paddingRight: isMobile ? '1rem' : '1.5rem'
+        }}>
+            <div className="container-fluid" style={{ paddingLeft: 0, paddingRight: 0 }}>
                 <div className="d-flex align-items-center">
                     {/* Botón hamburguesa a la izquierda */}
                     <button
@@ -189,12 +222,32 @@ export const Header: React.FC<{
                         </div>
                     </button>
                 </div>
-                <span className="navbar-brand fw-semibold fs-4 text-dark mb-0 ms-4 flex-grow-1" style={{ fontSize: isMobile ? '1.1rem' : undefined }}>{pageTitle}</span>
+                <span 
+                    className="navbar-brand fw-semibold text-dark mb-0 flex-grow-1" 
+                    style={{ 
+                        fontSize: isMobile ? '0.9rem' : '1.5rem',
+                        marginLeft: isMobile ? '0.25rem' : '1rem',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        maxWidth: isMobile ? 'calc(100vw - 180px)' : undefined
+                    }}
+                >
+                    {pageTitle}
+                </span>
                 <div className="ms-auto position-relative" ref={dropdownRef}>
                     {/* Pill container similar to the Horizon UI sample: subtle background, rounded, with a search area and the user block */}
                     <div
-                        className="d-flex align-items-center gap-2 rounded-pill shadow-sm px-3 py-1"
-                        style={{ background: 'rgba(255,255,255,0.95)', minHeight: 48, maxHeight: 56 }}
+                        className="d-flex align-items-center gap-2 rounded-pill shadow-sm"
+                        style={{ 
+                            background: 'rgba(255,255,255,0.95)', 
+                            minHeight: isMobile ? 40 : 48, 
+                            maxHeight: isMobile ? 44 : 56,
+                            paddingLeft: isMobile ? '0.5rem' : '1rem',
+                            paddingRight: isMobile ? '0.5rem' : '1rem',
+                            paddingTop: '0.25rem',
+                            paddingBottom: '0.25rem'
+                        }}
                     >
                         {/* user clickable block only (search & notifications removed as requested) */}
                         <button
@@ -224,12 +277,12 @@ export const Header: React.FC<{
                             style={{ background: 'transparent', outline: 'none', boxShadow: 'none', border: 'none', WebkitTapHighlightColor: 'transparent' }}
                         >
                             {user.profileImage && user.profileImage.trim() !== '' ? (
-                                <span className={`${isMobile ? '' : 'me-2'} d-inline-flex align-items-center justify-content-center rounded-circle bg-gray-200 position-relative`} style={{ width: 44, height: 44 }}>
+                                <span className={`${isMobile ? '' : 'me-2'} d-inline-flex align-items-center justify-content-center rounded-circle bg-gray-200 position-relative`} style={{ width: isMobile ? 36 : 44, height: isMobile ? 36 : 44 }}>
                                     <img
                                         src={user.profileImage}
                                         alt="Perfil"
                                         className="rounded-circle position-absolute top-0 start-0"
-                                        style={{ width: 44, height: 44, objectFit: 'cover' }}
+                                        style={{ width: isMobile ? 36 : 44, height: isMobile ? 36 : 44, objectFit: 'cover' }}
                                         onError={e => {
                                             const target = e.target as HTMLImageElement;
                                             target.style.display = 'none';
@@ -242,8 +295,8 @@ export const Header: React.FC<{
                                     </svg>
                                 </span>
                             ) : (
-                                <span className={`${isMobile ? '' : 'me-2'} d-inline-flex align-items-center justify-content-center rounded-circle bg-gray-200`} style={{ width: 44, height: 44 }}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-7 h-7 text-gray-400">
+                                <span className={`${isMobile ? '' : 'me-2'} d-inline-flex align-items-center justify-content-center rounded-circle bg-gray-200`} style={{ width: isMobile ? 36 : 44, height: isMobile ? 36 : 44 }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className={isMobile ? 'w-5 h-5 text-gray-400' : 'w-7 h-7 text-gray-400'}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                                     </svg>
                                 </span>

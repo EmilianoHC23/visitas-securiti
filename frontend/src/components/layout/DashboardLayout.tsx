@@ -55,7 +55,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     return (
-        <div className="container-fluid min-vh-100 d-flex p-0 bg-light" style={{ height: '100vh' }}>
+        <div className="container-fluid min-vh-100 d-flex p-0 bg-light" style={{ height: '100vh', position: 'relative' }}>
             {/* Backdrop para móvil */}
             {isMobile && mobileMenuOpen && (
                 <div
@@ -82,7 +82,16 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
             />
 
             {/* Right column: Header on top, content below */}
-            <div className="d-flex flex-column flex-grow-1 min-vh-0 min-w-0" style={{ flex: 1, minHeight: 0, overflowX: 'hidden' }}>
+            <div 
+                className="d-flex flex-column flex-grow-1 min-vh-0 min-w-0" 
+                style={{ 
+                    flex: 1, 
+                    minHeight: 0, 
+                    overflowX: 'hidden',
+                    width: isMobile ? '100%' : undefined,
+                    marginLeft: isMobile ? 0 : undefined
+                }}
+            >
                 <Header 
                     sidebarCollapsed={sidebarCollapsed} 
                     setSidebarCollapsed={handleToggleSidebar}

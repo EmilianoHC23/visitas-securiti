@@ -86,10 +86,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <nav
             className={`sidebar d-flex flex-column${collapsed ? ' align-items-center' : ' align-items-start'}`}
             style={{
-                minWidth: isMobile ? (mobileMenuOpen ? 280 : 0) : (collapsed ? 64 : 220),
-                width: isMobile ? (mobileMenuOpen ? 280 : 0) : (collapsed ? 64 : 220),
+                minWidth: isMobile ? 0 : (collapsed ? 64 : 220),
+                width: isMobile ? 280 : (collapsed ? 64 : 220),
+                maxWidth: isMobile ? 280 : undefined,
                 transition: isMobile ? 'transform 0.3s ease' : 'min-width 0.2s, width 0.2s',
                 overflowX: 'hidden',
+                overflowY: 'auto',
                 zIndex: isMobile ? 1050 : 10,
                 background: 'linear-gradient(180deg, var(--sidebar-gradient-start) 0%, var(--sidebar-gradient-end) 100%)',
                 color: '#ffffff',
@@ -98,7 +100,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 left: 0,
                 height: '100vh',
                 transform: isMobile ? (mobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
-                boxShadow: isMobile && mobileMenuOpen ? '2px 0 10px rgba(0,0,0,0.3)' : 'none'
+                boxShadow: isMobile && mobileMenuOpen ? '2px 0 10px rgba(0,0,0,0.3)' : 'none',
+                visibility: isMobile && !mobileMenuOpen ? 'hidden' : 'visible'
             }}
         >
             {/* Top: logo + name (shows full when expanded, only avatar when collapsed) */}

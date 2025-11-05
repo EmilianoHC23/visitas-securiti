@@ -55,6 +55,7 @@ export const PublicRegistrationPage: React.FC = () => {
 
       // Cargar el logo
       const logoImg = new Image();
+      logoImg.crossOrigin = 'anonymous';
       logoImg.src = '/logo.png';
       
       await new Promise((resolve, reject) => {
@@ -62,21 +63,29 @@ export const PublicRegistrationPage: React.FC = () => {
         logoImg.onerror = reject;
       });
 
-      // Agregar logo centrado con sombra (simulada)
-      const logoWidth = 45;
-      const logoHeight = 45;
-      const logoX = (pageWidth - logoWidth) / 2;
-      const logoY = 15;
+      // Agregar logo centrado con mejor calidad
+      const logoSize = 35;
+      const logoX = (pageWidth - logoSize) / 2;
+      const logoY = 18;
       
       // Círculo de fondo blanco para el logo
       pdf.setFillColor(255, 255, 255);
-      const circleRadius = 28;
-      pdf.circle(logoX + logoWidth/2, logoY + logoHeight/2, circleRadius, 'F');
+      const circleRadius = 22;
+      pdf.circle(pageWidth/2, logoY + logoSize/2, circleRadius, 'F');
       
-      pdf.addImage(logoImg, 'PNG', logoX, logoY, logoWidth, logoHeight);
+      // Agregar logo con mejor resolución
+      pdf.addImage(logoImg, 'PNG', logoX, logoY, logoSize, logoSize);
+
+      // Nombre del sistema debajo del logo
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(255, 255, 255); // Texto blanco
+      const nombreSistema = 'Visitas SecuriTI';
+      const nombreWidth = pdf.getTextWidth(nombreSistema);
+      pdf.text(nombreSistema, (pageWidth - nombreWidth) / 2, logoY + logoSize + 12);
 
       // Contenedor principal moderno con bordes redondeados (simulado)
-      const cardY = 95;
+      const cardY = 105;
       const cardPadding = 15;
       const cardWidth = pageWidth - (cardPadding * 2);
       

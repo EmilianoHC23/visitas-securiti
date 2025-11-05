@@ -142,11 +142,11 @@ export const AccessCodesPage: React.FC = () => {
 
   const getTypeColor = (type: string) => {
     const colors = {
-      reunion: 'bg-blue-100 text-blue-800',
-      proyecto: 'bg-purple-100 text-purple-800',
-      evento: 'bg-green-100 text-green-800',
-      visita: 'bg-yellow-100 text-yellow-800',
-      otro: 'bg-gray-100 text-gray-800'
+      reunion: 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300',
+      proyecto: 'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border border-purple-300',
+      evento: 'bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 border border-emerald-300',
+      visita: 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border border-yellow-300',
+      otro: 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border border-gray-300'
     };
     return colors[type as keyof typeof colors] || colors.otro;
   };
@@ -163,16 +163,16 @@ export const AccessCodesPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 lg:p-8">
       {/* Header mejorado */}
-      <div className="mb-6">
-        <div className="flex items-center gap-4 py-4">
-          <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center">
-            <IoQrCodeOutline className="w-6 h-6 text-white" />
+      <div className="mb-8">
+        <div className="flex items-center gap-4 mb-3">
+          <div className="w-14 h-14 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
+            <IoQrCodeOutline className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Accesos / Eventos</h1>
-            <p className="text-gray-600 text-sm md:text-base">Gestiona, filtra y consulta los accesos creados en tu organización</p>
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Accesos / Eventos</h1>
+            <p className="text-gray-600 text-sm sm:text-base mt-1">Gestiona, filtra y consulta los accesos creados en tu organización</p>
           </div>
         </div>
       </div>
@@ -186,111 +186,125 @@ export const AccessCodesPage: React.FC = () => {
             exit={{ opacity: 0, y: -8 }}
             className="fixed top-6 right-6 z-50"
           >
-            <div className={`max-w-sm w-full px-4 py-3 rounded-lg shadow-lg text-sm ${toast.severity === 'success' ? 'bg-emerald-600 text-white' : toast.severity === 'error' ? 'bg-red-600 text-white' : 'bg-gray-800 text-white'}`}>
+            <div className={`max-w-sm w-full px-5 py-4 rounded-xl shadow-2xl text-sm font-medium border-2 ${
+              toast.severity === 'success' 
+                ? 'bg-emerald-50 text-emerald-900 border-emerald-200' 
+                : toast.severity === 'error' 
+                ? 'bg-red-50 text-red-900 border-red-200' 
+                : 'bg-blue-50 text-blue-900 border-blue-200'
+            }`}>
               {toast.message}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Tabs */}
-      <div className="flex space-x-1 mb-6 border-b-2 border-gray-200">
-        <button
-          onClick={() => setActiveTab('active')}
-          className={`px-6 py-3 font-semibold flex items-center transition-colors ${
-            activeTab === 'active'
-              ? 'text-gray-900 border-b-2 border-gray-900'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Clock className={`w-4 h-4 mr-2 ${activeTab === 'active' ? 'text-gray-900' : 'text-gray-400'}`} />
-          Activos
-        </button>
-        <button
-          onClick={() => setActiveTab('finalized')}
-          className={`px-6 py-3 font-semibold flex items-center transition-colors ${
-            activeTab === 'finalized'
-              ? 'text-gray-900 border-b-2 border-gray-900'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <CheckCircle className={`w-4 h-4 mr-2 ${activeTab === 'finalized' ? 'text-gray-900' : 'text-gray-400'}`} />
-          Finalizados
-        </button>
-      </div>
+      {/* Tabs mejorados */}
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden mb-6">
+        <div className="border-b border-gray-100 bg-gray-50/50">
+          <nav className="flex -mb-px">
+            <button
+              onClick={() => setActiveTab('active')}
+              className={`flex-1 px-4 sm:px-6 py-4 sm:py-5 text-sm sm:text-base font-semibold border-b-3 transition-all ${
+                activeTab === 'active'
+                  ? 'border-gray-900 text-gray-900 bg-white'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-white/50'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Clock className="w-4 h-4" />
+                <span>Activos</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('finalized')}
+              className={`flex-1 px-4 sm:px-6 py-4 sm:py-5 text-sm sm:text-base font-semibold border-b-3 transition-all ${
+                activeTab === 'finalized'
+                  ? 'border-gray-900 text-gray-900 bg-white'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-white/50'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                <span>Finalizados</span>
+              </div>
+            </button>
+          </nav>
+        </div>
 
-      {/* Toolbar con búsqueda y calendario */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, ubicación o tipo..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <DatePicker
-            value={selectedDate}
-            onChange={setSelectedDate}
-            showClearButton={true}
-            placeholder="Seleccionar fecha"
-          />
-          <button
-            onClick={handleCreate}
-            className="flex items-center px-5 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-semibold shadow-md hover:shadow-lg"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Crear Acceso
-          </button>
-        </div>
-      </div>
+        {/* Toolbar con búsqueda y calendario */}
+        <div className="p-6 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Buscar por nombre, ubicación o tipo..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <DatePicker
+                value={selectedDate}
+                onChange={setSelectedDate}
+                showClearButton={true}
+                placeholder="Seleccionar fecha"
+              />
+              <button
+                onClick={handleCreate}
+                className="flex items-center px-5 py-3 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:from-gray-800 hover:to-gray-600 transition-all font-semibold shadow-lg hover:shadow-xl"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Crear Acceso
+              </button>
+            </div>
+          </div>
 
-      {/* Tabla de accesos */}
-      {loading ? (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-          <p className="mt-2 text-gray-600">Cargando accesos...</p>
-        </div>
-      ) : filteredAccesses.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-          <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-600 font-medium">No hay accesos {activeTab === 'active' ? 'activos' : 'finalizados'}</p>
-          <p className="text-sm text-gray-500 mt-1">Los accesos que crees aparecerán aquí</p>
-        </div>
-      ) : (
-        <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          {/* Tabla de accesos */}
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-3 border-gray-900"></div>
+              <p className="mt-3 text-gray-600 font-medium">Cargando accesos...</p>
+            </div>
+          ) : filteredAccesses.length === 0 ? (
+            <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 mx-6 mb-6">
+              <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-700 font-semibold text-lg">No hay accesos {activeTab === 'active' ? 'activos' : 'finalizados'}</p>
+              <p className="text-sm text-gray-500 mt-2">Los accesos que crees aparecerán aquí</p>
+            </div>
+          ) : (
+            <div className="overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">
                     Título
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">
                     Hora Inicio
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">
                     Hora Fin
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">
                     Razón
                   </th>
                   {activeTab === 'finalized' && (
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">
                       Estado
                     </th>
                   )}
-                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-800 uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-100">
                 {filteredAccesses.map((access) => (
-                  <tr key={access._id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={access._id} className="hover:bg-gradient-to-r hover:from-gray-50 hover:to-transparent transition-all duration-200">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div>
@@ -335,13 +349,17 @@ export const AccessCodesPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(access.type)}`}>
+                      <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm ${getTypeColor(access.type)}`}>
                         {getTypeLabel(access.type)}
                       </span>
                     </td>
                     {activeTab === 'finalized' && (
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${access.status === 'finalized' ? 'bg-gray-100 text-gray-700' : 'bg-red-100 text-red-700'}`}>
+                        <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm border ${
+                          access.status === 'finalized' 
+                            ? 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 border-gray-300' 
+                            : 'bg-gradient-to-r from-red-100 to-red-200 text-red-700 border-red-300'
+                        }`}>
                           {access.status === 'finalized' ? 'Finalizado' : 'Cancelado'}
                         </span>
                       </td>
@@ -350,7 +368,7 @@ export const AccessCodesPage: React.FC = () => {
                       <div className="flex items-center justify-center space-x-2">
                         <button
                           onClick={() => handleViewDetails(access)}
-                          className="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                          className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-lg hover:from-gray-200 hover:to-gray-300 transition-all text-sm font-medium shadow-sm"
                           title="Ver detalles"
                         >
                           <Eye className="w-4 h-4" />
@@ -363,7 +381,7 @@ export const AccessCodesPage: React.FC = () => {
                                 .then(() => window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Enlace de pre-registro copiado al portapapeles', severity: 'success' } })))
                                 .catch(() => window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Error al copiar enlace', severity: 'error' } })));
                             }}
-                            className="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium"
+                            className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 rounded-lg hover:from-emerald-200 hover:to-emerald-300 transition-all text-sm font-medium shadow-sm"
                             title="Copiar enlace de pre-registro"
                           >
                             <Copy className="w-4 h-4" />
@@ -373,14 +391,14 @@ export const AccessCodesPage: React.FC = () => {
                           <>
                             <button
                               onClick={() => handleEdit(access)}
-                              className="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
+                              className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 rounded-lg hover:from-blue-200 hover:to-blue-300 transition-all text-sm font-medium shadow-sm"
                               title="Editar"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(access)}
-                              className="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
+                              className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-red-100 to-red-200 text-red-700 rounded-lg hover:from-red-200 hover:to-red-300 transition-all text-sm font-medium shadow-sm"
                               title="Eliminar"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -396,6 +414,8 @@ export const AccessCodesPage: React.FC = () => {
           </div>
         </div>
       )}
+    </div>
+      </div>
 
       {/* Modales */}
       {showCreateModal && (
@@ -880,18 +900,23 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200"
+      >
         <div className="p-8">
           {/* Header */}
           <div className="flex justify-between items-start mb-8">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">Crear acceso</h2>
-              <p className="text-sm text-gray-500">Configura los detalles del acceso para tus visitantes</p>
+              <p className="text-sm text-gray-600">Configura los detalles del acceso para tus visitantes</p>
             </div>
             <button 
               onClick={onClose} 
-              className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg"
+              className="text-gray-400 hover:text-gray-700 transition-colors p-2 hover:bg-gray-100 rounded-xl"
             >
               <X className="w-6 h-6" />
             </button>
@@ -899,9 +924,9 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Información básica */}
-            <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center mr-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-gray-900 to-gray-700 rounded-xl flex items-center justify-center mr-3 shadow-md">
                   <IoQrCodeOutline className="w-5 h-5 text-white" />
                 </div>
                 Información del Acceso
@@ -929,14 +954,14 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                     value={formData.eventName}
                     onChange={(e) => setFormData({ ...formData, eventName: e.target.value })}
                     placeholder="Ej: Reunión de proyecto Q4"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white text-base"
                     required
                   />
                 </div>
               </div>
               
               {/* Toggle Pre-registro */}
-              <div className="bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-gray-400 transition-all">
+              <div className="bg-white border-2 border-gray-300 rounded-xl p-5 hover:border-gray-400 hover:shadow-md transition-all">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center mb-1">
@@ -967,9 +992,9 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
             </div>
 
             {/* Fechas y Horas */}
-            <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center mr-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-gray-900 to-gray-700 rounded-xl flex items-center justify-center mr-3 shadow-md">
                   <Clock className="w-5 h-5 text-white" />
                 </div>
                 Horario del Acceso
@@ -1019,9 +1044,9 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
             </div>
 
             {/* Invitados */}
-            <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center mr-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-gray-900 to-gray-700 rounded-xl flex items-center justify-center mr-3 shadow-md">
                   <Users className="w-5 h-5 text-white" />
                 </div>
                 Visitantes Invitados
@@ -1034,7 +1059,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
 
               <div className="space-y-3">
                 {invitedUsers.map((user, index) => (
-                  <div key={index} className="flex items-center gap-3 bg-white p-4 rounded-lg border-2 border-gray-200 hover:border-gray-400 transition-all">
+                  <div key={index} className="flex items-center gap-3 bg-white p-4 rounded-xl border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all">
                     {/* Email input */}
                     <div className="flex-1">
                       <div className="relative">
@@ -1044,7 +1069,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                           placeholder="correo@ejemplo.com"
                           value={user.email}
                           onChange={(e) => updateInvitedUser(index, 'email', e.target.value)}
-                          className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                          className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white"
                         />
                       </div>
                     </div>
@@ -1059,7 +1084,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                             placeholder="Nombre del visitante"
                             value={user.name}
                             onChange={(e) => updateInvitedUser(index, 'name', e.target.value)}
-                            className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                            className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white"
                           />
                         </div>
                       </div>
@@ -1083,7 +1108,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                 <button
                   type="button"
                   onClick={addInvitedUser}
-                  className="w-full py-3 text-sm font-medium text-gray-900 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-900 hover:bg-gray-50 transition-all flex items-center justify-center"
+                  className="w-full py-3.5 text-sm font-semibold text-gray-900 border-2 border-dashed border-gray-300 rounded-xl hover:border-gray-900 hover:bg-gradient-to-r hover:from-gray-50 hover:to-transparent transition-all flex items-center justify-center shadow-sm"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Agregar otro visitante
@@ -1092,7 +1117,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
             </div>
 
             {/* Opciones avanzadas */}
-            <div className="border-t border-gray-200 pt-6">
+            <div className="border-t-2 border-gray-200 pt-6">
               <button
                 type="button"
                 onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
@@ -1106,12 +1131,12 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
               </button>
 
               {showAdvancedOptions && (
-                <div className="mt-6 space-y-5 bg-gray-50 rounded-xl p-6 border border-gray-200">
+                <div className="mt-6 space-y-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 shadow-sm">
                   
                   {/* Anfitrión */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                      <UserCircle className="w-5 h-5 mr-2 text-gray-600" />
+                    <label className="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                      <UserCircle className="w-5 h-5 mr-2 text-gray-900" />
                       Anfitrión responsable
                     </label>
                       {/* Animated host dropdown */}
@@ -1120,15 +1145,15 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                         value={formData.hostId}
                         onChange={(v) => setFormData({ ...formData, hostId: v })}
                       />
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-xs text-gray-600 mt-2">
                       Este usuario recibirá las notificaciones del acceso
                     </p>
                   </div>
 
                   {/* Lugar */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                      <MapPin className="w-5 h-5 mr-2 text-gray-600" />
+                    <label className="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                      <MapPin className="w-5 h-5 mr-2 text-gray-900" />
                       Ubicación específica
                     </label>
                     <input
@@ -1136,14 +1161,14 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                       placeholder="Ej. Sala de juntas, Edificio A, Piso 3"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white text-base"
                     />
                   </div>
 
                   {/* Imagen del evento */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                      <Upload className="w-5 h-5 mr-2 text-gray-600" />
+                    <label className="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                      <Upload className="w-5 h-5 mr-2 text-gray-900" />
                       Imagen del evento
                     </label>
                     <div className="flex items-start space-x-4">
@@ -1180,8 +1205,8 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
 
                   {/* Información adicional */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                      <Edit2 className="w-5 h-5 mr-2 text-gray-600" />
+                    <label className="block text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                      <Edit2 className="w-5 h-5 mr-2 text-gray-900" />
                       Notas adicionales
                     </label>
                     <textarea
@@ -1189,7 +1214,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                       onChange={(e) => setFormData({ ...formData, additionalInfo: e.target.value })}
                       rows={4}
                       placeholder="Agrega instrucciones especiales, requisitos de entrada, código de vestimenta, etc."
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all resize-none"
+                      className="w-full px-4 py-3.5 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all resize-none bg-white text-base"
                     />
                   </div>
                 </div>
@@ -1197,23 +1222,23 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
             </div>
 
             {/* Botones de acción */}
-            <div className="flex justify-between items-center pt-8 border-t-2 border-gray-200">
-              <div className="flex items-center text-sm text-gray-500">
-                <Bell className="w-4 h-4 mr-2" />
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 border-t-2 border-gray-200">
+              <div className="flex items-center text-sm text-gray-600 font-medium">
+                <Bell className="w-4 h-4 mr-2 text-gray-900" />
                 Los invitados recibirán un correo con QR de acceso
               </div>
               <div className="flex space-x-3">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all font-medium"
+                  className="px-6 py-3 text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all font-semibold shadow-sm"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-8 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center font-semibold shadow-lg hover:shadow-xl"
+                  className="px-8 py-3 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:from-gray-800 hover:to-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center font-semibold shadow-lg hover:shadow-xl"
                 >
                   {loading ? (
                     <>
@@ -1234,7 +1259,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
             </div>
           </form>
         </div>
-      </div>
+      </motion.div>
 
       {/* Modal de Alerta de Lista Negra */}
       {blacklistAlert && (

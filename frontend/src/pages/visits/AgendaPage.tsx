@@ -38,6 +38,21 @@ export const AgendaPage: React.FC = () => {
   const [filterType, setFilterType] = useState<'all' | 'visits' | 'accesses'>('accesses');
   const [toast, setToast] = useState<string | null>(null);
 
+  // Estado para detectar móvil
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detectar si estamos en móvil
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   useEffect(() => { api.getHosts().then(setHosts).catch(console.error); }, []);
 
   const fetchAgenda = async () => {
@@ -225,21 +240,21 @@ export const AgendaPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      <div className={`max-w-7xl mx-auto ${isMobile ? 'p-3' : 'p-4 sm:p-6 lg:p-8'}`}>
         {/* Header moderno */}
-        <div className="mb-8">
+        <div className={isMobile ? 'mb-4' : 'mb-8'}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className={`${isMobile ? 'w-12 h-12' : 'w-14 h-14'} bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg`}>
+                <svg className={`${isMobile ? 'w-6 h-6' : 'w-7 h-7'} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7H3v12a2 2 0 002 2z" />
                 </svg>
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent">
+                <h1 className={`${isMobile ? 'text-xl' : 'text-2xl sm:text-3xl'} font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent`}>
                   Agenda de Eventos
                 </h1>
-                <p className="text-sm text-gray-600 mt-1">Gestiona y visualiza tus eventos programados</p>
+                <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 mt-1`}>Gestiona y visualiza tus eventos programados</p>
               </div>
             </div>
             
@@ -247,7 +262,7 @@ export const AgendaPage: React.FC = () => {
             <div className="flex gap-2 bg-white rounded-xl p-1.5 shadow-md border border-gray-200">
               <button
                 onClick={() => setViewMode('table')}
-                className={`px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                className={`${isMobile ? 'px-3 py-2' : 'px-4 py-2.5'} rounded-lg font-semibold text-sm transition-all duration-200 ${
                   viewMode === 'table' 
                     ? 'bg-gradient-to-br from-gray-900 to-gray-700 text-white shadow-lg' 
                     : 'text-gray-600 hover:bg-gray-100'
@@ -257,12 +272,12 @@ export const AgendaPage: React.FC = () => {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
-                  <span className="hidden sm:inline">Tabla</span>
+                  {!isMobile && <span className="hidden sm:inline">Tabla</span>}
                 </div>
               </button>
               <button
                 onClick={() => setViewMode('calendar')}
-                className={`px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                className={`${isMobile ? 'px-3 py-2' : 'px-4 py-2.5'} rounded-lg font-semibold text-sm transition-all duration-200 ${
                   viewMode === 'calendar' 
                     ? 'bg-gradient-to-br from-gray-900 to-gray-700 text-white shadow-lg' 
                     : 'text-gray-600 hover:bg-gray-100'
@@ -272,7 +287,7 @@ export const AgendaPage: React.FC = () => {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <span className="hidden sm:inline">Calendario</span>
+                  {!isMobile && <span className="hidden sm:inline">Calendario</span>}
                 </div>
               </button>
             </div>
@@ -280,10 +295,10 @@ export const AgendaPage: React.FC = () => {
         </div>
 
         {/* Filtros modernos */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className={`bg-white rounded-2xl shadow-xl border border-gray-200 ${isMobile ? 'p-4 mb-4' : 'p-6 mb-6'}`}>
+          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'} gap-${isMobile ? '3' : '6'}`}>
             {/* DateRangePicker - 6 columnas en lg, 5 en xl */}
-            <div className="lg:col-span-6 xl:col-span-5">
+            <div className={isMobile ? '' : 'lg:col-span-6 xl:col-span-5'}>
               <DateRangePicker
                 startValue={from}
                 endValue={to}
@@ -293,8 +308,8 @@ export const AgendaPage: React.FC = () => {
             </div>
             
             {/* Anfitrión - 3 columnas en lg, 3 en xl */}
-            <div className="lg:col-span-3 xl:col-span-3">
-              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+            <div className={isMobile ? '' : 'lg:col-span-3 xl:col-span-3'}>
+              <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-700 mb-2 flex items-center`}>
                 <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -304,8 +319,8 @@ export const AgendaPage: React.FC = () => {
             </div>
             
             {/* Buscar - 3 columnas en lg, 4 en xl */}
-            <div className="lg:col-span-3 xl:col-span-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+            <div className={isMobile ? '' : 'lg:col-span-3 xl:col-span-4'}>
+              <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-700 mb-2 flex items-center`}>
                 <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
@@ -314,14 +329,14 @@ export const AgendaPage: React.FC = () => {
               <div className="flex gap-2">
                 <input 
                   type="text" 
-                  placeholder="Nombre, empresa, título..." 
+                  placeholder={isMobile ? "Buscar..." : "Nombre, empresa, título..."} 
                   value={q} 
                   onChange={e => setQ(e.target.value)} 
-                  className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all text-sm"
+                  className={`flex-1 ${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-2.5'} border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all text-sm`}
                 />
                 <button 
                   onClick={fetchAgenda} 
-                  className="px-6 py-2.5 bg-gradient-to-br from-gray-900 to-gray-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all font-semibold text-sm hover:scale-105"
+                  className={`${isMobile ? 'px-4 py-2' : 'px-6 py-2.5'} bg-gradient-to-br from-gray-900 to-gray-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all font-semibold text-sm hover:scale-105`}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -341,6 +356,75 @@ export const AgendaPage: React.FC = () => {
             </div>
           </div>
         ) : viewMode === 'table' ? (
+          isMobile ? (
+            // Vista de tarjetas para móvil
+            <div className="space-y-3">
+              {agendaItems.length === 0 ? (
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-12 text-center">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
+                      <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-gray-900 font-semibold">No hay eventos</p>
+                      <p className="text-gray-500 text-xs mt-1">No se encontraron eventos</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                agendaItems.map(item => (
+                  <div key={item.id} className="bg-white rounded-xl shadow-md border border-gray-200 p-4 hover:shadow-lg transition-all">
+                    <div className="flex items-start justify-between mb-3">
+                      <span className={`inline-flex items-center px-2.5 py-1 text-xs font-bold rounded-full shadow-sm ${
+                        item.status === 'active'
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
+                          : item.accessType === 'reunion'
+                            ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
+                            : item.accessType === 'proyecto'
+                              ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                              : item.accessType === 'evento'
+                                ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white'
+                                : 'bg-gradient-to-r from-gray-500 to-slate-500 text-white'
+                      }`}>
+                        {item.type === 'visit' ? '👤 Visita' : item.accessType === 'reunion' ? '💼 Reunión' : item.accessType === 'proyecto' ? '🚀 Proyecto' : item.accessType === 'evento' ? '🎉 Evento' : '📋 Otro'}
+                      </span>
+                      <div className="text-right">
+                        <div className="text-sm font-semibold text-gray-900">
+                          {new Date(item.startDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(item.startDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                    </div>
+                    <h3 className="text-base font-bold text-gray-900 mb-2">{item.title}</h3>
+                    {item.location && (
+                      <div className="flex items-center gap-1 text-xs text-gray-600 mb-2">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>{item.location}</span>
+                      </div>
+                    )}
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.reason}</p>
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                      <div className="text-xs text-gray-500">{item.company || 'Sin empresa'}</div>
+                      <div className="flex items-center gap-1 text-xs font-medium text-gray-700">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <span>{item.hostName}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          ) : (
+            // Vista de tabla para desktop
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -430,8 +514,9 @@ export const AgendaPage: React.FC = () => {
               </table>
             </div>
           </div>
+          )
         ) : (
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+          <div className={`bg-white rounded-2xl shadow-xl border border-gray-200 ${isMobile ? 'p-3' : 'p-6'}`}>
             <CalendarMonth
               year={new Date().getFullYear()}
               month={new Date().getMonth()}

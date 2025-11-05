@@ -68,7 +68,12 @@ const iconVariants: Variants = {
     closed: { rotate: 0 },
 };
 
-export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: (collapsed: boolean) => void }> = ({ sidebarCollapsed, setSidebarCollapsed }) => {
+export const Header: React.FC<{ 
+    sidebarCollapsed: boolean; 
+    setSidebarCollapsed: (collapsed: boolean) => void;
+    isMobile?: boolean;
+    mobileMenuOpen?: boolean;
+}> = ({ sidebarCollapsed, setSidebarCollapsed, isMobile = false, mobileMenuOpen = false }) => {
     const { user, logout } = useAuth();
     const { showToast } = useToast();
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -98,7 +103,7 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                     <button
                         className="btn btn-outline-primary me-2 d-flex align-items-center justify-content-center no-focus-ring"
                         onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                        aria-label={sidebarCollapsed ? 'Mostrar menú' : 'Ocultar menú'}
+                        aria-label={isMobile ? (mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú') : (sidebarCollapsed ? 'Mostrar menú' : 'Ocultar menú')}
                         onMouseEnter={() => setBtnHover(true)}
                         onMouseLeave={() => setBtnHover(false)}
                         onFocus={(e) => {
@@ -151,9 +156,10 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                             {(() => {
                                 const iconFill = btnHover ? '#fff' : '#222';
                                 const iconColor = btnHover ? '#fff' : '#222';
+                                const isMenuOpen = isMobile ? mobileMenuOpen : !sidebarCollapsed;
                                 return (
                                     <>
-                                        <svg style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'block', transition: 'opacity 160ms ease, transform 160ms ease', opacity: sidebarCollapsed ? 0 : 1, transform: sidebarCollapsed ? 'scale(0.85)' : 'none' }} width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <svg style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'block', transition: 'opacity 160ms ease, transform 160ms ease', opacity: isMenuOpen ? 0 : 1, transform: isMenuOpen ? 'scale(0.85)' : 'none' }} width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <rect
                                                 y="4"
                                                 width="22"
@@ -176,14 +182,14 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                                                 fill={iconFill}
                                             />
                                         </svg>
-                                        <FaX style={{ position: 'absolute', top: '50%', left: '50%', transform: `${sidebarCollapsed ? 'translate(-50%,-50%) scale(1)' : 'translate(-50%,-50%) scale(0.8)'}`, width: 18, height: 18, transition: 'opacity 180ms ease, transform 180ms ease', opacity: sidebarCollapsed ? 1 : 0, color: iconColor, display: 'block' }} aria-hidden />
+                                        <FaX style={{ position: 'absolute', top: '50%', left: '50%', transform: `${isMenuOpen ? 'translate(-50%,-50%) scale(1)' : 'translate(-50%,-50%) scale(0.8)'}`, width: 18, height: 18, transition: 'opacity 180ms ease, transform 180ms ease', opacity: isMenuOpen ? 1 : 0, color: iconColor, display: 'block' }} aria-hidden />
                                     </>
                                 );
                             })()}
                         </div>
                     </button>
                 </div>
-                <span className="navbar-brand fw-semibold fs-4 text-dark mb-0 ms-4 flex-grow-1">{pageTitle}</span>
+                <span className="navbar-brand fw-semibold fs-4 text-dark mb-0 ms-4 flex-grow-1" style={{ fontSize: isMobile ? '1.1rem' : undefined }}>{pageTitle}</span>
                 <div className="ms-auto position-relative" ref={dropdownRef}>
                     {/* Pill container similar to the Horizon UI sample: subtle background, rounded, with a search area and the user block */}
                     <div
@@ -218,7 +224,7 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                             style={{ background: 'transparent', outline: 'none', boxShadow: 'none', border: 'none', WebkitTapHighlightColor: 'transparent' }}
                         >
                             {user.profileImage && user.profileImage.trim() !== '' ? (
-                                <span className="me-2 d-inline-flex align-items-center justify-content-center rounded-circle bg-gray-200 position-relative" style={{ width: 44, height: 44 }}>
+                                <span className={`${isMobile ? '' : 'me-2'} d-inline-flex align-items-center justify-content-center rounded-circle bg-gray-200 position-relative`} style={{ width: 44, height: 44 }}>
                                     <img
                                         src={user.profileImage}
                                         alt="Perfil"
@@ -236,18 +242,20 @@ export const Header: React.FC<{ sidebarCollapsed: boolean; setSidebarCollapsed: 
                                     </svg>
                                 </span>
                             ) : (
-                                <span className="me-2 d-inline-flex align-items-center justify-content-center rounded-circle bg-gray-200" style={{ width: 44, height: 44 }}>
+                                <span className={`${isMobile ? '' : 'me-2'} d-inline-flex align-items-center justify-content-center rounded-circle bg-gray-200`} style={{ width: 44, height: 44 }}>
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-7 h-7 text-gray-400">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                                     </svg>
                                 </span>
                             )}
 
-                            <div className="d-none d-md-block text-start me-2">
-                                <div className="fw-semibold text-dark" style={{ lineHeight: 1 }}>{user.firstName} {user.lastName}</div>
-                                <div className="text-muted text-capitalize small" style={{ lineHeight: 1 }}>{user.role}</div>
-                            </div>
-                            <motion.span variants={iconVariants} animate={dropdownOpen ? 'open' : 'closed'} className="d-inline-block">
+                            {!isMobile && (
+                                <div className="d-none d-md-block text-start me-2">
+                                    <div className="fw-semibold text-dark" style={{ lineHeight: 1 }}>{user.firstName} {user.lastName}</div>
+                                    <div className="text-muted text-capitalize small" style={{ lineHeight: 1 }}>{user.role}</div>
+                                </div>
+                            )}
+                            <motion.span variants={iconVariants} animate={dropdownOpen ? 'open' : 'closed'} className={`d-inline-block ${isMobile ? 'd-none' : ''}`}>
                                 <ChevronDownIcon className="text-secondary w-5 h-5" />
                             </motion.span>
                         </button>

@@ -15,8 +15,8 @@ import {
 } from 'lucide-react';
 import { IoQrCodeOutline } from 'react-icons/io5';
 
-type NavItemProps = { to: string; icon: React.ReactNode; label: string; collapsed: boolean };
-const NavItem: React.FC<NavItemProps> = ({ to, icon, label, collapsed }) => {
+type NavItemProps = { to: string; icon: React.ReactNode; label: string; collapsed: boolean; onClick?: () => void };
+const NavItem: React.FC<NavItemProps> = ({ to, icon, label, collapsed, onClick }) => {
     const location = useLocation();
     const isActive = location.pathname === to;
     const [hover, setHover] = useState(false);
@@ -30,6 +30,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, collapsed }) => {
             <NavLink
                 to={to}
                 end
+                onClick={onClick}
                 className={`nav-link d-flex align-items-center ${collapsed ? 'justify-content-center' : ''} px-3 py-2 border-0 w-100`}
                 onMouseEnter={() => setHover(true)}
                 onMouseLeave={() => setHover(false)}
@@ -56,9 +57,17 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, collapsed }) => {
 
 type SidebarProps = {
     collapsed?: boolean;
+    isMobile?: boolean;
+    mobileMenuOpen?: boolean;
+    onCloseMobile?: () => void;
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ 
+    collapsed = false, 
+    isMobile = false,
+    mobileMenuOpen = false,
+    onCloseMobile
+}) => {
     const { user } = useAuth();
 
     const navLinks = [
@@ -76,15 +85,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
     return (
         <nav
             className={`sidebar d-flex flex-column${collapsed ? ' align-items-center' : ' align-items-start'}`}
-                style={{
-                minWidth: collapsed ? 64 : 220,
-                width: collapsed ? 64 : 220,
-                transition: 'min-width 0.2s, width 0.2s',
+            style={{
+                minWidth: isMobile ? (mobileMenuOpen ? 280 : 0) : (collapsed ? 64 : 220),
+                width: isMobile ? (mobileMenuOpen ? 280 : 0) : (collapsed ? 64 : 220),
+                transition: isMobile ? 'transform 0.3s ease' : 'min-width 0.2s, width 0.2s',
                 overflowX: 'hidden',
-                zIndex: 10,
-                // grayscale gradient: black -> dark gray to contrast with white cards
+                zIndex: isMobile ? 1050 : 10,
                 background: 'linear-gradient(180deg, var(--sidebar-gradient-start) 0%, var(--sidebar-gradient-end) 100%)',
-                color: '#ffffff'
+                color: '#ffffff',
+                position: isMobile ? 'fixed' : 'relative',
+                top: 0,
+                left: 0,
+                height: '100vh',
+                transform: isMobile ? (mobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
+                boxShadow: isMobile && mobileMenuOpen ? '2px 0 10px rgba(0,0,0,0.3)' : 'none'
             }}
         >
             {/* Top: logo + name (shows full when expanded, only avatar when collapsed) */}
@@ -111,7 +125,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
                 style={{ paddingLeft: 0 }}
             >
                 {navLinks.filter(link => user && link.roles.includes(user.role)).map((link) => (
-                    <NavItem key={link.to} {...link} collapsed={collapsed} />
+                    <NavItem key={link.to} {...link} collapsed={collapsed} onClick={onCloseMobile} />
                 ))}
             </ul>
             <div style={{ flex: 1 }} />

@@ -211,11 +211,12 @@ export default function ReportsPage() {
       pdf.setTextColor(75, 85, 99);
       
       pdf.text('VISITANTE', 15, currentY + 7);
-      pdf.text('EMPRESA', 70, currentY + 7);
-      pdf.text('ANFITRIÓN', 115, currentY + 7);
-      pdf.text('ENTRADA', 160, currentY + 7);
-      pdf.text('SALIDA', 195, currentY + 7);
-      pdf.text('ESTADO', 230, currentY + 7);
+      pdf.text('EMPRESA', 60, currentY + 7);
+      pdf.text('ANFITRIÓN', 95, currentY + 7);
+      pdf.text('ENTRADA', 130, currentY + 7);
+      pdf.text('SALIDA', 160, currentY + 7);
+      pdf.text('ESTADO', 190, currentY + 7);
+      pdf.text('CORREO', 220, currentY + 7);
 
       currentY += 10;
 
@@ -234,11 +235,12 @@ export default function ReportsPage() {
           pdf.setFont('helvetica', 'bold');
           pdf.setTextColor(75, 85, 99);
           pdf.text('VISITANTE', 15, currentY + 7);
-          pdf.text('EMPRESA', 70, currentY + 7);
-          pdf.text('ANFITRIÓN', 115, currentY + 7);
-          pdf.text('ENTRADA', 160, currentY + 7);
-          pdf.text('SALIDA', 195, currentY + 7);
-          pdf.text('ESTADO', 230, currentY + 7);
+          pdf.text('EMPRESA', 60, currentY + 7);
+          pdf.text('ANFITRIÓN', 95, currentY + 7);
+          pdf.text('ENTRADA', 130, currentY + 7);
+          pdf.text('SALIDA', 160, currentY + 7);
+          pdf.text('ESTADO', 190, currentY + 7);
+          pdf.text('CORREO', 220, currentY + 7);
           currentY += 10;
           pdf.setFont('helvetica', 'normal');
         }
@@ -252,44 +254,51 @@ export default function ReportsPage() {
         pdf.setTextColor(31, 41, 55);
         
         // Visitante
-        const visitorName = visit.visitorName.length > 20 
-          ? visit.visitorName.substring(0, 20) + '...' 
+        const visitorName = visit.visitorName.length > 18 
+          ? visit.visitorName.substring(0, 18) + '...' 
           : visit.visitorName;
         pdf.text(visitorName, 15, currentY + 5);
 
         // Empresa
-        const company = (visit.visitorCompany || '-').length > 18
-          ? (visit.visitorCompany || '-').substring(0, 18) + '...'
+        const company = (visit.visitorCompany || '-').length > 15
+          ? (visit.visitorCompany || '-').substring(0, 15) + '...'
           : visit.visitorCompany || '-';
-        pdf.text(company, 70, currentY + 5);
+        pdf.text(company, 60, currentY + 5);
 
         // Anfitrión
         const hostName = `${visit.host?.firstName || ''} ${visit.host?.lastName || ''}`.trim();
-        const shortHost = hostName.length > 18 ? hostName.substring(0, 18) + '...' : hostName;
-        pdf.text(shortHost, 115, currentY + 5);
+        const shortHost = hostName.length > 15 ? hostName.substring(0, 15) + '...' : hostName;
+        pdf.text(shortHost, 95, currentY + 5);
 
         // Entrada
         const checkIn = visit.checkInTime 
           ? formatDateTime(visit.checkInTime as any).split(',')[1]?.trim() || '-'
           : '-';
-        pdf.text(checkIn, 160, currentY + 5);
+        pdf.text(checkIn, 130, currentY + 5);
 
         // Salida
         const checkOut = visit.checkOutTime
           ? formatDateTime(visit.checkOutTime as any).split(',')[1]?.trim() || '-'
           : '-';
-        pdf.text(checkOut, 195, currentY + 5);
+        pdf.text(checkOut, 160, currentY + 5);
 
         // Estado
         if (visit.status === VisitStatus.COMPLETED) {
           pdf.setTextColor(34, 197, 94);
-          pdf.text('Completada', 230, currentY + 5);
+          pdf.text('Completada', 190, currentY + 5);
         } else {
           pdf.setTextColor(239, 68, 68);
-          pdf.text('Rechazada', 230, currentY + 5);
+          pdf.text('Rechazada', 190, currentY + 5);
         }
 
         pdf.setTextColor(31, 41, 55);
+        
+        // Correo
+        const email = (visit.visitorEmail || '-').length > 28
+          ? (visit.visitorEmail || '-').substring(0, 28) + '...'
+          : visit.visitorEmail || '-';
+        pdf.text(email, 220, currentY + 5);
+
         currentY += 8;
       });
 

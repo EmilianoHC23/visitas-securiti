@@ -4,7 +4,7 @@ import type { Variants } from 'framer-motion';
 import { User, Access } from '../../types';
 import * as api from '../../services/api';
 import CalendarMonth from '../../components/visits/CalendarMonth';
-import { DatePicker } from '../../components/common/DatePicker';
+import { DateRangePicker } from '../../components/common/DatePicker';
 
 interface AgendaItem {
   id: string;
@@ -253,22 +253,18 @@ export const AgendaPage: React.FC = () => {
       {/* Removed type filter UI: agenda shows only accesos/eventos */}
 
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <DatePicker
-            label="Desde"
-            value={from}
-            onChange={setFrom}
-          />
-          <DatePicker
-            label="Hasta"
-            value={to}
-            onChange={setTo}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <DateRangePicker
+            startValue={from}
+            endValue={to}
+            onStartChange={setFrom}
+            onEndChange={setTo}
           />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Anfitrión</label>
             <HostDropdown hosts={hosts} value={hostId} onChange={setHostId} />
           </div>
-          <div className="md:col-span-2">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
             <div className="flex gap-2">
               <input type="text" placeholder="Nombre, empresa, título o motivo" value={q} onChange={e => setQ(e.target.value)} className="flex-1 border border-gray-300 rounded-lg p-2" />

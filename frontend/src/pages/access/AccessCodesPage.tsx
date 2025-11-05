@@ -38,6 +38,7 @@ export const AccessCodesPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   
   // Modales
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -47,6 +48,12 @@ export const AccessCodesPage: React.FC = () => {
 
   // Toast / Alert flotante (global dentro de esta página)
   const [toast, setToast] = useState<{ show: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({ show: false, message: '', severity: 'success' });
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -163,16 +170,20 @@ export const AccessCodesPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 lg:p-8">
+    <div className={`min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 ${isMobile ? 'p-3' : 'p-4 sm:p-6 lg:p-8'}`}>
       {/* Header mejorado */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-3">
-          <div className="w-14 h-14 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
-            <IoQrCodeOutline className="w-7 h-7 text-white" />
+      <div className={isMobile ? 'mb-4' : 'mb-8'}>
+        <div className={`flex items-center gap-3 ${isMobile ? 'mb-2' : 'gap-4 mb-3'}`}>
+          <div className={`${isMobile ? 'w-10 h-10' : 'w-14 h-14'} bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0`}>
+            <IoQrCodeOutline className={`${isMobile ? 'w-5 h-5' : 'w-7 h-7'} text-white`} />
           </div>
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Accesos / Eventos</h1>
-            <p className="text-gray-600 text-sm sm:text-base mt-1">Gestiona, filtra y consulta los accesos creados en tu organización</p>
+          <div className="flex-1 min-w-0">
+            <h1 className={`${isMobile ? 'text-xl' : 'text-3xl sm:text-4xl'} font-bold text-gray-900`}>
+              {isMobile ? 'Accesos' : 'Accesos / Eventos'}
+            </h1>
+            <p className={`text-gray-600 ${isMobile ? 'text-xs' : 'text-sm sm:text-base'} mt-1`}>
+              {isMobile ? 'Gestiona los accesos creados' : 'Gestiona, filtra y consulta los accesos creados en tu organización'}
+            </p>
           </div>
         </div>
       </div>
@@ -205,27 +216,27 @@ export const AccessCodesPage: React.FC = () => {
           <nav className="flex -mb-px">
             <button
               onClick={() => setActiveTab('active')}
-              className={`flex-1 px-4 sm:px-6 py-4 sm:py-5 text-sm sm:text-base font-semibold border-b-3 transition-all ${
+              className={`flex-1 ${isMobile ? 'px-3 py-3 text-sm' : 'px-4 sm:px-6 py-4 sm:py-5 text-sm sm:text-base'} font-semibold border-b-3 transition-all ${
                 activeTab === 'active'
                   ? 'border-gray-900 text-gray-900 bg-white'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-white/50'
               }`}
             >
               <div className="flex items-center justify-center gap-2">
-                <Clock className="w-4 h-4" />
+                <Clock className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
                 <span>Activos</span>
               </div>
             </button>
             <button
               onClick={() => setActiveTab('finalized')}
-              className={`flex-1 px-4 sm:px-6 py-4 sm:py-5 text-sm sm:text-base font-semibold border-b-3 transition-all ${
+              className={`flex-1 ${isMobile ? 'px-3 py-3 text-sm' : 'px-4 sm:px-6 py-4 sm:py-5 text-sm sm:text-base'} font-semibold border-b-3 transition-all ${
                 activeTab === 'finalized'
                   ? 'border-gray-900 text-gray-900 bg-white'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-white/50'
               }`}
             >
               <div className="flex items-center justify-center gap-2">
-                <CheckCircle className="w-4 h-4" />
+                <CheckCircle className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
                 <span>Finalizados</span>
               </div>
             </button>
@@ -233,31 +244,31 @@ export const AccessCodesPage: React.FC = () => {
         </div>
 
         {/* Toolbar con búsqueda y calendario */}
-        <div className="p-6 space-y-4">
+        <div className={`${isMobile ? 'p-3' : 'p-6'} space-y-4`}>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 ${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
               <input
                 type="text"
-                placeholder="Buscar por nombre, ubicación o tipo..."
+                placeholder={isMobile ? "Buscar..." : "Buscar por nombre, ubicación o tipo..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white"
+                className={`w-full ${isMobile ? 'pl-9 pr-3 py-2 text-sm' : 'pl-10 pr-4 py-3'} border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white`}
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className={`flex items-center ${isMobile ? 'gap-1.5' : 'gap-2'}`}>
               <DatePicker
                 value={selectedDate}
                 onChange={setSelectedDate}
                 showClearButton={true}
-                placeholder="Seleccionar fecha"
+                placeholder={isMobile ? "Fecha" : "Seleccionar fecha"}
               />
               <button
                 onClick={handleCreate}
-                className="flex items-center px-5 py-3 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:from-gray-800 hover:to-gray-600 transition-all font-semibold shadow-lg hover:shadow-xl"
+                className={`flex items-center ${isMobile ? 'px-3 py-2 text-sm' : 'px-5 py-3'} bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:from-gray-800 hover:to-gray-600 transition-all font-semibold shadow-lg hover:shadow-xl whitespace-nowrap`}
               >
-                <Plus className="w-5 h-5 mr-2" />
-                Crear Acceso
+                <Plus className={`${isMobile ? 'w-4 h-4 mr-1' : 'w-5 h-5 mr-2'}`} />
+                {isMobile ? 'Crear' : 'Crear Acceso'}
               </button>
             </div>
           </div>
@@ -269,12 +280,130 @@ export const AccessCodesPage: React.FC = () => {
               <p className="mt-3 text-gray-600 font-medium">Cargando accesos...</p>
             </div>
           ) : filteredAccesses.length === 0 ? (
-            <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 mx-6 mb-6">
-              <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-700 font-semibold text-lg">No hay accesos {activeTab === 'active' ? 'activos' : 'finalizados'}</p>
-              <p className="text-sm text-gray-500 mt-2">Los accesos que crees aparecerán aquí</p>
+            <div className={`text-center ${isMobile ? 'py-12' : 'py-16'} bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 ${isMobile ? 'mx-0 mb-0' : 'mx-6 mb-6'}`}>
+              <Calendar className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-400 mx-auto mb-4`} />
+              <p className={`text-gray-700 font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>
+                No hay accesos {activeTab === 'active' ? 'activos' : 'finalizados'}
+              </p>
+              <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-500 mt-2`}>
+                Los accesos que crees aparecerán aquí
+              </p>
+            </div>
+          ) : isMobile ? (
+            // Vista móvil: Cards
+            <div className="space-y-3">
+              {filteredAccesses.map((access) => (
+                <div
+                  key={access._id}
+                  onClick={() => handleViewDetails(access)}
+                  className="bg-white rounded-xl p-4 shadow-md border border-gray-200 hover:shadow-lg transition-all cursor-pointer"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 text-sm truncate">
+                        {access.eventName}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold ${getTypeColor(access.type)}`}>
+                          {getTypeLabel(access.type)}
+                        </span>
+                        {activeTab === 'finalized' && (
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold border ${
+                            access.status === 'finalized' 
+                              ? 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 border-gray-300' 
+                              : 'bg-gradient-to-r from-red-100 to-red-200 text-red-700 border-red-300'
+                          }`}>
+                            {access.status === 'finalized' ? 'Finalizado' : 'Cancelado'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 text-xs text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>
+                        {new Date(access.startDate).toLocaleDateString('es-MX', { 
+                          day: '2-digit', 
+                          month: 'short'
+                        })} {new Date(access.startDate).toLocaleTimeString('es-MX', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </span>
+                      <span className="text-gray-400">→</span>
+                      <span>
+                        {new Date(access.endDate).toLocaleDateString('es-MX', { 
+                          day: '2-digit', 
+                          month: 'short'
+                        })} {new Date(access.endDate).toLocaleTimeString('es-MX', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{access.invitedUsers.length} invitado{access.invitedUsers.length !== 1 ? 's' : ''}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewDetails(access);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-lg hover:from-gray-200 hover:to-gray-300 transition-all text-xs font-medium"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      Ver
+                    </button>
+                    {access.settings?.enablePreRegistration && access.status === 'active' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const link = `${window.location.origin}/public/register/${access._id}`;
+                          navigator.clipboard.writeText(link)
+                            .then(() => window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Enlace copiado', severity: 'success' } })))
+                            .catch(() => window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Error al copiar', severity: 'error' } })));
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 rounded-lg hover:from-emerald-200 hover:to-emerald-300 transition-all text-xs font-medium"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        Copiar
+                      </button>
+                    )}
+                    {access.status === 'active' && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(access);
+                          }}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 rounded-lg hover:from-blue-200 hover:to-blue-300 transition-all text-xs font-medium"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          Editar
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(access);
+                          }}
+                          className="flex items-center justify-center p-2 bg-gradient-to-r from-red-100 to-red-200 text-red-700 rounded-lg hover:from-red-200 hover:to-red-300 transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
+            // Vista desktop: Tabla
             <div className="overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -413,7 +542,7 @@ export const AccessCodesPage: React.FC = () => {
             </table>
           </div>
         </div>
-      )}
+          )}
     </div>
       </div>
 

@@ -5,6 +5,7 @@ import { Visit, VisitStatus } from '../../types';
 import * as api from '../../services/api';
 import { formatDateTime, formatLongDate } from '../../utils/dateUtils';
 import { VisitTimelineModal } from './VisitTimelineModal';
+import { DatePicker } from '../../components/common/DatePicker';
 
 export default function ReportsPage() {
   const [visits, setVisits] = useState<Visit[]>([]);
@@ -13,7 +14,6 @@ export default function ReportsPage() {
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
   const [visitEvents, setVisitEvents] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showTimelineModal, setShowTimelineModal] = useState(false);
   // Alert modal state (replace native alert)
@@ -139,30 +139,12 @@ export default function ReportsPage() {
             </div>
 
             {/* Date Picker */}
-            <div className="relative flex-shrink-0">
-              <button
-                onClick={() => setShowDatePicker(!showDatePicker)}
-                className="px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 flex items-center gap-2 text-sm font-medium text-gray-700 transition-colors"
-              >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Fecha
-              </button>
-
-              {showDatePicker && (
-                <div className="absolute right-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-10">
-                  <input
-                    type="date"
-                    value={selectedDate.toISOString().split('T')[0]}
-                    onChange={(e) => {
-                      setSelectedDate(new Date(e.target.value));
-                      setShowDatePicker(false);
-                    }}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                  />
-                </div>
-              )}
+            <div className="flex-shrink-0">
+              <DatePicker
+                value={selectedDate.toISOString().split('T')[0]}
+                onChange={(value) => setSelectedDate(new Date(value))}
+                showClearButton={false}
+              />
             </div>
 
             {/* Download Button */}

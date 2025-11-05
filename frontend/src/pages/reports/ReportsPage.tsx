@@ -337,7 +337,7 @@ export default function ReportsPage() {
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 mb-6">
           <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
             {/* Search */}
-            <div className="flex-1 relative">
+            <div className="flex-1 lg:max-w-md relative">
               <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
               <input
                 type="text"
@@ -349,7 +349,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Date Picker */}
-            <div className="flex-shrink-0 lg:w-48">
+            <div className="flex-shrink-0 w-full lg:w-52">
               <DatePicker
                 value={selectedDate.toISOString().split('T')[0]}
                 onChange={(value) => setSelectedDate(new Date(value))}
@@ -360,7 +360,7 @@ export default function ReportsPage() {
             {/* Download Button */}
             <button
               onClick={handleDownloadReport}
-              className="px-6 py-3.5 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:from-gray-800 hover:to-gray-600 flex items-center justify-center gap-3 text-sm font-bold transition-all shadow-lg hover:shadow-xl whitespace-nowrap"
+              className="px-6 py-3.5 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:from-gray-800 hover:to-gray-600 flex items-center justify-center gap-3 text-sm font-bold transition-all shadow-lg hover:shadow-xl whitespace-nowrap flex-shrink-0"
             >
               <Download className="w-5 h-5" />
               Descargar PDF

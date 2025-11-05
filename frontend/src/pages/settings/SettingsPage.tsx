@@ -175,6 +175,7 @@ export const SettingsPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [saved, setSaved] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const photoInputRef = useRef<HTMLInputElement>(null);
 
     // Account Tab State
     const [buildingName, setBuildingName] = useState('SecurITI');
@@ -276,6 +277,12 @@ export const SettingsPage: React.FC = () => {
         // Only update local state — persist when the user clicks "Guardar Cambios"
         setCompanyLogo('');
         // Clear any previous saved indicator because there are unsaved changes now
+        setSaved(false);
+    };
+
+    const handleRemovePhoto = () => {
+        if (!companyPhoto) return;
+        setCompanyPhoto('');
         setSaved(false);
     };
 
@@ -589,27 +596,50 @@ export const SettingsPage: React.FC = () => {
                                     </div>
                                     
                                     <div className="flex flex-col items-center justify-center">
-                                        <div 
-                                            className="w-64 h-48 border-3 border-dashed border-gray-300 rounded-2xl flex items-center justify-center bg-gradient-to-br from-gray-50 to-white hover:border-gray-900 hover:bg-gray-50 transition-all cursor-pointer group relative overflow-hidden"
-                                            onClick={() => document.getElementById('photo-upload')?.click()}
-                                        >
-                                            {companyPhoto ? (
-                                                <>
-                                                    <img src={companyPhoto} alt="Company" className="w-full h-full object-cover rounded-2xl" />
-                                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
-                                                        <Upload className="w-12 h-12 text-white mb-2" />
-                                                        <p className="text-white text-sm font-semibold">Cambiar Foto</p>
+                                        <div className="relative">
+                                            <div 
+                                                className="w-64 h-48 border-3 border-dashed border-gray-300 rounded-2xl flex items-center justify-center bg-gradient-to-br from-gray-50 to-white hover:border-gray-900 hover:bg-gray-50 transition-all cursor-pointer group overflow-hidden"
+                                                onClick={() => photoInputRef.current?.click()}
+                                            >
+                                                {companyPhoto ? (
+                                                    <>
+                                                        <img src={companyPhoto} alt="Company" className="w-full h-full object-cover rounded-2xl" />
+                                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
+                                                            <Upload className="w-12 h-12 text-white mb-2" />
+                                                            <p className="text-white text-sm font-semibold">Cambiar Foto</p>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="text-center p-6">
+                                                        <Upload className="w-16 h-16 text-gray-400 mx-auto mb-3 group-hover:text-gray-900 transition-colors" />
+                                                        <p className="text-base font-semibold text-gray-700 group-hover:text-gray-900">Subir foto</p>
+                                                        <p className="text-xs text-gray-500 mt-1">Haz clic para seleccionar</p>
                                                     </div>
-                                                </>
-                                            ) : (
-                                                <div className="text-center p-6">
-                                                    <Upload className="w-16 h-16 text-gray-400 mx-auto mb-3 group-hover:text-gray-900 transition-colors" />
-                                                    <p className="text-base font-semibold text-gray-700 group-hover:text-gray-900">Subir foto</p>
-                                                    <p className="text-xs text-gray-500 mt-1">Haz clic para seleccionar</p>
-                                                </div>
+                                                )}
+                                            </div>
+
+                                            {/* small edit button placed outside the clickable box (like logo section) */}
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); photoInputRef.current?.click(); }}
+                                                className="absolute -right-2 -bottom-2 bg-gradient-to-br from-gray-900 to-gray-700 text-white w-9 h-9 rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform"
+                                                aria-label="Cambiar foto"
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                            </button>
+
+                                            {companyPhoto && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleRemovePhoto(); }}
+                                                    className="absolute -left-3 -top-3 bg-white text-red-600 w-9 h-9 rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform border border-red-100 z-10"
+                                                    aria-label="Eliminar foto"
+                                                    title="Eliminar foto"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
                                             )}
                                         </div>
                                         <input
+                                            ref={photoInputRef}
                                             id="photo-upload"
                                             type="file"
                                             accept="image/*"

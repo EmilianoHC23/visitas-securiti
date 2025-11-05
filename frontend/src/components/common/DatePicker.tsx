@@ -83,11 +83,11 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         <Group className="relative inline-flex w-full items-center">
           <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center">
             <Button className="p-1 hover:bg-gray-100 rounded transition-colors">
-              <CalendarIcon className="w-4 h-4 text-gray-600" />
+              <CalendarIcon className="w-3.5 h-3.5 text-gray-600" />
             </Button>
           </div>
           
-          <DateInput className="flex-1 pl-10 pr-20 py-2.5 border-2 border-gray-200 rounded-lg 
+          <DateInput className="flex-1 pl-9 pr-8 py-2 border-2 border-gray-200 rounded-lg 
                                focus-within:outline-none focus-within:ring-2 focus-within:ring-gray-900 focus-within:border-transparent 
                                hover:border-gray-300 transition-all duration-200
                                disabled:bg-gray-100 disabled:cursor-not-allowed
@@ -262,13 +262,13 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           <Group className="relative flex-1 inline-flex items-center">
             <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center">
               <Button className="p-1 hover:bg-gray-100 rounded transition-colors">
-                <CalendarIcon className="w-4 h-4 text-gray-600" />
+                <CalendarIcon className="w-3.5 h-3.5 text-gray-600" />
               </Button>
             </div>
             
             <DateInput
               slot="start"
-              className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-lg 
+              className="w-full pl-9 pr-3 py-2 border-2 border-gray-200 rounded-lg 
                        focus-within:outline-none focus-within:ring-2 focus-within:ring-gray-900 focus-within:border-transparent 
                        hover:border-gray-300 transition-all duration-200
                        text-gray-900 text-sm font-medium flex items-center gap-0.5"
@@ -287,7 +287,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           <Group className="relative flex-1 inline-flex items-center">
             <DateInput
               slot="end"
-              className="w-full pl-4 pr-4 py-2.5 border-2 border-gray-200 rounded-lg 
+              className="w-full pl-3 pr-3 py-2 border-2 border-gray-200 rounded-lg 
                        focus-within:outline-none focus-within:ring-2 focus-within:ring-gray-900 focus-within:border-transparent 
                        hover:border-gray-300 transition-all duration-200
                        text-gray-900 text-sm font-medium flex items-center gap-0.5"

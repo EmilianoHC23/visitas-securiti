@@ -83,7 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
                 overflowX: 'hidden',
                 zIndex: 10,
                 // grayscale gradient: black -> dark gray to contrast with white cards
-                background: 'linear-gradient(180deg, #000000 0%, #374151 100%)',
+                background: 'linear-gradient(180deg, var(--sidebar-gradient-start) 0%, var(--sidebar-gradient-end) 100%)',
                 color: '#ffffff'
             }}
         >

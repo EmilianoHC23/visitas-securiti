@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line, Legend } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line } from 'recharts';
 import { Visit, VisitStatus, DashboardStats } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircleIcon, ClockIcon, LoginIcon } from '../components/common/icons';
+import { QrIcon, VisitsIcon, AgendaIcon } from '../components/common/icons';
 import { FaRegUser } from 'react-icons/fa';
 import * as api from '../services/api';
 
@@ -203,6 +203,63 @@ const RecentActivityItem: React.FC<{ visit: Visit }> = ({ visit }) => {
     );
 };
 
+// Próximas llegadas de hoy
+const UpcomingToday: React.FC = () => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    const startIso = start.toISOString();
+    const endIso = end.toISOString();
+
+    const { data, isLoading, error } = useQuery<Visit[], Error>({
+        queryKey: ['agenda', 'today', startIso, endIso],
+        queryFn: async () => {
+            const res = await api.getAgenda({ from: startIso, to: endIso });
+            // Some implementations return array directly, others under { events }
+            return Array.isArray(res) ? res as Visit[] : (res?.events || []);
+        }
+    });
+
+    const upcoming = (data || [])
+        .filter(v => v.status !== VisitStatus.COMPLETED)
+        .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())
+        .slice(0, 5);
+
+    return (
+        <div className="card shadow-sm border-0 mb-3">
+            <div className="card-body">
+                <h5 className="card-title fw-semibold mb-3">Próximas llegadas de hoy</h5>
+                {isLoading ? (
+                    <div className="text-muted">Cargando...</div>
+                ) : error ? (
+                    <div className="text-danger small">No se pudo cargar la agenda</div>
+                ) : upcoming.length === 0 ? (
+                    <div className="text-muted small">No hay llegadas pendientes para hoy</div>
+                ) : (
+                    <ul className="list-unstyled mb-0">
+                        {upcoming.map(v => {
+                            const time = new Date(v.scheduledDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                            const hostName = (v as any)?.host?.firstName ? `${(v as any).host.firstName} ${(v as any).host.lastName || ''}` : '';
+                            return (
+                                <li key={v._id} className="d-flex align-items-center py-2 border-bottom last:border-bottom-0">
+                                    <span className="icon-tile me-3" style={{ width: 40, height: 40 }}>
+                                        <VisitsIcon className="w-5 h-5" />
+                                    </span>
+                                    <div className="flex-1">
+                                        <div className="fw-semibold text-dark" style={{ lineHeight: 1.2 }}>{v.visitorName} · <span className="text-muted fw-normal">{time}</span></div>
+                                        <div className="small text-muted" style={{ lineHeight: 1.2 }}>{v.visitorCompany || 'Sin empresa'} {hostName ? `· Host: ${hostName}` : ''}</div>
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
+            </div>
+        </div>
+    );
+};
+
 export const Dashboard: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -220,10 +277,8 @@ export const Dashboard: React.FC = () => {
     const [recentVisits, setRecentVisits] = useState<Visit[]>([]);
     const [frequentCompanies, setFrequentCompanies] = useState<Array<{ company: string; count: number }>>([]);
     const [frequentVisitors, setFrequentVisitors] = useState<Array<{ id: string; name: string; company?: string; photo?: string; count: number }>>([]);
-    const [analyticsData, setAnalyticsData] = useState<any[]>([]);
     const [analyticsStatusData, setAnalyticsStatusData] = useState<any[]>([]);
     const [period, setPeriod] = useState<'week' | 'month'>('week');
-    const [chartLoading, setChartLoading] = useState(false);
     const [prevPeriodSums, setPrevPeriodSums] = useState<{ pending?: number | undefined | null; approved?: number | undefined | null; checkedIn?: number | undefined | null; completed?: number | undefined | null; }>({});
     const [sparkFilter, setSparkFilter] = useState<'pending' | 'approved' | 'checkedIn' | 'completed' | null>(null);
     const [visibleSeries, setVisibleSeries] = useState<{ pending: boolean; approved: boolean; checkedIn: boolean; completed: boolean }>({ pending: true, approved: true, checkedIn: true, completed: true });
@@ -266,7 +321,6 @@ export const Dashboard: React.FC = () => {
     // Mirror query results into local state used by the component (keeps UI code stable)
     useEffect(() => {
         setIsLoading(statsQuery.isLoading || recent5Query.isLoading || recentLargeQuery.isLoading || analyticsQuery.isLoading || prevAnalyticsQuery.isLoading);
-        setChartLoading(analyticsQuery.isLoading || recentLargeQuery.isLoading);
         if (statsQuery.data) setStats(statsQuery.data);
         if (recent5Query.data) setRecentVisits(recent5Query.data);
 
@@ -475,7 +529,7 @@ export const Dashboard: React.FC = () => {
                 </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6" style={{ alignItems: 'stretch' }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-3" style={{ alignItems: 'stretch' }}>
                 <div
                     role="button"
                     tabIndex={0}
@@ -502,7 +556,7 @@ export const Dashboard: React.FC = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 3.13a4 4 0 0 1 0 7.75" />
                         </svg>
                     }
-                    color="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white"
+                    color="icon-tile"
                 />
                 </div>
                 <div
@@ -526,7 +580,7 @@ export const Dashboard: React.FC = () => {
                     icon={
                         <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3" /><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={2} fill="none" /></svg>
                     }
-                    color="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white"
+                    color="icon-tile"
                 />
                 </div>
                 <div
@@ -550,7 +604,7 @@ export const Dashboard: React.FC = () => {
                     icon={
                         <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     }
-                    color="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white"
+                    color="icon-tile"
                 />
                 </div>
                 <div
@@ -574,8 +628,57 @@ export const Dashboard: React.FC = () => {
                     icon={
                         <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3" /><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={2} fill="none" /></svg>
                     }
-                    color="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white"
+                    color="icon-tile"
                 />
+                </div>
+            </div>
+
+            {/* Quick actions */}
+            <div className="row g-3 mb-4">
+                <div className="col-12">
+                    <div className="card border-0 shadow-sm">
+                        <div className="card-body d-flex flex-wrap gap-3">
+                            <button className="btn btn-light d-flex align-items-center px-3 py-2 border rounded-3 transition-smooth" onClick={() => navigate('/register')}>
+                                <span className="icon-tile me-2" style={{ width: 40, height: 40 }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>
+                                </span>
+                                <div className="text-start">
+                                    <div className="fw-semibold">Registrar visita</div>
+                                    <div className="small text-muted">Crear una nueva visita</div>
+                                </div>
+                            </button>
+
+                            <button className="btn btn-light d-flex align-items-center px-3 py-2 border rounded-3 transition-smooth" onClick={() => navigate('/visits?status=pending')}>
+                                <span className="icon-tile me-2" style={{ width: 40, height: 40 }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+                                </span>
+                                <div className="text-start">
+                                    <div className="fw-semibold">Aprobar pendientes</div>
+                                    <div className="small text-muted">Revisar solicitudes</div>
+                                </div>
+                            </button>
+
+                            <button className="btn btn-light d-flex align-items-center px-3 py-2 border rounded-3 transition-smooth" onClick={() => navigate('/access-codes')}>
+                                <span className="icon-tile me-2" style={{ width: 40, height: 40 }}>
+                                    <QrIcon className="w-5 h-5" />
+                                </span>
+                                <div className="text-start">
+                                    <div className="fw-semibold">Accesos & eventos</div>
+                                    <div className="small text-muted">Gestionar invitaciones</div>
+                                </div>
+                            </button>
+
+                            <button className="btn btn-light d-flex align-items-center px-3 py-2 border rounded-3 transition-smooth" onClick={() => navigate('/agenda')}>
+                                <span className="icon-tile me-2" style={{ width: 40, height: 40 }}>
+                                    <AgendaIcon className="w-5 h-5" />
+                                </span>
+                                <div className="text-start">
+                                    <div className="fw-semibold">Agenda de hoy</div>
+                                    <div className="small text-muted">Ver próximas llegadas</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -598,7 +701,7 @@ export const Dashboard: React.FC = () => {
                              <path strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
                              </svg>
                 }
-                    color="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white"
+                    color="icon-tile"
                         />
                         </div>
                     </div>
@@ -617,7 +720,7 @@ export const Dashboard: React.FC = () => {
                             icon={
                                 <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="7" width="18" height="13" rx="2" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 3v4M8 3v4" /></svg>
                             }
-                            color="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white"
+                            color="icon-tile"
                         />
                         </div>
                     </div>
@@ -753,6 +856,8 @@ export const Dashboard: React.FC = () => {
                     </div>
                 </div>
                 <div className="col-12 col-lg-4">
+                    {/* Próximas llegadas hoy */}
+                    <UpcomingToday />
                     {/* Empresas frecuentes card */}
                     <div className="card shadow-sm border-0 mb-3">
                         <div className="card-body">

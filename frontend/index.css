@@ -4,6 +4,23 @@ body {
   font-family: 'Inter', Arial, Helvetica, sans-serif !important;
 }
 
+/* Design tokens: keep sidebar + icon colors consistent */
+:root {
+  --sidebar-gradient-start: #000000;
+  --sidebar-gradient-end: #374151;
+  --surface-0: #ffffff;
+  --surface-1: #f8fafc;
+  --text-0: #0f172a;
+  --text-muted: #6b7280;
+
+  /* Status accents used across dashboard */
+  --accent-pending: #f6ad55;   /* amber-400 */
+  --accent-approved: #60a5fa;  /* blue-400 */
+  --accent-checkedin: #34d399; /* emerald-400 */
+  --accent-completed: #9ca3af; /* gray-400 */
+  --icon-tile-bg: #111827;     /* gray-900 for icon tiles to match sidebar contrast */
+}
+
 /* Color de fondo para el item activo del sidebar que contrasta con el logo */
 .bg-logo-contrast {
   background-color: #232a36 !important;
@@ -65,5 +82,18 @@ body {
 /* Smooth transitions for all interactive elements */
 .transition-smooth {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Utility: icon tile container used inside stat cards */
+.icon-tile {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: var(--icon-tile-bg);
+  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.06);
 }
 

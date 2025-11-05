@@ -116,10 +116,10 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           </div>
         </Group>
 
-        <Popover className="bg-white rounded-xl shadow-2xl border-2 border-gray-200 p-4 z-50 mt-2">
+        <Popover className="bg-white rounded-xl shadow-2xl border-2 border-gray-200 p-5 z-50 mt-2 min-w-[280px]">
           <Dialog className="outline-none">
             <Calendar className="w-full">
-              <header className="flex items-center justify-between mb-3">
+              <header className="flex items-center justify-between mb-4">
                 <Button
                   slot="previous"
                   className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
@@ -134,7 +134,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                   <ChevronRight className="w-4 h-4 text-gray-700" />
                 </Button>
               </header>
-              <CalendarGrid className="border-spacing-1 border-separate">
+              <CalendarGrid className="border-spacing-1 border-separate w-full mb-1">
                 {(date) => (
                   <CalendarCell
                     date={date}
@@ -306,10 +306,10 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           </Group>
         </div>
 
-        <Popover className="bg-white rounded-xl shadow-2xl border-2 border-gray-200 p-4 z-50 mt-2">
+        <Popover className="bg-white rounded-xl shadow-2xl border-2 border-gray-200 p-5 z-50 mt-2 min-w-[280px]">
           <Dialog className="outline-none">
             <RangeCalendar className="w-full">
-              <header className="flex items-center justify-between mb-3">
+              <header className="flex items-center justify-between mb-4">
                 <Button
                   slot="previous"
                   className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
@@ -324,7 +324,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                   <ChevronRight className="w-4 h-4 text-gray-700" />
                 </Button>
               </header>
-              <CalendarGrid className="border-spacing-1 border-separate">
+              <CalendarGrid className="border-spacing-1 border-separate w-full mb-1">
                 {(date) => (
                   <CalendarCell
                     date={date}

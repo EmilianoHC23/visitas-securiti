@@ -323,7 +323,7 @@ export default function ReportsPage() {
         {/* Header Moderno */}
         <div className="mb-8">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg">
+            <div className="w-16 h-16 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
               <BarChart3 className="w-8 h-8 text-white" />
             </div>
             <div>
@@ -344,26 +344,23 @@ export default function ReportsPage() {
                 placeholder="Buscar por visitante, empresa, anfitrión..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
               />
             </div>
 
             {/* Date Picker */}
             <div className="flex-shrink-0 lg:w-48">
-              <div className="relative">
-                <Calendar className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none z-10" />
-                <DatePicker
-                  value={selectedDate.toISOString().split('T')[0]}
-                  onChange={(value) => setSelectedDate(new Date(value))}
-                  showClearButton={false}
-                />
-              </div>
+              <DatePicker
+                value={selectedDate.toISOString().split('T')[0]}
+                onChange={(value) => setSelectedDate(new Date(value))}
+                showClearButton={false}
+              />
             </div>
 
             {/* Download Button */}
             <button
               onClick={handleDownloadReport}
-              className="px-6 py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 flex items-center justify-center gap-3 text-sm font-bold transition-all shadow-lg hover:shadow-xl whitespace-nowrap"
+              className="px-6 py-3.5 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:from-gray-800 hover:to-gray-600 flex items-center justify-center gap-3 text-sm font-bold transition-all shadow-lg hover:shadow-xl whitespace-nowrap"
             >
               <Download className="w-5 h-5" />
               Descargar PDF
@@ -372,14 +369,14 @@ export default function ReportsPage() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-200">
-            <div className="bg-gradient-to-br from-blue-50 to-white p-4 rounded-xl border-2 border-blue-200">
+            <div className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl border-2 border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">Total Visitas</p>
                   <p className="text-3xl font-bold text-gray-900">{filteredVisits.length}</p>
                 </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-white" />
                 </div>
               </div>
             </div>
@@ -392,8 +389,8 @@ export default function ReportsPage() {
                     {filteredVisits.filter(v => v.status === VisitStatus.COMPLETED).length}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-white" />
                 </div>
               </div>
             </div>
@@ -406,8 +403,8 @@ export default function ReportsPage() {
                     {filteredVisits.filter(v => v.status === VisitStatus.REJECTED).length}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                  <XCircle className="w-6 h-6 text-red-600" />
+                <div className="w-12 h-12 bg-red-600 rounded-xl flex items-center justify-center">
+                  <XCircle className="w-6 h-6 text-white" />
                 </div>
               </div>
             </div>
@@ -417,7 +414,7 @@ export default function ReportsPage() {
         {/* Table */}
         {loading ? (
           <div className="text-center py-20 bg-white rounded-2xl shadow-xl border border-gray-200">
-            <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-blue-600"></div>
+            <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-gray-900"></div>
             <p className="mt-6 text-gray-600 text-lg font-medium">Cargando visitas...</p>
           </div>
         ) : filteredVisits.length === 0 ? (
@@ -449,7 +446,7 @@ export default function ReportsPage() {
                     <tr 
                       key={v._id} 
                       onClick={() => handleVisitClick(v)} 
-                      className="hover:bg-blue-50 cursor-pointer transition-all duration-200"
+                      className="hover:bg-gray-50 cursor-pointer transition-all duration-200"
                     >
                       <td className="px-4 py-4 whitespace-nowrap">
                         <div className="w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-sm">
@@ -528,7 +525,7 @@ export default function ReportsPage() {
         {alertOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-200">
-              <div className="p-6 bg-gradient-to-r from-blue-600 to-blue-700 flex items-start justify-between text-white">
+              <div className="p-6 bg-gradient-to-r from-gray-900 to-gray-700 flex items-start justify-between text-white">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -548,11 +545,11 @@ export default function ReportsPage() {
               </div>
 
               <div className="p-6">
-                <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 border-2 border-blue-200 text-center">
+                <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border-2 border-gray-200 text-center">
                   <p className="text-sm text-gray-700 mb-6 whitespace-pre-line">{alertMessage}</p>
                   <button 
                     onClick={() => { setAlertOpen(false); setAlertMessage(''); }} 
-                    className="px-6 py-3 min-w-[120px] text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg hover:from-blue-700 hover:to-blue-800 font-bold transition-all"
+                    className="px-6 py-3 min-w-[120px] text-white bg-gradient-to-r from-gray-900 to-gray-700 rounded-xl shadow-lg hover:from-gray-800 hover:to-gray-600 font-bold transition-all"
                   >
                     Aceptar
                   </button>

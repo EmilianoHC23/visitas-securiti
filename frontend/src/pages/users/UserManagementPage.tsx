@@ -1169,22 +1169,55 @@ export const UserManagementPage: React.FC = () => {
                                         </td>
                                     </tr>
                                 ))}
-                                {/* Modal de vista previa de usuario */}
-                                <UserPreviewModal isOpen={isPreviewModalOpen} onClose={() => setIsPreviewModalOpen(false)} user={previewUser} />
                             </tbody>
                         </table>
                     )}
                 </div>
-
-                <InviteUserModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onInvite={handleInviteUser} loading={inviteLoading} />
-
-                {/* Confirm dialog used for delete/resend actions */}
-                <ConfirmDialog isOpen={confirmOpen} title={confirmData?.title || ''} message={confirmData?.message || ''} primaryLabel={confirmData?.type === 'deactivate' ? 'Desactivar' : confirmData?.type === 'resend' ? 'Reenviar' : 'Confirmar'} secondaryLabel="Cancelar" showSecondary={confirmData?.type === 'deactivate'} onClose={() => closeConfirm()} onPrimary={() => handleConfirmPrimary()} onSecondary={() => handleConfirmSecondary()} />
-
-                {notification && (<NotificationBanner message={notification.message} type={notification.type} onClose={() => setNotification(null)} />)}
-
-                <EditUserModal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setEditingUser(null); }} onUpdate={handleUpdateUser} loading={editLoading} user={editingUser} />
             </div>
+
+            {/* Modales y banners montados fuera de la tarjeta/tabla */}
+            <InviteUserModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onInvite={handleInviteUser}
+                loading={inviteLoading}
+            />
+
+            <EditUserModal
+                isOpen={isEditModalOpen}
+                onClose={() => { setIsEditModalOpen(false); setEditingUser(null); }}
+                onUpdate={handleUpdateUser}
+                loading={editLoading}
+                user={editingUser}
+            />
+
+            {/* Confirm dialog used for delete/resend actions */}
+            <ConfirmDialog
+                isOpen={confirmOpen}
+                title={confirmData?.title || ''}
+                message={confirmData?.message || ''}
+                primaryLabel={confirmData?.type === 'deactivate' ? 'Desactivar' : confirmData?.type === 'resend' ? 'Reenviar' : 'Confirmar'}
+                secondaryLabel="Cancelar"
+                showSecondary={confirmData?.type === 'deactivate'}
+                onClose={() => closeConfirm()}
+                onPrimary={() => handleConfirmPrimary()}
+                onSecondary={() => handleConfirmSecondary()}
+            />
+
+            {notification && (
+                <NotificationBanner
+                    message={notification.message}
+                    type={notification.type}
+                    onClose={() => setNotification(null)}
+                />
+            )}
+
+            {/* Modal de vista previa de usuario fuera de la tabla */}
+            <UserPreviewModal
+                isOpen={isPreviewModalOpen}
+                onClose={() => setIsPreviewModalOpen(false)}
+                user={previewUser}
+            />
         </div>
     );
 };

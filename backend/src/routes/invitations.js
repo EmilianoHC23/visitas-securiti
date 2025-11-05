@@ -503,11 +503,11 @@ router.post('/resend/:userId', auth, authorize(['admin']), async (req, res) => {
   }
 });
 
-// Eliminar invitación y usuario pendiente
+// Eliminar invitación y usuario (sin restricciones de estado)
 router.delete('/:userId', auth, authorize(['admin']), async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log('🗑️ Deleting invitation for user:', userId);
+    console.log('🗑️ Deleting user and invitation:', userId);
 
     // Buscar el usuario
     const user = await User.findById(userId);
@@ -515,26 +515,21 @@ router.delete('/:userId', auth, authorize(['admin']), async (req, res) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    // Verificar que sea un usuario pendiente
-    if (user.invitationStatus !== 'pending') {
-      return res.status(400).json({ message: 'Solo se pueden eliminar usuarios con invitación pendiente' });
-    }
-
-    // Buscar y eliminar la invitación asociada
+    // Buscar y eliminar la invitación asociada (si existe)
     const invitation = await Invitation.findOne({ email: user.email });
     if (invitation) {
       await Invitation.findByIdAndDelete(invitation._id);
       console.log('🗑️ Invitation deleted:', invitation._id);
     }
 
-    // Eliminar el usuario pendiente
+    // Eliminar el usuario (sin importar el estado)
     await User.findByIdAndDelete(userId);
     console.log('🗑️ User deleted:', userId);
 
-    res.json({ message: 'Invitación eliminada exitosamente' });
+    res.json({ message: 'Usuario eliminado exitosamente' });
 
   } catch (error) {
-    console.error('Error deleting invitation:', error);
+    console.error('Error deleting user:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

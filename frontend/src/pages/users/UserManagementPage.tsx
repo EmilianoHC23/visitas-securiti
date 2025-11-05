@@ -93,7 +93,7 @@ const UserPreviewModal: React.FC<{
         </div>
     );
 };
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { LogoutIcon, SettingsIcon } from '../../components/common/icons';
@@ -102,6 +102,7 @@ import { FiUsers } from 'react-icons/fi';
 import { MdEditNote } from 'react-icons/md';
 import { BsPersonAdd } from 'react-icons/bs';
 import { FiShield, FiMail } from 'react-icons/fi';
+import { Upload, Camera, Trash2, X } from 'lucide-react';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -109,7 +110,7 @@ import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import { User, UserRole } from '../../types';
 import * as api from '../../services/api';
 
-// Reusable confirm dialog (Tailwind based, styled like example)
+// Reusable confirm dialog - Colores consistentes con SettingsPage
 const ConfirmDialog: React.FC<{
     isOpen: boolean;
     title: string;
@@ -124,66 +125,70 @@ const ConfirmDialog: React.FC<{
 }> = ({ isOpen, title, message, primaryLabel = 'Confirmar', secondaryLabel = 'Cancelar', showSecondary = false, onClose, onPrimary, onSecondary, icon }) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden">
-                {/* Header: gradient like other modals */}
-                <div className="p-6 bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 border-b border-gray-700 flex items-start justify-between text-white">
-                    <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
-                            {/* Warning icon */}
-                            {icon || (
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 9v2m0 4h.01M21 12A9 9 0 1112 3a9 9 0 019 9z" />
-                                </svg>
-                            )}
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden"
+            >
+                {/* Header con gradiente rojo para acciones destructivas */}
+                <div className="relative p-6 bg-gradient-to-br from-red-600 to-red-700">
+                    <div className="absolute inset-0 bg-black/10"></div>
+                    <div className="relative flex items-start justify-between text-white">
+                        <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-1 ring-white/30">
+                                {icon || (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 9v2m0 4h.01M21 12A9 9 0 1112 3a9 9 0 019 9z" />
+                                    </svg>
+                                )}
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-white">{title}</h3>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-white">{title}</h3>
-                            <p className="text-sm text-indigo-100">{/* small subtitle if needed */}</p>
-                        </div>
+                        <button
+                            onClick={onClose}
+                            className="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-all"
+                            aria-label="Cerrar"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-200 hover:text-white p-2 rounded-lg transition-colors"
-                        aria-label="Cerrar"
-                    >
-                        ✕
-                    </button>
                 </div>
 
                 <div className="p-6">
-                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm text-center">
-                        <p className="text-sm text-gray-700 mb-6 whitespace-pre-line">{message}</p>
+                    <p className="text-sm text-gray-700 mb-6 whitespace-pre-line leading-relaxed">{message}</p>
 
-                        <div className="flex items-center justify-center gap-3">
-                            <button
-                                onClick={() => { onClose(); }}
-                                className="px-4 py-2 min-w-[120px] text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                            >
-                                {secondaryLabel}
-                            </button>
+                    <div className="flex items-center justify-end gap-3">
+                        <button
+                            onClick={() => { onClose(); }}
+                            className="px-6 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all font-medium"
+                        >
+                            {secondaryLabel}
+                        </button>
 
+                        <button
+                            onClick={() => { onPrimary(); }}
+                            className="px-6 py-2.5 text-white bg-gradient-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl shadow-md hover:shadow-lg transition-all font-medium"
+                        >
+                            {primaryLabel}
+                        </button>
+                    </div>
+
+                    {showSecondary && onSecondary && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
                             <button
-                                onClick={() => { onPrimary(); }}
-                                className="px-4 py-2 min-w-[120px] text-white bg-gradient-to-r from-gray-900 to-gray-600 rounded-lg shadow hover:from-gray-800 hover:to-gray-500"
+                                onClick={() => { onSecondary(); }}
+                                className="w-full px-4 py-3 text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 rounded-xl transition-all font-medium"
                             >
-                                {primaryLabel}
+                                Eliminar permanentemente
                             </button>
                         </div>
-
-                        {showSecondary && onSecondary && (
-                            <div className="mt-6">
-                                <button
-                                    onClick={() => { onSecondary(); }}
-                                    className="w-full px-4 py-3 text-red-700 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition-colors"
-                                >
-                                    Eliminar permanentemente
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                    )}
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 };
@@ -213,6 +218,7 @@ interface NewUserData {
     firstName: string;
     lastName: string;
     role: UserRole;
+    profileImage?: string;
 }
 
 interface EditUserData {
@@ -220,6 +226,7 @@ interface EditUserData {
     lastName: string;
     role: UserRole;
     email: string;
+    profileImage?: string;
 }
 
 const RoleBadge: React.FC<{ role: UserRole }> = ({ role }) => {
@@ -362,16 +369,53 @@ const InviteUserModal: React.FC<{
         firstName: '',
         lastName: '',
         role: UserRole.HOST,
+        profileImage: '',
     };
 
     const [formData, setFormData] = useState<NewUserData>(initialFormData);
+    const [previewImage, setPreviewImage] = useState<string>('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Reset form whenever the modal is opened so fields are empty for a new invite
     useEffect(() => {
         if (isOpen) {
             setFormData(initialFormData);
+            setPreviewImage('');
         }
     }, [isOpen]);
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // Validar tamaño (5MB máximo)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('El archivo es demasiado grande. Máximo 5MB.');
+                return;
+            }
+
+            // Validar tipo
+            if (!file.type.match(/image\/(jpeg|jpg|png|gif|webp)/)) {
+                alert('Solo se permiten archivos de imagen (jpeg, jpg, png, gif, webp)');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const base64Image = event.target?.result as string;
+                setPreviewImage(base64Image);
+                setFormData(prev => ({ ...prev, profileImage: base64Image }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setPreviewImage('');
+        setFormData(prev => ({ ...prev, profileImage: '' }));
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -389,97 +433,155 @@ const InviteUserModal: React.FC<{
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden">
-                <div className="p-6 bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 border-b border-gray-700 flex items-start justify-between text-white">
-                    <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
-                            {/* Decorative user icon (react-icons) */}
-                            <FaRegUser className="w-6 h-6 text-white" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.2 }}
+                className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden"
+            >
+                {/* Header con gradiente gris consistente con SettingsPage */}
+                <div className="relative p-8 bg-gradient-to-br from-gray-900 to-gray-700">
+                    <div className="absolute inset-0 bg-black/10"></div>
+                    <div className="relative flex items-start justify-between text-white">
+                        <div className="flex items-start gap-4">
+                            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-1 ring-white/30">
+                                <BsPersonAdd className="w-7 h-7 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-bold text-white mb-1">Invitar Nuevo Usuario</h3>
+                                <p className="text-sm text-white/90">Envía una invitación por correo para crear acceso al sistema</p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-white">Invitar Nuevo Usuario</h3>
-                            <p className="text-sm text-indigo-100">Envía una invitación por correo para crear acceso al sistema</p>
-                        </div>
+                        <button
+                            onClick={onClose}
+                            className="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-all"
+                            aria-label="Cerrar"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-200 hover:text-white p-2 rounded-lg transition-colors"
-                        aria-label="Cerrar"
-                    >
-                        ✕
-                    </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-md bg-gray-100 flex items-center justify-center text-gray-700 ring-1 ring-gray-50">
-                                    <MdEditNote className="w-5 h-5" />
+                <form onSubmit={handleSubmit} className="p-8">
+                    {/* Sección de foto de perfil */}
+                    <div className="mb-8">
+                        <label className="block text-sm font-semibold text-gray-700 mb-4">
+                            Foto de perfil
+                        </label>
+                        <div className="flex items-center gap-6">
+                            <div className="relative">
+                                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg ring-2 ring-gray-200">
+                                    {previewImage ? (
+                                        <img
+                                            src={previewImage}
+                                            alt="Preview"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <FaRegUser className="w-10 h-10 text-gray-400" />
+                                    )}
                                 </div>
-                            <div>
-                                <h4 className="text-sm font-semibold text-gray-800">Datos del usuario</h4>
-                                <p className="text-xs text-gray-500">Rellena la información básica para enviar la invitación</p>
+                                {previewImage && (
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveImage}
+                                        className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-all"
+                                        title="Eliminar foto"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex-1">
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    className="hidden"
+                                    id="profile-image-upload"
+                                />
+                                <label
+                                    htmlFor="profile-image-upload"
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-br from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all cursor-pointer font-medium"
+                                >
+                                    <Upload className="w-4 h-4" />
+                                    {previewImage ? 'Cambiar foto' : 'Subir foto'}
+                                </label>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    JPG, PNG o GIF. Máximo 5MB.
+                                </p>
                             </div>
                         </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                    <FaRegUser className="w-5 h-5" />
-                                </span>
-                                <input
-                                    type="text"
-                                    name="firstName"
-                                    value={formData.firstName}
-                                    onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-3 border border-gray-100 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                                    required
-                                />
+                    </div>
+
+                    {/* Datos del usuario */}
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-6 border border-gray-200/50 shadow-sm mb-6">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center text-white">
+                                <MdEditNote className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-semibold text-gray-800">Información del usuario</h4>
+                                <p className="text-xs text-gray-500">Completa los datos para enviar la invitación</p>
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                        <FaRegUser className="w-4 h-4" />
+                                    </span>
+                                    <input
+                                        type="text"
+                                        name="firstName"
+                                        value={formData.firstName}
+                                        onChange={handleChange}
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                                        placeholder="Nombre"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Apellido</label>
                                 <input
                                     type="text"
                                     name="lastName"
                                     value={formData.lastName}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-3 border border-gray-100 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                                    placeholder="Apellido"
                                     required
                                 />
                             </div>
                         </div>
-                    </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                {/* Mail icon */}
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a3 3 0 003.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                            </span>
-                            <input
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                className="w-full pl-10 pr-4 py-3 border border-gray-100 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                                placeholder="correo@ejemplo.com"
-                                required
-                            />
+                        <div className="mt-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Correo electrónico</label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                    <FiMail className="w-4 h-4" />
+                                </span>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                                    placeholder="correo@ejemplo.com"
+                                    required
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                        <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
-                        <div className="relative">
-                            {/* Custom RoleSelect shows icon in the control and icons in the menu */}
+                        <div className="mt-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Rol del usuario</label>
                             <RoleSelect
                                 value={formData.role}
                                 onChange={(r: UserRole) => setFormData(prev => ({ ...prev, role: r }))}
@@ -487,25 +589,32 @@ const InviteUserModal: React.FC<{
                         </div>
                     </div>
 
-                    </div>
-                    <div className="pt-2 flex items-center justify-end gap-3">
+                    {/* Botones de acción */}
+                    <div className="flex items-center justify-end gap-3 pt-2">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                            className="px-6 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all font-medium"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-4 py-2 text-white bg-gradient-to-r from-gray-900 to-gray-600 rounded-lg shadow hover:from-gray-800 hover:to-gray-500 disabled:opacity-60"
+                            className="px-6 py-2.5 text-white bg-gradient-to-br from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 rounded-xl shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed transition-all font-medium"
                         >
-                            {loading ? 'Invitando...' : 'Invitar Usuario'}
+                            {loading ? (
+                                <span className="flex items-center gap-2">
+                                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                    Invitando...
+                                </span>
+                            ) : (
+                                'Enviar Invitación'
+                            )}
                         </button>
                     </div>
                 </form>
-            </div>
+            </motion.div>
         </div>
     );
 };
@@ -522,7 +631,10 @@ const EditUserModal: React.FC<{
         lastName: '',
         role: UserRole.HOST,
         email: '',
+        profileImage: '',
     });
+    const [previewImage, setPreviewImage] = useState<string>('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (user) {
@@ -531,9 +643,42 @@ const EditUserModal: React.FC<{
                 lastName: user.lastName,
                 role: user.role,
                 email: user.email,
+                profileImage: user.profileImage || '',
             });
+            setPreviewImage(user.profileImage || '');
         }
     }, [user]);
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                alert('El archivo es demasiado grande. Máximo 5MB.');
+                return;
+            }
+
+            if (!file.type.match(/image\/(jpeg|jpg|png|gif|webp)/)) {
+                alert('Solo se permiten archivos de imagen');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const base64Image = event.target?.result as string;
+                setPreviewImage(base64Image);
+                setFormData(prev => ({ ...prev, profileImage: base64Image }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setPreviewImage('');
+        setFormData(prev => ({ ...prev, profileImage: '' }));
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -550,118 +695,185 @@ const EditUserModal: React.FC<{
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden">
-                <div className="p-6 bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 border-b border-gray-700 flex items-start justify-between text-white">
-                    <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20">
-                            <MdEditNote className="w-6 h-6 text-white" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.2 }}
+                className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden"
+            >
+                {/* Header con gradiente gris */}
+                <div className="relative p-8 bg-gradient-to-br from-gray-900 to-gray-700">
+                    <div className="absolute inset-0 bg-black/10"></div>
+                    <div className="relative flex items-start justify-between text-white">
+                        <div className="flex items-start gap-4">
+                            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-1 ring-white/30">
+                                <MdEditNote className="w-7 h-7 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-bold text-white mb-1">Editar Usuario</h3>
+                                <p className="text-sm text-white/90">Actualiza la información del usuario</p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-white">Editar Usuario</h3>
-                            <p className="text-sm text-indigo-100">Actualiza la información básica del usuario</p>
-                        </div>
+                        <button
+                            onClick={onClose}
+                            className="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-all"
+                            aria-label="Cerrar"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-200 hover:text-white p-2 rounded-lg transition-colors"
-                        aria-label="Cerrar"
-                    >
-                        ✕
-                    </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm">
+                <form onSubmit={handleSubmit} className="p-8">
+                    {/* Sección de foto de perfil */}
+                    <div className="mb-8">
+                        <label className="block text-sm font-semibold text-gray-700 mb-4">
+                            Foto de perfil
+                        </label>
+                        <div className="flex items-center gap-6">
+                            <div className="relative">
+                                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg ring-2 ring-gray-200">
+                                    {previewImage ? (
+                                        <img
+                                            src={previewImage}
+                                            alt="Preview"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <FaRegUser className="w-10 h-10 text-gray-400" />
+                                    )}
+                                </div>
+                                {previewImage && (
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveImage}
+                                        className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-all"
+                                        title="Eliminar foto"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex-1">
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    className="hidden"
+                                    id="edit-profile-image-upload"
+                                />
+                                <label
+                                    htmlFor="edit-profile-image-upload"
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-br from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all cursor-pointer font-medium"
+                                >
+                                    <Upload className="w-4 h-4" />
+                                    {previewImage ? 'Cambiar foto' : 'Subir foto'}
+                                </label>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    JPG, PNG o GIF. Máximo 5MB.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Datos del usuario */}
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-6 border border-gray-200/50 shadow-sm mb-6">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-md bg-gray-100 flex items-center justify-center text-gray-700 ring-1 ring-gray-50">
+                            <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center text-white">
                                 <MdEditNote className="w-5 h-5" />
                             </div>
                             <div>
-                                <h4 className="text-sm font-semibold text-gray-800">Datos del usuario</h4>
-                                <p className="text-xs text-gray-500">Rellena la información básica para actualizar al usuario</p>
+                                <h4 className="text-sm font-semibold text-gray-800">Información del usuario</h4>
+                                <p className="text-xs text-gray-500">Actualiza los datos del usuario</p>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
                                 <div className="relative">
                                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                        <FaRegUser className="w-5 h-5" />
+                                        <FaRegUser className="w-4 h-4" />
                                     </span>
                                     <input
                                         type="text"
                                         name="firstName"
                                         value={formData.firstName}
                                         onChange={handleChange}
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-100 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
                                         required
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
-                                <div>
-                                    <input
-                                        type="text"
-                                        name="lastName"
-                                        value={formData.lastName}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-gray-100 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                                        required
-                                    />
-                                </div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Apellido</label>
+                                <input
+                                    type="text"
+                                    name="lastName"
+                                    value={formData.lastName}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                                    required
+                                />
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+                        <div className="mt-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Correo electrónico</label>
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                    <FiMail className="w-5 h-5" />
+                                    <FiMail className="w-4 h-4" />
                                 </span>
                                 <input
                                     type="email"
                                     name="email"
                                     value={formData.email}
                                     onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-3 border border-gray-100 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-white/80 backdrop-blur-sm placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
                                     required
                                 />
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
-                            <div className="relative">
-                                <RoleSelect
-                                    value={formData.role}
-                                    onChange={(r: UserRole) => setFormData(prev => ({ ...prev, role: r }))}
-                                />
-                            </div>
+                        <div className="mt-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Rol del usuario</label>
+                            <RoleSelect
+                                value={formData.role}
+                                onChange={(r: UserRole) => setFormData(prev => ({ ...prev, role: r }))}
+                            />
                         </div>
                     </div>
 
-                    <div className="pt-2 flex items-center justify-end gap-3">
+                    {/* Botones de acción */}
+                    <div className="flex items-center justify-end gap-3 pt-2">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                            className="px-6 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all font-medium"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-4 py-2 text-white bg-gradient-to-r from-gray-900 to-gray-600 rounded-lg shadow hover:from-gray-800 hover:to-gray-500 disabled:opacity-60"
+                            className="px-6 py-2.5 text-white bg-gradient-to-br from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 rounded-xl shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed transition-all font-medium"
                         >
-                            {loading ? 'Actualizando...' : 'Actualizar'}
+                            {loading ? (
+                                <span className="flex items-center gap-2">
+                                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                    Actualizando...
+                                </span>
+                            ) : (
+                                'Guardar Cambios'
+                            )}
                         </button>
                     </div>
                 </form>
-            </div>
+            </motion.div>
         </div>
     );
 };
@@ -711,15 +923,16 @@ export const UserManagementPage: React.FC = () => {
                 email: userData.email,
                 firstName: userData.firstName,
                 lastName: userData.lastName,
-                role: userData.role
+                role: userData.role,
+                profileImage: userData.profileImage
             });
             setIsModalOpen(false);
             // Refrescar la lista de usuarios para mostrar el nuevo usuario invitado
             await fetchUsers();
-            setNotification({ message: 'Invitación enviada exitosamente. El usuario aparecerá en la tabla con estatus "Pendiente".', type: 'success' });
+            setNotification({ message: '✅ Invitación enviada exitosamente. El usuario aparecerá en la tabla con estatus "Pendiente".', type: 'success' });
         } catch (error) {
             console.error('Error sending invitation:', error);
-            setNotification({ message: 'Error al enviar invitación. Revisa la consola para más detalles.', type: 'error' });
+            setNotification({ message: '❌ Error al enviar invitación. Revisa la consola para más detalles.', type: 'error' });
         } finally {
             setInviteLoading(false);
         }
@@ -741,10 +954,10 @@ export const UserManagementPage: React.FC = () => {
             ));
             setIsEditModalOpen(false);
             setEditingUser(null);
-            setNotification({ message: 'Usuario actualizado exitosamente', type: 'success' });
+            setNotification({ message: '✅ Usuario actualizado exitosamente', type: 'success' });
         } catch (error) {
             console.error('Error updating user:', error);
-            setNotification({ message: 'Error al actualizar usuario', type: 'error' });
+            setNotification({ message: '❌ Error al actualizar usuario', type: 'error' });
         } finally {
             setEditLoading(false);
         }
@@ -809,20 +1022,22 @@ export const UserManagementPage: React.FC = () => {
 
     return (
         <div>
-            {/* Header area: placed outside the main table card so it visually sits above */}
-            <div className="mb-6 flex justify-between items-center px-6">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-md">
-                        <FiUsers className="w-6 h-6 text-white" />
+            {/* Header area modernizado - Colores consistentes con SettingsPage */}
+            <div className="mb-8 flex justify-between items-start px-6">
+                <div className="flex items-start gap-5">
+                    <div className="w-16 h-16 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
+                        <FiUsers className="w-8 h-8 text-white" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-semibold text-gray-800">Gestión de Usuarios</h2>
-                        <p className="text-sm text-gray-500 mt-1">Gestiona usuarios, roles y permisos; invita, edita o desactiva cuentas dentro del sistema.</p>
+                        <h2 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Usuarios</h2>
+                        <p className="text-sm text-gray-600 max-w-2xl leading-relaxed">
+                            Administra usuarios, asigna roles y permisos. Invita nuevos miembros, edita información o gestiona accesos del sistema.
+                        </p>
                     </div>
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="px-4 py-2 font-semibold text-white bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 rounded-lg shadow-md hover:from-gray-800 hover:via-gray-700 hover:to-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-900 transition-transform"
+                    className="group relative px-6 py-3 font-semibold text-white bg-gradient-to-br from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 rounded-xl shadow-lg hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-900 transition-all duration-200 transform hover:scale-105"
                 >
                     <span className="inline-flex items-center gap-2">
                         <BsPersonAdd className="w-5 h-5" />
@@ -831,40 +1046,43 @@ export const UserManagementPage: React.FC = () => {
                 </button>
             </div>
 
-            {/* Main card containing the table */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
-                <div className="overflow-x-auto rounded-lg shadow-sm border border-gray-100">
+            {/* Main card containing the table - modernizado con colores de SettingsPage */}
+            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-gray-200/50">
+                <div className="overflow-x-auto rounded-xl shadow-md border border-gray-200">
                     {loading ? (
-                        <div className="text-center p-8">Cargando usuarios...</div>
+                        <div className="text-center p-12">
+                            <div className="inline-block w-12 h-12 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin mb-4"></div>
+                            <p className="text-gray-600 font-medium">Cargando usuarios...</p>
+                        </div>
                     ) : (
                         <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gradient-to-r from-gray-900 via-gray-700 to-gray-600 text-white">
+                            <thead className="bg-gradient-to-r from-gray-900 to-gray-700 text-white">
                                 <tr>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider first:rounded-tl-lg">Foto</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Nombre</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Email</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Rol</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Estatus</th>
-                                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider last:rounded-tr-lg">Acciones</th>
+                                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider first:rounded-tl-xl">Foto</th>
+                                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Nombre</th>
+                                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Email</th>
+                                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Rol</th>
+                                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Estatus</th>
+                                    <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-white uppercase tracking-wider last:rounded-tr-xl">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-white divide-y divide-gray-100">
                                 {users.map((user, rowIndex) => (
                                     <tr
                                         key={user._id}
-                                        className="group bg-white even:bg-gray-50 border-b cursor-pointer transition-colors hover:bg-blue-100 focus-within:bg-blue-100"
+                                        className="group bg-white even:bg-gray-50/50 border-b border-gray-100 cursor-pointer transition-all duration-200 hover:bg-gray-100 focus-within:bg-gray-100"
                                         onClick={e => {
                                             if ((e.target as HTMLElement).closest('button')) return;
                                             setPreviewUser(user);
                                             setIsPreviewModalOpen(true);
                                         }}
                                     >
-                                        <td className="px-6 py-4 align-middle transition-colors group-hover:bg-blue-100">
-                                            <span className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-sm ring-1 ring-gray-200">
+                                        <td className="px-6 py-4 align-middle transition-all duration-200 group-hover:bg-transparent">
+                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden shadow-md ring-2 ring-white group-hover:ring-gray-300 transition-all">
                                                 <img
                                                     src={user.profileImage || ''}
                                                     alt={`${user.firstName} ${user.lastName}`}
-                                                    className="w-10 h-10 object-cover"
+                                                    className="w-12 h-12 object-cover"
                                                     onError={e => {
                                                         const img = e.target as HTMLImageElement;
                                                         img.style.display = 'none';
@@ -879,20 +1097,20 @@ export const UserManagementPage: React.FC = () => {
                                                     }}
                                                     style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'inline' : 'none' }}
                                                 />
-                                                <FaRegUser className="w-7 h-7 text-gray-400" style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'none' : 'inline-flex' }} />
-                                            </span>
+                                                <FaRegUser className="w-6 h-6 text-gray-400" style={{ display: user.profileImage && user.profileImage.trim() !== '' ? 'none' : 'inline-flex' }} />
+                                            </div>
                                         </td>
-                                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap transition-colors group-hover:bg-blue-100">
+                                        <td className="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap transition-all duration-200 group-hover:bg-transparent">
                                             {user.firstName} {user.lastName}
                                         </td>
-                                        <td className="px-6 py-4 transition-colors group-hover:bg-blue-100">{user.email}</td>
-                                        <td className="px-6 py-4 transition-colors group-hover:bg-blue-100">
+                                        <td className="px-6 py-4 transition-all duration-200 group-hover:bg-transparent text-gray-600">{user.email}</td>
+                                        <td className="px-6 py-4 transition-all duration-200 group-hover:bg-transparent">
                                             <RoleBadge role={user.role} />
                                         </td>
-                                        <td className="px-6 py-4 transition-colors group-hover:bg-blue-100">
+                                        <td className="px-6 py-4 transition-all duration-200 group-hover:bg-transparent">
                                             <StatusBadge status={user.invitationStatus || 'none'} />
                                         </td>
-                                        <td className="px-6 py-4 text-right transition-colors group-hover:bg-blue-100">
+                                        <td className="px-6 py-4 text-right transition-all duration-200 group-hover:bg-transparent">
                                             <div className="flex justify-end items-center space-x-2">
                                                 {user.invitationStatus === 'pending' && (
                                                     <button 
@@ -900,7 +1118,7 @@ export const UserManagementPage: React.FC = () => {
                                                             e.stopPropagation();
                                                             openConfirm({ type: 'resend', title: 'Reenviar invitación', message: '¿Estás seguro de que quieres reenviar la invitación a este usuario?', user });
                                                         }}
-                                                        className="p-2 text-blue-600 hover:text-blue-800 rounded hover:bg-gray-100 transition"
+                                                        className="group/btn p-2.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all"
                                                         title="Reenviar invitación"
                                                     >
                                                         <span className="relative inline-block w-5 h-5">
@@ -913,12 +1131,36 @@ export const UserManagementPage: React.FC = () => {
                                                         </span>
                                                     </button>
                                                 )}
-                                                <button onClick={e => { e.stopPropagation(); handleEditUser(user); }} className="p-2 text-green-600 hover:text-green-800 rounded hover:bg-gray-100 transition" title="Editar usuario">
+                                                <button 
+                                                    onClick={e => { e.stopPropagation(); handleEditUser(user); }} 
+                                                    className="p-2.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all" 
+                                                    title="Editar usuario"
+                                                >
                                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                                                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.313 3 21l1.687-4.5 12.175-13.013z" />
                                                     </svg>
                                                 </button>
-                                                <button onClick={e => { e.stopPropagation(); if (user.invitationStatus === 'pending' || user.invitationStatus === 'none') { openConfirm({ type: 'delete-invite', title: 'Eliminar invitación', message: '¿Estás seguro de que quieres eliminar esta invitación? El usuario será eliminado permanentemente y podrás reutilizar este correo.', user }); } else { openConfirm({ type: 'deactivate', title: '¿Qué deseas hacer con este usuario?', message: 'Puedes desactivar al usuario (será inactivable y podrá reactivarse) o eliminarlo completamente. Usa "Confirmar" para desactivar o "Eliminar permanentemente" para borrarlo.', user }); } }} className="p-2 text-red-600 hover:text-red-800 rounded hover:bg-gray-100 transition" title="Eliminar usuario">
+                                                <button onClick={e => { 
+                                                    e.stopPropagation(); 
+                                                    if (user.invitationStatus === 'pending' || user.invitationStatus === 'none') { 
+                                                        openConfirm({ 
+                                                            type: 'delete-invite', 
+                                                            title: 'Eliminar usuario', 
+                                                            message: '¿Estás seguro de que quieres eliminar a este usuario? Esta acción no se puede deshacer.', 
+                                                            user 
+                                                        }); 
+                                                    } else { 
+                                                        openConfirm({ 
+                                                            type: 'deactivate', 
+                                                            title: '¿Qué deseas hacer con este usuario?', 
+                                                            message: 'Puedes desactivar al usuario (será inactivable y podrá reactivarse) o eliminarlo completamente. Usa "Confirmar" para desactivar o "Eliminar permanentemente" para borrarlo.', 
+                                                            user 
+                                                        }); 
+                                                    } 
+                                                }} 
+                                                className="p-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all" 
+                                                title="Eliminar usuario"
+                                                >
                                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                                                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                                     </svg>

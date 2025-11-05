@@ -112,8 +112,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <img src="/logo_blanco.png" alt="Logo" style={{ width: 36, height: 36, objectFit: 'contain' }} />
                         </div>
                         <div>
-                            <div className="fw-bold" style={{ color: '#ffffff', letterSpacing: 1 }}>VISITAS</div>
-                            <div className="small text-white-50" style={{ opacity: 0.85 }}>SECURITI</div>
+                            <div 
+                                className="fw-bold" 
+                                style={{ 
+                                    background: 'linear-gradient(135deg, #ffffff 0%, #e5e7eb 100%)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    backgroundClip: 'text',
+                                    letterSpacing: 1.5,
+                                    fontSize: '1.1rem',
+                                    fontWeight: 700,
+                                    textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                }}
+                            >
+                                VISITAS
+                            </div>
+                            <div 
+                                className="small" 
+                                style={{ 
+                                    color: 'rgba(255,255,255,0.75)',
+                                    letterSpacing: 2,
+                                    fontWeight: 500,
+                                    fontSize: '0.75rem'
+                                }}
+                            >
+                                SECURITI
+                            </div>
                         </div>
                     </div>
                 ) : (

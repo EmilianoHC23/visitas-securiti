@@ -230,7 +230,7 @@ export const AgendaPage: React.FC = () => {
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <div className="w-14 h-14 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
                 <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7H3v12a2 2 0 002 2z" />
                 </svg>
@@ -249,7 +249,7 @@ export const AgendaPage: React.FC = () => {
                 onClick={() => setViewMode('table')}
                 className={`px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
                   viewMode === 'table' 
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30' 
+                    ? 'bg-gradient-to-br from-gray-900 to-gray-700 text-white shadow-lg' 
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
@@ -264,7 +264,7 @@ export const AgendaPage: React.FC = () => {
                 onClick={() => setViewMode('calendar')}
                 className={`px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 ${
                   viewMode === 'calendar' 
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30' 
+                    ? 'bg-gradient-to-br from-gray-900 to-gray-700 text-white shadow-lg' 
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
@@ -281,9 +281,9 @@ export const AgendaPage: React.FC = () => {
 
         {/* Filtros modernos */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {/* DateRangePicker */}
-            <div className="lg:col-span-1">
+            <div className="md:col-span-2 xl:col-span-1">
               <DateRangePicker
                 startValue={from}
                 endValue={to}
@@ -304,7 +304,7 @@ export const AgendaPage: React.FC = () => {
             </div>
             
             {/* Buscar */}
-            <div>
+            <div className="md:col-span-2 xl:col-span-1">
               <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
                 <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -317,11 +317,11 @@ export const AgendaPage: React.FC = () => {
                   placeholder="Nombre, empresa, título..." 
                   value={q} 
                   onChange={e => setQ(e.target.value)} 
-                  className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
+                  className="flex-1 px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all text-sm"
                 />
                 <button 
                   onClick={fetchAgenda} 
-                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all font-semibold text-sm hover:scale-105"
+                  className="px-6 py-2.5 bg-gradient-to-br from-gray-900 to-gray-700 text-white rounded-lg shadow-lg hover:shadow-xl transition-all font-semibold text-sm hover:scale-105"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -359,8 +359,8 @@ export const AgendaPage: React.FC = () => {
                     <tr>
                       <td colSpan={6} className="p-16 text-center">
                         <div className="flex flex-col items-center gap-4">
-                          <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
-                            <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
+                            <svg className="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                           </div>
@@ -373,7 +373,7 @@ export const AgendaPage: React.FC = () => {
                     </tr>
                   ) : (
                     agendaItems.map(item => (
-                      <tr key={item.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200">
+                      <tr key={item.id} className="hover:bg-gray-50 transition-all duration-200">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-full shadow-sm ${
                             item.status === 'active'
@@ -417,7 +417,7 @@ export const AgendaPage: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.company || '—'}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-semibold text-xs">
+                            <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-800 rounded-full flex items-center justify-center text-white font-semibold text-xs shadow-sm">
                               {item.hostName.split(' ').map(n => n[0]).join('').substring(0, 2)}
                             </div>
                             <span className="text-sm font-medium text-gray-900">{item.hostName}</span>

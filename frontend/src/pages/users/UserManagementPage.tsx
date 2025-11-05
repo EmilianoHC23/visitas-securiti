@@ -887,6 +887,7 @@ export const UserManagementPage: React.FC = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editLoading, setEditLoading] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
     // Confirm dialog state
     const [confirmOpen, setConfirmOpen] = useState(false);
@@ -900,6 +901,12 @@ export const UserManagementPage: React.FC = () => {
     // Estado para la vista previa
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [previewUser, setPreviewUser] = useState<User | null>(null);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const fetchUsers = useCallback(async () => {
         try {
@@ -1022,146 +1029,247 @@ export const UserManagementPage: React.FC = () => {
     return (
         <div>
             {/* Header area modernizado - Colores consistentes con SettingsPage */}
-            <div className="mb-8 flex justify-between items-start px-6">
-                <div className="flex items-start gap-5">
-                    <div className="w-16 h-16 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
-                        <Users className="w-8 h-8 text-white" />
+            <div className={`mb-8 flex ${isMobile ? 'flex-col gap-4' : 'justify-between items-start'} ${isMobile ? 'px-3' : 'px-6'}`}>
+                <div className="flex items-start gap-3 md:gap-5">
+                    <div className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0`}>
+                        <Users className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-white`} />
                     </div>
-                    <div>
-                        <h2 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Usuarios</h2>
-                        <p className="text-sm text-gray-600 max-w-2xl leading-relaxed">
-                            Administra usuarios, asigna roles y permisos. Invita nuevos miembros, edita información o gestiona accesos del sistema.
+                    <div className="flex-1">
+                        <h2 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-gray-900 mb-2`}>
+                            {isMobile ? 'Usuarios' : 'Gestión de Usuarios'}
+                        </h2>
+                        <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 max-w-2xl leading-relaxed`}>
+                            {isMobile 
+                                ? 'Administra usuarios y permisos del sistema'
+                                : 'Administra usuarios, asigna roles y permisos. Invita nuevos miembros, edita información o gestiona accesos del sistema.'
+                            }
                         </p>
                     </div>
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="group relative px-6 py-3 font-semibold text-white bg-gradient-to-br from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 rounded-xl shadow-lg hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-900 transition-all duration-200 transform hover:scale-105"
+                    className={`${isMobile ? 'w-full justify-center px-4 py-2.5 text-sm' : 'px-6 py-3'} group relative font-semibold text-white bg-gradient-to-br from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 rounded-xl shadow-lg hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-900 transition-all duration-200 transform hover:scale-105 flex-shrink-0`}
                 >
                     <span className="inline-flex items-center gap-2">
-                        <UserPlus className="w-5 h-5" />
-                        <span>Invitar Usuario</span>
+                        <UserPlus className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                        <span>{isMobile ? 'Invitar' : 'Invitar Usuario'}</span>
                     </span>
                 </button>
             </div>
 
             {/* Main card containing the table - modernizado con colores de SettingsPage */}
-            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-gray-200/50">
-                <div className="overflow-x-auto rounded-xl shadow-md border border-gray-200">
-                    {loading ? (
-                        <div className="text-center p-12">
-                            <div className="inline-block w-12 h-12 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin mb-4"></div>
-                            <p className="text-gray-600 font-medium">Cargando usuarios...</p>
-                        </div>
-                    ) : (
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gradient-to-r from-gray-900 to-gray-700 text-white">
-                                <tr>
-                                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider first:rounded-tl-xl">Foto</th>
-                                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Nombre</th>
-                                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Email</th>
-                                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Rol</th>
-                                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Estatus</th>
-                                    <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-white uppercase tracking-wider last:rounded-tr-xl">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-100">
-                                {users.map((user, rowIndex) => (
-                                    <tr
-                                        key={user._id}
-                                        className="group bg-white even:bg-gray-50/50 border-b border-gray-100 cursor-pointer transition-all duration-200 hover:bg-gray-100 focus-within:bg-gray-100"
-                                        onClick={e => {
-                                            if ((e.target as HTMLElement).closest('button')) return;
-                                            setPreviewUser(user);
-                                            setIsPreviewModalOpen(true);
-                                        }}
-                                    >
-                                        <td className="px-6 py-4 align-middle transition-all duration-200 group-hover:bg-transparent">
-                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden shadow-md ring-2 ring-white group-hover:ring-gray-300 transition-all">
-                                                {user.profileImage ? (
-                                                    <img
-                                                        src={user.profileImage}
-                                                        alt={`${user.firstName} ${user.lastName}`}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <UserIcon className="w-6 h-6 text-gray-400" />
-                                                )}
+            <div className={`bg-white/80 backdrop-blur-sm ${isMobile ? 'p-3' : 'p-6'} rounded-2xl shadow-xl border border-gray-200/50`}>
+                {isMobile ? (
+                    // Vista móvil: Cards en lugar de tabla
+                    <div className="space-y-3">
+                        {loading ? (
+                            <div className="text-center p-12">
+                                <div className="inline-block w-12 h-12 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin mb-4"></div>
+                                <p className="text-gray-600 font-medium text-sm">Cargando usuarios...</p>
+                            </div>
+                        ) : (
+                            users.map(user => (
+                                <div
+                                    key={user._id}
+                                    onClick={() => {
+                                        setPreviewUser(user);
+                                        setIsPreviewModalOpen(true);
+                                    }}
+                                    className="bg-white rounded-xl p-4 shadow-md border border-gray-200 hover:shadow-lg transition-all cursor-pointer"
+                                >
+                                    <div className="flex items-start gap-3 mb-3">
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden shadow-md ring-2 ring-white flex-shrink-0">
+                                            {user.profileImage ? (
+                                                <img
+                                                    src={user.profileImage}
+                                                    alt={`${user.firstName} ${user.lastName}`}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <UserIcon className="w-6 h-6 text-gray-400" />
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-semibold text-gray-900 text-sm truncate">
+                                                {user.firstName} {user.lastName}
+                                            </h3>
+                                            <p className="text-xs text-gray-600 truncate">{user.email}</p>
+                                            <div className="flex items-center gap-2 mt-1.5">
+                                                <RoleBadge role={user.role} />
+                                                <StatusBadge status={user.invitationStatus || 'none'} />
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap transition-all duration-200 group-hover:bg-transparent">
-                                            {user.firstName} {user.lastName}
-                                        </td>
-                                        <td className="px-6 py-4 transition-all duration-200 group-hover:bg-transparent text-gray-600">{user.email}</td>
-                                        <td className="px-6 py-4 transition-all duration-200 group-hover:bg-transparent">
-                                            <RoleBadge role={user.role} />
-                                        </td>
-                                        <td className="px-6 py-4 transition-all duration-200 group-hover:bg-transparent">
-                                            <StatusBadge status={user.invitationStatus || 'none'} />
-                                        </td>
-                                        <td className="px-6 py-4 text-right transition-all duration-200 group-hover:bg-transparent">
-                                            <div className="flex justify-end items-center space-x-2">
-                                                {user.invitationStatus === 'pending' && (
-                                                    <button 
-                                                        onClick={e => {
-                                                            e.stopPropagation();
-                                                            openConfirm({ type: 'resend', title: 'Reenviar invitación', message: '¿Estás seguro de que quieres reenviar la invitación a este usuario?', user });
-                                                        }}
-                                                        className="group/btn p-2.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all"
-                                                        title="Reenviar invitación"
-                                                    >
-                                                        <span className="relative inline-block w-5 h-5">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="absolute left-0 top-0 w-5 h-5">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-.659 1.591l-7.5 7.5a2.25 2.25 0 01-3.182 0l-7.5-7.5A2.25 2.25 0 012.25 6.993V6.75" />
-                                                            </svg>
-                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="absolute right-0 bottom-0 w-3 h-3">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h8m0 0l-3-3m3 3l-3 3" />
-                                                            </svg>
-                                                        </span>
-                                                    </button>
-                                                )}
-                                                <button 
-                                                    onClick={e => { e.stopPropagation(); handleEditUser(user); }} 
-                                                    className="p-2.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all" 
-                                                    title="Editar usuario"
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.313 3 21l1.687-4.5 12.175-13.013z" />
-                                                    </svg>
-                                                </button>
-                                                <button onClick={e => { 
-                                                    e.stopPropagation(); 
-                                                    if (user.invitationStatus === 'pending' || user.invitationStatus === 'none') { 
-                                                        openConfirm({ 
-                                                            type: 'delete-invite', 
-                                                            title: 'Eliminar usuario', 
-                                                            message: '¿Estás seguro de que quieres eliminar a este usuario? Esta acción no se puede deshacer.', 
-                                                            user 
-                                                        }); 
-                                                    } else { 
-                                                        openConfirm({ 
-                                                            type: 'deactivate', 
-                                                            title: '¿Qué deseas hacer con este usuario?', 
-                                                            message: 'Puedes desactivar al usuario (será inactivable y podrá reactivarse) o eliminarlo completamente. Usa "Confirmar" para desactivar o "Eliminar permanentemente" para borrarlo.', 
-                                                            user 
-                                                        }); 
-                                                    } 
-                                                }} 
-                                                className="p-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all" 
-                                                title="Eliminar usuario"
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </td>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+                                        {user.invitationStatus === 'pending' && (
+                                            <button 
+                                                onClick={e => {
+                                                    e.stopPropagation();
+                                                    openConfirm({ type: 'resend', title: 'Reenviar invitación', message: '¿Estás seguro de que quieres reenviar la invitación a este usuario?', user });
+                                                }}
+                                                className="flex-1 flex items-center justify-center gap-1.5 p-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all text-xs font-medium"
+                                            >
+                                                <Mail className="w-4 h-4" />
+                                                Reenviar
+                                            </button>
+                                        )}
+                                        <button 
+                                            onClick={e => { e.stopPropagation(); handleEditUser(user); }} 
+                                            className="flex-1 flex items-center justify-center gap-1.5 p-2 text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-all text-xs font-medium"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.313 3 21l1.687-4.5 12.175-13.013z" />
+                                            </svg>
+                                            Editar
+                                        </button>
+                                        <button 
+                                            onClick={e => { 
+                                                e.stopPropagation(); 
+                                                if (user.invitationStatus === 'pending' || user.invitationStatus === 'none') { 
+                                                    openConfirm({ 
+                                                        type: 'delete-invite', 
+                                                        title: 'Eliminar usuario', 
+                                                        message: '¿Estás seguro de que quieres eliminar a este usuario? Esta acción no se puede deshacer.', 
+                                                        user 
+                                                    }); 
+                                                } else { 
+                                                    openConfirm({ 
+                                                        type: 'deactivate', 
+                                                        title: '¿Qué deseas hacer con este usuario?', 
+                                                        message: 'Puedes desactivar al usuario (será inactivable y podrá reactivarse) o eliminarlo completamente. Usa "Confirmar" para desactivar o "Eliminar permanentemente" para borrarlo.', 
+                                                        user 
+                                                    }); 
+                                                } 
+                                            }} 
+                                            className="flex-1 flex items-center justify-center gap-1.5 p-2 text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-all text-xs font-medium"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                            Eliminar
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                ) : (
+                    // Vista desktop: Tabla original
+                    <div className="overflow-x-auto rounded-xl shadow-md border border-gray-200">
+                        {loading ? (
+                            <div className="text-center p-12">
+                                <div className="inline-block w-12 h-12 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin mb-4"></div>
+                                <p className="text-gray-600 font-medium">Cargando usuarios...</p>
+                            </div>
+                        ) : (
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gradient-to-r from-gray-900 to-gray-700 text-white">
+                                    <tr>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider first:rounded-tl-xl">Foto</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Nombre</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Email</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Rol</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Estatus</th>
+                                        <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-white uppercase tracking-wider last:rounded-tr-xl">Acciones</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-100">
+                                    {users.map((user, rowIndex) => (
+                                        <tr
+                                            key={user._id}
+                                            className="group bg-white even:bg-gray-50/50 border-b border-gray-100 cursor-pointer transition-all duration-200 hover:bg-gray-100 focus-within:bg-gray-100"
+                                            onClick={e => {
+                                                if ((e.target as HTMLElement).closest('button')) return;
+                                                setPreviewUser(user);
+                                                setIsPreviewModalOpen(true);
+                                            }}
+                                        >
+                                            <td className="px-6 py-4 align-middle transition-all duration-200 group-hover:bg-transparent">
+                                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden shadow-md ring-2 ring-white group-hover:ring-gray-300 transition-all">
+                                                    {user.profileImage ? (
+                                                        <img
+                                                            src={user.profileImage}
+                                                            alt={`${user.firstName} ${user.lastName}`}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <UserIcon className="w-6 h-6 text-gray-400" />
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap transition-all duration-200 group-hover:bg-transparent">
+                                                {user.firstName} {user.lastName}
+                                            </td>
+                                            <td className="px-6 py-4 transition-all duration-200 group-hover:bg-transparent text-gray-600">{user.email}</td>
+                                            <td className="px-6 py-4 transition-all duration-200 group-hover:bg-transparent">
+                                                <RoleBadge role={user.role} />
+                                            </td>
+                                            <td className="px-6 py-4 transition-all duration-200 group-hover:bg-transparent">
+                                                <StatusBadge status={user.invitationStatus || 'none'} />
+                                            </td>
+                                            <td className="px-6 py-4 text-right transition-all duration-200 group-hover:bg-transparent">
+                                                <div className="flex justify-end items-center space-x-2">
+                                                    {user.invitationStatus === 'pending' && (
+                                                        <button 
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                openConfirm({ type: 'resend', title: 'Reenviar invitación', message: '¿Estás seguro de que quieres reenviar la invitación a este usuario?', user });
+                                                            }}
+                                                            className="group/btn p-2.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all"
+                                                            title="Reenviar invitación"
+                                                        >
+                                                            <span className="relative inline-block w-5 h-5">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="absolute left-0 top-0 w-5 h-5">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-.659 1.591l-7.5 7.5a2.25 2.25 0 01-3.182 0l-7.5-7.5A2.25 2.25 0 012.25 6.993V6.75" />
+                                                                </svg>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="absolute right-0 bottom-0 w-3 h-3">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h8m0 0l-3-3m3 3l-3 3" />
+                                                                </svg>
+                                                            </span>
+                                                        </button>
+                                                    )}
+                                                    <button 
+                                                        onClick={e => { e.stopPropagation(); handleEditUser(user); }} 
+                                                        className="p-2.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all" 
+                                                        title="Editar usuario"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.313 3 21l1.687-4.5 12.175-13.013z" />
+                                                        </svg>
+                                                    </button>
+                                                    <button onClick={e => { 
+                                                        e.stopPropagation(); 
+                                                        if (user.invitationStatus === 'pending' || user.invitationStatus === 'none') { 
+                                                            openConfirm({ 
+                                                                type: 'delete-invite', 
+                                                                title: 'Eliminar usuario', 
+                                                                message: '¿Estás seguro de que quieres eliminar a este usuario? Esta acción no se puede deshacer.', 
+                                                                user 
+                                                            }); 
+                                                        } else { 
+                                                            openConfirm({ 
+                                                                type: 'deactivate', 
+                                                                title: '¿Qué deseas hacer con este usuario?', 
+                                                                message: 'Puedes desactivar al usuario (será inactivable y podrá reactivarse) o eliminarlo completamente. Usa "Confirmar" para desactivar o "Eliminar permanentemente" para borrarlo.', 
+                                                                user 
+                                                            }); 
+                                                        } 
+                                                    }} 
+                                                    className="p-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all" 
+                                                    title="Eliminar usuario"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Modales y banners montados fuera de la tarjeta/tabla */}

@@ -116,34 +116,34 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           </div>
         </Group>
 
-        <Popover className="bg-white rounded-xl shadow-2xl border-2 border-gray-200 p-5 z-50 mt-2 min-w-[280px]">
+        <Popover className="bg-white rounded-lg shadow-xl border border-gray-200 p-3 z-50 mt-2">
           <Dialog className="outline-none">
             <Calendar className="w-full">
-              <header className="flex items-center justify-between mb-4">
+              <header className="flex items-center justify-between mb-2">
                 <Button
                   slot="previous"
-                  className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-1 hover:bg-gray-100 rounded-md transition-colors"
                 >
-                  <ChevronLeft className="w-4 h-4 text-gray-700" />
+                  <ChevronLeft className="w-3.5 h-3.5 text-gray-700" />
                 </Button>
-                <Heading className="text-base font-bold text-gray-900" />
+                <Heading className="text-sm font-bold text-gray-900" />
                 <Button
                   slot="next"
-                  className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-1 hover:bg-gray-100 rounded-md transition-colors"
                 >
-                  <ChevronRight className="w-4 h-4 text-gray-700" />
+                  <ChevronRight className="w-3.5 h-3.5 text-gray-700" />
                 </Button>
               </header>
-              <CalendarGrid className="border-spacing-1 border-separate w-full mb-1">
+              <CalendarGrid className="border-spacing-0.5 border-separate">
                 {(date) => (
                   <CalendarCell
                     date={date}
-                    className="w-9 h-9 text-sm rounded-lg flex items-center justify-center
+                    className="w-8 h-8 text-xs rounded-md flex items-center justify-center
                              cursor-pointer hover:bg-gray-100 transition-colors
                              data-[selected]:bg-gray-900 data-[selected]:text-white data-[selected]:font-semibold
                              data-[disabled]:text-gray-300 data-[disabled]:cursor-not-allowed
                              data-[outside-month]:text-gray-400
-                             data-[focused]:ring-2 data-[focused]:ring-gray-900 data-[focused]:ring-offset-1"
+                             data-[focused]:ring-1 data-[focused]:ring-gray-900"
                   />
                 )}
               </CalendarGrid>
@@ -306,36 +306,36 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           </Group>
         </div>
 
-        <Popover className="bg-white rounded-xl shadow-2xl border-2 border-gray-200 p-5 z-50 mt-2 min-w-[280px]">
+        <Popover className="bg-white rounded-lg shadow-xl border border-gray-200 p-3 z-50 mt-2">
           <Dialog className="outline-none">
             <RangeCalendar className="w-full">
-              <header className="flex items-center justify-between mb-4">
+              <header className="flex items-center justify-between mb-2">
                 <Button
                   slot="previous"
-                  className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-1 hover:bg-gray-100 rounded-md transition-colors"
                 >
-                  <ChevronLeft className="w-4 h-4 text-gray-700" />
+                  <ChevronLeft className="w-3.5 h-3.5 text-gray-700" />
                 </Button>
-                <Heading className="text-base font-bold text-gray-900" />
+                <Heading className="text-sm font-bold text-gray-900" />
                 <Button
                   slot="next"
-                  className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-1 hover:bg-gray-100 rounded-md transition-colors"
                 >
-                  <ChevronRight className="w-4 h-4 text-gray-700" />
+                  <ChevronRight className="w-3.5 h-3.5 text-gray-700" />
                 </Button>
               </header>
-              <CalendarGrid className="border-spacing-1 border-separate w-full mb-1">
+              <CalendarGrid className="border-spacing-0.5 border-separate">
                 {(date) => (
                   <CalendarCell
                     date={date}
-                    className="w-9 h-9 text-sm rounded-lg flex items-center justify-center
+                    className="w-8 h-8 text-xs rounded-md flex items-center justify-center
                              cursor-pointer hover:bg-gray-100 transition-colors
                              data-[selected]:bg-gray-900 data-[selected]:text-white data-[selected]:font-semibold
                              data-[selection-start]:bg-gray-900 data-[selection-start]:text-white
                              data-[selection-end]:bg-gray-900 data-[selection-end]:text-white
                              data-[disabled]:text-gray-300 data-[disabled]:cursor-not-allowed
                              data-[outside-month]:text-gray-400
-                             data-[focused]:ring-2 data-[focused]:ring-gray-900 data-[focused]:ring-offset-1"
+                             data-[focused]:ring-1 data-[focused]:ring-gray-900"
                   />
                 )}
               </CalendarGrid>

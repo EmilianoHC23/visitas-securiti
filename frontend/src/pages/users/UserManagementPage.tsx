@@ -439,7 +439,7 @@ const InviteUserModal: React.FC<{
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.2 }}
-                className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden"
+                className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
             >
                 {/* Header con gradiente gris consistente con SettingsPage */}
                 <div className="relative p-8 bg-gradient-to-br from-gray-900 to-gray-700">
@@ -701,7 +701,7 @@ const EditUserModal: React.FC<{
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.2 }}
-                className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden"
+                className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
             >
                 {/* Header con gradiente gris */}
                 <div className="relative p-8 bg-gradient-to-br from-gray-900 to-gray-700">
@@ -987,7 +987,7 @@ export const UserManagementPage: React.FC = () => {
                 showNotification('Invitación reenviada exitosamente', 'success');
             } else if (type === 'delete-invite') {
                 await api.deleteInvitation(user._id);
-                showNotification('Invitación eliminada exitosamente. Puedes reutilizar este correo.', 'success');
+                showNotification('Usuario eliminado correctamente', 'success');
             } else if (type === 'deactivate') {
                 await api.deactivateUser(user._id);
                 showNotification('Usuario desactivado exitosamente.', 'success');

@@ -1187,6 +1187,7 @@ export const UserManagementPage: React.FC = () => {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                                     <tr>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Foto</th>
                                         <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Usuario</th>
                                         <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Email</th>
                                         <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Rol</th>

@@ -922,11 +922,16 @@ export const UserManagementPage: React.FC = () => {
     // Notification/banner state
     const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
-    // We'll use CSS :hover for row highlight (no JS state needed)
-
     // Estado para la vista previa
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [previewUser, setPreviewUser] = useState<User | null>(null);
+
+    // Detect mobile
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -1134,7 +1139,7 @@ export const UserManagementPage: React.FC = () => {
                                                     e.stopPropagation();
                                                     openConfirm({ type: 'resend', title: 'Reenviar invitación', message: '¿Estás seguro de que quieres reenviar la invitación a este usuario?', user });
                                                 }}
-                                                className="flex-1 flex items-center justify-center gap-1.5 p-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all text-xs font-medium"
+                                                className="flex-1 flex items-center justify-center gap-1.5 p-2 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 rounded-lg hover:from-blue-200 hover:to-blue-300 transition-all text-xs font-medium shadow-sm"
                                             >
                                                 <Mail className="w-4 h-4" />
                                                 Reenviar
@@ -1142,7 +1147,7 @@ export const UserManagementPage: React.FC = () => {
                                         )}
                                         <button 
                                             onClick={e => { e.stopPropagation(); handleEditUser(user); }} 
-                                            className="flex-1 flex items-center justify-center gap-1.5 p-2 text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-all text-xs font-medium"
+                                            className="flex-1 flex items-center justify-center gap-1.5 p-2 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 rounded-lg hover:from-emerald-200 hover:to-emerald-300 transition-all text-xs font-medium shadow-sm"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.313 3 21l1.687-4.5 12.175-13.013z" />
@@ -1152,23 +1157,15 @@ export const UserManagementPage: React.FC = () => {
                                         <button 
                                             onClick={e => { 
                                                 e.stopPropagation(); 
-                                                if (user.invitationStatus === 'pending' || user.invitationStatus === 'none') { 
-                                                    openConfirm({ 
-                                                        type: 'delete-invite', 
-                                                        title: 'Eliminar usuario', 
-                                                        message: '¿Estás seguro de que quieres eliminar a este usuario? Esta acción no se puede deshacer.', 
-                                                        user 
-                                                    }); 
-                                                } else { 
-                                                    openConfirm({ 
-                                                        type: 'deactivate', 
-                                                        title: '¿Qué deseas hacer con este usuario?', 
-                                                        message: 'Puedes desactivar al usuario (será inactivable y podrá reactivarse) o eliminarlo completamente. Usa "Confirmar" para desactivar o "Eliminar permanentemente" para borrarlo.', 
-                                                        user 
-                                                    }); 
-                                                } 
+                                                // Simplificar: todos los usuarios (pendientes o registrados) usan el modal simple de eliminación
+                                                openConfirm({ 
+                                                    type: 'delete-invite', 
+                                                    title: 'Eliminar usuario', 
+                                                    message: '¿Estás seguro de que quieres eliminar a este usuario? Esta acción no se puede deshacer.', 
+                                                    user 
+                                                }); 
                                             }} 
-                                            className="flex-1 flex items-center justify-center gap-1.5 p-2 text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-all text-xs font-medium"
+                                            className="flex-1 flex items-center justify-center gap-1.5 p-2 bg-gradient-to-r from-red-100 to-red-200 text-red-700 rounded-lg hover:from-red-200 hover:to-red-300 transition-all text-xs font-medium shadow-sm"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                             Eliminar
@@ -1188,21 +1185,20 @@ export const UserManagementPage: React.FC = () => {
                             </div>
                         ) : (
                             <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gradient-to-r from-gray-900 to-gray-700 text-white">
+                                <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                                     <tr>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider first:rounded-tl-xl">Foto</th>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Nombre</th>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Email</th>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Rol</th>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Estatus</th>
-                                        <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-white uppercase tracking-wider last:rounded-tr-xl">Acciones</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Usuario</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Email</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Rol</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Estatus</th>
+                                        <th scope="col" className="px-6 py-4 text-center text-xs font-bold text-gray-800 uppercase tracking-wider">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-100">
                                     {users.map((user, rowIndex) => (
                                         <tr
                                             key={user._id}
-                                            className="group bg-white even:bg-gray-50/50 border-b border-gray-100 cursor-pointer transition-all duration-200 hover:bg-gray-100 focus-within:bg-gray-100"
+                                            className="group bg-white even:bg-gray-50/50 border-b border-gray-100 cursor-pointer transition-all duration-200 hover:bg-gradient-to-r hover:from-gray-50 hover:to-transparent"
                                             onClick={e => {
                                                 if ((e.target as HTMLElement).closest('button')) return;
                                                 setPreviewUser(user);
@@ -1240,7 +1236,7 @@ export const UserManagementPage: React.FC = () => {
                                                                 e.stopPropagation();
                                                                 openConfirm({ type: 'resend', title: 'Reenviar invitación', message: '¿Estás seguro de que quieres reenviar la invitación a este usuario?', user });
                                                             }}
-                                                            className="group/btn p-2.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all"
+                                                            className="inline-flex items-center justify-center p-2.5 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 rounded-lg hover:from-blue-200 hover:to-blue-300 transition-all shadow-sm"
                                                             title="Reenviar invitación"
                                                         >
                                                             <span className="relative inline-block w-5 h-5">
@@ -1255,7 +1251,7 @@ export const UserManagementPage: React.FC = () => {
                                                     )}
                                                     <button 
                                                         onClick={e => { e.stopPropagation(); handleEditUser(user); }} 
-                                                        className="p-2.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all" 
+                                                        className="inline-flex items-center justify-center p-2.5 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 rounded-lg hover:from-emerald-200 hover:to-emerald-300 transition-all shadow-sm" 
                                                         title="Editar usuario"
                                                     >
                                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -1264,23 +1260,15 @@ export const UserManagementPage: React.FC = () => {
                                                     </button>
                                                     <button onClick={e => { 
                                                         e.stopPropagation(); 
-                                                        if (user.invitationStatus === 'pending' || user.invitationStatus === 'none') { 
-                                                            openConfirm({ 
-                                                                type: 'delete-invite', 
-                                                                title: 'Eliminar usuario', 
-                                                                message: '¿Estás seguro de que quieres eliminar a este usuario? Esta acción no se puede deshacer.', 
-                                                                user 
-                                                            }); 
-                                                        } else { 
-                                                            openConfirm({ 
-                                                                type: 'deactivate', 
-                                                                title: '¿Qué deseas hacer con este usuario?', 
-                                                                message: 'Puedes desactivar al usuario (será inactivable y podrá reactivarse) o eliminarlo completamente. Usa "Confirmar" para desactivar o "Eliminar permanentemente" para borrarlo.', 
-                                                                user 
-                                                            }); 
-                                                        } 
+                                                        // Simplificar: todos los usuarios usan el modal simple de eliminación
+                                                        openConfirm({ 
+                                                            type: 'delete-invite', 
+                                                            title: 'Eliminar usuario', 
+                                                            message: '¿Estás seguro de que quieres eliminar a este usuario? Esta acción no se puede deshacer.', 
+                                                            user 
+                                                        }); 
                                                     }} 
-                                                    className="p-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all" 
+                                                    className="inline-flex items-center justify-center p-2.5 bg-gradient-to-r from-red-100 to-red-200 text-red-700 rounded-lg hover:from-red-200 hover:to-red-300 transition-all shadow-sm" 
                                                     title="Eliminar usuario"
                                                     >
                                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">

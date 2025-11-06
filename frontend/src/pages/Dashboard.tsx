@@ -463,25 +463,12 @@ export const Dashboard: React.FC = () => {
     };
 
     if (isLoading && stats.active === 0) {
-        // Show skeletons instead of a global spinner for better perceived performance
+        // Show modern loading spinner for initial load
         return (
             <div className="container-fluid px-0">
-                <div className="mb-4">
-                    <div className="rounded-2xl p-3 p-md-4 mb-3" style={{ background: 'linear-gradient(90deg, rgba(99,102,241,0.05) 0%, rgba(99,102,241,0.02) 100%)', border: '1px solid rgba(99,102,241,0.03)' }}>
-                        <div className="d-flex justify-content-between align-items-start flex-column flex-md-row">
-                            <div>
-                                <div className="bg-gray-200 rounded" style={{ width: 220, height: 20, marginBottom: 6 }} />
-                                <div className="bg-gray-100 rounded" style={{ width: 300, height: 14 }} />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                    <SkeletonStatCard />
-                    <SkeletonStatCard />
-                    <SkeletonStatCard />
-                    <SkeletonStatCard />
+                <div className="text-center py-20 bg-white rounded-2xl shadow-xl border border-gray-200">
+                    <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-gray-900"></div>
+                    <p className="mt-6 text-lg text-gray-600 font-medium">Cargando dashboard...</p>
                 </div>
             </div>
         );

@@ -6,7 +6,83 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { QrIcon, VisitsIcon, AgendaIcon } from '../components/common/icons';
 import { FaRegUser } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
 import * as api from '../services/api';
+
+// Floating toast notification component
+const Toast: React.FC<{ 
+    message: string; 
+    type: 'success' | 'error' | 'warning' | 'info'; 
+    onClose: () => void;
+}> = ({ message, type, onClose }) => {
+    const config = {
+        success: { 
+            bg: 'bg-gradient-to-r from-emerald-500 to-green-600', 
+            icon: (
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+            )
+        },
+        error: { 
+            bg: 'bg-gradient-to-r from-red-500 to-red-600', 
+            icon: (
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            )
+        },
+        warning: { 
+            bg: 'bg-gradient-to-r from-yellow-500 to-amber-600', 
+            icon: (
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            )
+        },
+        info: { 
+            bg: 'bg-gradient-to-r from-blue-500 to-cyan-600', 
+            icon: (
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            )
+        }
+    };
+
+    const { bg, icon } = config[type];
+
+    useEffect(() => {
+        const timer = setTimeout(() => onClose(), 4500);
+        return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0, y: -50, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -50, scale: 0.95 }}
+                className="fixed top-4 right-4 z-[9999] max-w-md"
+            >
+                <div className={`${bg} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3`}>
+                    <div className="flex-shrink-0">
+                        {icon}
+                    </div>
+                    <span className="font-medium flex-1">{message}</span>
+                    <button
+                        onClick={onClose}
+                        className="flex-shrink-0 text-white/80 hover:text-white transition-colors"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </motion.div>
+        </AnimatePresence>
+    );
+};
 
 const Sparkline: React.FC<{ data: number[]; color?: string; width?: number; height?: number; onClick?: () => void; title?: string }> = ({ data, color = '#6366f1', width = 120, height = 36, onClick, title }) => {
     if (!data || data.length === 0) return null;
@@ -265,6 +341,7 @@ export const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
     const [stats, setStats] = useState<DashboardStats>({ 
         active: 0, 
         pending: 0, 
@@ -353,6 +430,10 @@ export const Dashboard: React.FC = () => {
             setFrequentVisitors(varr.slice(0, 5));
         } catch (err) {
             console.warn('Could not compute frequent lists from queries:', err);
+            setNotification({ 
+                message: 'No se pudieron calcular las listas de visitantes frecuentes', 
+                type: 'warning' 
+            });
         }
 
         // Build analyticsStatusData from the recent visits sample (client-side)
@@ -408,6 +489,10 @@ export const Dashboard: React.FC = () => {
             setAnalyticsStatusData(statusSeries);
         } catch (err) {
             console.warn('Could not compute analyticsStatusData from queries:', err);
+            setNotification({ 
+                message: 'No se pudieron procesar los datos de análisis de estatus', 
+                type: 'warning' 
+            });
         }
 
         // Compute prevPeriodSums from prevAnalyticsQuery
@@ -439,6 +524,10 @@ export const Dashboard: React.FC = () => {
             setPrevPeriodSums({ pending: prevPending, approved: prevApproved, checkedIn: prevCheckedIn, completed: prevCompleted });
         } catch (err) {
             console.warn('Could not map prev analytics to prevPeriodSums:', err);
+            setNotification({ 
+                message: 'No se pudieron calcular las estadísticas del periodo anterior', 
+                type: 'info' 
+            });
             setPrevPeriodSums({});
         }
 
@@ -922,6 +1011,15 @@ export const Dashboard: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Toast Notification */}
+            {notification && (
+                <Toast
+                    message={notification.message}
+                    type={notification.type}
+                    onClose={() => setNotification(null)}
+                />
+            )}
         </div>
     );
 };

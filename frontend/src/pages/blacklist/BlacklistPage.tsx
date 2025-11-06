@@ -196,11 +196,9 @@ export const BlacklistPage: React.FC = () => {
 
         {/* Content */}
         {loading ? (
-          <div className={`flex items-center justify-center ${isMobile ? 'py-12' : 'py-20'}`}>
-            <div className="text-center">
-              <div className={`animate-spin rounded-full ${isMobile ? 'h-10 w-10' : 'h-12 w-12'} border-b-2 border-red-600 mx-auto mb-4`}></div>
-              <p className={`text-gray-600 ${isMobile ? 'text-sm' : ''}`}>Cargando lista negra...</p>
-            </div>
+          <div className={`text-center ${isMobile ? 'py-12' : 'py-20'} bg-white rounded-2xl shadow-xl border border-gray-200`}>
+            <div className={`inline-block animate-spin rounded-full ${isMobile ? 'h-12 w-12 border-4' : 'h-16 w-16 border-4'} border-gray-200 border-t-gray-900`}></div>
+            <p className={`${isMobile ? 'mt-4 text-base' : 'mt-6 text-lg'} text-gray-600 font-medium`}>Cargando lista negra...</p>
           </div>
         ) : filteredEntries.length === 0 ? (
           <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 ${isMobile ? 'p-8' : 'p-12'} text-center`}>

@@ -236,8 +236,8 @@ export const SelfRegisterEventFormPage: React.FC = () => {
           </button>
 
           <div className="text-center mb-6">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full p-[2px]" style={{ background: 'linear-gradient(135deg, #111827 0%, #374151 100%)' }}>
-              <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full ring-2 ring-gray-800" style={{ background: 'linear-gradient(135deg, #111827 0%, #374151 100%)' }}>
+              <div className="w-full h-full rounded-full flex items-center justify-center overflow-hidden">
                 {companyInfo?.logo ? (
                   <img
                     src={companyInfo.logo}
@@ -245,9 +245,7 @@ export const SelfRegisterEventFormPage: React.FC = () => {
                     className="w-16 h-16 object-contain"
                   />
                 ) : (
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                    <Building2 className="w-8 h-8 text-gray-700" />
-                  </div>
+                  <Building2 className="w-8 h-8 text-white" />
                 )}
               </div>
             </div>

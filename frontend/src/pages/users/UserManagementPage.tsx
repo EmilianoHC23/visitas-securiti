@@ -1063,9 +1063,9 @@ export const UserManagementPage: React.FC = () => {
                     // Vista móvil: Cards en lugar de tabla
                     <div className="space-y-3">
                         {loading ? (
-                            <div className="text-center p-12">
-                                <div className="inline-block w-12 h-12 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin mb-4"></div>
-                                <p className="text-gray-600 font-medium text-sm">Cargando usuarios...</p>
+                            <div className={`text-center ${isMobile ? 'py-12' : 'py-20'} bg-white rounded-2xl shadow-xl border border-gray-200`}>
+                                <div className={`inline-block animate-spin rounded-full ${isMobile ? 'h-12 w-12 border-4' : 'h-16 w-16 border-4'} border-gray-200 border-t-gray-900`}></div>
+                                <p className={`${isMobile ? 'mt-4 text-base' : 'mt-6 text-lg'} text-gray-600 font-medium`}>Cargando usuarios...</p>
                             </div>
                         ) : (
                             users.map(user => (
@@ -1156,9 +1156,9 @@ export const UserManagementPage: React.FC = () => {
                     // Vista desktop: Tabla original
                     <div className="overflow-x-auto rounded-xl shadow-md border border-gray-200">
                         {loading ? (
-                            <div className="text-center p-12">
-                                <div className="inline-block w-12 h-12 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin mb-4"></div>
-                                <p className="text-gray-600 font-medium">Cargando usuarios...</p>
+                            <div className="text-center py-20 bg-white rounded-2xl shadow-xl border border-gray-200">
+                                <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-gray-900"></div>
+                                <p className="mt-6 text-lg text-gray-600 font-medium">Cargando usuarios...</p>
                             </div>
                         ) : (
                             <table className="min-w-full divide-y divide-gray-200">

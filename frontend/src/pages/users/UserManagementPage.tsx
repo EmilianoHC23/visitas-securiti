@@ -305,7 +305,7 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
     return <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusStyles[status] || statusStyles.none}`}>{statusLabels[status] || 'Sin Invitar'}</span>
 };
 
-// RoleSelect: optimizado sin animaciones pesadas
+// RoleSelect: con animaciones de Framer Motion estilo AgendaPage
 const RoleSelect: React.FC<{ value: UserRole; onChange: (r: UserRole) => void }> = memo(({ value, onChange }) => {
     const options: { value: UserRole; label: string; icon: React.ReactNode }[] = [
         { value: UserRole.HOST, label: 'Host', icon: <UserIcon className="w-4 h-4" /> },
@@ -317,15 +317,27 @@ const RoleSelect: React.FC<{ value: UserRole; onChange: (r: UserRole) => void }>
     const ref = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
-        const onDoc = (e: MouseEvent) => {
-            if (!ref.current || !(e.target instanceof Node) || ref.current.contains(e.target)) return;
-            setOpen(false);
+        const handleClickOutside = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
         };
-        document.addEventListener('click', onDoc);
-        return () => document.removeEventListener('click', onDoc);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     const selected = options.find(o => o.value === value) || options[0];
+
+    // Variants para animaciones
+    const wrapper: any = {
+        open: { scaleY: 1, opacity: 1, transition: { when: 'beforeChildren', staggerChildren: 0.06 } },
+        closed: { scaleY: 0, opacity: 0, transition: { when: 'afterChildren', staggerChildren: 0.04 } },
+    };
+
+    const item: any = {
+        open: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } },
+        closed: { opacity: 0, y: -6, transition: { duration: 0.12 } },
+    };
+
+    const chevron: any = { open: { rotate: 180 }, closed: { rotate: 0 } };
 
     return (
         <div className="relative" ref={ref}>
@@ -333,28 +345,42 @@ const RoleSelect: React.FC<{ value: UserRole; onChange: (r: UserRole) => void }>
                 type="button" 
                 onClick={() => setOpen(s => !s)} 
                 className="w-full text-left pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent shadow-sm text-sm flex items-center gap-3 transition-all"
+                aria-haspopup="listbox"
+                aria-expanded={open}
             >
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">{selected.icon}</span>
                 <span className="flex-1 text-gray-900 font-medium">{selected.label}</span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+                <motion.span className="inline-block" variants={chevron} animate={open ? 'open' : 'closed'}>
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                </motion.span>
             </button>
 
-            {open && (
-                <div className="absolute left-0 right-0 mt-2 bg-white shadow-xl border border-gray-200 rounded-xl overflow-hidden z-50 animate-fadeIn">
-                    {options.map(o => (
-                        <button 
-                            key={o.value}
-                            type="button" 
-                            onClick={() => { onChange(o.value); setOpen(false); }} 
-                            className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors ${o.value === value ? 'bg-gray-50 text-gray-900' : 'text-gray-700'}`}
-                        >
-                            <span className="text-gray-500">{o.icon}</span>
-                            <span className="flex-1 text-sm font-medium">{o.label}</span>
-                            {o.value === value && <CheckCircle className="w-4 h-4 text-gray-900" />}
-                        </button>
-                    ))}
-                </div>
-            )}
+            <AnimatePresence>
+                {open && (
+                    <motion.div 
+                        initial="closed" 
+                        animate="open" 
+                        exit="closed" 
+                        variants={wrapper} 
+                        style={{ transformOrigin: 'top' }} 
+                        className="absolute left-0 right-0 mt-2 bg-white shadow-xl border border-gray-200 rounded-xl overflow-hidden z-50"
+                    >
+                        {options.map(o => (
+                            <motion.button
+                                key={o.value}
+                                type="button"
+                                variants={item}
+                                onClick={() => { onChange(o.value); setOpen(false); }}
+                                className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors ${o.value === value ? 'bg-gray-50 text-gray-900' : 'text-gray-700'}`}
+                            >
+                                <span className="text-gray-500">{o.icon}</span>
+                                <span className="flex-1 text-sm font-medium">{o.label}</span>
+                                {o.value === value && <CheckCircle className="w-4 h-4 text-gray-900" />}
+                            </motion.button>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 });

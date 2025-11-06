@@ -275,9 +275,9 @@ export const AccessCodesPage: React.FC = () => {
 
           {/* Tabla de accesos */}
           {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-3 border-gray-900"></div>
-              <p className="mt-3 text-gray-600 font-medium">Cargando accesos...</p>
+            <div className={`text-center ${isMobile ? 'py-12' : 'py-20'} bg-white rounded-2xl shadow-xl border border-gray-200`}>
+              <div className={`inline-block animate-spin rounded-full ${isMobile ? 'h-12 w-12 border-4' : 'h-16 w-16 border-4'} border-gray-200 border-t-gray-900`}></div>
+              <p className={`${isMobile ? 'mt-4 text-base' : 'mt-6 text-lg'} text-gray-600 font-medium`}>Cargando accesos...</p>
             </div>
           ) : filteredAccesses.length === 0 ? (
             <div className={`text-center ${isMobile ? 'py-12' : 'py-16'} bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 ${isMobile ? 'mx-0 mb-0' : 'mx-6 mb-6'}`}>

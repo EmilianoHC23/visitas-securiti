@@ -741,7 +741,7 @@ class EmailService {
                     <!-- Content -->
                     <tr>
                       <td style="padding: 40px 30px;">
-                        <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hola,</p>
+                        <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hola ${invitationData.firstName || ''},</p>
                         
                         <p style="font-size: 16px; line-height: 1.6; color: #4b5563; margin: 0 0 25px 0;">
                           Has sido invitado a unirte al sistema de gestión de visitas de <strong>${invitationData.companyName}</strong>.

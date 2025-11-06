@@ -314,17 +314,21 @@ export const SelfRegisterVisitPage: React.FC = () => {
           </button>
 
           <div className="text-center mb-6">
-            {companyInfo?.logo ? (
-              <img
-                src={companyInfo.logo}
-                alt={companyInfo.name}
-                className="h-16 w-auto mx-auto object-contain mb-4"
-              />
-            ) : (
-              <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Building2 className="w-8 h-8 text-white" />
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full p-[2px]" style={{ background: 'linear-gradient(135deg, #111827 0%, #374151 100%)' }}>
+              <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                {companyInfo?.logo ? (
+                  <img
+                    src={companyInfo.logo}
+                    alt={companyInfo.name}
+                    className="w-16 h-16 object-contain"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                    <Building2 className="w-8 h-8 text-gray-700" />
+                  </div>
+                )}
               </div>
-            )}
+            </div>
             <h1 className="text-3xl font-bold text-gray-900">Registro de Visita</h1>
             <p className="text-gray-600 mt-2">Completa tus datos para registrar tu visita</p>
           </div>

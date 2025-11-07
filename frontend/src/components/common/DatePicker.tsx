@@ -170,63 +170,100 @@ export const TimePicker: React.FC<TimePickerProps> = ({
   className = '',
   disabled = false,
 }) => {
-  const [hours, minutes] = value.split(':').map(v => v || '00');
+  const [hours24, minutes] = value.split(':').map(v => v || '00');
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isPM, setIsPM] = React.useState(parseInt(hours24) >= 12);
+  
+  // Convert 24h to 12h format for display
+  const hours12 = parseInt(hours24) === 0 ? 12 : parseInt(hours24) > 12 ? parseInt(hours24) - 12 : parseInt(hours24);
+  const displayHours = hours12.toString().padStart(2, '0');
 
-  const updateTime = (newHours: string, newMinutes: string) => {
-    onChange(`${newHours}:${newMinutes}`);
+  const updateTime = (newHours12: number, newMinutes: string, pm: boolean) => {
+    let hours24 = newHours12;
+    if (pm && newHours12 !== 12) {
+      hours24 = newHours12 + 12;
+    } else if (!pm && newHours12 === 12) {
+      hours24 = 0;
+    }
+    onChange(`${hours24.toString().padStart(2, '0')}:${newMinutes}`);
   };
 
   const incrementHours = () => {
-    const h = parseInt(hours);
-    const newHours = ((h + 1) % 24).toString().padStart(2, '0');
-    updateTime(newHours, minutes);
+    const h = hours12;
+    const newHours = h === 12 ? 1 : h + 1;
+    updateTime(newHours, minutes, isPM);
   };
 
   const decrementHours = () => {
-    const h = parseInt(hours);
-    const newHours = ((h - 1 + 24) % 24).toString().padStart(2, '0');
-    updateTime(newHours, minutes);
+    const h = hours12;
+    const newHours = h === 1 ? 12 : h - 1;
+    updateTime(newHours, minutes, isPM);
   };
 
   const incrementMinutes = () => {
     const m = parseInt(minutes);
-    const newMinutes = ((m + 15) % 60).toString().padStart(2, '0');
-    const shouldIncrementHour = m + 15 >= 60;
-    if (shouldIncrementHour) {
-      const h = parseInt(hours);
-      const newHours = ((h + 1) % 24).toString().padStart(2, '0');
-      updateTime(newHours, newMinutes);
+    const newMinutes = ((m + 1) % 60).toString().padStart(2, '0');
+    if (m === 59) {
+      // Roll over to next hour
+      const h = hours12;
+      const newHours = h === 12 ? 1 : h + 1;
+      let newPM = isPM;
+      if (h === 11) {
+        newPM = !isPM;
+        setIsPM(newPM);
+      }
+      updateTime(newHours, newMinutes, newPM);
     } else {
-      updateTime(hours, newMinutes);
+      updateTime(hours12, newMinutes, isPM);
     }
   };
 
   const decrementMinutes = () => {
     const m = parseInt(minutes);
-    const newMinutes = ((m - 15 + 60) % 60).toString().padStart(2, '0');
-    const shouldDecrementHour = m - 15 < 0;
-    if (shouldDecrementHour) {
-      const h = parseInt(hours);
-      const newHours = ((h - 1 + 24) % 24).toString().padStart(2, '0');
-      updateTime(newHours, newMinutes);
+    const newMinutes = ((m - 1 + 60) % 60).toString().padStart(2, '0');
+    if (m === 0) {
+      // Roll back to previous hour
+      const h = hours12;
+      const newHours = h === 1 ? 12 : h - 1;
+      let newPM = isPM;
+      if (h === 12) {
+        newPM = !isPM;
+        setIsPM(newPM);
+      }
+      updateTime(newHours, newMinutes, newPM);
     } else {
-      updateTime(hours, newMinutes);
+      updateTime(hours12, newMinutes, isPM);
     }
   };
 
-  const handleHourChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleHourInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value.replace(/\D/g, '');
-    if (val === '') val = '00';
-    if (parseInt(val) > 23) val = '23';
-    updateTime(val.padStart(2, '0'), minutes);
+    if (val === '') return;
+    let numVal = parseInt(val);
+    if (numVal > 12) numVal = 12;
+    if (numVal < 1) numVal = 1;
+    updateTime(numVal, minutes, isPM);
   };
 
-  const handleMinuteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMinuteInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value.replace(/\D/g, '');
-    if (val === '') val = '00';
-    if (parseInt(val) > 59) val = '59';
-    updateTime(hours, val.padStart(2, '0'));
+    if (val === '') return;
+    let numVal = parseInt(val);
+    if (numVal > 59) numVal = 59;
+    if (numVal < 0) numVal = 0;
+    updateTime(hours12, numVal.toString().padStart(2, '0'), isPM);
+  };
+
+  const toggleAMPM = () => {
+    const newPM = !isPM;
+    setIsPM(newPM);
+    updateTime(hours12, minutes, newPM);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      setIsOpen(false);
+    }
   };
 
   return (
@@ -241,38 +278,32 @@ export const TimePicker: React.FC<TimePickerProps> = ({
         </label>
       )}
       <div className="relative">
-        {/* Display Button */}
-        <button
-          type="button"
-          onClick={() => !disabled && setIsOpen(!isOpen)}
-          disabled={disabled}
-          className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg 
-                     focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent 
-                     hover:border-gray-300 transition-all duration-200
-                     disabled:bg-gray-100 disabled:cursor-not-allowed
-                     text-gray-900 text-base font-semibold
-                     flex items-center justify-between group"
-        >
-          <div className="flex items-center space-x-2">
-            <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Display Input - Same style as DatePicker */}
+        <div className="relative group">
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none z-10">
+            <svg className="w-4 h-4 text-gray-400 group-focus-within:text-gray-900 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span className="text-2xl font-bold tracking-wider">{hours}:{minutes}</span>
           </div>
-          <svg 
-            className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+          <input
+            type="text"
+            value={`${displayHours}:${minutes} ${isPM ? 'PM' : 'AM'}`}
+            onClick={() => !disabled && setIsOpen(!isOpen)}
+            readOnly
+            disabled={disabled}
+            required={required}
+            className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-lg 
+                       focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent 
+                       hover:border-gray-300 transition-all duration-200
+                       disabled:bg-gray-100 disabled:cursor-not-allowed
+                       text-gray-900 text-sm font-medium cursor-pointer"
+          />
+        </div>
 
         {/* Picker Dropdown */}
         {isOpen && !disabled && (
           <div className="absolute z-50 mt-2 w-full bg-white rounded-xl shadow-2xl border-2 border-gray-200 p-4">
-            <div className="flex items-center justify-center space-x-4">
+            <div className="flex items-center justify-center space-x-3">
               {/* Hours */}
               <div className="flex flex-col items-center">
                 <button
@@ -287,8 +318,9 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                 </button>
                 <input
                   type="text"
-                  value={hours}
-                  onChange={handleHourChange}
+                  value={displayHours}
+                  onChange={handleHourInput}
+                  onKeyPress={handleKeyPress}
                   className="w-16 h-16 text-center text-3xl font-bold text-gray-900 
                            border-2 border-gray-300 rounded-xl my-2
                            focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent
@@ -326,7 +358,8 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                 <input
                   type="text"
                   value={minutes}
-                  onChange={handleMinuteChange}
+                  onChange={handleMinuteInput}
+                  onKeyPress={handleKeyPress}
                   className="w-16 h-16 text-center text-3xl font-bold text-gray-900 
                            border-2 border-gray-300 rounded-xl my-2
                            focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent
@@ -345,25 +378,22 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                 </button>
                 <span className="text-xs font-semibold text-gray-500 mt-1">MINUTOS</span>
               </div>
-            </div>
 
-            {/* Quick Time Options */}
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="grid grid-cols-3 gap-2">
-                {['09:00', '12:00', '14:00', '16:00', '18:00', '20:00'].map((time) => (
-                  <button
-                    key={time}
-                    type="button"
-                    onClick={() => {
-                      onChange(time);
-                      setIsOpen(false);
-                    }}
-                    className="px-3 py-2 text-sm font-semibold text-gray-700 bg-gray-100 
-                             hover:bg-gray-900 hover:text-white rounded-lg transition-colors duration-150"
-                  >
-                    {time}
-                  </button>
-                ))}
+              {/* AM/PM Toggle */}
+              <div className="flex flex-col items-center justify-center">
+                <button
+                  type="button"
+                  onClick={toggleAMPM}
+                  className={`w-16 h-16 flex items-center justify-center rounded-xl font-bold text-xl
+                           transition-all duration-200 border-2 ${
+                             isPM 
+                               ? 'bg-gray-900 text-white border-gray-900' 
+                               : 'bg-white text-gray-900 border-gray-300 hover:border-gray-900'
+                           }`}
+                >
+                  {isPM ? 'PM' : 'AM'}
+                </button>
+                <span className="text-xs font-semibold text-gray-500 mt-3">PERÍODO</span>
               </div>
             </div>
 

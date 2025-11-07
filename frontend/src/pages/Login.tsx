@@ -83,8 +83,8 @@ export const LoginPage: React.FC = () => {
         try {
             await login(email, password);
             // show success toast and local success Alert with icon, then navigate shortly after
-            try { showToast('Inicio de sesión iniciada correctamente', 'success'); } catch {}
-            setSuccessMessage('Inicio de sesión iniciada correctamente');
+            try { showToast('Sesión iniciada correctamente', 'success'); } catch {}
+            setSuccessMessage('Sesión iniciada correctamente');
             // auto-dismiss alert after 3.5s and navigate to dashboard
             setTimeout(() => {
                 setSuccessMessage(null);

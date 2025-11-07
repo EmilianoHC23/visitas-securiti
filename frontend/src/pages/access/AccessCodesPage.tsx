@@ -507,7 +507,7 @@ export const AccessCodesPage: React.FC = () => {
                             onClick={() => {
                               const link = `${window.location.origin}/public/register/${access._id}`;
                               navigator.clipboard.writeText(link)
-                                .then(() => window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Enlace de pre-registro copiado al portapapeles', severity: 'success' } })))
+                                .then(() => window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Enlace de pre-registro copiado', severity: 'success' } })))
                                 .catch(() => window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Error al copiar enlace', severity: 'error' } })));
                             }}
                             className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 rounded-lg hover:from-emerald-200 hover:to-emerald-300 transition-all text-sm font-medium shadow-sm"

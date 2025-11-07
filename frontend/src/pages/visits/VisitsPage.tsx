@@ -1500,7 +1500,10 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
             </div>
 
             {loading ? (
-                <div className="text-center p-8">Cargando visitas...</div>
+                <div className={`text-center ${isMobile ? 'py-12' : 'py-20'} bg-white rounded-2xl shadow-xl border border-gray-200`}>
+                    <div className={`inline-block animate-spin rounded-full ${isMobile ? 'h-12 w-12 border-4' : 'h-16 w-16 border-4'} border-gray-200 border-t-gray-900`}></div>
+                    <p className={`${isMobile ? 'mt-4 text-base' : 'mt-6 text-lg'} text-gray-600 font-medium`}>Cargando visitas...</p>
+                </div>
             ) : (
                 <>
                     {/* Tabs para móvil */}

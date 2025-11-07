@@ -176,17 +176,6 @@ export const SettingsPage: React.FC = () => {
     const [saved, setSaved] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const photoInputRef = useRef<HTMLInputElement>(null);
-    
-    // Mobile detection
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-    useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth < 768);
-        };
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
 
     // Account Tab State
     const [buildingName, setBuildingName] = useState('SecurITI');
@@ -383,14 +372,12 @@ export const SettingsPage: React.FC = () => {
                 {/* Header mejorado */}
                 <div className="mb-8">
                     <div className="flex items-center gap-4 mb-3">
-                        <div className={`${isMobile ? 'w-12 h-12' : 'w-14 h-14'} bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg`}>
-                            <Building2 className={`${isMobile ? 'w-6 h-6' : 'w-7 h-7'} text-white`} />
+                        <div className="w-14 h-14 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
+                            <Building2 className="w-7 h-7 text-white" />
                         </div>
                         <div>
-                            <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl sm:text-4xl'} font-bold text-gray-900`}>Configuración</h1>
-                            <p className={`text-gray-600 ${isMobile ? 'text-xs' : 'text-sm sm:text-base'} mt-1`}>
-                                {isMobile ? 'Administra tu organización' : 'Administra tu organización y preferencias del sistema'}
-                            </p>
+                            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Configuración</h1>
+                            <p className="text-gray-600 text-sm sm:text-base mt-1">Administra tu organización y preferencias del sistema</p>
                         </div>
                     </div>
                 </div>
@@ -435,45 +422,43 @@ export const SettingsPage: React.FC = () => {
                         {activeTab === 'account' && (
                             <div className="space-y-8">
                                 {/* Logo Section - Rediseñada */}
-                                <div className={`bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl ${isMobile ? 'p-4' : 'p-6 sm:p-8'}`}>
-                                    <div className={`flex items-center ${isMobile ? 'gap-2 mb-4' : 'gap-3 mb-6'}`}>
-                                        <div className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} bg-gray-900 rounded-xl flex items-center justify-center`}>
-                                            <Camera className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-white`} />
+                                <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-6 sm:p-8">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center">
+                                            <Camera className="w-5 h-5 text-white" />
                                         </div>
-                                        <h2 className={`${isMobile ? 'text-base' : 'text-xl sm:text-2xl'} font-bold text-gray-900`}>
-                                            {isMobile ? 'Nombre y Logo' : 'Nombre y Logo de la Organización'}
-                                        </h2>
+                                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Nombre y Logo de la Organización</h2>
                                     </div>
                                     
                                     <div className="flex flex-col lg:flex-row gap-8 items-start lg:items-center">
                                         {/* Logo Preview */}
-                                        <div className={`${isMobile ? 'mx-auto' : 'flex-shrink-0'}`}>
+                                        <div className="flex-shrink-0">
                                             <div className="relative">
-                                                <div className={`${isMobile ? 'w-24 h-24' : 'w-28 h-28 sm:w-32 sm:h-32'} rounded-2xl ring-4 ring-sky-200 overflow-hidden flex items-center justify-center shadow-lg transition-all bg-gradient-to-br from-gray-100 to-gray-200`}>
+                                                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl ring-4 ring-sky-200 overflow-hidden flex items-center justify-center shadow-lg transition-all bg-white">
                                                     {companyLogo ? (
                                                         // Use object-contain with slight padding so square logos display fully inside a square frame
                                                         <img src={companyLogo} alt="Logo" className="w-full h-full object-contain p-2" />
                                                     ) : (
-                                                        <Building2 className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} text-gray-400`} />
+                                                        <Building2 className="w-12 h-12 text-gray-300" />
                                                     )}
                                                 </div>
 
                                                 {/* small edit button */}
                                                 <button
                                                     onClick={() => fileInputRef.current?.click()}
-                                                    className={`absolute ${isMobile ? '-right-1 -bottom-1 w-7 h-7' : '-right-2 -bottom-2 w-9 h-9'} bg-gradient-to-br from-gray-900 to-gray-700 text-white rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform`}
+                                                    className="absolute -right-2 -bottom-2 bg-gradient-to-br from-gray-900 to-gray-700 text-white w-9 h-9 rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform"
                                                     aria-label="Cambiar logo"
                                                 >
-                                                    <Edit2 className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                                                    <Edit2 className="w-4 h-4" />
                                                 </button>
                                                 {companyLogo && (
                                                     <button
                                                         onClick={handleRemoveLogo}
-                                                        className={`absolute ${isMobile ? '-left-2 -top-2 w-7 h-7' : '-left-3 -top-3 w-9 h-9'} bg-white text-red-600 rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform border border-red-100 z-10`}
+                                                        className="absolute -left-3 -top-3 bg-white text-red-600 w-9 h-9 rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform border border-red-100 z-10"
                                                         aria-label="Eliminar logo"
                                                         title="Eliminar logo"
                                                     >
-                                                        <Trash2 className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                                                        <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 )}
                                             </div>
@@ -487,29 +472,28 @@ export const SettingsPage: React.FC = () => {
                                         </div>
 
                                         {/* Form Fields rediseñados (single row on md+) */}
-                                        <div className="flex-1 lg:ml-6 w-full">
+                                        <div className="flex-1 lg:ml-6">
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                                                 <div>
-                                                    <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-bold text-gray-700 mb-2`}>
-                                                        Nombre de la empresa*
-                                                    </label>
+                                                    <label className="block text-sm font-bold text-gray-700 mb-2">Nombre de la empresa*</label>
                                                     <input
                                                         type="text"
                                                         value={buildingName}
                                                         onChange={(e) => setBuildingName(e.target.value)}
                                                         placeholder="Mi Empresa"
-                                                        className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3.5 text-base'} bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all`}
+                                                        className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
                                                     />
                                                 </div>
+
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Recommendation note spanning both columns */}
-                                    <div className={`${isMobile ? 'mt-3' : 'mt-4'} bg-yellow-50 border border-yellow-200 rounded-xl ${isMobile ? 'p-2' : 'p-3'}`}>
+                                    <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-xl p-3">
                                         <div className="flex gap-2">
-                                            <AlertCircle className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-yellow-600 flex-shrink-0 mt-0.5`} />
-                                            <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-yellow-800 leading-relaxed`}>
+                                            <AlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                                            <p className="text-xs text-yellow-800 leading-relaxed">
                                                 Recomendado: PNG con fondo transparente, 500×500px, menor a 2MB. 
                                                 Este logo aparecerá en todos los correos del sistema.
                                             </p>
@@ -518,31 +502,25 @@ export const SettingsPage: React.FC = () => {
                                 </div>
 
                                 {/* System Settings - Rediseñada */}
-                                <div className={`bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl ${isMobile ? 'p-4' : 'p-6 sm:p-8'}`}>
-                                    <div className={`flex items-center ${isMobile ? 'gap-2 mb-4' : 'gap-3 mb-6'}`}>
-                                        <div className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} bg-gray-900 rounded-xl flex items-center justify-center`}>
-                                            <svg className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-6 sm:p-8">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center">
+                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                             </svg>
                                         </div>
-                                        <h3 className={`${isMobile ? 'text-base' : 'text-xl'} font-bold text-gray-900`}>
-                                            {isMobile ? 'Config. del Sistema' : 'Configuración del Sistema'}
-                                        </h3>
+                                        <h3 className="text-xl font-bold text-gray-900">Configuración del Sistema</h3>
                                     </div>
                                     <div className="grid grid-cols-1 gap-4">
                                         {/* Auto Checkout */}
-                                        <div className={`bg-white border-2 border-gray-200 rounded-xl ${isMobile ? 'p-3' : 'p-5'} hover:border-gray-400 transition-all`}>
+                                        <div className="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-gray-400 transition-all">
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex-1">
-                                                    <h4 className={`${isMobile ? 'text-sm' : 'text-base'} font-bold text-gray-900 mb-2`}>
-                                                        Checkout Automático
-                                                    </h4>
-                                                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 leading-relaxed`}>
-                                                        {isMobile 
-                                                            ? 'Salida automática a las 06:15 A.M. UTC cada día.'
-                                                            : 'La salida se registra automáticamente a las 06:15 A.M. UTC cada día. Al deshabilitar, deberás registrar salidas manualmente.'
-                                                        }
+                                                    <h4 className="text-base font-bold text-gray-900 mb-2">Checkout Automático</h4>
+                                                    <p className="text-sm text-gray-600 leading-relaxed">
+                                                        La salida se registra automáticamente a las 06:15 A.M. UTC cada día. 
+                                                        Al deshabilitar, deberás registrar salidas manualmente.
                                                     </p>
                                                 </div>
                                                 <button
@@ -556,13 +534,13 @@ export const SettingsPage: React.FC = () => {
                                                             setAutoCheckout(!autoCheckout);
                                                         }
                                                     }}
-                                                    className={`relative inline-flex ${isMobile ? 'h-6 w-12' : 'h-7 w-14'} items-center rounded-full transition-colors flex-shrink-0 ${
+                                                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors flex-shrink-0 ${
                                                         autoCheckout ? 'bg-gray-900' : 'bg-gray-300'
                                                     }`}
                                                 >
                                                     <span
-                                                        className={`inline-block ${isMobile ? 'h-4 w-4' : 'h-5 w-5'} transform rounded-full bg-white transition-transform shadow-md ${
-                                                            autoCheckout ? (isMobile ? 'translate-x-6' : 'translate-x-7') : 'translate-x-1'
+                                                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-md ${
+                                                            autoCheckout ? 'translate-x-7' : 'translate-x-1'
                                                         }`}
                                                     />
                                                 </button>
@@ -574,21 +552,19 @@ export const SettingsPage: React.FC = () => {
                                 {/* Save Button mejorado */}
                                 <div className="flex flex-col sm:flex-row justify-end items-center gap-4 pt-4">
                                     {saved && (
-                                        <div className={`flex items-center ${isMobile ? 'gap-1.5 px-3 py-1.5' : 'gap-2 px-4 py-2'} text-green-600 font-semibold bg-green-50 rounded-xl border border-green-200`}>
-                                            <Check className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
-                                            <span className={isMobile ? 'text-sm' : 'text-base'}>
-                                                {isMobile ? 'Guardado' : 'Guardado exitosamente'}
-                                            </span>
+                                        <div className="flex items-center gap-2 text-green-600 font-semibold bg-green-50 px-4 py-2 rounded-xl border border-green-200">
+                                            <Check className="w-5 h-5" />
+                                            <span>Guardado exitosamente</span>
                                         </div>
                                     )}
                                     <button
                                         onClick={handleSaveAccount}
                                         disabled={loading}
-                                        className={`w-full sm:w-auto ${isMobile ? 'px-6 py-3 text-sm' : 'px-8 py-4 text-base'} bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-xl hover:shadow-2xl flex items-center justify-center gap-3`}
+                                        className="w-full sm:w-auto px-8 py-4 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-xl hover:shadow-2xl flex items-center justify-center gap-3 text-base"
                                     >
                                         {loading ? (
                                             <>
-                                                <svg className={`animate-spin ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} viewBox="0 0 24 24">
+                                                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                                 </svg>
@@ -596,7 +572,7 @@ export const SettingsPage: React.FC = () => {
                                             </>
                                         ) : (
                                             <>
-                                                <Check className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                                                <Check className="w-5 h-5" />
                                                 Guardar Cambios
                                             </>
                                         )}
@@ -608,46 +584,36 @@ export const SettingsPage: React.FC = () => {
                         {activeTab === 'additional-info' && (
                             <div className="space-y-8">
                                 {/* Photo Upload - Rediseñada */}
-                                <div className={`bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl ${isMobile ? 'p-4' : 'p-6 sm:p-8'}`}>
-                                    <div className={`flex items-center ${isMobile ? 'gap-2 mb-4' : 'gap-3 mb-6'}`}>
-                                        <div className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} bg-gray-900 rounded-xl flex items-center justify-center`}>
-                                            <Camera className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-white`} />
+                                <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-6 sm:p-8">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center">
+                                            <Camera className="w-5 h-5 text-white" />
                                         </div>
                                         <div>
-                                            <h2 className={`${isMobile ? 'text-base' : 'text-xl sm:text-2xl'} font-bold text-gray-900`}>
-                                                Foto de la Empresa
-                                            </h2>
-                                            <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 mt-1`}>
-                                                {isMobile ? 'Para las invitaciones' : 'Imagen que se mostrará en las invitaciones'}
-                                            </p>
+                                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Foto de la Empresa</h2>
+                                            <p className="text-sm text-gray-600 mt-1">Imagen que se mostrará en las invitaciones</p>
                                         </div>
                                     </div>
                                     
                                     <div className="flex flex-col items-center justify-center">
                                         <div className="relative">
                                             <div 
-                                                className={`${isMobile ? 'w-56 h-40' : 'w-64 h-48'} border-3 border-dashed border-gray-300 rounded-2xl flex items-center justify-center bg-gradient-to-br from-gray-50 to-white hover:border-gray-900 hover:bg-gray-50 transition-all cursor-pointer group overflow-hidden`}
+                                                className="w-64 h-48 border-3 border-dashed border-gray-300 rounded-2xl flex items-center justify-center bg-gradient-to-br from-gray-50 to-white hover:border-gray-900 hover:bg-gray-50 transition-all cursor-pointer group overflow-hidden"
                                                 onClick={() => photoInputRef.current?.click()}
                                             >
                                                 {companyPhoto ? (
                                                     <>
                                                         <img src={companyPhoto} alt="Company" className="w-full h-full object-cover rounded-2xl" />
                                                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
-                                                            <Upload className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} text-white mb-2`} />
-                                                            <p className={`text-white ${isMobile ? 'text-xs' : 'text-sm'} font-semibold`}>
-                                                                Cambiar Foto
-                                                            </p>
+                                                            <Upload className="w-12 h-12 text-white mb-2" />
+                                                            <p className="text-white text-sm font-semibold">Cambiar Foto</p>
                                                         </div>
                                                     </>
                                                 ) : (
-                                                    <div className={`text-center ${isMobile ? 'p-4' : 'p-6'}`}>
-                                                        <Upload className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-400 mx-auto mb-3 group-hover:text-gray-900 transition-colors`} />
-                                                        <p className={`${isMobile ? 'text-sm' : 'text-base'} font-semibold text-gray-700 group-hover:text-gray-900`}>
-                                                            Subir foto
-                                                        </p>
-                                                        <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-500 mt-1`}>
-                                                            Haz clic para seleccionar
-                                                        </p>
+                                                    <div className="text-center p-6">
+                                                        <Upload className="w-16 h-16 text-gray-400 mx-auto mb-3 group-hover:text-gray-900 transition-colors" />
+                                                        <p className="text-base font-semibold text-gray-700 group-hover:text-gray-900">Subir foto</p>
+                                                        <p className="text-xs text-gray-500 mt-1">Haz clic para seleccionar</p>
                                                     </div>
                                                 )}
                                             </div>
@@ -655,20 +621,20 @@ export const SettingsPage: React.FC = () => {
                                             {/* small edit button placed outside the clickable box (like logo section) */}
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); photoInputRef.current?.click(); }}
-                                                className={`absolute ${isMobile ? '-right-1 -bottom-1 w-7 h-7' : '-right-2 -bottom-2 w-9 h-9'} bg-gradient-to-br from-gray-900 to-gray-700 text-white rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform`}
+                                                className="absolute -right-2 -bottom-2 bg-gradient-to-br from-gray-900 to-gray-700 text-white w-9 h-9 rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform"
                                                 aria-label="Cambiar foto"
                                             >
-                                                <Edit2 className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                                                <Edit2 className="w-4 h-4" />
                                             </button>
 
                                             {companyPhoto && (
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleRemovePhoto(); }}
-                                                    className={`absolute ${isMobile ? '-left-2 -top-2 w-7 h-7' : '-left-3 -top-3 w-9 h-9'} bg-white text-red-600 rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform border border-red-100 z-10`}
+                                                    className="absolute -left-3 -top-3 bg-white text-red-600 w-9 h-9 rounded-full flex items-center justify-center shadow-md hover:scale-105 transition-transform border border-red-100 z-10"
                                                     aria-label="Eliminar foto"
                                                     title="Eliminar foto"
                                                 >
-                                                    <Trash2 className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                                                    <Trash2 className="w-4 h-4" />
                                                 </button>
                                             )}
                                         </div>
@@ -680,8 +646,8 @@ export const SettingsPage: React.FC = () => {
                                             onChange={handlePhotoUpload}
                                             className="hidden"
                                         />
-                                        <div className={`${isMobile ? 'mt-3' : 'mt-4'} bg-blue-50 border border-blue-200 rounded-xl ${isMobile ? 'p-2' : 'p-3'} max-w-md`}>
-                                            <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-blue-800 leading-relaxed text-center`}>
+                                        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 max-w-md">
+                                            <p className="text-xs text-blue-800 leading-relaxed text-center">
                                                 <strong>Formatos:</strong> JPG, PNG • <strong>Peso máx:</strong> 2 MB<br />
                                                 <strong>Tamaño recomendado:</strong> 355×260 px
                                             </p>
@@ -690,58 +656,48 @@ export const SettingsPage: React.FC = () => {
                                 </div>
 
                                 {/* Dirección - Rediseñada */}
-                                <div className={`bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl ${isMobile ? 'p-4' : 'p-6 sm:p-8'}`}>
-                                    <div className={`flex items-center ${isMobile ? 'gap-2 mb-4' : 'gap-3 mb-6'}`}>
-                                        <div className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} bg-gray-900 rounded-xl flex items-center justify-center`}>
-                                            <MapPin className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-white`} />
+                                <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-6 sm:p-8">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center">
+                                            <MapPin className="w-5 h-5 text-white" />
                                         </div>
                                         <div>
-                                            <h2 className={`${isMobile ? 'text-base' : 'text-xl sm:text-2xl'} font-bold text-gray-900`}>
-                                                {isMobile ? 'Dirección de la Organización' : 'Dirección de la Organización'}
-                                            </h2>
-                                            <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 mt-1`}>
-                                                {isMobile ? 'Info de ubicación (Opcional)' : 'Información de ubicación para las invitaciones (Opcional)'}
-                                            </p>
+                                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Dirección de la Organización</h2>
+                                            <p className="text-sm text-gray-600 mt-1">Información de ubicación para las invitaciones (Opcional)</p>
                                         </div>
                                     </div>
                                     
-                                    <div className={isMobile ? 'space-y-4' : 'space-y-6'}>
+                                    <div className="space-y-6">
                                         {/* Primera fila - Calle, Colonia, CP */}
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                             <div className="lg:col-span-1">
-                                                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-bold text-gray-700 mb-2`}>
-                                                    Calle y número
-                                                </label>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">Calle y número</label>
                                                 <input
                                                     type="text"
-                                                    placeholder={isMobile ? 'Av. Insurgentes 1458' : 'Ej: Av. Insurgentes Sur 1458'}
+                                                    placeholder="Ej: Av. Insurgentes Sur 1458"
                                                     value={street}
                                                     onChange={(e) => setStreet(e.target.value)}
-                                                    className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3.5 text-base'} bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all`}
+                                                    className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
                                                 />
                                             </div>
                                             <div>
-                                                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-bold text-gray-700 mb-2`}>
-                                                    Colonia
-                                                </label>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">Colonia</label>
                                                 <input
                                                     type="text"
-                                                    placeholder={isMobile ? 'Insurgentes Mixcoac' : 'Ej: Insurgentes Mixcoac'}
+                                                    placeholder="Ej: Insurgentes Mixcoac"
                                                     value={colony}
                                                     onChange={(e) => setColony(e.target.value)}
-                                                    className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3.5 text-base'} bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all`}
+                                                    className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
                                                 />
                                             </div>
                                             <div>
-                                                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-bold text-gray-700 mb-2`}>
-                                                    Código postal
-                                                </label>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">Código postal</label>
                                                 <input
                                                     type="text"
-                                                    placeholder={isMobile ? '03920' : 'Ej: 03920'}
+                                                    placeholder="Ej: 03920"
                                                     value={postalCode}
                                                     onChange={(e) => setPostalCode(e.target.value)}
-                                                    className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3.5 text-base'} bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all`}
+                                                    className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
                                                 />
                                             </div>
                                         </div>
@@ -749,97 +705,80 @@ export const SettingsPage: React.FC = () => {
                                         {/* Segunda fila - País, Estado, Ciudad */}
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                             <div>
-                                                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-bold text-gray-700 mb-2`}>
-                                                    País
-                                                </label>
-                                                <CountryDropdown value={country} onChange={(v) => setCountry(v)} />
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">País</label>
+                                                    <CountryDropdown value={country} onChange={(v) => setCountry(v)} />
                                             </div>
                                             <div>
-                                                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-bold text-gray-700 mb-2`}>
-                                                    Estado
-                                                </label>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">Estado</label>
                                                 <StateDropdown value={state} onChange={(v) => setState(v)} />
                                             </div>
                                             <div>
-                                                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-bold text-gray-700 mb-2`}>
-                                                    Ciudad
-                                                </label>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">Ciudad</label>
                                                 <input
                                                     type="text"
-                                                    placeholder={isMobile ? 'Ciudad de México' : 'Ej: Ciudad de México'}
+                                                    placeholder="Ej: Ciudad de México"
                                                     value={city}
                                                     onChange={(e) => setCity(e.target.value)}
-                                                    className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3.5 text-base'} bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all`}
+                                                    className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
                                                 />
                                             </div>
                                         </div>
 
                                         {/* URL Google Maps */}
                                         <div>
-                                            <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-bold text-gray-700 mb-2 flex items-center gap-2`}>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
                                                 <span>URL de Google Maps</span>
-                                                {!isMobile && (
-                                                    <div className="group relative">
-                                                        <AlertCircle className="w-4 h-4 text-gray-400 cursor-help" />
-                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-72 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-10">
-                                                            Abre Google Maps, busca tu ubicación, haz clic en "Compartir" y copia el enlace. 
-                                                            Este aparecerá en las invitaciones para ayudar a los visitantes a encontrarte.
-                                                        </div>
+                                                <div className="group relative">
+                                                    <AlertCircle className="w-4 h-4 text-gray-400 cursor-help" />
+                                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-72 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-10">
+                                                        Abre Google Maps, busca tu ubicación, haz clic en "Compartir" y copia el enlace. 
+                                                        Este aparecerá en las invitaciones para ayudar a los visitantes a encontrarte.
                                                     </div>
-                                                )}
+                                                </div>
                                             </label>
                                             <input
                                                 type="text"
                                                 value={googleMapsUrl}
                                                 onChange={(e) => setGoogleMapsUrl(e.target.value)}
-                                                placeholder={isMobile ? 'https://maps.google.com/...' : 'https://maps.google.com/?q=...'}
-                                                className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3.5 text-base'} bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all`}
+                                                placeholder="https://maps.google.com/?q=..."
+                                                className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
                                             />
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Instrucciones adicionales - Rediseñada */}
-                                <div className={`bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl ${isMobile ? 'p-4' : 'p-6 sm:p-8'}`}>
-                                    <div className={`flex items-center ${isMobile ? 'gap-2 mb-4' : 'gap-3 mb-6'}`}>
-                                        <div className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} bg-gray-900 rounded-xl flex items-center justify-center`}>
-                                            <svg className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl p-6 sm:p-8">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center">
+                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                                             </svg>
                                         </div>
                                         <div>
-                                            <h2 className={`${isMobile ? 'text-base' : 'text-xl sm:text-2xl'} font-bold text-gray-900`}>
-                                                Información Adicional
-                                            </h2>
-                                            <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 mt-1`}>
-                                                {isMobile ? 'Mensaje para notificaciones' : 'Mensaje personalizado para las notificaciones'}
-                                            </p>
+                                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Información Adicional</h2>
+                                            <p className="text-sm text-gray-600 mt-1">Mensaje personalizado para las notificaciones</p>
                                         </div>
                                     </div>
                                     
                                     <div>
-                                        <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-bold text-gray-700 mb-2`}>
+                                        <label className="block text-sm font-bold text-gray-700 mb-2">
                                             Instrucciones de llegada (Opcional)
                                         </label>
-                                        <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 ${isMobile ? 'mb-2' : 'mb-3'}`}>
-                                            {isMobile 
-                                                ? 'Este mensaje se incluirá en las invitaciones por correo.'
-                                                : 'Este mensaje se incluirá en las invitaciones por correo electrónico. Proporciona instrucciones de acceso, estacionamiento, o cualquier información útil para tus visitantes.'
-                                            }
+                                        <p className="text-sm text-gray-600 mb-3">
+                                            Este mensaje se incluirá en las invitaciones por correo electrónico. Proporciona instrucciones de acceso, 
+                                            estacionamiento, o cualquier información útil para tus visitantes.
                                         </p>
                                         <div className="relative">
                                             <textarea
                                                 value={arrivalInstructions}
                                                 onChange={(e) => setArrivalInstructions(e.target.value)}
                                                 maxLength={145}
-                                                rows={isMobile ? 3 : 4}
-                                                placeholder={isMobile 
-                                                    ? 'Ejemplo: Muestra este mensaje en la recepción.'
-                                                    : 'Ejemplo: Muestra este mensaje con una identificación en la recepción. ¡Olvídate de las filas!'
-                                                }
-                                                className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3.5 text-base'} bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all resize-none`}
+                                                rows={4}
+                                                placeholder="Ejemplo: Muestra este mensaje con una identificación en la recepción. ¡Olvídate de las filas!"
+                                                className="w-full px-4 py-3.5 text-base bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all resize-none"
                                             />
-                                            <div className={`absolute ${isMobile ? 'bottom-2 right-2 text-[10px] px-1.5 py-0.5' : 'bottom-3 right-3 text-xs px-2 py-1'} font-semibold rounded ${
+                                            <div className={`absolute bottom-3 right-3 text-xs font-semibold px-2 py-1 rounded ${
                                                 arrivalInstructions.length > 130 
                                                     ? 'bg-red-100 text-red-700' 
                                                     : 'bg-gray-100 text-gray-500'
@@ -853,21 +792,19 @@ export const SettingsPage: React.FC = () => {
                                 {/* Save Button mejorado */}
                                 <div className="flex flex-col sm:flex-row justify-end items-center gap-4 pt-4">
                                     {saved && (
-                                        <div className={`flex items-center ${isMobile ? 'gap-1.5 px-3 py-1.5' : 'gap-2 px-4 py-2'} text-green-600 font-semibold bg-green-50 rounded-xl border border-green-200`}>
-                                            <Check className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
-                                            <span className={isMobile ? 'text-sm' : 'text-base'}>
-                                                {isMobile ? 'Guardado' : 'Guardado exitosamente'}
-                                            </span>
+                                        <div className="flex items-center gap-2 text-green-600 font-semibold bg-green-50 px-4 py-2 rounded-xl border border-green-200">
+                                            <Check className="w-5 h-5" />
+                                            <span>Guardado exitosamente</span>
                                         </div>
                                     )}
                                     <button
                                         onClick={handleSaveAdditionalInfo}
                                         disabled={loading}
-                                        className={`w-full sm:w-auto ${isMobile ? 'px-6 py-3 text-sm' : 'px-8 py-4 text-base'} bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-xl hover:shadow-2xl flex items-center justify-center gap-3`}
+                                        className="w-full sm:w-auto px-8 py-4 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-xl hover:shadow-2xl flex items-center justify-center gap-3 text-base"
                                     >
                                         {loading ? (
                                             <>
-                                                <svg className={`animate-spin ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} viewBox="0 0 24 24">
+                                                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                                 </svg>
@@ -875,7 +812,7 @@ export const SettingsPage: React.FC = () => {
                                             </>
                                         ) : (
                                             <>
-                                                <Check className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                                                <Check className="w-5 h-5" />
                                                 Guardar Cambios
                                             </>
                                         )}

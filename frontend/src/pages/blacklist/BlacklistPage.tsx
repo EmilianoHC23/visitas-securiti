@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BlacklistEntry } from '../../types';
 import * as api from '../../services/api';
-import { Shield, Search, UserX, Mail, AlertCircle, Camera, Upload, Trash2, X } from 'lucide-react';
+import { Search, UserX, Mail, AlertCircle, Camera, Upload, Trash2, X } from 'lucide-react';
 
 export const BlacklistPage: React.FC = () => {
   const [blacklistEntries, setBlacklistEntries] = useState<BlacklistEntry[]>([]);
@@ -159,8 +159,8 @@ export const BlacklistPage: React.FC = () => {
         {/* Header */}
         <div className={isMobile ? "mb-4" : "mb-8"}>
           <div className={`flex items-center ${isMobile ? 'gap-2 mb-2' : 'gap-3 mb-2'}`}>
-              <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0`}>
-                <Shield className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
+              <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} bg-gradient-to-br from-gray-900 to-gray-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg`}>
+                <UserX className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
               </div>
             <div className="min-w-0">
               <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-gray-900`}>Lista Negra</h1>
@@ -196,11 +196,9 @@ export const BlacklistPage: React.FC = () => {
 
         {/* Content */}
         {loading ? (
-          <div className={`flex items-center justify-center ${isMobile ? 'py-12' : 'py-20'}`}>
-            <div className="text-center">
-              <div className={`animate-spin rounded-full ${isMobile ? 'h-10 w-10' : 'h-12 w-12'} border-b-2 border-red-600 mx-auto mb-4`}></div>
-              <p className={`text-gray-600 ${isMobile ? 'text-sm' : ''}`}>Cargando lista negra...</p>
-            </div>
+          <div className={`text-center ${isMobile ? 'py-12' : 'py-20'} bg-white rounded-2xl shadow-xl border border-gray-200`}>
+            <div className={`inline-block animate-spin rounded-full ${isMobile ? 'h-12 w-12 border-4' : 'h-16 w-16 border-4'} border-gray-200 border-t-gray-900`}></div>
+            <p className={`${isMobile ? 'mt-4 text-base' : 'mt-6 text-lg'} text-gray-600 font-medium`}>Cargando lista negra...</p>
           </div>
         ) : filteredEntries.length === 0 ? (
           <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 ${isMobile ? 'p-8' : 'p-12'} text-center`}>

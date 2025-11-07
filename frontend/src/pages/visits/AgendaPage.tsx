@@ -349,11 +349,9 @@ export const AgendaPage: React.FC = () => {
 
         {/* Contenido principal */}
         {loading ? (
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-16 text-center">
-            <div className="flex flex-col items-center gap-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-              <p className="text-gray-600 font-medium">Cargando agenda...</p>
-            </div>
+          <div className={`text-center ${isMobile ? 'py-12' : 'py-20'} bg-white rounded-2xl shadow-xl border border-gray-200`}>
+            <div className={`inline-block animate-spin rounded-full ${isMobile ? 'h-12 w-12 border-4' : 'h-16 w-16 border-4'} border-gray-200 border-t-gray-900`}></div>
+            <p className={`${isMobile ? 'mt-4 text-base' : 'mt-6 text-lg'} text-gray-600 font-medium`}>Cargando agenda...</p>
           </div>
         ) : viewMode === 'table' ? (
           isMobile ? (

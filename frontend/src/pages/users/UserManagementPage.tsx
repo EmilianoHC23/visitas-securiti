@@ -305,7 +305,7 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
     return <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusStyles[status] || statusStyles.none}`}>{statusLabels[status] || 'Sin Invitar'}</span>
 };
 
-// RoleSelect: optimizado sin animaciones pesadas
+// RoleSelect: con animaciones de Framer Motion estilo AgendaPage
 const RoleSelect: React.FC<{ value: UserRole; onChange: (r: UserRole) => void }> = memo(({ value, onChange }) => {
     const options: { value: UserRole; label: string; icon: React.ReactNode }[] = [
         { value: UserRole.HOST, label: 'Host', icon: <UserIcon className="w-4 h-4" /> },
@@ -317,15 +317,27 @@ const RoleSelect: React.FC<{ value: UserRole; onChange: (r: UserRole) => void }>
     const ref = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
-        const onDoc = (e: MouseEvent) => {
-            if (!ref.current || !(e.target instanceof Node) || ref.current.contains(e.target)) return;
-            setOpen(false);
+        const handleClickOutside = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
         };
-        document.addEventListener('click', onDoc);
-        return () => document.removeEventListener('click', onDoc);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     const selected = options.find(o => o.value === value) || options[0];
+
+    // Variants para animaciones
+    const wrapper: any = {
+        open: { scaleY: 1, opacity: 1, transition: { when: 'beforeChildren', staggerChildren: 0.06 } },
+        closed: { scaleY: 0, opacity: 0, transition: { when: 'afterChildren', staggerChildren: 0.04 } },
+    };
+
+    const item: any = {
+        open: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } },
+        closed: { opacity: 0, y: -6, transition: { duration: 0.12 } },
+    };
+
+    const chevron: any = { open: { rotate: 180 }, closed: { rotate: 0 } };
 
     return (
         <div className="relative" ref={ref}>
@@ -333,28 +345,42 @@ const RoleSelect: React.FC<{ value: UserRole; onChange: (r: UserRole) => void }>
                 type="button" 
                 onClick={() => setOpen(s => !s)} 
                 className="w-full text-left pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent shadow-sm text-sm flex items-center gap-3 transition-all"
+                aria-haspopup="listbox"
+                aria-expanded={open}
             >
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">{selected.icon}</span>
                 <span className="flex-1 text-gray-900 font-medium">{selected.label}</span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+                <motion.span className="inline-block" variants={chevron} animate={open ? 'open' : 'closed'}>
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                </motion.span>
             </button>
 
-            {open && (
-                <div className="absolute left-0 right-0 mt-2 bg-white shadow-xl border border-gray-200 rounded-xl overflow-hidden z-50 animate-fadeIn">
-                    {options.map(o => (
-                        <button 
-                            key={o.value}
-                            type="button" 
-                            onClick={() => { onChange(o.value); setOpen(false); }} 
-                            className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors ${o.value === value ? 'bg-gray-50 text-gray-900' : 'text-gray-700'}`}
-                        >
-                            <span className="text-gray-500">{o.icon}</span>
-                            <span className="flex-1 text-sm font-medium">{o.label}</span>
-                            {o.value === value && <CheckCircle className="w-4 h-4 text-gray-900" />}
-                        </button>
-                    ))}
-                </div>
-            )}
+            <AnimatePresence>
+                {open && (
+                    <motion.div 
+                        initial="closed" 
+                        animate="open" 
+                        exit="closed" 
+                        variants={wrapper} 
+                        style={{ transformOrigin: 'top' }} 
+                        className="absolute left-0 right-0 mt-2 bg-white shadow-xl border border-gray-200 rounded-xl overflow-hidden z-50"
+                    >
+                        {options.map(o => (
+                            <motion.button
+                                key={o.value}
+                                type="button"
+                                variants={item}
+                                onClick={() => { onChange(o.value); setOpen(false); }}
+                                className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors ${o.value === value ? 'bg-gray-50 text-gray-900' : 'text-gray-700'}`}
+                            >
+                                <span className="text-gray-500">{o.icon}</span>
+                                <span className="flex-1 text-sm font-medium">{o.label}</span>
+                                {o.value === value && <CheckCircle className="w-4 h-4 text-gray-900" />}
+                            </motion.button>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 });
@@ -896,11 +922,16 @@ export const UserManagementPage: React.FC = () => {
     // Notification/banner state
     const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
-    // We'll use CSS :hover for row highlight (no JS state needed)
-
     // Estado para la vista previa
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [previewUser, setPreviewUser] = useState<User | null>(null);
+
+    // Detect mobile
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -1063,9 +1094,9 @@ export const UserManagementPage: React.FC = () => {
                     // Vista móvil: Cards en lugar de tabla
                     <div className="space-y-3">
                         {loading ? (
-                            <div className="text-center p-12">
-                                <div className="inline-block w-12 h-12 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin mb-4"></div>
-                                <p className="text-gray-600 font-medium text-sm">Cargando usuarios...</p>
+                            <div className={`text-center ${isMobile ? 'py-12' : 'py-20'} bg-white rounded-2xl shadow-xl border border-gray-200`}>
+                                <div className={`inline-block animate-spin rounded-full ${isMobile ? 'h-12 w-12 border-4' : 'h-16 w-16 border-4'} border-gray-200 border-t-gray-900`}></div>
+                                <p className={`${isMobile ? 'mt-4 text-base' : 'mt-6 text-lg'} text-gray-600 font-medium`}>Cargando usuarios...</p>
                             </div>
                         ) : (
                             users.map(user => (
@@ -1108,7 +1139,7 @@ export const UserManagementPage: React.FC = () => {
                                                     e.stopPropagation();
                                                     openConfirm({ type: 'resend', title: 'Reenviar invitación', message: '¿Estás seguro de que quieres reenviar la invitación a este usuario?', user });
                                                 }}
-                                                className="flex-1 flex items-center justify-center gap-1.5 p-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all text-xs font-medium"
+                                                className="flex-1 flex items-center justify-center gap-1.5 p-2 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 rounded-lg hover:from-blue-200 hover:to-blue-300 transition-all text-xs font-medium shadow-sm"
                                             >
                                                 <Mail className="w-4 h-4" />
                                                 Reenviar
@@ -1116,7 +1147,7 @@ export const UserManagementPage: React.FC = () => {
                                         )}
                                         <button 
                                             onClick={e => { e.stopPropagation(); handleEditUser(user); }} 
-                                            className="flex-1 flex items-center justify-center gap-1.5 p-2 text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-all text-xs font-medium"
+                                            className="flex-1 flex items-center justify-center gap-1.5 p-2 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 rounded-lg hover:from-emerald-200 hover:to-emerald-300 transition-all text-xs font-medium shadow-sm"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.313 3 21l1.687-4.5 12.175-13.013z" />
@@ -1126,23 +1157,15 @@ export const UserManagementPage: React.FC = () => {
                                         <button 
                                             onClick={e => { 
                                                 e.stopPropagation(); 
-                                                if (user.invitationStatus === 'pending' || user.invitationStatus === 'none') { 
-                                                    openConfirm({ 
-                                                        type: 'delete-invite', 
-                                                        title: 'Eliminar usuario', 
-                                                        message: '¿Estás seguro de que quieres eliminar a este usuario? Esta acción no se puede deshacer.', 
-                                                        user 
-                                                    }); 
-                                                } else { 
-                                                    openConfirm({ 
-                                                        type: 'deactivate', 
-                                                        title: '¿Qué deseas hacer con este usuario?', 
-                                                        message: 'Puedes desactivar al usuario (será inactivable y podrá reactivarse) o eliminarlo completamente. Usa "Confirmar" para desactivar o "Eliminar permanentemente" para borrarlo.', 
-                                                        user 
-                                                    }); 
-                                                } 
+                                                // Simplificar: todos los usuarios (pendientes o registrados) usan el modal simple de eliminación
+                                                openConfirm({ 
+                                                    type: 'delete-invite', 
+                                                    title: 'Eliminar usuario', 
+                                                    message: '¿Estás seguro de que quieres eliminar a este usuario? Esta acción no se puede deshacer.', 
+                                                    user 
+                                                }); 
                                             }} 
-                                            className="flex-1 flex items-center justify-center gap-1.5 p-2 text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-all text-xs font-medium"
+                                            className="flex-1 flex items-center justify-center gap-1.5 p-2 bg-gradient-to-r from-red-100 to-red-200 text-red-700 rounded-lg hover:from-red-200 hover:to-red-300 transition-all text-xs font-medium shadow-sm"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                             Eliminar
@@ -1156,27 +1179,27 @@ export const UserManagementPage: React.FC = () => {
                     // Vista desktop: Tabla original
                     <div className="overflow-x-auto rounded-xl shadow-md border border-gray-200">
                         {loading ? (
-                            <div className="text-center p-12">
-                                <div className="inline-block w-12 h-12 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin mb-4"></div>
-                                <p className="text-gray-600 font-medium">Cargando usuarios...</p>
+                            <div className="text-center py-20 bg-white rounded-2xl shadow-xl border border-gray-200">
+                                <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-gray-900"></div>
+                                <p className="mt-6 text-lg text-gray-600 font-medium">Cargando usuarios...</p>
                             </div>
                         ) : (
                             <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gradient-to-r from-gray-900 to-gray-700 text-white">
+                                <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                                     <tr>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider first:rounded-tl-xl">Foto</th>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Nombre</th>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Email</th>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Rol</th>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">Estatus</th>
-                                        <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-white uppercase tracking-wider last:rounded-tr-xl">Acciones</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Foto</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Usuario</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Email</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Rol</th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">Estatus</th>
+                                        <th scope="col" className="px-6 py-4 text-center text-xs font-bold text-gray-800 uppercase tracking-wider">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-100">
                                     {users.map((user, rowIndex) => (
                                         <tr
                                             key={user._id}
-                                            className="group bg-white even:bg-gray-50/50 border-b border-gray-100 cursor-pointer transition-all duration-200 hover:bg-gray-100 focus-within:bg-gray-100"
+                                            className="group bg-white even:bg-gray-50/50 border-b border-gray-100 cursor-pointer transition-all duration-200 hover:bg-gradient-to-r hover:from-gray-50 hover:to-transparent"
                                             onClick={e => {
                                                 if ((e.target as HTMLElement).closest('button')) return;
                                                 setPreviewUser(user);
@@ -1214,7 +1237,7 @@ export const UserManagementPage: React.FC = () => {
                                                                 e.stopPropagation();
                                                                 openConfirm({ type: 'resend', title: 'Reenviar invitación', message: '¿Estás seguro de que quieres reenviar la invitación a este usuario?', user });
                                                             }}
-                                                            className="group/btn p-2.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all"
+                                                            className="inline-flex items-center justify-center p-2.5 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 rounded-lg hover:from-blue-200 hover:to-blue-300 transition-all shadow-sm"
                                                             title="Reenviar invitación"
                                                         >
                                                             <span className="relative inline-block w-5 h-5">
@@ -1229,7 +1252,7 @@ export const UserManagementPage: React.FC = () => {
                                                     )}
                                                     <button 
                                                         onClick={e => { e.stopPropagation(); handleEditUser(user); }} 
-                                                        className="p-2.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all" 
+                                                        className="inline-flex items-center justify-center p-2.5 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 rounded-lg hover:from-emerald-200 hover:to-emerald-300 transition-all shadow-sm" 
                                                         title="Editar usuario"
                                                     >
                                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -1238,23 +1261,15 @@ export const UserManagementPage: React.FC = () => {
                                                     </button>
                                                     <button onClick={e => { 
                                                         e.stopPropagation(); 
-                                                        if (user.invitationStatus === 'pending' || user.invitationStatus === 'none') { 
-                                                            openConfirm({ 
-                                                                type: 'delete-invite', 
-                                                                title: 'Eliminar usuario', 
-                                                                message: '¿Estás seguro de que quieres eliminar a este usuario? Esta acción no se puede deshacer.', 
-                                                                user 
-                                                            }); 
-                                                        } else { 
-                                                            openConfirm({ 
-                                                                type: 'deactivate', 
-                                                                title: '¿Qué deseas hacer con este usuario?', 
-                                                                message: 'Puedes desactivar al usuario (será inactivable y podrá reactivarse) o eliminarlo completamente. Usa "Confirmar" para desactivar o "Eliminar permanentemente" para borrarlo.', 
-                                                                user 
-                                                            }); 
-                                                        } 
+                                                        // Simplificar: todos los usuarios usan el modal simple de eliminación
+                                                        openConfirm({ 
+                                                            type: 'delete-invite', 
+                                                            title: 'Eliminar usuario', 
+                                                            message: '¿Estás seguro de que quieres eliminar a este usuario? Esta acción no se puede deshacer.', 
+                                                            user 
+                                                        }); 
                                                     }} 
-                                                    className="p-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all" 
+                                                    className="inline-flex items-center justify-center p-2.5 bg-gradient-to-r from-red-100 to-red-200 text-red-700 rounded-lg hover:from-red-200 hover:to-red-300 transition-all shadow-sm" 
                                                     title="Eliminar usuario"
                                                     >
                                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">

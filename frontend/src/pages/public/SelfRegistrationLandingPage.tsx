@@ -76,17 +76,22 @@ export const SelfRegistrationLandingPage: React.FC = () => {
       <div className="max-w-2xl w-full">
         {/* Company Logo */}
         <div className="text-center mb-8">
-          {companyInfo?.logo ? (
-            <img
-              src={companyInfo.logo}
-              alt={companyInfo.name}
-              className="h-20 w-auto mx-auto object-contain mb-6"
-            />
-          ) : (
-            <div className="w-20 h-20 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <Building2 className="w-10 h-10 text-white" />
+          <div
+            className="w-24 h-24 mx-auto mb-6 rounded-full ring-2 ring-gray-800"
+            style={{ background: 'linear-gradient(135deg, #111827 0%, #374151 100%)' }}
+          >
+            <div className="w-full h-full rounded-full flex items-center justify-center overflow-hidden">
+              {companyInfo?.logo ? (
+                <img
+                  src={companyInfo.logo}
+                  alt={companyInfo.name}
+                  className="w-16 h-16 object-contain"
+                />
+              ) : (
+                <Building2 className="w-10 h-10 text-white" />
+              )}
             </div>
-          )}
+          </div>
           
           <h1 className="text-4xl font-bold text-gray-900 mb-3">
             Bienvenido a {companyInfo?.name || 'Nuestra Empresa'}

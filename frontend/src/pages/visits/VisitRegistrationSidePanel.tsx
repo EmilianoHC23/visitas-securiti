@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { User } from '../../types';
-import { X, Camera, User as UserIcon, Mail, Briefcase, MapPin, Users, FileText, CheckCircle } from 'lucide-react';
+import { X, Camera, User as UserIcon, Mail, Briefcase, MapPin, Users, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { MdOutlineQrCodeScanner } from 'react-icons/md';
 import { VscSignIn } from 'react-icons/vsc';
 import { FaRegUser } from 'react-icons/fa';
@@ -28,6 +28,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
   const { showToast } = useToast();
   const [mode, setMode] = useState<RegistrationMode>(null);
   const [qrDataAlert, setQrDataAlert] = useState<{ show: boolean; eventName: string } | null>(null);
+  const [cameraErrorAlert, setCameraErrorAlert] = useState(false);
   const [formData, setFormData] = useState({
     visitorEmail: '',
     visitorName: '',
@@ -83,7 +84,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
       }
     } catch (error) {
       console.error('❌ Error al iniciar cámara:', error);
-      alert('No se pudo acceder a la cámara. Verifica los permisos.');
+      setCameraErrorAlert(true);
     }
   };
 
@@ -733,6 +734,56 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
               <div className="flex items-center justify-center">
                 <button
                   onClick={() => setQrDataAlert(null)}
+                  className="px-6 py-2.5 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium bg-gradient-to-br from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600"
+                >
+                  Aceptar
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal de Error de Cámara */}
+      {cameraErrorAlert && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden"
+          >
+            {/* Header with gradient */}
+            <div className="relative p-8 rounded-t-2xl bg-gradient-to-br from-gray-900 to-gray-700">
+              <div className="absolute inset-0 rounded-t-2xl bg-black/10 pointer-events-none"></div>
+              <div className="relative flex items-start justify-between text-white">
+                <div className="flex items-start gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-1 ring-white/30">
+                    <AlertCircle className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl md:text-2xl font-bold text-white">Error de acceso a la cámara</h3>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setCameraErrorAlert(false)}
+                  className="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-all"
+                  aria-label="Cerrar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 rounded-b-2xl bg-white">
+              <p className="text-sm text-gray-700 mb-6 leading-relaxed">
+                No se pudo acceder a la cámara. Verifica los permisos.
+              </p>
+
+              <div className="flex items-center justify-center">
+                <button
+                  onClick={() => setCameraErrorAlert(false)}
                   className="px-6 py-2.5 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium bg-gradient-to-br from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600"
                 >
                   Aceptar

@@ -29,6 +29,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
   const [mode, setMode] = useState<RegistrationMode>(null);
   const [qrDataAlert, setQrDataAlert] = useState<{ show: boolean; eventName: string } | null>(null);
   const [cameraErrorAlert, setCameraErrorAlert] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     visitorEmail: '',
     visitorName: '',
@@ -221,47 +222,52 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
       return;
     }
 
-    // Si hay un acceso pendiente de QR escaneado, registrar el check-in y crear visita con auto check-in
-    const pendingAccess = (window as any).__pendingAccessCheckIn;
+    if (isSubmitting) return; // Prevent double submission
+    setIsSubmitting(true);
 
-    // Crear objeto de datos con los flags necesarios
-    const visitDataToSubmit = { ...formData };
+    try {
+      // Si hay un acceso pendiente de QR escaneado, registrar el check-in y crear visita con auto check-in
+      const pendingAccess = (window as any).__pendingAccessCheckIn;
 
-    if (pendingAccess) {
-      // Marcar que esta visita viene de un acceso/evento para auto check-in ANTES de intentar el fetch
-      // Esto garantiza que la visita vaya a "Dentro" incluso si falla la actualización de asistencia
-      (visitDataToSubmit as any).fromAccessEvent = true;
-      (visitDataToSubmit as any).accessCode = pendingAccess.accessCode;
+      // Crear objeto de datos con los flags necesarios
+      const visitDataToSubmit = { ...formData };
 
-      console.log('🎫 Visita marcada como fromAccessEvent con código:', pendingAccess.accessCode);
+      if (pendingAccess) {
+        // Marcar que esta visita viene de un acceso/evento para auto check-in ANTES de intentar el fetch
+        // Esto garantiza que la visita vaya a "Dentro" incluso si falla la actualización de asistencia
+        (visitDataToSubmit as any).fromAccessEvent = true;
+        (visitDataToSubmit as any).accessCode = pendingAccess.accessCode;
 
-      try {
-        // Hacer check-in en el acceso usando el servicio API
-        await api.publicAccessCheckIn({
+        console.log('🎫 Visita marcada como fromAccessEvent con código:', pendingAccess.accessCode);
+
+        // Hacer check-in en el acceso en paralelo (no esperar)
+        api.publicAccessCheckIn({
           accessCode: pendingAccess.accessCode,
           guestEmail: pendingAccess.guestEmail || formData.visitorEmail,
           guestName: pendingAccess.guestName || formData.visitorName
+        }).then(() => {
+          console.log('✅ Asistencia actualizada en el acceso');
+        }).catch((error) => {
+          console.error('Error al actualizar asistencia:', error);
         });
-
-        console.log('✅ Asistencia actualizada en el acceso');
 
         // Limpiar el acceso pendiente
         delete (window as any).__pendingAccessCheckIn;
-      } catch (error) {
-        console.error('Error al actualizar asistencia:', error);
-        // No bloqueamos el registro de visita si falla la actualización - el flag ya está establecido
       }
-    }
 
-    try {
-      // onSubmit puede ser síncrono o devolver una promesa
+      // Cerrar el panel inmediatamente para mejor UX
+      showToast('Registrando visita...', 'info');
+      onClose();
+
+      // Hacer el submit en segundo plano
       await Promise.resolve(onSubmit(visitDataToSubmit));
       showToast('Visita registrada correctamente', 'success');
-      onClose();
     } catch (error: any) {
       console.error('Error al registrar visita:', error);
       const serverMessage = error?.response?.data?.message || error?.message;
       showToast(serverMessage ? `No se pudo registrar la visita: ${serverMessage}` : 'No se pudo registrar la visita', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -316,7 +322,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
           <img
             src={src}
             alt={`${host.firstName} ${host.lastName}`}
-            className="w-8 h-8 rounded-full object-cover"
+            className="w-10 h-10 rounded-full object-cover"
             onError={() => setFailedImages(prev => ({ ...prev, [host._id]: true }))}
           />
         );
@@ -324,7 +330,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
 
       // Fallback: initials avatar
       return (
-        <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-semibold">{initials}</div>
+        <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-semibold text-sm">{initials}</div>
       );
     };
     // framer-motion variants for host dropdown
@@ -348,23 +354,23 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
         <button
           type="button"
           onClick={() => setOpen(o => !o)}
-          className="w-full text-left px-4 py-2 border border-gray-300 rounded-lg flex items-center gap-3 bg-white"
+          className="w-full text-left px-4 py-3 border-2 border-gray-300 rounded-xl flex items-center gap-3 bg-white hover:border-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
           aria-haspopup="listbox"
           aria-expanded={open}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             {selected ? renderAvatar(selected) : (
-              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                <FaRegUser className="w-4 h-4 text-gray-400" />
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                <FaRegUser className="w-5 h-5 text-gray-400" />
               </div>
             )}
-            <div className="min-w-0">
-              <div className="text-sm font-medium text-gray-800 truncate">{selected ? `${selected.firstName} ${selected.lastName}` : 'Selecciona un anfitrión'}</div>
-              <div className="text-xs text-gray-500 truncate">{selected ? ((selected as any).email || '') : ''}</div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-gray-800 truncate">{selected ? `${selected.firstName} ${selected.lastName}` : 'Selecciona un anfitrión'}</div>
+              {selected && <div className="text-xs text-gray-500 truncate">{((selected as any).email || '')}</div>}
             </div>
           </div>
-          <motion.span className="ml-auto d-inline-block" variants={chevronVariants} animate={open ? 'open' : 'closed'}>
-            <svg className="w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd" /></svg>
+          <motion.span className="flex-shrink-0" variants={chevronVariants} animate={open ? 'open' : 'closed'}>
+            <svg className="w-5 h-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd" /></svg>
           </motion.span>
         </button>
 
@@ -376,7 +382,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
               exit="closed"
               variants={hostWrapperVariants}
               style={{ transformOrigin: 'top' }}
-              className="absolute z-50 mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-56 overflow-auto"
+              className="absolute z-50 mt-2 w-full bg-white rounded-xl shadow-2xl border-2 border-gray-200 max-h-64 overflow-auto"
             >
               {sortedHosts.length > 0 ? sortedHosts.map(host => (
                 <motion.button
@@ -384,16 +390,16 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
                   type="button"
                   variants={hostItemVariants}
                   onClick={() => { onChange(host._id); setOpen(false); }}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left"
+                  className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left transition-colors"
                 >
                   {renderAvatar(host)}
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium text-gray-800 truncate">{host.firstName} {host.lastName}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold text-gray-800 truncate">{host.firstName} {host.lastName}</div>
                     <div className="text-xs text-gray-500 truncate">{(host as any).email || ''}</div>
                   </div>
                 </motion.button>
               )) : (
-                <div className="p-3 text-sm text-gray-500">No hay anfitriones disponibles</div>
+                <div className="p-4 text-sm text-gray-500 text-center">No hay anfitriones disponibles</div>
               )}
             </motion.div>
           )}
@@ -419,7 +425,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 bg-gradient-to-r from-gray-900 via-cyan-600 to-blue-600">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500">
           <h2 className="text-xl font-bold text-white flex items-center gap-2"><VscSignIn className="w-5 h-5" />Registrar Entrada</h2>
           <button
             onClick={onClose}
@@ -439,10 +445,10 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
               
               <button
                 onClick={() => handleModeSelection('quick-qr')}
-                className="w-full p-6 border-2 border-gray-200 rounded-xl hover:border-cyan-500 hover:bg-cyan-50 transition-all flex items-center gap-4 group"
+                className="w-full p-6 border-2 border-gray-200 rounded-xl hover:border-gray-900 hover:bg-gray-50 transition-all flex items-center gap-4 group"
               >
-                <div className="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center group-hover:bg-cyan-500 transition-colors">
-                  <MdOutlineQrCodeScanner className="w-6 h-6 text-cyan-600 group-hover:text-white" />
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-gray-900 transition-colors">
+                  <MdOutlineQrCodeScanner className="w-6 h-6 text-gray-600 group-hover:text-white" />
                 </div>
                 <div className="text-left">
                   <h3 className="font-semibold text-gray-800">Registro Rápido con QR</h3>
@@ -452,10 +458,10 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
 
               <button
                 onClick={() => handleModeSelection('manual')}
-                className="w-full p-6 border-2 border-gray-200 rounded-xl hover:border-cyan-500 hover:bg-cyan-50 transition-all flex items-center gap-4 group"
+                className="w-full p-6 border-2 border-gray-200 rounded-xl hover:border-gray-900 hover:bg-gray-50 transition-all flex items-center gap-4 group"
               >
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-500 transition-colors">
-                  <UserIcon className="w-6 h-6 text-blue-600 group-hover:text-white" />
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-gray-900 transition-colors">
+                  <UserIcon className="w-6 h-6 text-gray-600 group-hover:text-white" />
                 </div>
                 <div className="text-left">
                   <h3 className="font-semibold text-gray-800">Registro Manual</h3>
@@ -521,7 +527,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
                     setShowCamera(true);
                     startCamera(false);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 text-cyan-600 border border-cyan-600 rounded-lg hover:bg-cyan-50 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-gray-900 border border-gray-900 rounded-lg hover:bg-gray-900 hover:text-white transition-colors"
                 >
                   <Camera className="w-4 h-4" />
                   {formData.visitorPhoto ? 'Cambiar foto' : 'Tomar foto (opcional)'}
@@ -530,7 +536,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
 
               {/* Form Fields */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-gray-400" />
                     <span>Correo electrónico *</span>
@@ -541,13 +547,13 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
                   required
                   value={formData.visitorEmail}
                   onChange={(e) => setFormData({ ...formData, visitorEmail: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all hover:border-gray-400"
                   placeholder="correo@ejemplo.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
                   <div className="flex items-center gap-2">
                     <UserIcon className="w-4 h-4 text-gray-400" />
                     <span>Nombre completo *</span>
@@ -558,13 +564,13 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
                   required
                   value={formData.visitorName}
                   onChange={(e) => setFormData({ ...formData, visitorName: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all hover:border-gray-400"
                   placeholder="Juan Pérez"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
                   <div className="flex items-center gap-2">
                     <Briefcase className="w-4 h-4 text-gray-400" />
                     <span>Empresa</span>
@@ -574,13 +580,13 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
                   type="text"
                   value={formData.visitorCompany}
                   onChange={(e) => setFormData({ ...formData, visitorCompany: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all hover:border-gray-400"
                   placeholder="Nombre de la empresa"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-gray-400" />
                     <span>A dónde se dirige</span>
@@ -590,13 +596,13 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
                   type="text"
                   value={formData.destination}
                   onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all hover:border-gray-400"
                   placeholder="Ej: Oficina 302, Sala de juntas..."
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-gray-400" />
                     <span>A quién visita *</span>
@@ -610,7 +616,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-gray-400" />
                     <span>Razón de la visita *</span>
@@ -621,7 +627,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
                   value={formData.reason}
                   onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent resize-none"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all hover:border-gray-400 resize-none"
                   placeholder="Describe brevemente el motivo de la visita..."
                 />
               </div>
@@ -642,15 +648,16 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
                       visitorPhoto: ''
                     });
                   }}
-                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-semibold transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg hover:from-cyan-600 hover:to-blue-700 font-medium transition-all shadow-lg hover:shadow-xl"
+                  disabled={isSubmitting}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-gray-900 to-gray-600 text-white rounded-xl hover:from-gray-800 hover:to-gray-500 font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Registrar Visita
+                  {isSubmitting ? 'Registrando...' : 'Registrar Visita'}
                 </button>
               </div>
             </form>
@@ -671,13 +678,13 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
               <div className="flex gap-3">
                 <button
                   onClick={stopCamera}
-                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-semibold transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={capturePhoto}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg hover:from-cyan-600 hover:to-blue-700 font-medium transition-all shadow-lg hover:shadow-xl"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-gray-900 to-gray-600 text-white rounded-xl hover:from-gray-800 hover:to-gray-500 font-semibold transition-all shadow-lg hover:shadow-xl"
                 >
                   Capturar Foto
                 </button>

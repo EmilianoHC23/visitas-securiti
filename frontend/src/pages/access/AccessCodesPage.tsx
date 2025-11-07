@@ -424,7 +424,7 @@ export const AccessCodesPage: React.FC = () => {
                           }}
                           className="flex items-center justify-center p-2 bg-gradient-to-r from-red-100 to-red-200 text-red-700 rounded-lg hover:from-red-200 hover:to-red-300 transition-all"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <X className="w-3.5 h-3.5" />
                         </button>
                       </>
                     )}
@@ -560,7 +560,7 @@ export const AccessCodesPage: React.FC = () => {
                               className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-red-100 to-red-200 text-red-700 rounded-lg hover:from-red-200 hover:to-red-300 transition-all text-sm font-medium shadow-sm"
                               title="Eliminar"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <X className="w-4 h-4" />
                             </button>
                           </>
                         )}

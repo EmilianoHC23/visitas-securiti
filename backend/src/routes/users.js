@@ -30,10 +30,22 @@ router.get('/', auth, authorize('admin'), async (req, res) => {
 // Get hosts (for visit assignment) - Incluye hosts y admins
 router.get('/hosts', auth, async (req, res) => {
   try {
+    // Debug: obtener todos los usuarios primero
+    const allUsers = await User.find({ 
+      role: { $in: ['host', 'admin'] }
+    }).select('-password');
+    
+    console.log('📊 Total usuarios host/admin:', allUsers.length);
+    allUsers.forEach(u => {
+      console.log(`  - ${u.firstName} ${u.lastName} (${u.email}): isActive=${u.isActive}, role=${u.role}`);
+    });
+    
     const hosts = await User.find({ 
       role: { $in: ['host', 'admin'] }, 
       isActive: true 
     }).select('-password');
+    
+    console.log('✅ Hosts activos retornados:', hosts.length);
     res.json(hosts);
   } catch (error) {
     console.error('Get hosts error:', error);

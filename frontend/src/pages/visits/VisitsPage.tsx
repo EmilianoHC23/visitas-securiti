@@ -1276,7 +1276,13 @@ export const VisitsPage: React.FC = () => {
     useEffect(() => {
         fetchVisits();
         api.getHosts()
-            .then(setHosts)
+            .then(hosts => {
+                console.log('🔍 Hosts recibidos del backend:', hosts.length);
+                hosts.forEach(h => {
+                    console.log(`  - ${h.firstName} ${h.lastName} (${h.email}): role=${h.role}`);
+                });
+                setHosts(hosts);
+            })
             .catch(err => console.error("Failed to fetch hosts:", err));
     }, [fetchVisits]);
 

@@ -22,7 +22,8 @@ import {
   Bell,
   Link as LinkIcon,
   Copy,
-  Download
+  Download,
+  AlertCircle
 } from 'lucide-react';
 import { IoQrCodeOutline } from 'react-icons/io5';
 import { getAccesses, createAccess, updateAccess, cancelAccess, finalizeAccess, getUsers, checkBlacklist } from '../../services/api';
@@ -46,6 +47,8 @@ export const AccessCodesPage: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedAccess, setSelectedAccess] = useState<Access | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [accessToDelete, setAccessToDelete] = useState<Access | null>(null);
 
   // Toast / Alert flotante (global dentro de esta página)
   const [toast, setToast] = useState<{ show: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({ show: false, message: '', severity: 'success' });
@@ -146,11 +149,18 @@ export const AccessCodesPage: React.FC = () => {
   };
 
   const handleDelete = async (access: Access) => {
-    if (!confirm(`¿Estás seguro de cancelar el acceso "${access.eventName}"?`)) return;
+    setAccessToDelete(access);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!accessToDelete) return;
     
     try {
-      await cancelAccess(access._id);
+      await cancelAccess(accessToDelete._id);
       await loadAccesses();
+      setShowDeleteConfirm(false);
+      setAccessToDelete(null);
     } catch (error) {
       console.error('Error canceling access:', error);
       alert('Error al cancelar el acceso');
@@ -604,6 +614,70 @@ export const AccessCodesPage: React.FC = () => {
           onClose={() => setShowDetailsModal(false)}
           onFinalize={handleFinalize}
         />
+      )}
+
+      {/* Modal de Confirmación de Eliminación */}
+      {showDeleteConfirm && accessToDelete && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden"
+          >
+            {/* Header with gradient */}
+            <div className="relative p-8 rounded-t-2xl bg-gradient-to-br from-gray-900 to-gray-700">
+              <div className="absolute inset-0 rounded-t-2xl bg-black/10 pointer-events-none"></div>
+              <div className="relative flex items-start justify-between text-white">
+                <div className="flex items-start gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-1 ring-white/30">
+                    <AlertCircle className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl md:text-2xl font-bold text-white">Cancelar acceso</h3>
+                    <p className="text-sm text-white/80 mt-1">Confirmación</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setAccessToDelete(null);
+                  }}
+                  className="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-all"
+                  aria-label="Cerrar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 rounded-b-2xl bg-white">
+              <p className="text-sm text-gray-700 mb-6 leading-relaxed">
+                ¿Estás seguro de cancelar el acceso "<strong>{accessToDelete.eventName}</strong>"?
+              </p>
+
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setAccessToDelete(null);
+                  }}
+                  className="px-6 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all font-medium"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  onClick={confirmDelete}
+                  className="px-6 py-2.5 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium bg-gradient-to-br from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600"
+                >
+                  Aceptar
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   );

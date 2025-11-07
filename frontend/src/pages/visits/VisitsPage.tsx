@@ -1191,7 +1191,18 @@ export const VisitsPage: React.FC = () => {
                     fromAccessEvent: true
                 });
                 
-                console.log('✅ Visita creada como aprobada - el organizador debe registrar la entrada manualmente');
+                console.log('✅ Visita creada como aprobada');
+                
+                // Si autoCheckIn está activado, hacer check-in automático
+                if (autoCheckIn && response && response._id) {
+                    console.log('🔄 Auto check-in activado - registrando entrada automáticamente');
+                    try {
+                        await api.checkInVisit(response._id);
+                        console.log('✅ Check-in automático completado');
+                    } catch (checkInError) {
+                        console.error('❌ Error en check-in automático:', checkInError);
+                    }
+                }
             } else {
                 console.log('👤 Procesando visita REGULAR - flujo normal');
                 

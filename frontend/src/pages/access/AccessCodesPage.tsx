@@ -25,7 +25,7 @@ import {
   Download
 } from 'lucide-react';
 import { IoQrCodeOutline } from 'react-icons/io5';
-import { getAccesses, createAccess, updateAccess, cancelAccess, getUsers, checkBlacklist } from '../../services/api';
+import { getAccesses, createAccess, updateAccess, cancelAccess, finalizeAccess, getUsers, checkBlacklist } from '../../services/api';
 import { Access, InvitedUser, UserRole } from '../../types';
 import { formatDate, formatDateTime } from '../../utils/dateUtils';
 import { DatePicker, TimePicker } from '../../components/common/DatePicker';
@@ -159,18 +159,8 @@ export const AccessCodesPage: React.FC = () => {
 
   const handleFinalize = async (accessId: string) => {
     try {
-      // Call the finalize endpoint
-      const response = await fetch(`/api/access/${accessId}/finalize`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to finalize access');
-      }
+      // Call the finalize endpoint using api service
+      await finalizeAccess(accessId);
 
       // Reload accesses to reflect the change
       await loadAccesses();

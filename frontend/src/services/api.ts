@@ -449,6 +449,12 @@ export const cancelAccess = async (id: string): Promise<void> => {
   });
 };
 
+export const finalizeAccess = async (id: string): Promise<Access> => {
+  return apiRequest(`/access/${id}/finalize`, {
+    method: 'POST',
+  });
+};
+
 export const checkInAccess = async (accessCode: string, guestData: {
   guestEmail?: string;
   guestPhone?: string;

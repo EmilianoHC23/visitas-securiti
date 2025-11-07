@@ -159,7 +159,7 @@ export const BlacklistPage: React.FC = () => {
         {/* Header */}
         <div className={isMobile ? "mb-4" : "mb-8"}>
           <div className={`flex items-center ${isMobile ? 'gap-2 mb-2' : 'gap-3 mb-2'}`}>
-              <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0`}>
+              <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} bg-gradient-to-br from-gray-900 to-gray-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg`}>
                 <UserX className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
               </div>
             <div className="min-w-0">

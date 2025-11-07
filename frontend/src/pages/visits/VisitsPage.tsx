@@ -1025,12 +1025,28 @@ export const VisitsPage: React.FC = () => {
     const handleApproveFromModal = async (visitId: string) => {
         console.log('🟢 [APPROVE] Starting approval for visit:', visitId);
         try {
+            // Cerrar modal inmediatamente para mejor UX
+            setPendingModalVisit(null);
+
+            // Actualización optimista: actualizar UI inmediatamente
+            setVisits(prevVisits => prevVisits.map(v => {
+                if (v._id === visitId) {
+                    console.log('✅ [APPROVE] Optimistic update - changing status to APPROVED');
+                    return { ...v, status: VisitStatus.APPROVED };
+                }
+                return v;
+            }));
+
+            // Luego hacer la llamada API en segundo plano
             const updatedVisit = await api.approveVisit(visitId);
             console.log('✅ [APPROVE] Successfully approved visit:', visitId, 'new status:', updatedVisit.status);
+            
+            // Actualizar con la respuesta real del servidor
             setVisits(prevVisits => prevVisits.map(v => v._id === visitId ? updatedVisit : v));
-            setPendingModalVisit(null);
         } catch (error) {
             console.error('❌ [APPROVE] Failed to approve visit:', error);
+            // Recargar visitas en caso de error para revertir el cambio optimista
+            fetchVisits();
         }
     };
 
@@ -1044,30 +1060,45 @@ export const VisitsPage: React.FC = () => {
     // Handler para confirmar rechazo con razón
     const handleRejectWithReason = async (reason: string) => {
         if (!rejectionVisit) return;
+        
+        // Cerrar modal inmediatamente para mejor UX
+        setRejectionModalOpen(false);
+        const visitToReject = rejectionVisit;
+        setRejectionVisit(null);
+
         try {
             // Si la visita ya está rechazada, solo actualizar la razón sin cambiar estado
-            if (rejectionVisit.status === VisitStatus.REJECTED) {
-                const updatedVisit = await api.updateVisit(rejectionVisit._id, { rejectionReason: reason });
-                setVisits(prevVisits => prevVisits.map(v => v._id === rejectionVisit._id ? updatedVisit : v));
-            } else if (rejectionVisit.status === VisitStatus.APPROVED) {
+            if (visitToReject.status === VisitStatus.REJECTED) {
+                const updatedVisit = await api.updateVisit(visitToReject._id, { rejectionReason: reason });
+                setVisits(prevVisits => prevVisits.map(v => v._id === visitToReject._id ? updatedVisit : v));
+            } else if (visitToReject.status === VisitStatus.APPROVED) {
                 // No permitir rechazar si ya está aprobada
                 alert('No se puede rechazar una visita que ya fue aprobada.');
             } else {
+                // Actualización optimista: actualizar UI inmediatamente
+                setVisits(prevVisits => prevVisits.map(v => {
+                    if (v._id === visitToReject._id) {
+                        return { ...v, status: VisitStatus.REJECTED, rejectionReason: reason };
+                    }
+                    return v;
+                }));
+
                 // Si está en otro estado (pending), rechazar con razón
                 try {
-                    const updatedVisit = await api.updateVisitStatus(rejectionVisit._id, VisitStatus.REJECTED, reason);
-                    setVisits(prevVisits => prevVisits.map(v => v._id === rejectionVisit._id ? updatedVisit : v));
+                    const updatedVisit = await api.updateVisitStatus(visitToReject._id, VisitStatus.REJECTED, reason);
+                    setVisits(prevVisits => prevVisits.map(v => v._id === visitToReject._id ? updatedVisit : v));
                 } catch (error: any) {
                     // Mostrar error del backend si la transición no es permitida
                     alert(error?.response?.data?.message || 'No se pudo rechazar la visita.');
+                    // Recargar visitas en caso de error
+                    fetchVisits();
                 }
             }
         } catch (error) {
             alert('No se pudo rechazar la visita.');
             console.error('Failed to reject visit:', error);
-        } finally {
-            setRejectionModalOpen(false);
-            setRejectionVisit(null);
+            // Recargar visitas en caso de error
+            fetchVisits();
         }
     };
 
@@ -1260,10 +1291,23 @@ export const VisitsPage: React.FC = () => {
 
     const handleApprove = async (id: string) => {
         try {
+            // Actualización optimista: actualizar UI inmediatamente
+            setVisits(prevVisits => prevVisits.map(v => {
+                if (v._id === id) {
+                    return { ...v, status: VisitStatus.APPROVED };
+                }
+                return v;
+            }));
+
+            // Luego hacer la llamada API en segundo plano
             const updatedVisit = await api.approveVisit(id);
+            
+            // Actualizar con la respuesta real del servidor
             setVisits(prevVisits => prevVisits.map(v => v._id === id ? updatedVisit : v));
         } catch (error) {
             console.error('Failed to approve visit:', error);
+            // Recargar visitas en caso de error para revertir el cambio optimista
+            fetchVisits();
         }
     };
 

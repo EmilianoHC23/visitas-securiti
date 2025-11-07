@@ -1266,17 +1266,34 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                 </div>
 
                 {/* Sin Vencimiento Toggle */}
-                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <input
-                    type="checkbox"
-                    id="noExpiration"
-                    checked={formData.noExpiration}
-                    onChange={(e) => setFormData({ ...formData, noExpiration: e.target.checked })}
-                    className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-500"
-                  />
-                  <label htmlFor="noExpiration" className="text-xs sm:text-sm font-medium text-gray-700 cursor-pointer">
-                    Sin Vencimiento (el acceso no expirará automáticamente)
-                  </label>
+                <div className="bg-white rounded-xl border-2 border-gray-200 p-4 hover:border-gray-300 transition-all">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className="w-10 h-10 bg-gradient-to-br from-gray-900 to-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
+                        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <label htmlFor="noExpiration" className="block text-sm font-semibold text-gray-900 cursor-pointer mb-1">
+                          Sin Vencimiento
+                        </label>
+                        <p className="text-xs text-gray-600">
+                          El acceso no expirará automáticamente
+                        </p>
+                      </div>
+                    </div>
+                    <label htmlFor="noExpiration" className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                      <input
+                        type="checkbox"
+                        id="noExpiration"
+                        checked={formData.noExpiration}
+                        onChange={(e) => setFormData({ ...formData, noExpiration: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-900/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
+                    </label>
+                  </div>
                 </div>
 
                 {/* Fecha y hora de finalización */}

@@ -2288,9 +2288,9 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose, onFinalize
             {access.status === 'active' && (
               <button
                 onClick={() => setShowConfirmDialog(true)}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center"
+                className="px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:from-gray-800 hover:to-gray-600 transition-all flex items-center font-semibold shadow-lg hover:shadow-xl"
               >
-                <XCircle className="w-4 h-4 mr-2" />
+                <CheckCircle className="w-5 h-5 mr-2" />
                 Finalizar Acceso
               </button>
             )}

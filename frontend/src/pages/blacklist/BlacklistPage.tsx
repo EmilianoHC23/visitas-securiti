@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BlacklistEntry } from '../../types';
 import * as api from '../../services/api';
-import { Shield, Search, UserX, Mail, AlertCircle, Camera, Upload, Trash2, X } from 'lucide-react';
+import { Search, UserX, Mail, AlertCircle, Camera, Upload, Trash2, X } from 'lucide-react';
 
 export const BlacklistPage: React.FC = () => {
   const [blacklistEntries, setBlacklistEntries] = useState<BlacklistEntry[]>([]);
@@ -160,7 +160,7 @@ export const BlacklistPage: React.FC = () => {
         <div className={isMobile ? "mb-4" : "mb-8"}>
           <div className={`flex items-center ${isMobile ? 'gap-2 mb-2' : 'gap-3 mb-2'}`}>
               <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} bg-gray-900 rounded-xl flex items-center justify-center flex-shrink-0`}>
-                <Shield className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
+                <UserX className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
               </div>
             <div className="min-w-0">
               <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-gray-900`}>Lista Negra</h1>

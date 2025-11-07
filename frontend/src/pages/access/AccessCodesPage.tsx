@@ -374,15 +374,21 @@ export const AccessCodesPage: React.FC = () => {
                         })}
                       </span>
                       <span className="text-gray-400">→</span>
-                      <span>
-                        {new Date(access.endDate).toLocaleDateString('es-MX', { 
-                          day: '2-digit', 
-                          month: 'short'
-                        })} {new Date(access.endDate).toLocaleTimeString('es-MX', { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
-                      </span>
+                      {access.settings?.noExpiration && access.status === 'active' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200">
+                          Sin vencimiento
+                        </span>
+                      ) : (
+                        <span>
+                          {new Date(access.endDate).toLocaleDateString('es-MX', { 
+                            day: '2-digit', 
+                            month: 'short'
+                          })} {new Date(access.endDate).toLocaleTimeString('es-MX', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <Users className="w-3.5 h-3.5 flex-shrink-0" />
@@ -504,19 +510,29 @@ export const AccessCodesPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {new Date(access.endDate).toLocaleDateString('es-MX', { 
-                          day: '2-digit', 
-                          month: 'short', 
-                          year: 'numeric' 
-                        })}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(access.endDate).toLocaleTimeString('es-MX', { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
-                      </div>
+                      {access.settings?.noExpiration && access.status === 'active' ? (
+                        <div className="flex items-center">
+                          <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200">
+                            Sin vencimiento
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="text-sm text-gray-900">
+                            {new Date(access.endDate).toLocaleDateString('es-MX', { 
+                              day: '2-digit', 
+                              month: 'short', 
+                              year: 'numeric' 
+                            })}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(access.endDate).toLocaleTimeString('es-MX', { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </div>
+                        </>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm ${getTypeColor(access.type)}`}>

@@ -30,24 +30,32 @@ export const VisitTimelineModal: React.FC<VisitTimelineModalProps> = ({
 
   if (!isOpen || !visit) return null;
 
+  // Detectar si es una visita de acceso/evento
+  const isAccessEvent = visit.visitType === 'access-code';
+
   // Construir timeline desde los datos de la visita
-  const timeline = [
-    {
+  const timeline = [];
+
+  // Solo agregar evento de registro para visitas normales (no para accesos/eventos)
+  if (!isAccessEvent) {
+    timeline.push({
       type: 'registration',
       title: 'Registro de visita',
       description: 'Solicitud creada',
       timestamp: visit.createdAt || visit.scheduledDate,
       icon: Clock,
       color: 'blue'
-    }
-  ];
+    });
+  }
 
   // Agregar aprobación o rechazo
   if (visit.status === 'approved' || visit.status === 'checked-in' || visit.status === 'completed') {
     timeline.push({
       type: 'approved',
-      title: 'Visita aprobada',
-      description: `Por ${visit.host.firstName} ${visit.host.lastName}`,
+      title: isAccessEvent ? 'Acceso/Evento creado' : 'Visita aprobada',
+      description: isAccessEvent 
+        ? `Código de acceso generado por ${visit.host.firstName} ${visit.host.lastName}`
+        : `Por ${visit.host.firstName} ${visit.host.lastName}`,
       timestamp: visit.approvedAt || visit.updatedAt || visit.scheduledDate,
       icon: CheckCircle,
       color: 'green'
@@ -225,20 +233,14 @@ export const VisitTimelineModal: React.FC<VisitTimelineModalProps> = ({
                   return (
                     <div key={index} className={`relative flex ${isMobile ? 'gap-3' : 'gap-4'}`}>
                       {/* Icono */}
-                      <div className={`relative z-10 ${isMobile ? 'w-10 h-10' : 'w-12 h-12'} rounded-full flex items-center justify-center flex-shrink-0 ${
-                        event.color === 'blue' ? 'bg-blue-100' :
-                        event.color === 'green' ? 'bg-green-100' :
-                        event.color === 'red' ? 'bg-red-100' :
-                        event.color === 'purple' ? 'bg-purple-100' :
-                        'bg-gray-100'
+                      <div className={`relative z-10 ${isMobile ? 'w-10 h-10' : 'w-12 h-12'} rounded-full flex items-center justify-center flex-shrink-0 shadow-lg ${
+                        event.color === 'blue' ? 'bg-gradient-to-br from-blue-500 to-blue-600' :
+                        event.color === 'green' ? 'bg-gradient-to-br from-emerald-500 to-emerald-600' :
+                        event.color === 'red' ? 'bg-gradient-to-br from-red-500 to-red-600' :
+                        event.color === 'purple' ? 'bg-gradient-to-br from-purple-500 to-purple-600' :
+                        'bg-gradient-to-br from-gray-500 to-gray-600'
                       }`}>
-                        <Icon className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} ${
-                          event.color === 'blue' ? 'text-blue-600' :
-                          event.color === 'green' ? 'text-green-600' :
-                          event.color === 'red' ? 'text-red-600' :
-                          event.color === 'purple' ? 'text-purple-600' :
-                          'text-gray-600'
-                        }`} />
+                        <Icon className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
                       </div>
                       
                       {/* Contenido */}

@@ -247,7 +247,8 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
       invitedUsers,
       notifyUsers,
       settings,
-      additionalInfo
+      additionalInfo,
+      hostId
     } = req.body;
 
     // Validations
@@ -267,6 +268,9 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
       return res.status(404).json({ message: 'Empresa no encontrada' });
     }
 
+    // Use hostId if provided, otherwise use current user
+    const creatorUserId = hostId || req.user._id;
+
     // Create access
     const access = new Access({
       eventName,
@@ -275,7 +279,7 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
       endDate: new Date(endDate),
       location: location || '',
       eventImage: eventImage || '',
-      creatorId: req.user._id,
+      creatorId: creatorUserId,
       companyId: req.user.companyId,
       invitedUsers: invitedUsers ? invitedUsers.map(user => ({
         name: user.name,
@@ -302,10 +306,11 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
     // Generar y almacenar QR para cada invitado con email o teléfono (para descarga en UI)
     if (Array.isArray(access.invitedUsers) && access.invitedUsers.length > 0) {
       let modifiedGuestQRCodes = false;
-      // Preparar información del anfitrión para incluir en QR
+      // Preparar información del anfitrión para incluir en QR - usar el creador del acceso
+      const creator = access.creatorId;
       const hostInfo = {
-        name: `${req.user.firstName} ${req.user.lastName}`,
-        email: req.user.email
+        name: `${creator.firstName} ${creator.lastName}`,
+        email: creator.email
       };
       for (const guest of access.invitedUsers) {
         try {
@@ -327,10 +332,11 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
     // Send emails if enabled
     if (access.settings.sendAccessByEmail) {
       // Send confirmation email to creator
+      const creator = access.creatorId;
       try {
         await emailService.sendAccessCreatedEmail({
-          creatorEmail: req.user.email,
-          creatorName: `${req.user.firstName} ${req.user.lastName}`,
+          creatorEmail: creator.email,
+          creatorName: `${creator.firstName} ${creator.lastName}`,
           accessTitle: access.eventName,
           accessType: access.type,
           startDate: access.startDate,
@@ -363,14 +369,14 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
               eventName: access.eventName,
               eventDate: access.startDate,
               location: access.location || '',
-              hostName: `${req.user.firstName} ${req.user.lastName}`,
-              hostEmail: req.user.email
+              hostName: `${creator.firstName} ${creator.lastName}`,
+              hostEmail: creator.email
             };
 
             await emailService.sendAccessInvitationEmail({
               invitedEmail: guest.email,
               invitedName: guest.name,
-              creatorName: `${req.user.firstName} ${req.user.lastName}`,
+              creatorName: `${creator.firstName} ${creator.lastName}`,
               accessTitle: access.eventName,
               accessType: access.type,
               startDate: access.startDate,
@@ -382,7 +388,7 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
               qrData: JSON.stringify(qrData), // Pasar como string para usar en la API pública
               eventImage: access.eventImage,
               additionalInfo: access.additionalInfo,
-              hostName: `${req.user.firstName} ${req.user.lastName}`,
+              hostName: `${creator.firstName} ${creator.lastName}`,
               companyName: company.name,
               companyLogo: company.logo,
               companyId: company._id,
@@ -1085,6 +1091,54 @@ router.get('/event-image/:accessId/:token', async (req, res) => {
       return res.status(401).json({ message: 'Token inválido o expirado' });
     }
     res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// ==================== MANUAL FINALIZATION ====================
+router.post('/:id/finalize', auth, authorize(['admin', 'host']), async (req, res) => {
+  try {
+    const access = await Access.findById(req.params.id);
+
+    if (!access) {
+      return res.status(404).json({ message: 'Acceso no encontrado' });
+    }
+
+    // Check if user has permission to finalize this access
+    if (req.user.role === 'host' && access.creatorId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'No tienes permiso para finalizar este acceso' });
+    }
+
+    // Check if access is already finalized or cancelled
+    if (access.status !== 'active') {
+      return res.status(400).json({ message: 'El acceso ya está finalizado o cancelado' });
+    }
+
+    // Update status to finalized
+    access.status = 'finalized';
+
+    // Update endDate to current date/time if noExpiration is true
+    if (access.settings?.noExpiration) {
+      access.endDate = new Date();
+    }
+
+    // Update all pending invitees to 'no-asistio'
+    if (access.invitedUsers && Array.isArray(access.invitedUsers)) {
+      access.invitedUsers.forEach(user => {
+        if (user.attendanceStatus === 'pendiente') {
+          user.attendanceStatus = 'no-asistio';
+        }
+      });
+    }
+
+    await access.save();
+    await access.populate('creatorId', 'firstName lastName email');
+
+    console.log(`✅ Manual finalization: ${access.eventName} (${access._id}) by user ${req.user._id}`);
+
+    res.status(200).json(access);
+  } catch (error) {
+    console.error('Manual finalization error:', error);
+    res.status(500).json({ message: 'Error interno del servidor', error: error.message });
   }
 });
 

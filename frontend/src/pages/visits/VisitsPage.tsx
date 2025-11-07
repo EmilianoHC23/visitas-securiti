@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { FaRegUser } from 'react-icons/fa';
-import { Visit, VisitStatus, User } from '../../types';
+import { Visit, VisitStatus, User, UserRole } from '../../types';
 import * as api from '../../services/api';
 import { CheckoutModal } from './CheckoutModal';
 import { VisitHistoryModal } from './VisitHistoryModal';
@@ -16,6 +16,7 @@ import { CheckCircleIcon, LogoutIcon, LoginIcon, ClockIcon } from '../../compone
 import { VscSignIn, VscSignOut } from 'react-icons/vsc';
 import { useNavigate } from 'react-router-dom';
 import jsQR from 'jsqr';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Hook para calcular y actualizar el tiempo de espera en tiempo real
 function useElapsedTime(startDate: string) {
@@ -948,6 +949,7 @@ const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits:
 
 
 export const VisitsPage: React.FC = () => {
+    const { user } = useAuth();
 
     const [visits, setVisits] = useState<Visit[]>([]);
     const [hosts, setHosts] = useState<User[]>([]);
@@ -1144,13 +1146,22 @@ export const VisitsPage: React.FC = () => {
         try {
             setLoading(true);
             const visitsData = await api.getVisits();
-            setVisits(visitsData.visits);
+            
+            // Filter visits for hosts - only show their own visits
+            let filteredVisits = visitsData.visits;
+            if (user?.role === UserRole.HOST) {
+                filteredVisits = visitsData.visits.filter((visit: Visit) => 
+                    visit.host && typeof visit.host === 'object' && visit.host._id === user._id
+                );
+            }
+            
+            setVisits(filteredVisits);
         } catch (error) {
             console.error("Failed to fetch visits:", error);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [user]);
 
     // Handler para el side panel de registro
     const handleVisitRegistration = async (visitData: any) => {

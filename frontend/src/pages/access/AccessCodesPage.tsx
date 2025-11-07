@@ -26,12 +26,13 @@ import {
 } from 'lucide-react';
 import { IoQrCodeOutline } from 'react-icons/io5';
 import { getAccesses, createAccess, updateAccess, cancelAccess, getUsers, checkBlacklist } from '../../services/api';
-import { Access, InvitedUser } from '../../types';
+import { Access, InvitedUser, UserRole } from '../../types';
 import { formatDate, formatDateTime } from '../../utils/dateUtils';
 import { DatePicker, TimePicker } from '../../components/common/DatePicker';
 import { useAuth } from '../../contexts/AuthContext';
 
 export const AccessCodesPage: React.FC = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'active' | 'finalized'>('active');
   const [accesses, setAccesses] = useState<Access[]>([]);
   const [filteredAccesses, setFilteredAccesses] = useState<Access[]>([]);
@@ -112,7 +113,16 @@ export const AccessCodesPage: React.FC = () => {
     setLoading(true);
     try {
       const data = await getAccesses();
-      setAccesses(data);
+      
+      // Filter accesses for hosts - only show their own accesses
+      let filteredData = data;
+      if (user?.role === UserRole.HOST) {
+        filteredData = data.filter((access: Access) => 
+          typeof access.creatorId === 'object' ? access.creatorId._id === user._id : access.creatorId === user._id
+        );
+      }
+      
+      setAccesses(filteredData);
     } catch (error) {
       console.error('Error loading accesses:', error);
     } finally {
@@ -144,6 +154,36 @@ export const AccessCodesPage: React.FC = () => {
     } catch (error) {
       console.error('Error canceling access:', error);
       alert('Error al cancelar el acceso');
+    }
+  };
+
+  const handleFinalize = async (accessId: string) => {
+    try {
+      // Call the finalize endpoint
+      const response = await fetch(`/api/access/${accessId}/finalize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to finalize access');
+      }
+
+      // Reload accesses to reflect the change
+      await loadAccesses();
+      
+      // Show success toast
+      window.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: 'Acceso finalizado correctamente', severity: 'success' }
+      }));
+    } catch (error) {
+      console.error('Error finalizing access:', error);
+      window.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: 'Error al finalizar el acceso', severity: 'error' }
+      }));
     }
   };
 
@@ -572,6 +612,7 @@ export const AccessCodesPage: React.FC = () => {
         <DetailsModal
           access={selectedAccess}
           onClose={() => setShowDetailsModal(false)}
+          onFinalize={handleFinalize}
         />
       )}
     </div>
@@ -865,6 +906,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
     sendEmail: true,
     enablePreRegistration: true,
     hostId: user?._id || '',
+    noExpiration: false,
   });
   const [invitedUsers, setInvitedUsers] = useState<Array<{
     name: string;
@@ -956,10 +998,11 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
           location: formData.location,
           eventImage: formData.eventImage,
           invitedUsers: validInvitedUsers,
+          hostId: formData.hostId,
           settings: {
             sendAccessByEmail: formData.sendEmail,
             enablePreRegistration: formData.enablePreRegistration,
-            noExpiration: false
+            noExpiration: formData.noExpiration
           },
           additionalInfo: formData.additionalInfo
         };
@@ -988,10 +1031,11 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
         location: formData.location,
         eventImage: formData.eventImage,
         invitedUsers: validInvitedUsers,
+        hostId: formData.hostId,
         settings: {
           sendAccessByEmail: formData.sendEmail,
           enablePreRegistration: formData.enablePreRegistration,
-          noExpiration: false
+          noExpiration: formData.noExpiration
         },
         additionalInfo: formData.additionalInfo
       });
@@ -1156,6 +1200,20 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                   </div>
                 </div>
 
+                {/* Sin Vencimiento Toggle */}
+                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <input
+                    type="checkbox"
+                    id="noExpiration"
+                    checked={formData.noExpiration}
+                    onChange={(e) => setFormData({ ...formData, noExpiration: e.target.checked })}
+                    className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-500"
+                  />
+                  <label htmlFor="noExpiration" className="text-xs sm:text-sm font-medium text-gray-700 cursor-pointer">
+                    Sin Vencimiento (el acceso no expirará automáticamente)
+                  </label>
+                </div>
+
                 {/* Fecha y hora de finalización */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -1168,6 +1226,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                       onChange={(value) => setFormData({ ...formData, endDate: value })}
                       min={formData.startDate || new Date().toISOString().split('T')[0]}
                       required
+                      disabled={formData.noExpiration}
                     />
                   </div>
                   <div>
@@ -1178,6 +1237,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                     <TimePicker
                       value={formData.endTime}
                       onChange={(value) => setFormData({ ...formData, endTime: value })}
+                      disabled={formData.noExpiration}
                     />
                   </div>
                 </div>
@@ -1897,9 +1957,11 @@ const EditAccessModal: React.FC<EditAccessModalProps> = ({ access, onClose, onSu
 interface DetailsModalProps {
   access: Access;
   onClose: () => void;
+  onFinalize: (accessId: string) => void;
 }
 
-const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose }) => {
+const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose, onFinalize }) => {
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const getAttendanceIcon = (status: string) => {
     switch (status) {
       case 'asistio':
@@ -2123,15 +2185,54 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose }) => {
             )}
           </div>
 
-          {/* Botón cerrar */}
-          <div className="flex justify-end mt-6">
+          {/* Botón cerrar y finalizar */}
+          <div className="flex justify-between items-center mt-6">
+            {access.status === 'active' && (
+              <button
+                onClick={() => setShowConfirmDialog(true)}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center"
+              >
+                <XCircle className="w-4 h-4 mr-2" />
+                Finalizar Acceso
+              </button>
+            )}
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors ml-auto"
             >
               Cerrar
             </button>
           </div>
+
+          {/* Confirmation Dialog */}
+          {showConfirmDialog && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
+              <div className="bg-white rounded-xl p-6 max-w-md mx-4 shadow-xl">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">¿Finalizar acceso?</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Esta acción marcará el acceso como finalizado y cambiará el estado de todos los invitados pendientes a "No asistió". Esta acción no se puede deshacer.
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setShowConfirmDialog(false)}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => {
+                      onFinalize(access._id);
+                      setShowConfirmDialog(false);
+                      onClose();
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    Finalizar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -404,6 +404,7 @@ export const createAccess = async (accessData: {
   endDate: Date | string;
   location?: string;
   eventImage?: string;
+  hostId?: string;
   invitedUsers?: Array<{
     name: string;
     email?: string;

@@ -26,6 +26,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { IoQrCodeOutline } from 'react-icons/io5';
+import { IoIosLink } from "react-icons/io";
 import { getAccesses, createAccess, updateAccess, cancelAccess, finalizeAccess, getUsers, checkBlacklist } from '../../services/api';
 import { Access, InvitedUser, UserRole } from '../../types';
 import { formatDate, formatDateTime } from '../../utils/dateUtils';
@@ -411,7 +412,7 @@ export const AccessCodesPage: React.FC = () => {
                         }}
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 rounded-lg hover:from-emerald-200 hover:to-emerald-300 transition-all text-xs font-medium"
                       >
-                        <Copy className="w-3.5 h-3.5" />
+                        <IoIosLink className="w-3.5 h-3.5" />
                         Copiar
                       </button>
                     )}
@@ -553,7 +554,7 @@ export const AccessCodesPage: React.FC = () => {
                             className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 rounded-lg hover:from-emerald-200 hover:to-emerald-300 transition-all text-sm font-medium shadow-sm"
                             title="Copiar enlace de pre-registro"
                           >
-                            <Copy className="w-4 h-4" />
+                            <IoIosLink className="w-4 h-4" />
                           </button>
                         )}
                         {access.status === 'active' && (
@@ -2139,7 +2140,7 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose, onFinalize
                       }}
                       className="flex items-center px-3 py-1.5 text-xs text-gray-900 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-100"
                     >
-                      <Copy className="w-3.5 h-3.5 mr-2" />
+                      <IoIosLink className="w-3.5 h-3.5 mr-2" />
                       Copiar enlace
                     </button>
                   </div>

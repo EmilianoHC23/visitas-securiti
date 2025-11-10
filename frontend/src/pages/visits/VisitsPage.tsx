@@ -14,7 +14,7 @@ import { VisitRegistrationSidePanel } from './VisitRegistrationSidePanel';
 import { ExitRegistrationSidePanel } from './ExitRegistrationSidePanel';
 import { CheckCircleIcon, LogoutIcon, LoginIcon, ClockIcon } from '../../components/common/icons';
 import { VscSignIn, VscSignOut } from 'react-icons/vsc';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import jsQR from 'jsqr';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -950,6 +950,7 @@ const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits:
 
 export const VisitsPage: React.FC = () => {
     const { user } = useAuth();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const [visits, setVisits] = useState<Visit[]>([]);
     const [hosts, setHosts] = useState<User[]>([]);
@@ -976,6 +977,17 @@ export const VisitsPage: React.FC = () => {
         
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
+
+    // Detectar parámetro openPanel en la URL para abrir el side panel automáticamente
+    useEffect(() => {
+        const openPanel = searchParams.get('openPanel');
+        if (openPanel === 'true') {
+            setIsModalOpen(true);
+            // Limpiar el parámetro de la URL
+            searchParams.delete('openPanel');
+            setSearchParams(searchParams);
+        }
+    }, [searchParams, setSearchParams]);
     
     // Nuevos modales
     const [pendingModalVisit, setPendingModalVisit] = useState<Visit | null>(null);

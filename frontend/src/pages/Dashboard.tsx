@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Visit, VisitStatus, DashboardStats } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -954,35 +954,91 @@ export const Dashboard: React.FC = () => {
                             <h6 className="mb-3 fw-semibold">Visitantes frecuentes</h6>
                             {frequentVisitors.length > 0 ? (
                                 (() => {
+                                    const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6'];
                                     const total = frequentVisitors.reduce((s, v) => s + v.count, 0) || 1;
+                                    const chartData = frequentVisitors.map((v, idx) => ({
+                                        name: v.name,
+                                        value: v.count,
+                                        percent: Math.round((v.count / total) * 100),
+                                        company: v.company,
+                                        color: COLORS[idx % COLORS.length]
+                                    }));
+
+                                    const renderCustomLabel = (entry: any) => {
+                                        return `${entry.percent}%`;
+                                    };
+
                                     return (
-                                        <div className="space-y-3">
-                                            {frequentVisitors.map(v => {
-                                                const pct = Math.round((v.count / total) * 100);
-                                                return (
-                                                    <div key={v.id} className="d-flex align-items-center justify-content-between mb-3">
-                                                        <div className="d-flex align-items-center">
-                                                            <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center me-3">
-                                                                {v.photo ? (
-                                                                    <img src={v.photo} alt={v.name} className="w-10 h-10 object-cover" />
-                                                                ) : (
-                                                                    <FaRegUser className="w-6 h-6 text-gray-400" />
-                                                                )}
-                                                            </div>
-                                                            <div style={{ maxWidth: 220 }}>
-                                                                <div className="text-sm fw-medium text-gray-800 truncate">{v.name}</div>
-                                                                <div className="text-xs text-muted truncate">{v.company}</div>
+                                        <div className="d-flex flex-column align-items-center">
+                                            {/* Gráfico circular */}
+                                            <ResponsiveContainer width="100%" height={280}>
+                                                <PieChart>
+                                                    <Pie
+                                                        data={chartData}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        labelLine={false}
+                                                        label={renderCustomLabel}
+                                                        outerRadius={90}
+                                                        innerRadius={50}
+                                                        fill="#8884d8"
+                                                        dataKey="value"
+                                                        paddingAngle={3}
+                                                    >
+                                                        {chartData.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip 
+                                                        formatter={(value: any, name: string, props: any) => [
+                                                            `${value} visitas (${props.payload.percent}%)`,
+                                                            props.payload.company || 'Sin empresa'
+                                                        ]}
+                                                        contentStyle={{ 
+                                                            background: 'rgba(255, 255, 255, 0.98)', 
+                                                            border: '1px solid rgba(0,0,0,0.1)',
+                                                            borderRadius: '8px',
+                                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                                        }}
+                                                    />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+
+                                            {/* Leyenda personalizada */}
+                                            <div className="w-100 mt-3" style={{ maxHeight: 200, overflowY: 'auto' }}>
+                                                <div className="row g-2">
+                                                    {chartData.map((item, idx) => (
+                                                        <div key={idx} className="col-12">
+                                                            <div className="d-flex align-items-center justify-content-between p-2 rounded" style={{ background: 'rgba(0,0,0,0.02)' }}>
+                                                                <div className="d-flex align-items-center gap-2 flex-1" style={{ minWidth: 0 }}>
+                                                                    <div 
+                                                                        style={{ 
+                                                                            width: 12, 
+                                                                            height: 12, 
+                                                                            borderRadius: '50%', 
+                                                                            backgroundColor: item.color,
+                                                                            flexShrink: 0
+                                                                        }} 
+                                                                    />
+                                                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                                                        <div className="text-sm fw-medium text-gray-800 text-truncate" title={item.name}>
+                                                                            {item.name}
+                                                                        </div>
+                                                                        {item.company && (
+                                                                            <div className="text-xs text-muted text-truncate" title={item.company}>
+                                                                                {item.company}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="text-sm fw-semibold text-gray-700 ms-2" style={{ flexShrink: 0 }}>
+                                                                    {item.value} · {item.percent}%
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div style={{ width: 140 }} className="text-end">
-                                                            <div className="text-sm text-gray-600">{v.count} · {pct}%</div>
-                                                            <div className="w-full bg-gray-100 rounded-full h-2 mt-1 overflow-hidden">
-                                                                <div className="h-2 bg-gradient-to-r from-purple-500 to-indigo-600" style={{ width: `${pct}%` }} />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
                                     );
                                 })()
@@ -1000,22 +1056,76 @@ export const Dashboard: React.FC = () => {
                             {frequentCompanies.length > 0 ? (
                                 (() => {
                                     const total = frequentCompanies.reduce((s, c) => s + c.count, 0) || 1;
+                                    const maxCount = Math.max(...frequentCompanies.map(c => c.count));
+                                    
                                     return (
-                                        <div className="space-y-3">
-                                            {frequentCompanies.map(fc => {
-                                                const pct = Math.round((fc.count / total) * 100);
-                                                return (
-                                                    <div key={fc.company} className="mb-3">
-                                                        <div className="d-flex justify-content-between items-center mb-1">
-                                                            <div className="text-sm text-gray-700 font-medium truncate" style={{maxWidth: '65%'}}>{fc.company}</div>
-                                                            <div className="text-sm text-gray-600">{fc.count} · {pct}%</div>
-                                                        </div>
-                                                        <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                                                            <div className="h-2 bg-gradient-to-r from-blue-500 to-blue-700" style={{ width: `${pct}%` }} />
-                                                        </div>
+                                        <div className="w-100">
+                                            {/* Gráfico de barras horizontales con gradiente */}
+                                            <ResponsiveContainer width="100%" height={280}>
+                                                <BarChart 
+                                                    data={frequentCompanies.map(fc => ({
+                                                        name: fc.company.length > 20 ? fc.company.substring(0, 20) + '...' : fc.company,
+                                                        fullName: fc.company,
+                                                        value: fc.count,
+                                                        percent: Math.round((fc.count / total) * 100)
+                                                    }))}
+                                                    layout="vertical"
+                                                    margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                                                >
+                                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                                                    <XAxis type="number" allowDecimals={false} />
+                                                    <YAxis 
+                                                        type="category" 
+                                                        dataKey="name" 
+                                                        width={120}
+                                                        tick={{ fontSize: 12 }}
+                                                    />
+                                                    <Tooltip 
+                                                        formatter={(value: any, name: string, props: any) => [
+                                                            `${value} visitas (${props.payload.percent}%)`,
+                                                            props.payload.fullName
+                                                        ]}
+                                                        contentStyle={{ 
+                                                            background: 'rgba(255, 255, 255, 0.98)', 
+                                                            border: '1px solid rgba(0,0,0,0.1)',
+                                                            borderRadius: '8px',
+                                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                                        }}
+                                                        cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
+                                                    />
+                                                    <Bar 
+                                                        dataKey="value" 
+                                                        fill="url(#colorCompanies)" 
+                                                        radius={[0, 8, 8, 0]}
+                                                        maxBarSize={28}
+                                                    >
+                                                        <defs>
+                                                            <linearGradient id="colorCompanies" x1="0" y1="0" x2="1" y2="0">
+                                                                <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                                                                <stop offset="100%" stopColor="#8b5cf6" stopOpacity={1}/>
+                                                            </linearGradient>
+                                                        </defs>
+                                                    </Bar>
+                                                </BarChart>
+                                            </ResponsiveContainer>
+
+                                            {/* Resumen estadístico debajo */}
+                                            <div className="mt-3 pt-3 border-top">
+                                                <div className="row g-2 text-center">
+                                                    <div className="col-4">
+                                                        <div className="text-muted small">Total empresas</div>
+                                                        <div className="fw-bold text-primary h5 mb-0">{frequentCompanies.length}</div>
                                                     </div>
-                                                );
-                                            })}
+                                                    <div className="col-4">
+                                                        <div className="text-muted small">Total visitas</div>
+                                                        <div className="fw-bold text-success h5 mb-0">{total}</div>
+                                                    </div>
+                                                    <div className="col-4">
+                                                        <div className="text-muted small">Top empresa</div>
+                                                        <div className="fw-bold text-purple h5 mb-0">{maxCount}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     );
                                 })()

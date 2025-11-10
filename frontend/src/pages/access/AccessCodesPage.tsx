@@ -2185,9 +2185,14 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose, onFinalize
               <div className="flex items-start">
                 <Calendar className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Fecha</p>
+                  <p className="text-sm font-medium text-gray-700">
+                    {access.noExpiration ? 'Fecha de inicio' : 'Fecha'}
+                  </p>
                   <p className="text-sm text-gray-600">
-                    {formatDate(access.startDate)} - {formatDate(access.endDate)}
+                    {access.noExpiration 
+                      ? formatDate(access.startDate)
+                      : `${formatDate(access.startDate)} - ${formatDate(access.endDate)}`
+                    }
                   </p>
                 </div>
               </div>

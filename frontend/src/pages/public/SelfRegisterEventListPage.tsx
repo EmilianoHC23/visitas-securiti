@@ -15,6 +15,7 @@ interface AccessEvent {
   eventImage?: string;
   startDate: string;
   endDate: string;
+  noExpiration?: boolean;
   creatorId?: {
     firstName: string;
     lastName: string;
@@ -193,7 +194,7 @@ export const SelfRegisterEventListPage: React.FC = () => {
                         <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
                         <span className="text-sm">
                           {formatDate(access.startDate)}
-                          {access.endDate && access.endDate !== access.startDate && ` - ${formatDate(access.endDate)}`}
+                          {!access.noExpiration && access.endDate && access.endDate !== access.startDate && ` - ${formatDate(access.endDate)}`}
                         </span>
                       </div>
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts';
-import { Visit, VisitStatus, DashboardStats } from '../types';
+import { Visit, VisitStatus, DashboardStats, Access } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { QrIcon, VisitsIcon, AgendaIcon } from '../components/common/icons';
@@ -288,7 +288,7 @@ const UpcomingToday: React.FC = () => {
     const startIso = start.toISOString();
     const endIso = end.toISOString();
 
-    const { data, isLoading, error } = useQuery<Visit[], Error>({
+    const { data: visitsData, isLoading: visitsLoading, error: visitsError } = useQuery<Visit[], Error>({
         queryKey: ['agenda', 'today', startIso, endIso],
         queryFn: async () => {
             const res = await api.getAgenda({ from: startIso, to: endIso });
@@ -297,10 +297,26 @@ const UpcomingToday: React.FC = () => {
         }
     });
 
-    const upcoming = (data || [])
+    const { data: accessesData, isLoading: accessesLoading } = useQuery<Access[], Error>({
+        queryKey: ['accessAgenda', 'today', startIso, endIso],
+        queryFn: async () => {
+            const res = await api.getAccessesForAgenda(startIso, endIso);
+            return Array.isArray(res) ? res as Access[] : [];
+        }
+    });
+
+    const upcoming = (visitsData || [])
         .filter(v => v.status !== VisitStatus.COMPLETED)
         .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())
         .slice(0, 5);
+
+    const upcomingAccesses = (accessesData || [])
+        .filter(a => a.status === 'active')
+        .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+        .slice(0, 3);
+
+    const isLoading = visitsLoading || accessesLoading;
+    const error = visitsError;
 
     return (
         <div className="card shadow-sm border-0 mb-3">
@@ -310,7 +326,7 @@ const UpcomingToday: React.FC = () => {
                     <div className="text-muted">Cargando...</div>
                 ) : error ? (
                     <div className="text-danger small">No se pudo cargar la agenda</div>
-                ) : upcoming.length === 0 ? (
+                ) : upcoming.length === 0 && upcomingAccesses.length === 0 ? (
                     <div className="text-muted small">No hay llegadas pendientes para hoy</div>
                 ) : (
                     <ul className="list-unstyled mb-0">
@@ -325,6 +341,71 @@ const UpcomingToday: React.FC = () => {
                                     <div className="flex-1">
                                         <div className="fw-semibold text-dark" style={{ lineHeight: 1.2 }}>{v.visitorName} · <span className="text-muted fw-normal">{time}</span></div>
                                         <div className="small text-muted" style={{ lineHeight: 1.2 }}>{v.visitorCompany || 'Sin empresa'} {hostName ? `· Host: ${hostName}` : ''}</div>
+                                    </div>
+                                </li>
+                            );
+                        })}
+                        {upcomingAccesses.map(access => {
+                            const time = new Date(access.startDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                            const creatorName = access.creatorId ? `${(access.creatorId as any).firstName} ${(access.creatorId as any).lastName || ''}`.trim() : '';
+                            const invitedCount = access.invitedUsers?.length || 0;
+                            const attendedCount = access.invitedUsers?.filter(u => u.attendanceStatus === 'asistio').length || 0;
+                            
+                            return (
+                                <li key={access._id} className="py-2 border-bottom last:border-bottom-0">
+                                    <div className="d-flex align-items-center">
+                                        <span className="icon-tile me-3" style={{ width: 40, height: 40 }}>
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </span>
+                                        <div className="flex-1">
+                                            <div className="fw-semibold text-dark" style={{ lineHeight: 1.2 }}>
+                                                {access.eventName} · <span className="text-muted fw-normal">{time}</span>
+                                            </div>
+                                            <div className="small text-muted" style={{ lineHeight: 1.2 }}>
+                                                {access.location || 'Sin ubicación'} {creatorName ? `· Host: ${creatorName}` : ''}
+                                            </div>
+                                            {invitedCount > 0 && (
+                                                <div className="small mt-1" style={{ lineHeight: 1.4 }}>
+                                                    <span className="badge bg-primary bg-opacity-10 text-primary me-1" style={{ fontSize: '0.7rem', fontWeight: 500 }}>
+                                                        {invitedCount} invitado{invitedCount !== 1 ? 's' : ''}
+                                                    </span>
+                                                    {attendedCount > 0 && (
+                                                        <span className="badge bg-success bg-opacity-10 text-success" style={{ fontSize: '0.7rem', fontWeight: 500 }}>
+                                                            {attendedCount} registrado{attendedCount !== 1 ? 's' : ''}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {invitedCount > 0 && (
+                                                <div className="mt-2" style={{ fontSize: '0.75rem' }}>
+                                                    <details className="text-muted">
+                                                        <summary className="cursor-pointer hover:text-primary" style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                            Ver invitados ({invitedCount})
+                                                        </summary>
+                                                        <ul className="list-unstyled mt-2 ps-3">
+                                                            {access.invitedUsers.map((guest, idx) => (
+                                                                <li key={idx} className="d-flex align-items-center py-1">
+                                                                    <span className={`me-2 ${guest.attendanceStatus === 'asistio' ? 'text-success' : 'text-muted'}`}>
+                                                                        {guest.attendanceStatus === 'asistio' ? '✓' : '○'}
+                                                                    </span>
+                                                                    <span className="flex-1">
+                                                                        {guest.name}
+                                                                        {guest.company && <span className="text-muted"> · {guest.company}</span>}
+                                                                    </span>
+                                                                    {guest.checkInTime && (
+                                                                        <span className="text-muted small">
+                                                                            {new Date(guest.checkInTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                                                        </span>
+                                                                    )}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </details>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </li>
                             );

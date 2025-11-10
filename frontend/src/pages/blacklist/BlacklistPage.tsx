@@ -159,8 +159,8 @@ export const BlacklistPage: React.FC = () => {
         {/* Header */}
         <div className={isMobile ? "mb-4" : "mb-8"}>
           <div className={`flex items-center ${isMobile ? 'gap-2 mb-2' : 'gap-3 mb-2'}`}>
-              <div className={`${isMobile ? 'p-2' : 'p-3'} bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md`}>
-                <ShieldBan className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-gray-700`} />
+              <div className={`${isMobile ? 'p-2' : 'p-3'} bg-gradient-to-br from-gray-800 via-gray-900 to-black rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg`}>
+                <UserX className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-white`} />
               </div>
             <div className="min-w-0">
               <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-gray-900`}>Lista Negra</h1>

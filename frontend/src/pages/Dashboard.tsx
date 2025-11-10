@@ -358,19 +358,7 @@ export const Dashboard: React.FC = () => {
     const [period, setPeriod] = useState<'week' | 'month'>('week');
     const [prevPeriodSums, setPrevPeriodSums] = useState<{ pending?: number | undefined | null; approved?: number | undefined | null; checkedIn?: number | undefined | null; completed?: number | undefined | null; }>({});
     const [sparkFilter, setSparkFilter] = useState<'pending' | 'approved' | 'checkedIn' | 'completed' | null>(null);
-    const [visibleSeries, setVisibleSeries] = useState<{ pending: boolean; approved: boolean; checkedIn: boolean; completed: boolean }>({ pending: true, approved: true, checkedIn: true, completed: true });
 
-    // Ensure at least one series remains visible. Prevent toggling off the last visible series.
-    const toggleSeries = (key: keyof typeof visibleSeries) => {
-        setVisibleSeries(s => {
-            const next = { ...s, [key]: !s[key] };
-            // if all would become false, ignore the toggle and keep current state
-            if (!next.pending && !next.approved && !next.checkedIn && !next.completed) {
-                return s;
-            }
-            return next;
-        });
-    };
     // Use React Query to fetch data and keep it cached/refetched in background
     const statsQuery = useQuery<DashboardStats, Error>({ queryKey: ['dashboardStats'], queryFn: api.getDashboardStats });
     const recent5Query = useQuery<Visit[], Error>({ queryKey: ['recentVisits', 5], queryFn: () => api.getRecentVisits(5) });
@@ -454,10 +442,8 @@ export const Dashboard: React.FC = () => {
                 const d = new Date(k + 'T00:00:00');
                 seriesMap.set(k, {
                     day: d.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit' }),
-                    pending: 0,
-                    approved: 0,
-                    checkedIn: 0,
-                    completed: 0
+                    completed: 0,
+                    rejected: 0
                 });
             });
 
@@ -467,20 +453,14 @@ export const Dashboard: React.FC = () => {
                 if (!seriesMap.has(key)) return;
                 const obj = seriesMap.get(key);
                 switch (v.status) {
-                    case VisitStatus.PENDING:
-                        obj.pending = (obj.pending || 0) + 1;
-                        break;
-                    case VisitStatus.APPROVED:
-                        obj.approved = (obj.approved || 0) + 1;
-                        break;
-                    case VisitStatus.CHECKED_IN:
-                        obj.checkedIn = (obj.checkedIn || 0) + 1;
-                        break;
                     case VisitStatus.COMPLETED:
                         obj.completed = (obj.completed || 0) + 1;
                         break;
+                    case VisitStatus.REJECTED:
+                        obj.rejected = (obj.rejected || 0) + 1;
+                        break;
                     default:
-                        obj.completed = (obj.completed || 0) + 1;
+                        // Ignorar otros estados
                         break;
                 }
             });
@@ -535,10 +515,8 @@ export const Dashboard: React.FC = () => {
 
     // Current period sums (derived from analyticsStatusData)
     const currSums = {
-        pending: analyticsStatusData.reduce((s, d) => s + (d.pending || 0), 0),
-        approved: analyticsStatusData.reduce((s, d) => s + (d.approved || 0), 0),
-        checkedIn: analyticsStatusData.reduce((s, d) => s + (d.checkedIn || 0), 0),
         completed: analyticsStatusData.reduce((s, d) => s + (d.completed || 0), 0),
+        rejected: analyticsStatusData.reduce((s, d) => s + (d.rejected || 0), 0),
     };
 
     const calcDelta = (curr: number, prev: number | undefined | null) : number | null | undefined => {
@@ -619,8 +597,6 @@ export const Dashboard: React.FC = () => {
                     value={stats.checkedIn}
                     sparkData={analyticsStatusData && analyticsStatusData.length > 0 ? analyticsStatusData.map(d => d.checkedIn || 0) : []}
                     sparkColor="#34d399"
-                    deltaPercent={calcDelta(currSums.checkedIn, prevPeriodSums.checkedIn)}
-                    deltaTooltip={`Cambio respecto al periodo anterior: ${period === 'week' ? '7 días previos' : '30 días previos'}`}
                     onSparkClick={() => setSparkFilter('checkedIn')}
                     sparkTitle="Haz clic para filtrar actividad: Visitas Activas"
                     isActive={sparkFilter === 'checkedIn'}
@@ -648,8 +624,6 @@ export const Dashboard: React.FC = () => {
                     value={stats.pending}
                     sparkData={analyticsStatusData && analyticsStatusData.length > 0 ? analyticsStatusData.map(d => d.pending || 0) : []}
                     sparkColor="#f6ad55"
-                    deltaPercent={calcDelta(currSums.pending, prevPeriodSums.pending)}
-                    deltaTooltip={`Cambio respecto al periodo anterior: ${period === 'week' ? '7 días previos' : '30 días previos'}`}
                     onSparkClick={() => setSparkFilter('pending')}
                     sparkTitle="Haz clic para filtrar actividad: Pendientes"
                     isActive={sparkFilter === 'pending'}
@@ -672,8 +646,6 @@ export const Dashboard: React.FC = () => {
                     value={stats.approved}
                     sparkData={analyticsStatusData && analyticsStatusData.length > 0 ? analyticsStatusData.map(d => d.approved || 0) : []}
                     sparkColor="#60a5fa"
-                    deltaPercent={calcDelta(currSums.approved, prevPeriodSums.approved)}
-                    deltaTooltip={`Cambio respecto al periodo anterior: ${period === 'week' ? '7 días previos' : '30 días previos'}`}
                     onSparkClick={() => setSparkFilter('approved')}
                     sparkTitle="Haz clic para filtrar actividad: Pre-aprobadas"
                     isActive={sparkFilter === 'approved'}
@@ -818,38 +790,21 @@ export const Dashboard: React.FC = () => {
                                     <button onClick={() => setPeriod('week')} className={`px-3 py-1 rounded-lg text-sm ${period === 'week' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700'}`}>7 días</button>
                                     <button onClick={() => setPeriod('month')} className={`px-3 py-1 rounded-lg text-sm ${period === 'month' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700'}`}>30 días</button>
                                 </div>
-
-                                {/* Series toggles */}
-                                <div className="d-none d-sm-flex align-items-center gap-2 me-2" aria-hidden={false}>
-                                    <button className={`btn btn-sm ${visibleSeries.pending ? 'btn-outline-warning' : 'btn-outline-secondary'}`} onClick={() => toggleSeries('pending')} aria-pressed={visibleSeries.pending} aria-label="Alternar pendientes" title="Mostrar/Ocultar Pendientes">
-                                        <span style={{ width: 10, height: 10, background: '#f6ad55', display: 'inline-block', marginRight: 6, borderRadius: 2 }} />Pendientes
-                                    </button>
-                                    <button className={`btn btn-sm ${visibleSeries.approved ? 'btn-outline-primary' : 'btn-outline-secondary'}`} onClick={() => toggleSeries('approved')} aria-pressed={visibleSeries.approved} aria-label="Alternar aprobadas" title="Mostrar/Ocultar Aprobadas">
-                                        <span style={{ width: 10, height: 10, background: '#60a5fa', display: 'inline-block', marginRight: 6, borderRadius: 2 }} />Aprobadas
-                                    </button>
-                                    <button className={`btn btn-sm ${visibleSeries.checkedIn ? 'btn-outline-success' : 'btn-outline-secondary'}`} onClick={() => toggleSeries('checkedIn')} aria-pressed={visibleSeries.checkedIn} aria-label="Alternar check-ins" title="Mostrar/Ocultar Check-ins">
-                                        <span style={{ width: 10, height: 10, background: '#34d399', display: 'inline-block', marginRight: 6, borderRadius: 2 }} />Check-ins
-                                    </button>
-                                    <button className={`btn btn-sm ${visibleSeries.completed ? 'btn-outline-secondary' : 'btn-outline-light'}`} onClick={() => toggleSeries('completed')} aria-pressed={visibleSeries.completed} aria-label="Alternar completadas" title="Mostrar/Ocultar Completadas">
-                                        <span style={{ width: 10, height: 10, background: '#9ca3af', display: 'inline-block', marginRight: 6, borderRadius: 2 }} />Completadas
-                                    </button>
-                                </div>
                             </div>
                             <div style={{ width: '100%', height: 300 }}>
                                 <ResponsiveContainer>
                                     <BarChart
                                         data={analyticsStatusData.length > 0 ? analyticsStatusData : [
-                                        { day: 'Lun', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
-                                        { day: 'Mar', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
-                                        { day: 'Mié', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
-                                        { day: 'Jue', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
-                                        { day: 'Vie', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
-                                        { day: 'Sáb', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
-                                        { day: 'Dom', pending: 0, approved: 0, checkedIn: 0, completed: 0 },
+                                        { day: 'Lun', completed: 0, rejected: 0 },
+                                        { day: 'Mar', completed: 0, rejected: 0 },
+                                        { day: 'Mié', completed: 0, rejected: 0 },
+                                        { day: 'Jue', completed: 0, rejected: 0 },
+                                        { day: 'Vie', completed: 0, rejected: 0 },
+                                        { day: 'Sáb', completed: 0, rejected: 0 },
+                                        { day: 'Dom', completed: 0, rejected: 0 },
                                     ]}
-                                        // visual tweaks to improve bar appearance at different widths
-                                        barCategoryGap="20%" // spacing between categories
-                                        barGap={6} // gap between bars of same category
+                                        barCategoryGap="20%"
+                                        barGap={6}
                                     >
                                         <CartesianGrid strokeDasharray="3 3" vertical={false}/>
                                         <XAxis dataKey="day" tick={{fontSize: 12}}/>
@@ -859,16 +814,13 @@ export const Dashboard: React.FC = () => {
                                             cursor={{fill: 'rgba(34, 131, 229, 0.06)'}} 
                                             labelFormatter={(label) => `${label}`}
                                             content={({ active, payload, label }: any) => {
-                                                if (!active || !payload) return null;
-                                                // payload contains items for each visible dataKey
-                                                const items = payload.filter((p: any) => p && p.dataKey && visibleSeries[(p.dataKey as keyof typeof visibleSeries)]);
-                                                if (!items || items.length === 0) return null;
+                                                if (!active || !payload || !payload.length) return null;
                                                 return (
                                                     <div className="shadow rounded bg-white p-2" style={{ minWidth: 140 }}>
                                                         <div className="fw-semibold mb-1">{label}</div>
-                                                        {items.map((p: any) => (
+                                                        {payload.map((p: any) => (
                                                             <div key={p.dataKey} className="d-flex justify-content-between small" style={{ color: p.fill }}>
-                                                                <div>{p.name || p.dataKey}</div>
+                                                                <div>{p.name}</div>
                                                                 <div className="fw-bold">{p.value}</div>
                                                             </div>
                                                         ))}
@@ -877,11 +829,8 @@ export const Dashboard: React.FC = () => {
                                             }}
                                         />
 
-                                        {/* Bars with visibility and stacked toggle */}
-                                        <Bar dataKey="pending" name="Pendientes" hide={!visibleSeries.pending} fill="#f6ad55" radius={[6, 6, 0, 0]} maxBarSize={36} />
-                                        <Bar dataKey="approved" name="Aprobadas" hide={!visibleSeries.approved} fill="#60a5fa" radius={[6, 6, 0, 0]} maxBarSize={36} />
-                                        <Bar dataKey="checkedIn" name="Check-ins" hide={!visibleSeries.checkedIn} fill="#34d399" radius={[6, 6, 0, 0]} maxBarSize={36} />
-                                        <Bar dataKey="completed" name="Completadas" hide={!visibleSeries.completed} fill="#9ca3af" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                                        <Bar dataKey="completed" name="Completadas" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                                        <Bar dataKey="rejected" name="Rechazadas" fill="#ef4444" radius={[6, 6, 0, 0]} maxBarSize={36} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>

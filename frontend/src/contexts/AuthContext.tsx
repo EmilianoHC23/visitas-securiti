@@ -7,6 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  updateUser: (updatedUser: User) => void;
   // loading: true during login/logout actions
   loading: boolean;
   // initializing: true while performing initial token check on app startup
@@ -60,11 +61,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('securitiToken');
   }, []);
 
+  const updateUser = useCallback((updatedUser: User) => {
+    setUser(updatedUser);
+  }, []);
+
   const value = {
     user,
     isAuthenticated: !!user,
     login,
     logout,
+    updateUser,
     // expose both flags: 'initializing' for app startup, 'loading' for auth actions
     initializing,
     loading,

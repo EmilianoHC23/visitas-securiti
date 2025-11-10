@@ -7,6 +7,7 @@ import { useToast } from '../common/Toast';
 import { ChevronDownIcon, LogoutIcon } from '../common/icons';
 import { FaX } from 'react-icons/fa6';
 import { useLocation } from 'react-router-dom';
+import { ProfileModal } from './ProfileModal';
 
 const getPageTitle = (pathname: string, isMobile: boolean = false): string => {
     if (isMobile) {
@@ -105,6 +106,7 @@ export const Header: React.FC<{
     const { showToast } = useToast();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [btnHover, setBtnHover] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const location = useLocation();
     const pageTitle = getPageTitle(location.pathname, isMobile);
@@ -325,7 +327,16 @@ export const Header: React.FC<{
                                 style={{ transformOrigin: 'top', right: 0, minWidth: 200 }}
                                 className="dropdown-menu dropdown-menu-end show mt-2 shadow position-absolute"
                             >
-                                <motion.a variants={itemVariants} href="#profile" className="dropdown-item">Mi Perfil</motion.a>
+                                <motion.button
+                                    variants={itemVariants}
+                                    onClick={() => {
+                                        setIsProfileModalOpen(true);
+                                        setDropdownOpen(false);
+                                    }}
+                                    className="dropdown-item"
+                                >
+                                    Mi Perfil
+                                </motion.button>
 
                                 <motion.button
                                     variants={itemVariants}
@@ -355,6 +366,14 @@ export const Header: React.FC<{
                     </AnimatePresence>
                 </div>
             </div>
+
+            {/* Profile Modal */}
+            <ProfileModal
+                isOpen={isProfileModalOpen}
+                onClose={() => setIsProfileModalOpen(false)}
+                onSuccess={(message) => showToast(message, 'success')}
+                onError={(message) => showToast(message, 'error')}
+            />
         </nav>
     );
 };

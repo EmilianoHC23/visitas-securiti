@@ -166,3 +166,74 @@ body {
 .react-aria-Popover[data-exiting] {
   animation: fadeIn 150ms ease-in reverse;
 }
+
+/* Estilos para el slider de zoom del editor de imágenes */
+input[type="range"].slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+}
+
+input[type="range"].slider-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 3px solid white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+}
+
+input[type="range"].slider-thumb::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+input[type="range"].slider-thumb::-webkit-slider-thumb:active {
+  transform: scale(1.2);
+}
+
+input[type="range"].slider-thumb::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 3px solid white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+}
+
+input[type="range"].slider-thumb::-moz-range-thumb:hover {
+  transform: scale(1.1);
+}
+
+input[type="range"].slider-thumb::-moz-range-thumb:active {
+  transform: scale(1.2);
+}
+
+/* Estilos para el editor de recorte de imágenes */
+.crop-handle {
+  transition: opacity 0.2s ease;
+}
+
+.crop-handle:active {
+  opacity: 1 !important;
+}
+
+/* Prevenir selección de texto durante el arrastre */
+.select-none {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Mejorar el rendimiento de las transformaciones */
+.transform-gpu {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
+}

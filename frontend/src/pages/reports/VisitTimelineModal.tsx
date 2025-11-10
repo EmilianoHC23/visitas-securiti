@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Visit } from '../../types';
 import { X, Clock, CheckCircle, UserCheck, LogOut, XCircle } from 'lucide-react';
 import { FaRegUser } from 'react-icons/fa';
+import { TbTimelineEventPlus } from 'react-icons/tb';
 import { formatDateTime, formatShortDate, formatTime } from '../../utils/dateUtils';
 
 interface VisitTimelineModalProps {
@@ -110,11 +111,14 @@ export const VisitTimelineModal: React.FC<VisitTimelineModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-3 sm:p-4">
       <div className={`bg-white rounded-2xl shadow-2xl w-full ${isMobile ? 'max-w-sm max-h-[85vh]' : 'max-w-5xl max-h-[90vh]'} overflow-hidden`}>
         {/* Header */}
-        <div className={`bg-gradient-to-r from-cyan-500 to-blue-600 ${isMobile ? 'px-4 py-3' : 'px-6 py-4'} flex items-center justify-between`}>
-          <h2 className={`${isMobile ? 'text-base' : 'text-xl'} font-bold text-white`}>Historial de Visita</h2>
+        <div className={`bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 ${isMobile ? 'px-4 py-3' : 'px-6 py-4'} flex items-center justify-between`}>
+          <h2 className={`${isMobile ? 'text-base' : 'text-xl'} font-bold text-white flex items-center gap-2`}>
+            <TbTimelineEventPlus className={isMobile ? "w-5 h-5" : "w-6 h-6"} />
+            Historial de Visita
+          </h2>
           <button
             onClick={onClose}
-            className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+            className="text-white hover:bg-white/10 rounded-full p-2 transition-colors"
           >
             <X className={isMobile ? "w-4 h-4" : "w-5 h-5"} />
           </button>

@@ -216,11 +216,11 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-900 via-cyan-600 to-cyan-500">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500">
           <h2 className="text-xl font-bold text-white flex items-center gap-2"><VscSignOut className="w-5 h-5" />Registrar Salida</h2>
           <button
             onClick={onClose}
-            className="text-white hover:text-gray-200 rounded-full p-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-cyan-700"
+            className="text-white bg-white/0 hover:bg-white/10 rounded-full p-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/40"
             aria-label="Cerrar"
           >
             <X className="w-5 h-5" aria-hidden={true} />
@@ -241,10 +241,10 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                     setShowQrScanner(true);
                     startCamera();
                   }}
-                  className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-cyan-500 hover:bg-cyan-50 transition-all flex items-center gap-4 group"
+                  className="w-full p-6 border-2 border-gray-200 rounded-xl hover:border-gray-900 hover:bg-gray-50 transition-all flex items-center gap-4 group"
                 >
-                  <div className="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center group-hover:bg-cyan-500 transition-colors">
-                    <MdOutlineQrCodeScanner className="w-6 h-6 text-cyan-600 group-hover:text-white" aria-hidden={true} />
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-gray-900 transition-colors">
+                    <MdOutlineQrCodeScanner className="w-6 h-6 text-gray-600 group-hover:text-white" aria-hidden={true} />
                   </div>
                   <div className="text-left">
                     <h3 className="font-semibold text-gray-800">Escanear QR</h3>
@@ -254,7 +254,7 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
 
                 {/* Buscador manual */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
                     O busca manualmente:
                   </label>
                   <input
@@ -262,7 +262,7 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                     placeholder="Buscar por nombre, email o empresa..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all hover:border-gray-400"
                   />
                 </div>
 
@@ -274,13 +274,13 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                         <button
                           key={visit._id}
                           onClick={() => setSelectedVisit(visit)}
-                          className="w-full p-3 border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all text-left flex items-center gap-3"
+                          className="w-full p-3 border-2 border-gray-200 rounded-xl hover:border-gray-900 hover:bg-gray-50 transition-all text-left flex items-center gap-3"
                         >
-                          <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center flex-shrink-0">
+                          <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center flex-shrink-0">
                             {visit.visitorPhoto ? (
                               <img src={visit.visitorPhoto} alt={visit.visitorName} className="w-full h-full object-cover" />
                             ) : (
-                              <FaRegUser className="w-6 h-6 text-purple-600" />
+                              <FaRegUser className="w-6 h-6 text-gray-600" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -319,11 +319,11 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                     
                     {/* QR Frame Overlay */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-64 h-64 border-4 border-purple-400 rounded-2xl relative">
-                        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-purple-500 rounded-tl-xl"></div>
-                        <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-purple-500 rounded-tr-xl"></div>
-                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-purple-500 rounded-bl-xl"></div>
-                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-purple-500 rounded-br-xl"></div>
+                      <div className="w-64 h-64 border-4 border-cyan-400 rounded-2xl relative">
+                        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-cyan-500 rounded-tl-xl"></div>
+                        <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-cyan-500 rounded-tr-xl"></div>
+                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-cyan-500 rounded-bl-xl"></div>
+                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-cyan-500 rounded-br-xl"></div>
                       </div>
                     </div>
                   </div>
@@ -334,7 +334,7 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                   
                   <button
                     onClick={stopCamera}
-                    className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-semibold transition-colors"
                   >
                     Cancelar
                   </button>
@@ -347,11 +347,11 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
               <div className="p-6 space-y-6">
                 {/* Foto y datos básicos */}
                 <div className="flex flex-col items-center pb-6 border-b border-gray-200">
-                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-cyan-100 to-blue-100 flex items-center justify-center mb-3 ring-4 ring-cyan-100">
+                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center mb-3 ring-4 ring-gray-100">
                     {selectedVisit.visitorPhoto ? (
                       <img src={selectedVisit.visitorPhoto} alt={selectedVisit.visitorName} className="w-full h-full object-cover" />
                     ) : (
-                        <FaRegUser className="w-12 h-12 text-purple-600" aria-hidden={true} />
+                        <FaRegUser className="w-12 h-12 text-gray-600" aria-hidden={true} />
                     )}
                   </div>
                   <h3 className="text-xl font-bold text-gray-800">{selectedVisit.visitorName}</h3>
@@ -365,7 +365,7 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
                     <span className="text-sm font-medium text-gray-600">A quién visitó</span>
-                    <span className="text-sm font-semibold text-cyan-600">
+                    <span className="text-sm font-semibold text-gray-800">
                       {selectedVisit.host.firstName} {selectedVisit.host.lastName}
                     </span>
                   </div>
@@ -373,20 +373,20 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                   {selectedVisit.assignedResource && (
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
                       <span className="text-sm font-medium text-gray-600">Recurso asignado</span>
-                      <span className="text-sm font-semibold text-cyan-600">{selectedVisit.assignedResource}</span>
+                      <span className="text-sm font-semibold text-gray-800">{selectedVisit.assignedResource}</span>
                     </div>
                   )}
 
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
                     <span className="text-sm font-medium text-gray-600">Hora de entrada</span>
-                    <span className="text-sm font-semibold text-cyan-600">
+                    <span className="text-sm font-semibold text-gray-800">
                       {selectedVisit.checkInTime ? new Date(selectedVisit.checkInTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '-'}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
                     <span className="text-sm font-medium text-gray-600">Tiempo transcurrido</span>
-                    <span className="text-lg font-bold text-cyan-600">{elapsedTime}</span>
+                    <span className="text-lg font-bold text-gray-800">{elapsedTime}</span>
                   </div>
                 </div>
 
@@ -399,7 +399,7 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                   {/* Grid de fotos */}
                   <div className="grid grid-cols-5 gap-2 mb-3">
                     {exitPhotos.map((photo, index) => (
-                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border-2 border-cyan-200 group">
+                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 group">
                         <img src={photo} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />
                         <button
                           onClick={() => removePhoto(index)}
@@ -414,7 +414,7 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                     {exitPhotos.length < 5 && (
                       <button
                           onClick={() => fileInputRef.current?.click()}
-                          className="aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-cyan-500 hover:bg-cyan-50 flex items-center justify-center transition-all"
+                          className="aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-900 hover:bg-gray-50 flex items-center justify-center transition-all"
                         >
                           <Upload className="w-5 h-5 text-gray-400" aria-hidden={true} />
                         </button>
@@ -439,13 +439,13 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
                 <div className="flex gap-3 pt-4">
                   <button
                     onClick={() => setSelectedVisit(null)}
-                    className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                    className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-semibold transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleConfirmExit}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-600 font-medium transition-all shadow-lg hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-200"
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-gray-900 to-gray-600 text-white rounded-xl hover:from-gray-800 hover:to-gray-500 font-semibold transition-all shadow-lg hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
                   >
                     <span className="sr-only">Confirmar Salida</span>
                     Confirmar Salida

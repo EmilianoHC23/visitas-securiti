@@ -1104,6 +1104,11 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
         return;
       }
 
+      // Show optimistic feedback immediately
+      window.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: '⏳ Creando acceso y enviando invitaciones...', severity: 'info' }
+      }));
+
       await createAccess({
         eventName: formData.eventName,
         type: formData.type,
@@ -1121,10 +1126,17 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
         additionalInfo: formData.additionalInfo
       });
 
+      // Show success message
+      window.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: '✅ Acceso creado correctamente. Los emails se están enviando en segundo plano.', severity: 'success' }
+      }));
+
       onSuccess();
     } catch (error) {
       console.error('Error creating access:', error);
-      alert('Error al crear el acceso');
+      window.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: '❌ Error al crear el acceso', severity: 'error' }
+      }));
     } finally {
       setLoading(false);
     }
@@ -1142,12 +1154,25 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
     // Continuar con la creación del acceso
     setLoading(true);
     try {
+      // Show optimistic feedback
+      window.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: '⏳ Creando acceso y enviando invitaciones...', severity: 'info' }
+      }));
+
       await createAccess(blacklistAlert.accessData);
+      
+      // Show success message
+      window.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: '✅ Acceso creado correctamente. Los emails se están enviando en segundo plano.', severity: 'success' }
+      }));
+
       setBlacklistAlert(null);
       onSuccess();
     } catch (error) {
       console.error('Error creating access:', error);
-      alert('Error al crear el acceso');
+      window.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: '❌ Error al crear el acceso', severity: 'error' }
+      }));
     } finally {
       setLoading(false);
     }
@@ -1772,11 +1797,24 @@ const EditAccessModal: React.FC<EditAccessModalProps> = ({ access, onClose, onSu
         return;
       }
 
+      // Show optimistic feedback
+      window.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: '⏳ Actualizando acceso...', severity: 'info' }
+      }));
+
       await updateAccess(access._id, updates);
+      
+      // Show success message
+      window.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: '✅ Acceso actualizado correctamente', severity: 'success' }
+      }));
+
       onSuccess();
     } catch (error) {
       console.error('Error updating access:', error);
-      alert('Error al actualizar el acceso');
+      window.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: '❌ Error al actualizar el acceso', severity: 'error' }
+      }));
     } finally {
       setLoading(false);
     }
@@ -1794,12 +1832,25 @@ const EditAccessModal: React.FC<EditAccessModalProps> = ({ access, onClose, onSu
     // Continuar con la actualización del acceso
     setLoading(true);
     try {
+      // Show optimistic feedback
+      window.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: '⏳ Actualizando acceso...', severity: 'info' }
+      }));
+
       await updateAccess(access._id, blacklistAlert.updateData);
+      
+      // Show success message
+      window.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: '✅ Acceso actualizado correctamente', severity: 'success' }
+      }));
+
       setBlacklistAlert(null);
       onSuccess();
     } catch (error) {
       console.error('Error updating access:', error);
-      alert('Error al actualizar el acceso');
+      window.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: '❌ Error al actualizar el acceso', severity: 'error' }
+      }));
     } finally {
       setLoading(false);
     }

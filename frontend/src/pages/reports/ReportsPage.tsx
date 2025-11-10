@@ -13,7 +13,7 @@ export default function ReportsPage() {
   const [filteredVisits, setFilteredVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
-  const [visitEvents, setVisitEvents] = useState<any[]>([]);
+  const [visitEvents, setVisitEvents] = useState<{ events: any[]; accessInfo?: any }>({ events: [] });
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [searchTerm, setSearchTerm] = useState('');
   const [showTimelineModal, setShowTimelineModal] = useState(false);
@@ -100,9 +100,10 @@ export default function ReportsPage() {
     setSelectedVisit(visit);
     try {
       const details = await api.getVisitDetails(visit._id);
-      setVisitEvents(details.events || []);
+      // Pasar tanto events como accessInfo al modal
+      setVisitEvents({ events: details.events || [], accessInfo: details.accessInfo });
     } catch (e) {
-      setVisitEvents([]);
+      setVisitEvents({ events: [], accessInfo: null });
     }
     setShowTimelineModal(true);
   };
@@ -516,12 +517,17 @@ export default function ReportsPage() {
                     <span className="text-gray-500">Anfitrión:</span>
                     <span className="text-gray-900 font-medium">{v.host?.firstName} {v.host?.lastName}</span>
                   </div>
-                  {v.checkInTime && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500">Entrada:</span>
-                      <span className="text-gray-900">{splitDateTime(v.checkInTime)[1]}</span>
-                    </div>
-                  )}
+                  {(() => {
+                    // Para visitas de acceso/evento, la "entrada" es cuando pasó a approved
+                    const isAccessEvent = v.visitType === 'access-code';
+                    const entryTime = isAccessEvent ? v.approvedAt : v.checkInTime;
+                    return entryTime && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500">Entrada:</span>
+                        <span className="text-gray-900">{splitDateTime(entryTime)[1]}</span>
+                      </div>
+                    );
+                  })()}
                   {v.checkOutTime && (
                     <div className="flex items-center justify-between">
                       <span className="text-gray-500">Salida:</span>
@@ -582,7 +588,11 @@ export default function ReportsPage() {
                       </td>
                       <td className="px-4 py-4 align-top">
                         {(() => {
-                          const [date, time] = splitDateTime(v.checkInTime);
+                          // Para visitas de acceso/evento, la "entrada" es cuando pasó a approved (respuesta recibida)
+                          // Para visitas normales, es el checkInTime (entrada registrada)
+                          const isAccessEvent = v.visitType === 'access-code';
+                          const entryTime = isAccessEvent ? v.approvedAt : v.checkInTime;
+                          const [date, time] = splitDateTime(entryTime);
                           return (
                             <div>
                               <div className="text-sm font-medium text-gray-800">{date}</div>
@@ -593,6 +603,7 @@ export default function ReportsPage() {
                       </td>
                       <td className="px-4 py-4 align-top">
                         {(() => {
+                          // La salida es checkOutTime para ambos tipos
                           const [date, time] = splitDateTime(v.checkOutTime);
                           return (
                             <div>

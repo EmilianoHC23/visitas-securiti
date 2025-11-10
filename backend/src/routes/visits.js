@@ -104,7 +104,33 @@ router.get('/:id', auth, async (req, res) => {
     }
     // Obtener eventos de la visita para la línea de tiempo
     const events = await VisitEvent.find({ visitId: visit._id }).sort({ createdAt: 1 });
-    res.json({ visit, events });
+    
+    // Si la visita proviene de un acceso/evento, obtener información del acceso
+    let accessInfo = null;
+    if (visit.visitType === 'access-code' && visit.accessCode) {
+      try {
+        const Access = require('../models/Access');
+        const access = await Access.findOne({ accessCode: visit.accessCode })
+          .populate('creatorId', 'firstName lastName email')
+          .lean();
+        if (access) {
+          accessInfo = {
+            _id: access._id,
+            eventName: access.eventName,
+            type: access.type,
+            creatorId: access.creatorId,
+            startDate: access.startDate,
+            endDate: access.endDate,
+            location: access.location,
+            createdAt: access.createdAt
+          };
+        }
+      } catch (accessError) {
+        console.error('Error fetching access info:', accessError);
+      }
+    }
+    
+    res.json({ visit, events, accessInfo });
   } catch (error) {
     console.error('Get visit error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });

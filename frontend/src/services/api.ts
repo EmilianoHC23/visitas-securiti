@@ -580,7 +580,7 @@ export const testSMTPConfig = async () => {
   return apiRequest('/invitations/test-smtp');
 };
 
-export const getVisitDetails = async (visitId: string): Promise<{ visit: Visit; events: any[] }> => {
+export const getVisitDetails = async (visitId: string): Promise<{ visit: Visit; events: any[]; accessInfo?: any }> => {
   return apiRequest(`/visits/${visitId}`);
 };
 

@@ -9,14 +9,14 @@ interface VisitTimelineModalProps {
   visit: Visit | null;
   isOpen: boolean;
   onClose: () => void;
-  events?: any[];
+  events?: { events: any[]; accessInfo?: any };
 }
 
 export const VisitTimelineModal: React.FC<VisitTimelineModalProps> = ({
   visit,
   isOpen,
   onClose,
-  events = []
+  events = { events: [] }
 }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -37,8 +37,60 @@ export const VisitTimelineModal: React.FC<VisitTimelineModalProps> = ({
   // Construir timeline desde los datos de la visita
   const timeline = [];
 
-  // Solo agregar evento de registro para visitas normales (no para accesos/eventos)
-  if (!isAccessEvent) {
+  // Para visitas de ACCESO/EVENTO
+  if (isAccessEvent) {
+    // 1. Creación del acceso/evento (usar events.accessInfo si está disponible)
+    const accessInfo = events?.accessInfo;
+    if (accessInfo) {
+      timeline.push({
+        type: 'access-created',
+        title: 'Acceso/Evento creado',
+        description: `"${accessInfo.eventName}" creado por ${accessInfo.creatorId?.firstName || ''} ${accessInfo.creatorId?.lastName || ''}`,
+        timestamp: accessInfo.createdAt || visit.createdAt,
+        icon: Clock,
+        color: 'blue'
+      });
+    }
+
+    // 2. Respuesta recibida (aprobado) - cuando el invitado registró su asistencia
+    if (visit.approvedAt) {
+      timeline.push({
+        type: 'approved',
+        title: 'Respuesta recibida',
+        description: 'El invitado confirmó su asistencia y fue aprobado automáticamente',
+        timestamp: visit.approvedAt,
+        icon: CheckCircle,
+        color: 'green'
+      });
+    }
+
+    // 3. Entrada registrada (dentro) - cuando físicamente ingresó
+    if (visit.checkInTime) {
+      timeline.push({
+        type: 'checkin',
+        title: 'Entrada registrada (Dentro)',
+        description: visit.assignedResource ? `Recurso: ${visit.assignedResource}` : 'Entrada física registrada',
+        timestamp: visit.checkInTime,
+        icon: UserCheck,
+        color: 'purple'
+      });
+    }
+
+    // 4. Salida registrada
+    if (visit.checkOutTime) {
+      timeline.push({
+        type: 'checkout',
+        title: 'Salida registrada',
+        description: 'Visita completada',
+        timestamp: visit.checkOutTime,
+        icon: LogOut,
+        color: 'gray'
+      });
+    }
+  } 
+  // Para visitas NORMALES
+  else {
+    // 1. Registro de visita
     timeline.push({
       type: 'registration',
       title: 'Registro de visita',
@@ -47,53 +99,51 @@ export const VisitTimelineModal: React.FC<VisitTimelineModalProps> = ({
       icon: Clock,
       color: 'blue'
     });
-  }
 
-  // Agregar aprobación o rechazo
-  if (visit.status === 'approved' || visit.status === 'checked-in' || visit.status === 'completed') {
-    timeline.push({
-      type: 'approved',
-      title: isAccessEvent ? 'Acceso/Evento creado' : 'Visita aprobada',
-      description: isAccessEvent 
-        ? `Código de acceso generado por ${visit.host.firstName} ${visit.host.lastName}`
-        : `Por ${visit.host.firstName} ${visit.host.lastName}`,
-      timestamp: visit.approvedAt || visit.updatedAt || visit.scheduledDate,
-      icon: CheckCircle,
-      color: 'green'
-    });
-  } else if (visit.status === 'rejected') {
-    timeline.push({
-      type: 'rejected',
-      title: 'Visita rechazada',
-      description: visit.rejectionReason || 'Sin motivo especificado',
-      timestamp: visit.rejectedAt || visit.updatedAt || visit.scheduledDate,
-      icon: XCircle,
-      color: 'red'
-    });
-  }
+    // 2. Aprobación o rechazo
+    if (visit.status === 'approved' || visit.status === 'checked-in' || visit.status === 'completed') {
+      timeline.push({
+        type: 'approved',
+        title: 'Visita aprobada',
+        description: `Aprobada por ${visit.host.firstName} ${visit.host.lastName}`,
+        timestamp: visit.approvedAt || visit.updatedAt || visit.scheduledDate,
+        icon: CheckCircle,
+        color: 'green'
+      });
+    } else if (visit.status === 'rejected') {
+      timeline.push({
+        type: 'rejected',
+        title: 'Visita rechazada',
+        description: `Rechazada por ${visit.host.firstName} ${visit.host.lastName}${visit.rejectionReason ? `: ${visit.rejectionReason}` : ''}`,
+        timestamp: visit.rejectedAt || visit.updatedAt || visit.scheduledDate,
+        icon: XCircle,
+        color: 'red'
+      });
+    }
 
-  // Agregar check-in
-  if (visit.checkInTime) {
-    timeline.push({
-      type: 'checkin',
-      title: 'Entrada registrada',
-      description: visit.assignedResource ? `Recurso: ${visit.assignedResource}` : 'Sin recurso asignado',
-      timestamp: visit.checkInTime,
-      icon: UserCheck,
-      color: 'purple'
-    });
-  }
+    // 3. Entrada registrada
+    if (visit.checkInTime) {
+      timeline.push({
+        type: 'checkin',
+        title: 'Entrada registrada',
+        description: visit.assignedResource ? `Recurso: ${visit.assignedResource}` : 'Sin recurso asignado',
+        timestamp: visit.checkInTime,
+        icon: UserCheck,
+        color: 'purple'
+      });
+    }
 
-  // Agregar check-out
-  if (visit.checkOutTime) {
-    timeline.push({
-      type: 'checkout',
-      title: 'Salida registrada',
-      description: 'Visita completada',
-      timestamp: visit.checkOutTime,
-      icon: LogOut,
-      color: 'gray'
-    });
+    // 4. Salida registrada
+    if (visit.checkOutTime) {
+      timeline.push({
+        type: 'checkout',
+        title: 'Salida registrada',
+        description: 'Visita completada',
+        timestamp: visit.checkOutTime,
+        icon: LogOut,
+        color: 'gray'
+      });
+    }
   }
 
   // Calcular duración de la visita

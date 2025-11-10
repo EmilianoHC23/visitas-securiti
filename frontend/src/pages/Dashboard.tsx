@@ -803,10 +803,11 @@ export const Dashboard: React.FC = () => {
                 </div>
             )}
 
-            <div className="row g-3">
-                <div className="col-12 col-lg-8">
-                    {/* Chart card */}
-                    <div className="card shadow-sm border-0 mb-3">
+            {/* Layout principal reorganizado */}
+            <div className="row g-3 mb-3">
+                <div className="col-12">
+                    {/* Chart card - Ancho completo */}
+                    <div className="card shadow-sm border-0">
                         <div className="card-body">
                             <div className="d-flex justify-content-between items-center mb-2">
                                 <h5 className="card-title fw-semibold mb-0">Visitas</h5>
@@ -886,9 +887,69 @@ export const Dashboard: React.FC = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
+            {/* Segunda fila: Próximas llegadas y Actividad Reciente */}
+            <div className="row g-3 mb-3">
+                <div className="col-12 col-lg-6">
+                    {/* Próximas llegadas hoy */}
+                    <UpcomingToday />
+                </div>
+                <div className="col-12 col-lg-6">
+                    {/* Actividad Reciente card - con altura máxima y scroll */}
+                    <div className="card shadow-sm border-0" style={{ height: '100%', maxHeight: '400px' }}>
+                        <div className="card-body d-flex flex-column" style={{ height: '100%' }}>
+                            <h5 className="card-title fw-semibold mb-3">Actividad Reciente</h5>
+
+                            {/* Sparkline filter pill */}
+                            {sparkFilter && (
+                                <div className="mb-2 d-flex align-items-center gap-2">
+                                    <span className="badge bg-primary">Filtrando: {sparkFilter}</span>
+                                    <button className="btn btn-sm btn-outline-secondary" onClick={() => setSparkFilter(null)}>Limpiar</button>
+                                </div>
+                            )}
+
+                            <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+                                {((sparkFilter ? recentVisits.filter(rv => {
+                                    const map: any = {
+                                        pending: VisitStatus.PENDING,
+                                        approved: VisitStatus.APPROVED,
+                                        checkedIn: VisitStatus.CHECKED_IN,
+                                        completed: VisitStatus.COMPLETED
+                                    };
+                                    return rv.status === map[sparkFilter as keyof typeof map];
+                                }) : recentVisits).length > 0) ? (
+                                    <ul className="list-unstyled mb-0">
+                                        {(sparkFilter ? recentVisits.filter(rv => {
+                                            const map: any = {
+                                                pending: VisitStatus.PENDING,
+                                                approved: VisitStatus.APPROVED,
+                                                checkedIn: VisitStatus.CHECKED_IN,
+                                                completed: VisitStatus.COMPLETED
+                                            };
+                                            return rv.status === map[sparkFilter as keyof typeof map];
+                                        }) : recentVisits).map(visit => (
+                                            <RecentActivityItem key={visit._id} visit={visit} />
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <div className="text-center py-5">
+                                        <div className="text-muted mb-2">No hay actividad reciente</div>
+                                        <div className="small text-secondary">Las visitas aparecerán aquí cuando se registren</div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Tercera fila: Visitantes y Empresas frecuentes */}
+            <div className="row g-3">
+                <div className="col-12 col-lg-6">
                     {/* Visitantes frecuentes card */}
-                    <div className="card shadow-sm border-0">
+                    <div className="card shadow-sm border-0 h-100">
                         <div className="card-body">
                             <h6 className="mb-3 fw-semibold">Visitantes frecuentes</h6>
                             {frequentVisitors.length > 0 ? (
@@ -899,7 +960,7 @@ export const Dashboard: React.FC = () => {
                                             {frequentVisitors.map(v => {
                                                 const pct = Math.round((v.count / total) * 100);
                                                 return (
-                                                    <div key={v.id} className="d-flex align-items-center justify-content-between">
+                                                    <div key={v.id} className="d-flex align-items-center justify-content-between mb-3">
                                                         <div className="d-flex align-items-center">
                                                             <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center me-3">
                                                                 {v.photo ? (
@@ -926,16 +987,14 @@ export const Dashboard: React.FC = () => {
                                     );
                                 })()
                             ) : (
-                                <div className="text-center text-muted">No hay visitantes frecuentes</div>
+                                <div className="text-center text-muted py-4">No hay visitantes frecuentes</div>
                             )}
                         </div>
                     </div>
                 </div>
-                <div className="col-12 col-lg-4">
-                    {/* Próximas llegadas hoy */}
-                    <UpcomingToday />
+                <div className="col-12 col-lg-6">
                     {/* Empresas frecuentes card */}
-                    <div className="card shadow-sm border-0 mb-3">
+                    <div className="card shadow-sm border-0 h-100">
                         <div className="card-body">
                             <h5 className="card-title fw-semibold mb-3">Empresas frecuentes</h5>
                             {frequentCompanies.length > 0 ? (
@@ -946,7 +1005,7 @@ export const Dashboard: React.FC = () => {
                                             {frequentCompanies.map(fc => {
                                                 const pct = Math.round((fc.count / total) * 100);
                                                 return (
-                                                    <div key={fc.company} className="">
+                                                    <div key={fc.company} className="mb-3">
                                                         <div className="d-flex justify-content-between items-center mb-1">
                                                             <div className="text-sm text-gray-700 font-medium truncate" style={{maxWidth: '65%'}}>{fc.company}</div>
                                                             <div className="text-sm text-gray-600">{fc.count} · {pct}%</div>
@@ -961,51 +1020,7 @@ export const Dashboard: React.FC = () => {
                                     );
                                 })()
                             ) : (
-                                <div className="text-center py-3 text-sm text-muted">No hay datos de empresas frecuentes</div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Actividad Reciente card */}
-                    <div className="card shadow-sm border-0">
-                        <div className="card-body">
-                            <h5 className="card-title fw-semibold mb-3">Actividad Reciente</h5>
-
-                            {/* Sparkline filter pill */}
-                            {sparkFilter && (
-                                <div className="mb-2 d-flex align-items-center gap-2">
-                                    <span className="badge bg-primary">Filtrando: {sparkFilter}</span>
-                                    <button className="btn btn-sm btn-outline-secondary" onClick={() => setSparkFilter(null)}>Limpiar</button>
-                                </div>
-                            )}
-
-                            {((sparkFilter ? recentVisits.filter(rv => {
-                                const map: any = {
-                                    pending: VisitStatus.PENDING,
-                                    approved: VisitStatus.APPROVED,
-                                    checkedIn: VisitStatus.CHECKED_IN,
-                                    completed: VisitStatus.COMPLETED
-                                };
-                                return rv.status === map[sparkFilter as keyof typeof map];
-                            }) : recentVisits).length > 0) ? (
-                                <ul className="list-unstyled mb-0">
-                                    {(sparkFilter ? recentVisits.filter(rv => {
-                                        const map: any = {
-                                            pending: VisitStatus.PENDING,
-                                            approved: VisitStatus.APPROVED,
-                                            checkedIn: VisitStatus.CHECKED_IN,
-                                            completed: VisitStatus.COMPLETED
-                                        };
-                                        return rv.status === map[sparkFilter as keyof typeof map];
-                                    }) : recentVisits).map(visit => (
-                                        <RecentActivityItem key={visit._id} visit={visit} />
-                                    ))}
-                                </ul>
-                            ) : (
-                                <div className="text-center py-5">
-                                    <div className="text-muted mb-2">No hay actividad reciente</div>
-                                    <div className="small text-secondary">Las visitas aparecerán aquí cuando se registren</div>
-                                </div>
+                                <div className="text-center py-4 text-sm text-muted">No hay datos de empresas frecuentes</div>
                             )}
                         </div>
                     </div>

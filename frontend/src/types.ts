@@ -142,6 +142,7 @@ export interface Access {
   endDate: Date | string;
   eventImage?: string;
   location?: string;
+  noExpiration?: boolean; // Virtual getter del backend
   settings: {
     sendAccessByEmail: boolean;
     language: 'es' | 'en';

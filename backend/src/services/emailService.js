@@ -1507,10 +1507,12 @@ class EmailService {
                               <td style="padding: 8px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Fecha y hora de inicio:</td>
                               <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">${formatFullDate(new Date(data.startDate))}</td>
                             </tr>
+                            ${!data.noExpiration ? `
                             <tr>
                               <td style="padding: 8px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Fecha y hora de fin:</td>
                               <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">${formatFullDate(new Date(data.endDate))}</td>
                             </tr>
+                            ` : ''}
                             ${data.location ? `
                             <tr>
                               <td style="padding: 8px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Lugar:</td>
@@ -1694,10 +1696,12 @@ class EmailService {
                               <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Fecha y hora de inicio:</td>
                               <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${formatFullDate(new Date(data.startDate))}</td>
                             </tr>
+                            ${!data.noExpiration ? `
                             <tr>
                               <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Fecha y hora de fin:</td>
                               <td style="padding: 6px 0; color: #1f2937; font-size: 14px; text-align: right; font-weight: 500;">${formatFullDate(new Date(data.endDate))}</td>
                             </tr>
+                            ` : ''}
                             ${data.location ? `
                             <tr>
                               <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Lugar:</td>
@@ -2359,7 +2363,7 @@ class EmailService {
                           <h3 style="color: ${primaryColor}; margin: 0 0 15px 0; font-size: 16px; font-weight: 600;">Nueva fecha de fin</h3>
                           <p style="color: #1f2937; margin: 0; font-size: 15px; line-height: 1.8;">
                             <strong>Fecha y hora de inicio:</strong> ${formatFullDate(new Date(data.startDate))}<br>
-                            <strong style="color: ${accentColor};">Nueva fecha y hora de fin:</strong> ${formatFullDate(new Date(data.endDate))}
+                            ${!data.noExpiration ? `<strong style="color: ${accentColor};">Nueva fecha y hora de fin:</strong> ${formatFullDate(new Date(data.endDate))}` : ''}
                           </p>
                         </div>
 

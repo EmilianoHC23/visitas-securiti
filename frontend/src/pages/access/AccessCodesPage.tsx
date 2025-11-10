@@ -23,10 +23,14 @@ import {
   Link as LinkIcon,
   Copy,
   Download,
-  AlertCircle
+  AlertCircle,
+  QrCode,
+  Shield,
+  FileWarning,
+  Timer,
+  Ban,
+  Sparkles
 } from 'lucide-react';
-import { IoQrCodeOutline } from 'react-icons/io5';
-import { IoIosLink } from "react-icons/io";
 import { getAccesses, createAccess, updateAccess, cancelAccess, finalizeAccess, getUsers, checkBlacklist } from '../../services/api';
 import { Access, InvitedUser, UserRole } from '../../types';
 import { formatDate, formatDateTime } from '../../utils/dateUtils';
@@ -216,7 +220,7 @@ export const AccessCodesPage: React.FC = () => {
       <div className={isMobile ? 'mb-4' : 'mb-8'}>
         <div className={`flex items-center gap-3 ${isMobile ? 'mb-2' : 'gap-4 mb-3'}`}>
           <div className={`${isMobile ? 'w-10 h-10' : 'w-14 h-14'} bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0`}>
-            <IoQrCodeOutline className={`${isMobile ? 'w-5 h-5' : 'w-7 h-7'} text-white`} />
+            <QrCode className={`${isMobile ? 'w-5 h-5' : 'w-7 h-7'} text-white`} />
           </div>
           <div className="flex-1 min-w-0">
             <h1 className={`${isMobile ? 'text-xl' : 'text-3xl sm:text-4xl'} font-bold text-gray-900`}>
@@ -418,7 +422,7 @@ export const AccessCodesPage: React.FC = () => {
                         }}
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 rounded-lg hover:from-emerald-200 hover:to-emerald-300 transition-all text-xs font-medium"
                       >
-                        <IoIosLink className="w-3.5 h-3.5" />
+                        <LinkIcon className="w-3.5 h-3.5" />
                         Copiar
                       </button>
                     )}
@@ -570,7 +574,7 @@ export const AccessCodesPage: React.FC = () => {
                             className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 rounded-lg hover:from-emerald-200 hover:to-emerald-300 transition-all text-sm font-medium shadow-sm"
                             title="Copiar enlace de pre-registro"
                           >
-                            <IoIosLink className="w-4 h-4" />
+                            <LinkIcon className="w-4 h-4" />
                           </button>
                         )}
                         {access.status === 'active' && (
@@ -1206,7 +1210,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
             <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-gray-900 to-gray-700 rounded-xl flex items-center justify-center mr-2 sm:mr-3 shadow-md flex-shrink-0">
-                  <IoQrCodeOutline className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
                 <span className="text-sm sm:text-base">Información del Acceso</span>
               </h3>
@@ -1311,9 +1315,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1">
                       <div className="w-10 h-10 bg-gradient-to-br from-gray-900 to-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
-                        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                        <Timer className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
                         <label htmlFor="noExpiration" className="block text-sm font-semibold text-gray-900 cursor-pointer mb-1">
@@ -1593,9 +1595,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
             <div className="p-5 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white sticky top-0">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/20 rounded-lg flex-shrink-0">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
+                  <Shield className="w-6 h-6" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold">Visitantes en lista negra detectados</h3>
@@ -1647,9 +1647,10 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
 
               {/* Advertencia */}
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-900 text-sm">
-                  <strong>⚠️ Importante:</strong> Estas personas están registradas en la lista negra. 
-                  ¿Deseas continuar con la creación del acceso de todas formas?
+                <p className="text-red-900 text-sm flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <span><strong>Importante:</strong> Estas personas están registradas en la lista negra. 
+                  ¿Deseas continuar con la creación del acceso de todas formas?</span>
                 </p>
               </div>
 
@@ -1659,9 +1660,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                   onClick={() => handleBlacklistAction('cancel')}
                   className="px-4 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all shadow-md font-semibold flex items-center justify-center gap-2"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <Ban className="w-4 h-4" />
                   Cancelar Creación
                 </button>
                 <button
@@ -1679,9 +1678,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                     </>
                   ) : (
                     <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <CheckCircle className="w-4 h-4" />
                       Continuar de Todos Modos
                     </>
                   )}
@@ -2003,9 +2000,7 @@ const EditAccessModal: React.FC<EditAccessModalProps> = ({ access, onClose, onSu
             <div className="p-5 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white sticky top-0">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/20 rounded-lg flex-shrink-0">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
+                  <Shield className="w-6 h-6" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold">Visitantes en lista negra detectados</h3>
@@ -2054,9 +2049,10 @@ const EditAccessModal: React.FC<EditAccessModalProps> = ({ access, onClose, onSu
 
               {/* Advertencia */}
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-900 text-sm">
-                  <strong>⚠️ Importante:</strong> Estas personas están registradas en la lista negra. 
-                  ¿Deseas continuar con la actualización del acceso de todas formas?
+                <p className="text-red-900 text-sm flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <span><strong>Importante:</strong> Estas personas están registradas en la lista negra. 
+                  ¿Deseas continuar con la actualización del acceso de todas formas?</span>
                 </p>
               </div>
 
@@ -2066,9 +2062,7 @@ const EditAccessModal: React.FC<EditAccessModalProps> = ({ access, onClose, onSu
                   onClick={() => handleBlacklistAction('cancel')}
                   className="px-4 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all shadow-md font-semibold flex items-center justify-center gap-2"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <Ban className="w-4 h-4" />
                   Cancelar Actualización
                 </button>
                 <button
@@ -2086,9 +2080,7 @@ const EditAccessModal: React.FC<EditAccessModalProps> = ({ access, onClose, onSu
                     </>
                   ) : (
                     <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <CheckCircle className="w-4 h-4" />
                       Continuar de Todos Modos
                     </>
                   )}
@@ -2185,9 +2177,14 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose, onFinalize
               <div className="flex items-start">
                 <Calendar className="w-5 h-5 text-gray-400 mr-2 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Fecha</p>
+                  <p className="text-sm font-medium text-gray-700">
+                    {access.noExpiration ? 'Fecha de inicio' : 'Fecha'}
+                  </p>
                   <p className="text-sm text-gray-600">
-                    {formatDate(access.startDate)} - {formatDate(access.endDate)}
+                    {access.noExpiration 
+                      ? formatDate(access.startDate)
+                      : `${formatDate(access.startDate)} - ${formatDate(access.endDate)}`
+                    }
                   </p>
                 </div>
               </div>
@@ -2224,7 +2221,7 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose, onFinalize
                       }}
                       className="flex items-center px-3 py-1.5 text-xs text-gray-900 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-100"
                     >
-                      <IoIosLink className="w-3.5 h-3.5 mr-2" />
+                      <Copy className="w-3.5 h-3.5 mr-2" />
                       Copiar enlace
                     </button>
                   </div>

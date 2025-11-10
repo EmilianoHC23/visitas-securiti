@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BlacklistEntry } from '../../types';
 import * as api from '../../services/api';
-import { Search, UserX, Mail, AlertCircle, Camera, Upload, Trash2, X } from 'lucide-react';
+import { Search, UserX, Mail, AlertCircle, Camera, Upload, Trash2, X, ShieldBan } from 'lucide-react';
 
 export const BlacklistPage: React.FC = () => {
   const [blacklistEntries, setBlacklistEntries] = useState<BlacklistEntry[]>([]);
@@ -159,8 +159,8 @@ export const BlacklistPage: React.FC = () => {
         {/* Header */}
         <div className={isMobile ? "mb-4" : "mb-8"}>
           <div className={`flex items-center ${isMobile ? 'gap-2 mb-2' : 'gap-3 mb-2'}`}>
-              <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} bg-gradient-to-br from-gray-900 to-gray-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg`}>
-                <UserX className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
+              <div className={`${isMobile ? 'p-2' : 'p-3'} bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md`}>
+                <ShieldBan className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-gray-700`} />
               </div>
             <div className="min-w-0">
               <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-gray-900`}>Lista Negra</h1>
@@ -292,44 +292,50 @@ export const BlacklistPage: React.FC = () => {
       {/* Confirm dialog (copied/adapted from UserManagementPage ConfirmDialog) */}
       {confirmOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className={`bg-white rounded-xl ${isMobile ? 'max-w-sm' : 'max-w-2xl'} w-full shadow-2xl overflow-hidden`}>
+          <div className={`bg-white rounded-xl ${isMobile ? 'max-w-sm' : 'max-w-md'} w-full shadow-2xl overflow-hidden`}>
             {/* Header: gradient like other modals */}
-            <div className={`${isMobile ? 'p-4' : 'p-6'} bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 border-b border-gray-700 flex items-start justify-between text-white`}>
-              <div className={`flex items-start ${isMobile ? 'gap-2' : 'gap-4'}`}>
-                <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} rounded-lg bg-white/15 flex items-center justify-center shadow-sm ring-1 ring-white/20`}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 9v2m0 4h.01M21 12A9 9 0 1112 3a9 9 0 019 9z" />
-                  </svg>
+            <div className={`${isMobile ? 'p-4' : 'p-6'} border-b border-gray-200 flex items-start justify-between`}>
+              <div className={`flex items-start ${isMobile ? 'gap-2' : 'gap-3'}`}>
+                <div className={`${isMobile ? 'p-2' : 'p-2.5'} rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-sm`}>
+                  <AlertCircle className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-gray-700`} />
                 </div>
                 <div>
-                  <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-bold text-white`}>Eliminar entrada</h3>
-                  <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-indigo-100`}>Confirmación</p>
+                  <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-bold text-gray-900`}>Eliminar entrada</h3>
+                  <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600`}>Confirmación requerida</p>
                 </div>
               </div>
               <button
                 onClick={closeConfirm}
-                className="text-gray-200 hover:text-white p-2 rounded-lg transition-colors"
+                className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 aria-label="Cerrar"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className={isMobile ? "p-4" : "p-6"}>
-              <div className={`bg-gray-50 rounded-xl ${isMobile ? 'p-4' : 'p-6'} border border-gray-200 shadow-sm text-center`}>
-                <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-700 ${isMobile ? 'mb-4' : 'mb-6'} whitespace-pre-line`}>{`¿Está seguro de que desea eliminar esta entrada de la lista negra?\n${confirmEntry?.visitorName || ''}`}</p>
+              <div className={`bg-gray-50 rounded-xl ${isMobile ? 'p-4' : 'p-5'} border border-gray-200 shadow-sm`}>
+                <p className={`${isMobile ? 'text-sm' : 'text-base'} text-gray-700 ${isMobile ? 'mb-4' : 'mb-5'} text-center`}>
+                  ¿Está seguro de que desea eliminar esta entrada de la lista negra?
+                </p>
+                {confirmEntry && (
+                  <div className="bg-white rounded-lg p-3 mb-4 border border-gray-200">
+                    <p className="font-semibold text-gray-900 text-sm">{confirmEntry.visitorName}</p>
+                    <p className="text-xs text-gray-600">{confirmEntry.identifier}</p>
+                  </div>
+                )}
 
                 <div className={`flex items-center justify-center ${isMobile ? 'gap-2' : 'gap-3'}`}>
                   <button
                     onClick={() => { closeConfirm(); }}
-                    className={`${isMobile ? 'px-3 py-2 min-w-[100px] text-sm' : 'px-4 py-2 min-w-[120px]'} text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors`}
+                    className={`${isMobile ? 'px-4 py-2.5 text-sm' : 'px-5 py-2.5'} text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium flex-1`}
                   >
                     Cancelar
                   </button>
 
                   <button
                     onClick={() => { confirmDelete(); }}
-                    className={`${isMobile ? 'px-3 py-2 min-w-[100px] text-sm' : 'px-4 py-2 min-w-[120px]'} text-white bg-gradient-to-r from-gray-900 to-gray-600 rounded-lg shadow hover:from-gray-800 hover:to-gray-500`}
+                    className={`${isMobile ? 'px-4 py-2.5 text-sm' : 'px-5 py-2.5'} text-white bg-gradient-to-r from-gray-700 to-gray-800 rounded-lg shadow hover:from-gray-800 hover:to-gray-900 transition-all font-medium flex-1`}
                   >
                     Eliminar
                   </button>
@@ -348,8 +354,8 @@ export const BlacklistPage: React.FC = () => {
             <div className={`${isMobile ? 'p-4' : 'p-6'} border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10`}>
               <div className="flex items-center justify-between">
                 <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-3'}`}>
-                  <div className={`${isMobile ? 'p-1.5' : 'p-2'} bg-gray-900 rounded-lg flex items-center justify-center`}>
-                    <UserX className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
+                  <div className={`${isMobile ? 'p-1.5' : 'p-2'} bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg shadow-sm`}>
+                    <UserX className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-gray-700`} />
                   </div>
                   <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-900`}>
                     {isMobile ? 'Agregar a Lista' : 'Agregar a Lista Negra'}

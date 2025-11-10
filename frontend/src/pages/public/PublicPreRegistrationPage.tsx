@@ -22,6 +22,7 @@ interface AccessInfo {
   eventImage?: string;
   additionalInfo?: string;
   status: string;
+  noExpiration?: boolean;
   settings: {
     enablePreRegistration?: boolean;
   };
@@ -194,11 +195,15 @@ const PublicPreRegistrationPage: React.FC = () => {
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
           {/* Company Logo at top */}
           <div className="w-full flex items-center justify-center pt-6">
-            <img
-              src={access?.company?.logo || '/logo.png'}
-              alt={access?.company?.name || 'Logo'}
-              className="h-12 w-auto object-contain"
-            />
+            <div className="w-20 h-20 mx-auto rounded-full ring-2 ring-gray-800" style={{ background: 'linear-gradient(135deg, #111827 0%, #374151 100%)' }}>
+              <div className="w-full h-full rounded-full flex items-center justify-center overflow-hidden">
+                <img
+                  src={access?.company?.logo || '/logo.png'}
+                  alt={access?.company?.name || 'Logo'}
+                  className="w-16 h-16 object-contain"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="p-6">
@@ -235,18 +240,20 @@ const PublicPreRegistrationPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center text-gray-700">
-                <Clock className="w-5 h-5 mr-3 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium">Fecha y hora de fin</p>
-                  <p className="text-sm">
-                    {access && new Date(access.endDate).toLocaleString('es-MX', {
-                      dateStyle: 'long',
-                      timeStyle: 'short'
-                    })}
-                  </p>
+              {access && !access.noExpiration && (
+                <div className="flex items-center text-gray-700">
+                  <Clock className="w-5 h-5 mr-3 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium">Fecha y hora de fin</p>
+                    <p className="text-sm">
+                      {new Date(access.endDate).toLocaleString('es-MX', {
+                        dateStyle: 'long',
+                        timeStyle: 'short'
+                      })}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {access?.location && (
                 <div className="flex items-center text-gray-700">

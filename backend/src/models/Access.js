@@ -112,7 +112,14 @@ const accessSchema = new mongoose.Schema({
     default: ''
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// Virtual getter para acceder fácilmente a noExpiration
+accessSchema.virtual('noExpiration').get(function() {
+  return this.settings?.noExpiration || false;
 });
 
 // Generar código único antes de guardar

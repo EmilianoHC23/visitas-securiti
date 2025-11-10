@@ -357,7 +357,8 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
           invitedCount: access.invitedUsers.length,
           companyName: company.name,
           companyLogo: company.logo,
-          companyId: company._id.toString()
+          companyId: company._id.toString(),
+          noExpiration: access.noExpiration || false
         });
       } catch (emailError) {
         console.error('Error sending access created email:', emailError);
@@ -402,7 +403,8 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
               companyLogo: company.logo,
               companyId: company._id,
               accessId: access._id.toString(),
-              companyLocation: company.location
+              companyLocation: company.location,
+              noExpiration: access.noExpiration || false
             });
           } catch (emailError) {
             console.error(`Error sending invitation to ${guest.email}:`, emailError);
@@ -543,7 +545,8 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
                 companyLogo: company.logo,
                 companyId: company._id,
                 accessId: access._id.toString(),
-                companyLocation: company.location
+                companyLocation: company.location,
+                noExpiration: access.noExpiration || false
               });
             } catch (emailError) {
               console.error(`Error sending invitation to ${guest.email}:`, emailError);
@@ -579,7 +582,8 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
             changes: [],
             companyName: company.name,
             companyLogo: company.logo,
-            companyId: company._id
+            companyId: company._id,
+            noExpiration: access.noExpiration || false
           });
           console.log('📧 [UPDATE ACCESS] Email de modificación enviado al creador (endDate extendida)');
         } catch (emailError) {
@@ -614,7 +618,8 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
                 accessCode: access.accessCode,
                 qrData: JSON.stringify(qrData),
                 companyName: company.name,
-                companyLogo: company.logo
+                companyLogo: company.logo,
+                noExpiration: access.noExpiration || false
               });
             } catch (emailError) {
               console.error(`Error sending modification email to ${guest.email}:`, emailError);

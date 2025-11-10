@@ -285,14 +285,21 @@ export default function ReportsPage() {
         pdf.text(shortHost, 95, currentY + 5);
 
         // Entrada
-        const checkIn = visit.checkInTime 
-          ? formatDateTime(visit.checkInTime as any).split(',')[1]?.trim() || '-'
+        let entryTime;
+        if (visit.status === VisitStatus.REJECTED) {
+          entryTime = visit.createdAt;
+        } else {
+          entryTime = visit.checkInTime;
+        }
+        const checkIn = entryTime 
+          ? formatDateTime(entryTime as any).split(',')[1]?.trim() || '-'
           : '-';
         pdf.text(checkIn, 130, currentY + 5);
 
         // Salida
-        const checkOut = visit.checkOutTime
-          ? formatDateTime(visit.checkOutTime as any).split(',')[1]?.trim() || '-'
+        const exitTime = visit.status === VisitStatus.REJECTED ? visit.rejectedAt : visit.checkOutTime;
+        const checkOut = exitTime
+          ? formatDateTime(exitTime as any).split(',')[1]?.trim() || '-'
           : '-';
         pdf.text(checkOut, 160, currentY + 5);
 
@@ -518,9 +525,14 @@ export default function ReportsPage() {
                     <span className="text-gray-900 font-medium">{v.host?.firstName} {v.host?.lastName}</span>
                   </div>
                   {(() => {
-                    // Para visitas de acceso/evento, la "entrada" es cuando pasó a approved
-                    const isAccessEvent = v.visitType === 'access-code';
-                    const entryTime = isAccessEvent ? v.approvedAt : v.checkInTime;
+                    // Para visitas RECHAZADAS: mostrar createdAt
+                    // Para visitas completadas: mostrar checkInTime
+                    let entryTime;
+                    if (v.status === VisitStatus.REJECTED) {
+                      entryTime = v.createdAt;
+                    } else {
+                      entryTime = v.checkInTime;
+                    }
                     return entryTime && (
                       <div className="flex items-center justify-between">
                         <span className="text-gray-500">Entrada:</span>
@@ -528,12 +540,17 @@ export default function ReportsPage() {
                       </div>
                     );
                   })()}
-                  {v.checkOutTime && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500">Salida:</span>
-                      <span className="text-gray-900">{splitDateTime(v.checkOutTime)[1]}</span>
-                    </div>
-                  )}
+                  {(() => {
+                    // Para visitas RECHAZADAS: mostrar rejectedAt
+                    // Para visitas completadas: mostrar checkOutTime
+                    const exitTime = v.status === VisitStatus.REJECTED ? v.rejectedAt : v.checkOutTime;
+                    return exitTime && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500">Salida:</span>
+                        <span className="text-gray-900">{splitDateTime(exitTime)[1]}</span>
+                      </div>
+                    );
+                  })()}
                   {v.visitorEmail && (
                     <div className="flex items-center justify-between">
                       <span className="text-gray-500">Email:</span>
@@ -588,10 +605,15 @@ export default function ReportsPage() {
                       </td>
                       <td className="px-4 py-4 align-top">
                         {(() => {
-                          // Para visitas de acceso/evento, la "entrada" es cuando pasó a approved (respuesta recibida)
-                          // Para visitas normales, es el checkInTime (entrada registrada)
-                          const isAccessEvent = v.visitType === 'access-code';
-                          const entryTime = isAccessEvent ? v.approvedAt : v.checkInTime;
+                          // Para visitas RECHAZADAS: mostrar createdAt (registro)
+                          // Para visitas de acceso/evento: mostrar checkInTime (entrada física)
+                          // Para visitas normales completadas: mostrar checkInTime (entrada física)
+                          let entryTime;
+                          if (v.status === VisitStatus.REJECTED) {
+                            entryTime = v.createdAt; // Fecha de registro
+                          } else {
+                            entryTime = v.checkInTime; // Entrada física
+                          }
                           const [date, time] = splitDateTime(entryTime);
                           return (
                             <div>
@@ -603,8 +625,10 @@ export default function ReportsPage() {
                       </td>
                       <td className="px-4 py-4 align-top">
                         {(() => {
-                          // La salida es checkOutTime para ambos tipos
-                          const [date, time] = splitDateTime(v.checkOutTime);
+                          // Para visitas RECHAZADAS: mostrar rejectedAt
+                          // Para visitas completadas: mostrar checkOutTime
+                          const exitTime = v.status === VisitStatus.REJECTED ? v.rejectedAt : v.checkOutTime;
+                          const [date, time] = splitDateTime(exitTime);
                           return (
                             <div>
                               <div className="text-sm font-medium text-gray-800">{date}</div>

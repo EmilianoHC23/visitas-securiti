@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../common/Toast';
 import { ChevronDownIcon, LogoutIcon } from '../common/icons';
 import { FaX } from 'react-icons/fa6';
+import { FaRegUser } from 'react-icons/fa';
 import { useLocation } from 'react-router-dom';
 import { ProfileModal } from './ProfileModal';
 
@@ -333,8 +334,11 @@ export const Header: React.FC<{
                                         setIsProfileModalOpen(true);
                                         setDropdownOpen(false);
                                     }}
-                                    className="dropdown-item"
+                                    className="dropdown-item d-flex align-items-center"
                                 >
+                                    <motion.span variants={actionIconVariants} className="me-2 d-inline-flex align-items-center justify-content-center">
+                                        <FaRegUser />
+                                    </motion.span>
                                     Mi Perfil
                                 </motion.button>
 

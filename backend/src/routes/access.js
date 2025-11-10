@@ -303,105 +303,123 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
     await access.save();
     await access.populate('creatorId', 'firstName lastName email');
 
-    // Generar y almacenar QR para cada invitado con email o teléfono (para descarga en UI)
+    // Generar y almacenar QR para cada invitado en paralelo (optimización)
     if (Array.isArray(access.invitedUsers) && access.invitedUsers.length > 0) {
-      let modifiedGuestQRCodes = false;
-      // Preparar información del anfitrión para incluir en QR - usar el creador del acceso
       const creator = access.creatorId;
       const hostInfo = {
         name: `${creator.firstName} ${creator.lastName}`,
         email: creator.email
       };
-      for (const guest of access.invitedUsers) {
+      
+      // Generar todos los QR codes en paralelo
+      const qrPromises = access.invitedUsers.map(async (guest) => {
         try {
-          // Generar QR base64 y guardarlo para permitir descarga desde el panel
           const qrCode = await generateAccessInvitationQR(access, guest, hostInfo);
           if (qrCode) {
             guest.qrCode = qrCode;
-            modifiedGuestQRCodes = true;
+            return true;
           }
+          return false;
         } catch (qrErr) {
           console.warn('⚠️ Error generating QR for invited user:', guest?.email || guest?.name, qrErr?.message);
+          return false;
         }
-      }
+      });
+
+      const results = await Promise.allSettled(qrPromises);
+      const modifiedGuestQRCodes = results.some(r => r.status === 'fulfilled' && r.value === true);
+      
       if (modifiedGuestQRCodes) {
-        try { await access.save(); } catch (saveErr) { console.warn('⚠️ Error saving guest QR codes:', saveErr?.message); }
-      }
-    }
-
-    // Send emails if enabled
-    if (access.settings.sendAccessByEmail) {
-      // Send confirmation email to creator
-      const creator = access.creatorId;
-      try {
-        await emailService.sendAccessCreatedEmail({
-          creatorEmail: creator.email,
-          creatorName: `${creator.firstName} ${creator.lastName}`,
-          accessTitle: access.eventName,
-          accessType: access.type,
-          startDate: access.startDate,
-          endDate: access.endDate,
-          startTime: formatTime(access.startDate),
-          endTime: formatTime(access.endDate),
-          location: access.location,
-          accessCode: access.accessCode,
-          invitedCount: access.invitedUsers.length,
-          companyName: company.name,
-          companyLogo: company.logo,
-          companyId: company._id.toString() // ✅ AGREGAR companyId
-        });
-      } catch (emailError) {
-        console.error('Error sending access created email:', emailError);
-      }
-
-      // Send invitation emails to guests
-      for (const guest of access.invitedUsers) {
-        if (guest.email) {
-          try {
-            // Enviar datos del QR para que el email renderice un QR escaneable
-            const qrData = {
-              type: 'access-invitation',
-              accessId: access._id.toString(),
-              accessCode: access.accessCode,
-              guestName: guest.name,
-              guestEmail: guest.email || '',
-              guestCompany: guest.company || '',
-              eventName: access.eventName,
-              eventDate: access.startDate,
-              location: access.location || '',
-              hostName: `${creator.firstName} ${creator.lastName}`,
-              hostEmail: creator.email
-            };
-
-            await emailService.sendAccessInvitationEmail({
-              invitedEmail: guest.email,
-              invitedName: guest.name,
-              creatorName: `${creator.firstName} ${creator.lastName}`,
-              accessTitle: access.eventName,
-              accessType: access.type,
-              startDate: access.startDate,
-              endDate: access.endDate,
-              startTime: formatTime(access.startDate),
-              endTime: formatTime(access.endDate),
-              location: access.location,
-              accessCode: access.accessCode,
-              qrData: JSON.stringify(qrData), // Pasar como string para usar en la API pública
-              eventImage: access.eventImage,
-              additionalInfo: access.additionalInfo,
-              hostName: `${creator.firstName} ${creator.lastName}`,
-              companyName: company.name,
-              companyLogo: company.logo,
-              companyId: company._id,
-              accessId: access._id.toString(), // ✅ AGREGAR accessId
-              companyLocation: company.location // ✅ AGREGAR location para mostrar dirección
-            });
-          } catch (emailError) {
-            console.error(`Error sending invitation to ${guest.email}:`, emailError);
-          }
+        try { 
+          await access.save(); 
+        } catch (saveErr) { 
+          console.warn('⚠️ Error saving guest QR codes:', saveErr?.message); 
         }
       }
     }
 
+    // Send emails if enabled (asynchronously in background - don't block response)
+    if (access.settings.sendAccessByEmail) {
+      const creator = access.creatorId;
+      
+      // Fire and forget - send emails in background without blocking response
+      (async () => {
+        // Send confirmation email to creator
+        try {
+          await emailService.sendAccessCreatedEmail({
+            creatorEmail: creator.email,
+            creatorName: `${creator.firstName} ${creator.lastName}`,
+            accessTitle: access.eventName,
+            accessType: access.type,
+            startDate: access.startDate,
+            endDate: access.endDate,
+            startTime: formatTime(access.startDate),
+            endTime: formatTime(access.endDate),
+            location: access.location,
+            accessCode: access.accessCode,
+            invitedCount: access.invitedUsers.length,
+            companyName: company.name,
+            companyLogo: company.logo,
+            companyId: company._id.toString()
+          });
+        } catch (emailError) {
+          console.error('Error sending access created email:', emailError);
+        }
+
+        // Send invitation emails to guests in parallel
+        const emailPromises = access.invitedUsers
+          .filter(guest => guest.email)
+          .map(async (guest) => {
+            try {
+              const qrData = {
+                type: 'access-invitation',
+                accessId: access._id.toString(),
+                accessCode: access.accessCode,
+                guestName: guest.name,
+                guestEmail: guest.email || '',
+                guestCompany: guest.company || '',
+                eventName: access.eventName,
+                eventDate: access.startDate,
+                location: access.location || '',
+                hostName: `${creator.firstName} ${creator.lastName}`,
+                hostEmail: creator.email
+              };
+
+              await emailService.sendAccessInvitationEmail({
+                invitedEmail: guest.email,
+                invitedName: guest.name,
+                creatorName: `${creator.firstName} ${creator.lastName}`,
+                accessTitle: access.eventName,
+                accessType: access.type,
+                startDate: access.startDate,
+                endDate: access.endDate,
+                startTime: formatTime(access.startDate),
+                endTime: formatTime(access.endDate),
+                location: access.location,
+                accessCode: access.accessCode,
+                qrData: JSON.stringify(qrData),
+                eventImage: access.eventImage,
+                additionalInfo: access.additionalInfo,
+                hostName: `${creator.firstName} ${creator.lastName}`,
+                companyName: company.name,
+                companyLogo: company.logo,
+                companyId: company._id,
+                accessId: access._id.toString(),
+                companyLocation: company.location
+              });
+            } catch (emailError) {
+              console.error(`Error sending invitation to ${guest.email}:`, emailError);
+            }
+          });
+
+        await Promise.allSettled(emailPromises);
+        console.log(`✅ Background emails sent for access ${access._id}`);
+      })().catch(err => {
+        console.error('Background email job failed:', err);
+      });
+    }
+
+    // Return immediately without waiting for emails
     res.status(201).json(access);
   } catch (error) {
     console.error('Create access error:', error);
@@ -476,70 +494,79 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
         }
       }
 
-      // Generar y guardar QR para nuevos invitados
+      // Generar y guardar QR para nuevos invitados en paralelo
       if (newGuests.length > 0) {
         try {
-          for (const g of access.invitedUsers) {
-            // Generar QR solo para los que no lo tengan aún
-            if (!g.qrCode) {
+          const qrPromises = access.invitedUsers
+            .filter(g => !g.qrCode)
+            .map(async (g) => {
               try {
                 const qr = await generateAccessInvitationQR(access, g);
                 if (qr) g.qrCode = qr;
               } catch (qrErr) {
                 console.warn('⚠️ Error generating QR for new guest:', g?.email || g?.name, qrErr?.message);
               }
-            }
-          }
+            });
+          
+          await Promise.allSettled(qrPromises);
         } catch (bulkQrErr) {
           console.warn('⚠️ Error generating QRs for new guests:', bulkQrErr?.message);
         }
       }
 
-      // Send invitation emails to new guests
+      // Send invitation emails to new guests in background (non-blocking)
       if (newGuests.length > 0 && access.settings.sendAccessByEmail) {
-        const company = await Company.findOne({ companyId: access.companyId });
-        
-        for (const guest of newGuests) {
-          if (guest.email) {
-            try {
-              // Generar datos del QR para usar con API pública
-              const qrData = {
-                type: 'access-invitation',
-                accessId: access._id.toString(),
-                accessCode: access.accessCode,
-                guestName: guest.name,
-                guestEmail: guest.email || '',
-                eventName: access.eventName,
-                eventDate: access.startDate
-              };
+        (async () => {
+          try {
+            const company = await Company.findOne({ companyId: access.companyId });
+            
+            const emailPromises = newGuests
+              .filter(guest => guest.email)
+              .map(async (guest) => {
+                try {
+                  const qrData = {
+                    type: 'access-invitation',
+                    accessId: access._id.toString(),
+                    accessCode: access.accessCode,
+                    guestName: guest.name,
+                    guestEmail: guest.email || '',
+                    eventName: access.eventName,
+                    eventDate: access.startDate
+                  };
 
-              await emailService.sendAccessInvitationEmail({
-                invitedEmail: guest.email,
-                invitedName: guest.name,
-                creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-                accessTitle: access.eventName,
-                accessType: access.type,
-                startDate: access.startDate,
-                endDate: access.endDate,
-                startTime: formatTime(access.startDate),
-                endTime: formatTime(access.endDate),
-                location: access.location,
-                accessCode: access.accessCode,
-                qrData: JSON.stringify(qrData),
-                eventImage: access.eventImage,
-                additionalInfo: access.additionalInfo,
-                hostName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-                companyName: company.name,
-                companyLogo: company.logo,
-                companyId: company._id,
-                accessId: access._id.toString(), // ✅ AGREGAR accessId
-                companyLocation: company.location // ✅ AGREGAR location para mostrar dirección
+                  await emailService.sendAccessInvitationEmail({
+                    invitedEmail: guest.email,
+                    invitedName: guest.name,
+                    creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+                    accessTitle: access.eventName,
+                    accessType: access.type,
+                    startDate: access.startDate,
+                    endDate: access.endDate,
+                    startTime: formatTime(access.startDate),
+                    endTime: formatTime(access.endDate),
+                    location: access.location,
+                    accessCode: access.accessCode,
+                    qrData: JSON.stringify(qrData),
+                    eventImage: access.eventImage,
+                    additionalInfo: access.additionalInfo,
+                    hostName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+                    companyName: company.name,
+                    companyLogo: company.logo,
+                    companyId: company._id,
+                    accessId: access._id.toString(),
+                    companyLocation: company.location
+                  });
+                } catch (emailError) {
+                  console.error(`Error sending invitation to ${guest.email}:`, emailError);
+                }
               });
-            } catch (emailError) {
-              console.error(`Error sending invitation to ${guest.email}:`, emailError);
-            }
+
+            await Promise.allSettled(emailPromises);
+            console.log(`✅ Background invitation emails sent for ${newGuests.length} new guests`);
+          } catch (err) {
+            console.error('Background new guest emails failed:', err);
           }
-        }
+        })().catch(err => console.error('New guest email job failed:', err));
       }
     }
 
@@ -549,54 +576,16 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
 
     await access.save();
 
-    // Send modification email to creator SOLO si endDate fue extendida
+    // Send modification emails in background (non-blocking)
     if (access.settings.sendAccessByEmail && endDateExtended) {
-      try {
-        const company = await Company.findOne({ companyId: access.companyId });
-        await emailService.sendAccessModifiedToCreatorEmail({
-          creatorEmail: access.creatorId.email,
-          creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-          accessTitle: access.eventName,
-          accessType: access.type,
-          startDate: access.startDate,
-          endDate: access.endDate,
-          startTime: formatTime(access.startDate),
-          endTime: formatTime(access.endDate),
-          location: access.location,
-          changes: [],
-          companyName: company.name,
-          companyLogo: company.logo,
-          companyId: company._id
-        });
-        console.log('📧 [UPDATE ACCESS] Email de modificación enviado al creador (endDate extendida)');
-      } catch (emailError) {
-        console.error('Error sending modification email to creator:', emailError);
-      }
-    } else if (!endDateExtended) {
-      console.log('ℹ️ [UPDATE ACCESS] Email de modificación omitido - solo se agregaron invitados o se cambió imagen/info');
-    }
-
-    // Send modification email to all guests SOLO si endDate fue extendida
-    if (access.settings.sendAccessByEmail && endDateExtended) {
-      for (const guest of access.invitedUsers) {
-        if (guest.email) {
+      (async () => {
+        try {
+          const company = await Company.findOne({ companyId: access.companyId });
+          
+          // Send to creator
           try {
-            const company = await Company.findOne({ companyId: access.companyId });
-            
-            // Generar datos del QR para usar con API pública
-            const qrData = {
-              type: 'access-invitation',
-              accessId: access._id.toString(),
-              accessCode: access.accessCode,
-              guestName: guest.name,
-              guestEmail: guest.email || '',
-              eventName: access.eventName,
-              eventDate: access.startDate
-            };
-            
-            await emailService.sendAccessModifiedToGuestEmail({
-              invitedEmail: guest.email,
-              invitedName: guest.name,
+            await emailService.sendAccessModifiedToCreatorEmail({
+              creatorEmail: access.creatorId.email,
               creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
               accessTitle: access.eventName,
               accessType: access.type,
@@ -605,18 +594,63 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
               startTime: formatTime(access.startDate),
               endTime: formatTime(access.endDate),
               location: access.location,
-              accessCode: access.accessCode,
-              qrData: JSON.stringify(qrData),
+              changes: [],
               companyName: company.name,
-              companyLogo: company.logo
+              companyLogo: company.logo,
+              companyId: company._id
             });
+            console.log('📧 [UPDATE ACCESS] Email de modificación enviado al creador (endDate extendida)');
           } catch (emailError) {
-            console.error(`Error sending modification email to ${guest.email}:`, emailError);
+            console.error('Error sending modification email to creator:', emailError);
           }
+
+          // Send to all guests in parallel
+          const guestEmailPromises = access.invitedUsers
+            .filter(guest => guest.email)
+            .map(async (guest) => {
+              try {
+                const qrData = {
+                  type: 'access-invitation',
+                  accessId: access._id.toString(),
+                  accessCode: access.accessCode,
+                  guestName: guest.name,
+                  guestEmail: guest.email || '',
+                  eventName: access.eventName,
+                  eventDate: access.startDate
+                };
+                
+                await emailService.sendAccessModifiedToGuestEmail({
+                  invitedEmail: guest.email,
+                  invitedName: guest.name,
+                  creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+                  accessTitle: access.eventName,
+                  accessType: access.type,
+                  startDate: access.startDate,
+                  endDate: access.endDate,
+                  startTime: formatTime(access.startDate),
+                  endTime: formatTime(access.endDate),
+                  location: access.location,
+                  accessCode: access.accessCode,
+                  qrData: JSON.stringify(qrData),
+                  companyName: company.name,
+                  companyLogo: company.logo
+                });
+              } catch (emailError) {
+                console.error(`Error sending modification email to ${guest.email}:`, emailError);
+              }
+            });
+
+          await Promise.allSettled(guestEmailPromises);
+          console.log(`✅ Background modification emails sent for access ${access._id}`);
+        } catch (err) {
+          console.error('Background modification emails failed:', err);
         }
-      }
+      })().catch(err => console.error('Modification email job failed:', err));
+    } else if (!endDateExtended) {
+      console.log('ℹ️ [UPDATE ACCESS] Email de modificación omitido - solo se agregaron invitados o se cambió imagen/info');
     }
 
+    // Return immediately without waiting for emails
     res.json(access);
   } catch (error) {
     console.error('Update access error:', error);

@@ -73,7 +73,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const navLinks = [
         { to: "/", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
         { to: "/visits", label: "Visitas", icon: <ClipboardList className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
-        { to: "/agenda", label: "Agenda", icon: <Calendar className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
         { to: "/users", label: "Usuarios", icon: <Users className="w-5 h-5" />, roles: [UserRole.ADMIN] },
         { to: "/access-codes", label: "Accesos/Eventos", icon: <IoQrCodeOutline className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
         { to: "/public-registration", label: "Auto-registro", icon: <UserPlus className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },

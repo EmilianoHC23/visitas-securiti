@@ -1512,7 +1512,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                 {/* Botones de acción */}
                 <div className={`flex gap-3 ${isMobile ? 'w-full' : 'items-center'}`}>
                     <button
-                        onClick={() => navigate('/visits/agenda')}
+                        onClick={() => navigate('/agenda')}
                         className={`${isMobile ? 'flex-1' : ''} px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium flex items-center ${isMobile ? 'justify-center' : ''} gap-2 transition-colors`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

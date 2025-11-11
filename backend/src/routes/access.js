@@ -303,117 +303,159 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
     await access.save();
     await access.populate('creatorId', 'firstName lastName email');
 
-    // Generar y almacenar QR para cada invitado en paralelo (optimización)
-    if (Array.isArray(access.invitedUsers) && access.invitedUsers.length > 0) {
-      const creator = access.creatorId;
-      const hostInfo = {
-        name: `${creator.firstName} ${creator.lastName}`,
-        email: creator.email
-      };
-      
-      // Generar todos los QR codes en paralelo
-      const qrPromises = access.invitedUsers.map(async (guest) => {
-        try {
-          const qrCode = await generateAccessInvitationQR(access, guest, hostInfo);
-          if (qrCode) {
-            guest.qrCode = qrCode;
-            return true;
-          }
-          return false;
-        } catch (qrErr) {
-          console.warn('⚠️ Error generating QR for invited user:', guest?.email || guest?.name, qrErr?.message);
-          return false;
-        }
-      });
+    // RESPUESTA RÁPIDA: responder inmediatamente al frontend
+    res.status(201).json(access);
 
-      const results = await Promise.allSettled(qrPromises);
-      const modifiedGuestQRCodes = results.some(r => r.status === 'fulfilled' && r.value === true);
-      
-      if (modifiedGuestQRCodes) {
-        try { 
-          await access.save(); 
-        } catch (saveErr) { 
-          console.warn('⚠️ Error saving guest QR codes:', saveErr?.message); 
-        }
-      }
-    }
+    // PROCESAMIENTO EN SEGUNDO PLANO: QR + Emails sin bloquear respuesta
+    // Capturar datos necesarios para evitar problemas de scope/referencias
+    const bgContext = {
+      accessId: access._id.toString(),
+      accessCode: access.accessCode,
+      eventName: access.eventName,
+      type: access.type,
+      startDate: access.startDate,
+      endDate: access.endDate,
+      startTime: formatTime(access.startDate),
+      endTime: formatTime(access.endDate),
+      location: access.location,
+      eventImage: access.eventImage,
+      additionalInfo: access.additionalInfo,
+      noExpiration: access.noExpiration || false,
+      sendEmail: access.settings.sendAccessByEmail,
+      creatorEmail: access.creatorId.email,
+      creatorFirstName: access.creatorId.firstName,
+      creatorLastName: access.creatorId.lastName,
+      invitedUsers: access.invitedUsers.map(g => ({
+        name: g.name,
+        email: g.email || '',
+        phone: g.phone || '',
+        company: g.company || '',
+        _id: g._id.toString()
+      })),
+      companyName: company.name,
+      companyLogo: company.logo,
+      companyId: company._id.toString(),
+      companyLocation: company.location
+    };
 
-    // Send emails if enabled
-    if (access.settings.sendAccessByEmail) {
-      // Send confirmation email to creator
-      const creator = access.creatorId;
+    setImmediate(async () => {
       try {
-        await emailService.sendAccessCreatedEmail({
-          creatorEmail: creator.email,
-          creatorName: `${creator.firstName} ${creator.lastName}`,
-          accessTitle: access.eventName,
-          accessType: access.type,
-          startDate: access.startDate,
-          endDate: access.endDate,
-          startTime: formatTime(access.startDate),
-          endTime: formatTime(access.endDate),
-          location: access.location,
-          accessCode: access.accessCode,
-          invitedCount: access.invitedUsers.length,
-          companyName: company.name,
-          companyLogo: company.logo,
-          companyId: company._id.toString(),
-          noExpiration: access.noExpiration || false
-        });
-      } catch (emailError) {
-        console.error('Error sending access created email:', emailError);
-      }
-
-      // Send invitation emails to guests
-      for (const guest of access.invitedUsers) {
-        if (guest.email) {
-          try {
-            // Enviar datos del QR para que el email renderice un QR escaneable
-            const qrData = {
-              type: 'access-invitation',
-              accessId: access._id.toString(),
-              accessCode: access.accessCode,
-              guestName: guest.name,
-              guestEmail: guest.email || '',
-              guestCompany: guest.company || '',
-              eventName: access.eventName,
-              eventDate: access.startDate,
-              location: access.location || '',
-              hostName: `${creator.firstName} ${creator.lastName}`,
-              hostEmail: creator.email
+        // Generar QR codes en paralelo
+        if (bgContext.invitedUsers.length > 0) {
+          const Access = require('../models/Access');
+          const accessDoc = await Access.findById(bgContext.accessId);
+          
+          if (accessDoc) {
+            const hostInfo = {
+              name: `${bgContext.creatorFirstName} ${bgContext.creatorLastName}`,
+              email: bgContext.creatorEmail
             };
+            
+            const qrPromises = accessDoc.invitedUsers.map(async (guest) => {
+              try {
+                const qrCode = await generateAccessInvitationQR(accessDoc, guest, hostInfo);
+                if (qrCode) {
+                  guest.qrCode = qrCode;
+                  return true;
+                }
+                return false;
+              } catch (qrErr) {
+                console.warn('⚠️ [BG] Error generating QR:', guest?.email || guest?.name, qrErr?.message);
+                return false;
+              }
+            });
 
-            await emailService.sendAccessInvitationEmail({
-              invitedEmail: guest.email,
-              invitedName: guest.name,
-              creatorName: `${creator.firstName} ${creator.lastName}`,
-              accessTitle: access.eventName,
-              accessType: access.type,
-              startDate: access.startDate,
-              endDate: access.endDate,
-              startTime: formatTime(access.startDate),
-              endTime: formatTime(access.endDate),
-              location: access.location,
-              accessCode: access.accessCode,
-              qrData: JSON.stringify(qrData),
-              eventImage: access.eventImage,
-              additionalInfo: access.additionalInfo,
-              hostName: `${creator.firstName} ${creator.lastName}`,
-              companyName: company.name,
-              companyLogo: company.logo,
-              companyId: company._id,
-              accessId: access._id.toString(),
-              companyLocation: company.location,
-              noExpiration: access.noExpiration || false
+            const results = await Promise.allSettled(qrPromises);
+            const modifiedQRCodes = results.some(r => r.status === 'fulfilled' && r.value === true);
+            
+            if (modifiedQRCodes) {
+              try { 
+                await accessDoc.save(); 
+              } catch (saveErr) { 
+                console.warn('⚠️ [BG] Error saving QR codes:', saveErr?.message); 
+              }
+            }
+          }
+        }
+
+        // Enviar emails si está habilitado
+        if (bgContext.sendEmail) {
+          const creatorName = `${bgContext.creatorFirstName} ${bgContext.creatorLastName}`;
+          
+          // Email al creador
+          try {
+            await emailService.sendAccessCreatedEmail({
+              creatorEmail: bgContext.creatorEmail,
+              creatorName,
+              accessTitle: bgContext.eventName,
+              accessType: bgContext.type,
+              startDate: bgContext.startDate,
+              endDate: bgContext.endDate,
+              startTime: bgContext.startTime,
+              endTime: bgContext.endTime,
+              location: bgContext.location,
+              accessCode: bgContext.accessCode,
+              invitedCount: bgContext.invitedUsers.length,
+              companyName: bgContext.companyName,
+              companyLogo: bgContext.companyLogo,
+              companyId: bgContext.companyId,
+              noExpiration: bgContext.noExpiration
             });
           } catch (emailError) {
-            console.error(`Error sending invitation to ${guest.email}:`, emailError);
+            console.error('⚠️ [BG] Error sending creator email:', emailError);
+          }
+
+          // Emails a invitados
+          for (const guest of bgContext.invitedUsers) {
+            if (guest.email) {
+              try {
+                const qrData = {
+                  type: 'access-invitation',
+                  accessId: bgContext.accessId,
+                  accessCode: bgContext.accessCode,
+                  guestName: guest.name,
+                  guestEmail: guest.email,
+                  guestCompany: guest.company,
+                  eventName: bgContext.eventName,
+                  eventDate: bgContext.startDate,
+                  location: bgContext.location,
+                  hostName: creatorName,
+                  hostEmail: bgContext.creatorEmail
+                };
+
+                await emailService.sendAccessInvitationEmail({
+                  invitedEmail: guest.email,
+                  invitedName: guest.name,
+                  creatorName,
+                  accessTitle: bgContext.eventName,
+                  accessType: bgContext.type,
+                  startDate: bgContext.startDate,
+                  endDate: bgContext.endDate,
+                  startTime: bgContext.startTime,
+                  endTime: bgContext.endTime,
+                  location: bgContext.location,
+                  accessCode: bgContext.accessCode,
+                  qrData: JSON.stringify(qrData),
+                  eventImage: bgContext.eventImage,
+                  additionalInfo: bgContext.additionalInfo,
+                  hostName: creatorName,
+                  companyName: bgContext.companyName,
+                  companyLogo: bgContext.companyLogo,
+                  companyId: bgContext.companyId,
+                  accessId: bgContext.accessId,
+                  companyLocation: bgContext.companyLocation,
+                  noExpiration: bgContext.noExpiration
+                });
+              } catch (emailError) {
+                console.error(`⚠️ [BG] Error sending invitation to ${guest.email}:`, emailError);
+              }
+            }
           }
         }
+      } catch (bgError) {
+        console.error('⚠️ [BG] Error en procesamiento de QR/emails:', bgError);
       }
-    }
-
-    res.status(201).json(access);
+    });
   } catch (error) {
     console.error('Create access error:', error);
     res.status(500).json({ message: 'Error interno del servidor', error: error.message });
@@ -466,8 +508,8 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
     }
 
     // Add new invited users (cannot remove existing)
+    const newGuests = [];
     if (invitedUsers && Array.isArray(invitedUsers)) {
-      const newGuests = [];
       for (const user of invitedUsers) {
         // Check if user already exists
         const exists = access.invitedUsers.some(
@@ -486,74 +528,6 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
           modified = true;
         }
       }
-
-      // Generar y guardar QR para nuevos invitados en paralelo
-      if (newGuests.length > 0) {
-        try {
-          const qrPromises = access.invitedUsers
-            .filter(g => !g.qrCode)
-            .map(async (g) => {
-              try {
-                const qr = await generateAccessInvitationQR(access, g);
-                if (qr) g.qrCode = qr;
-              } catch (qrErr) {
-                console.warn('⚠️ Error generating QR for new guest:', g?.email || g?.name, qrErr?.message);
-              }
-            });
-          
-          await Promise.allSettled(qrPromises);
-        } catch (bulkQrErr) {
-          console.warn('⚠️ Error generating QRs for new guests:', bulkQrErr?.message);
-        }
-      }
-
-      // Send invitation emails to new guests
-      if (newGuests.length > 0 && access.settings.sendAccessByEmail) {
-        const company = await Company.findOne({ companyId: access.companyId });
-        
-        for (const guest of newGuests) {
-          if (guest.email) {
-            try {
-              // Generar datos del QR para usar con API pública
-              const qrData = {
-                type: 'access-invitation',
-                accessId: access._id.toString(),
-                accessCode: access.accessCode,
-                guestName: guest.name,
-                guestEmail: guest.email || '',
-                eventName: access.eventName,
-                eventDate: access.startDate
-              };
-
-              await emailService.sendAccessInvitationEmail({
-                invitedEmail: guest.email,
-                invitedName: guest.name,
-                creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-                accessTitle: access.eventName,
-                accessType: access.type,
-                startDate: access.startDate,
-                endDate: access.endDate,
-                startTime: formatTime(access.startDate),
-                endTime: formatTime(access.endDate),
-                location: access.location,
-                accessCode: access.accessCode,
-                qrData: JSON.stringify(qrData),
-                eventImage: access.eventImage,
-                additionalInfo: access.additionalInfo,
-                hostName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-                companyName: company.name,
-                companyLogo: company.logo,
-                companyId: company._id,
-                accessId: access._id.toString(),
-                companyLocation: company.location,
-                noExpiration: access.noExpiration || false
-              });
-            } catch (emailError) {
-              console.error(`Error sending invitation to ${guest.email}:`, emailError);
-            }
-          }
-        }
-      }
     }
 
     if (!modified) {
@@ -562,78 +536,192 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
 
     await access.save();
 
-    // Send modification emails if endDate was extended
-    if (access.settings.sendAccessByEmail && endDateExtended) {
-      try {
-        const company = await Company.findOne({ companyId: access.companyId });
-        
-        // Send to creator
-        try {
-          await emailService.sendAccessModifiedToCreatorEmail({
-            creatorEmail: access.creatorId.email,
-            creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-            accessTitle: access.eventName,
-            accessType: access.type,
-            startDate: access.startDate,
-            endDate: access.endDate,
-            startTime: formatTime(access.startDate),
-            endTime: formatTime(access.endDate),
-            location: access.location,
-            changes: [],
-            companyName: company.name,
-            companyLogo: company.logo,
-            companyId: company._id,
-            noExpiration: access.noExpiration || false
-          });
-          console.log('📧 [UPDATE ACCESS] Email de modificación enviado al creador (endDate extendida)');
-        } catch (emailError) {
-          console.error('Error sending modification email to creator:', emailError);
-        }
+    // RESPUESTA RÁPIDA: responder inmediatamente al frontend
+    res.json(access);
 
-        // Send to all guests
-        for (const guest of access.invitedUsers) {
-          if (guest.email) {
-            try {
-              const qrData = {
-                type: 'access-invitation',
-                accessId: access._id.toString(),
-                accessCode: access.accessCode,
-                guestName: guest.name,
-                guestEmail: guest.email || '',
-                eventName: access.eventName,
-                eventDate: access.startDate
-              };
-              
-              await emailService.sendAccessModifiedToGuestEmail({
-                invitedEmail: guest.email,
-                invitedName: guest.name,
-                creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-                accessTitle: access.eventName,
-                accessType: access.type,
-                startDate: access.startDate,
-                endDate: access.endDate,
-                startTime: formatTime(access.startDate),
-                endTime: formatTime(access.endDate),
-                location: access.location,
-                accessCode: access.accessCode,
-                qrData: JSON.stringify(qrData),
-                companyName: company.name,
-                companyLogo: company.logo,
-                noExpiration: access.noExpiration || false
+    // PROCESAMIENTO EN SEGUNDO PLANO: QR + Emails sin bloquear respuesta
+    const bgUpdateContext = {
+      accessId: access._id.toString(),
+      accessCode: access.accessCode,
+      eventName: access.eventName,
+      type: access.type,
+      startDate: access.startDate,
+      endDate: access.endDate,
+      startTime: formatTime(access.startDate),
+      endTime: formatTime(access.endDate),
+      location: access.location,
+      eventImage: access.eventImage,
+      additionalInfo: access.additionalInfo,
+      noExpiration: access.noExpiration || false,
+      sendEmail: access.settings.sendAccessByEmail,
+      creatorEmail: access.creatorId.email,
+      creatorFirstName: access.creatorId.firstName,
+      creatorLastName: access.creatorId.lastName,
+      companyId: access.companyId,
+      newGuests: newGuests.map(g => ({
+        name: g.name,
+        email: g.email || '',
+        phone: g.phone || '',
+        company: g.company || ''
+      })),
+      endDateExtended,
+      allInvitedUsers: access.invitedUsers.map(g => ({
+        name: g.name,
+        email: g.email || '',
+        company: g.company || ''
+      }))
+    };
+
+    setImmediate(async () => {
+      try {
+        const Access = require('../models/Access');
+        const Company = require('../models/Company');
+        
+        // Generar QR para nuevos invitados
+        if (bgUpdateContext.newGuests.length > 0) {
+          const accessDoc = await Access.findById(bgUpdateContext.accessId);
+          if (accessDoc) {
+            const qrPromises = accessDoc.invitedUsers
+              .filter(g => !g.qrCode)
+              .map(async (g) => {
+                try {
+                  const qr = await generateAccessInvitationQR(accessDoc, g);
+                  if (qr) g.qrCode = qr;
+                } catch (qrErr) {
+                  console.warn('⚠️ [BG] Error generating QR:', g?.email || g?.name, qrErr?.message);
+                }
               });
-            } catch (emailError) {
-              console.error(`Error sending modification email to ${guest.email}:`, emailError);
+            
+            await Promise.allSettled(qrPromises);
+            try {
+              await accessDoc.save();
+            } catch (saveErr) {
+              console.warn('⚠️ [BG] Error saving QRs:', saveErr?.message);
             }
           }
         }
-      } catch (err) {
-        console.error('Error sending modification emails:', err);
-      }
-    } else if (!endDateExtended) {
-      console.log('ℹ️ [UPDATE ACCESS] Email de modificación omitido - solo se agregaron invitados o se cambió imagen/info');
-    }
 
-    res.json(access);
+        // Enviar emails si está habilitado
+        if (bgUpdateContext.sendEmail) {
+          const company = await Company.findOne({ companyId: bgUpdateContext.companyId });
+          const creatorName = `${bgUpdateContext.creatorFirstName} ${bgUpdateContext.creatorLastName}`;
+          
+          // Emails a nuevos invitados
+          for (const guest of bgUpdateContext.newGuests) {
+            if (guest.email) {
+              try {
+                const qrData = {
+                  type: 'access-invitation',
+                  accessId: bgUpdateContext.accessId,
+                  accessCode: bgUpdateContext.accessCode,
+                  guestName: guest.name,
+                  guestEmail: guest.email,
+                  eventName: bgUpdateContext.eventName,
+                  eventDate: bgUpdateContext.startDate
+                };
+
+                await emailService.sendAccessInvitationEmail({
+                  invitedEmail: guest.email,
+                  invitedName: guest.name,
+                  creatorName,
+                  accessTitle: bgUpdateContext.eventName,
+                  accessType: bgUpdateContext.type,
+                  startDate: bgUpdateContext.startDate,
+                  endDate: bgUpdateContext.endDate,
+                  startTime: bgUpdateContext.startTime,
+                  endTime: bgUpdateContext.endTime,
+                  location: bgUpdateContext.location,
+                  accessCode: bgUpdateContext.accessCode,
+                  qrData: JSON.stringify(qrData),
+                  eventImage: bgUpdateContext.eventImage,
+                  additionalInfo: bgUpdateContext.additionalInfo,
+                  hostName: creatorName,
+                  companyName: company?.name || 'Empresa',
+                  companyLogo: company?.logo || null,
+                  companyId: company?._id?.toString() || null,
+                  accessId: bgUpdateContext.accessId,
+                  companyLocation: company?.location || null,
+                  noExpiration: bgUpdateContext.noExpiration
+                });
+              } catch (emailError) {
+                console.error(`⚠️ [BG] Error sending invitation to ${guest.email}:`, emailError);
+              }
+            }
+          }
+
+          // Emails de modificación si la fecha fue extendida
+          if (bgUpdateContext.endDateExtended) {
+            try {
+              // Email al creador
+              try {
+                await emailService.sendAccessModifiedToCreatorEmail({
+                  creatorEmail: bgUpdateContext.creatorEmail,
+                  creatorName,
+                  accessTitle: bgUpdateContext.eventName,
+                  accessType: bgUpdateContext.type,
+                  startDate: bgUpdateContext.startDate,
+                  endDate: bgUpdateContext.endDate,
+                  startTime: bgUpdateContext.startTime,
+                  endTime: bgUpdateContext.endTime,
+                  location: bgUpdateContext.location,
+                  changes: [],
+                  companyName: company?.name || 'Empresa',
+                  companyLogo: company?.logo || null,
+                  companyId: company?._id?.toString() || null,
+                  noExpiration: bgUpdateContext.noExpiration
+                });
+                console.log('📧 [BG] Email de modificación enviado al creador');
+              } catch (emailError) {
+                console.error('⚠️ [BG] Error sending modification email to creator:', emailError);
+              }
+
+              // Emails a todos los invitados
+              for (const guest of bgUpdateContext.allInvitedUsers) {
+                if (guest.email) {
+                  try {
+                    const qrData = {
+                      type: 'access-invitation',
+                      accessId: bgUpdateContext.accessId,
+                      accessCode: bgUpdateContext.accessCode,
+                      guestName: guest.name,
+                      guestEmail: guest.email,
+                      eventName: bgUpdateContext.eventName,
+                      eventDate: bgUpdateContext.startDate
+                    };
+                    
+                    await emailService.sendAccessModifiedToGuestEmail({
+                      invitedEmail: guest.email,
+                      invitedName: guest.name,
+                      creatorName,
+                      accessTitle: bgUpdateContext.eventName,
+                      accessType: bgUpdateContext.type,
+                      startDate: bgUpdateContext.startDate,
+                      endDate: bgUpdateContext.endDate,
+                      startTime: bgUpdateContext.startTime,
+                      endTime: bgUpdateContext.endTime,
+                      location: bgUpdateContext.location,
+                      accessCode: bgUpdateContext.accessCode,
+                      qrData: JSON.stringify(qrData),
+                      companyName: company?.name || 'Empresa',
+                      companyLogo: company?.logo || null,
+                      noExpiration: bgUpdateContext.noExpiration
+                    });
+                  } catch (emailError) {
+                    console.error(`⚠️ [BG] Error sending modification email to ${guest.email}:`, emailError);
+                  }
+                }
+              }
+            } catch (err) {
+              console.error('⚠️ [BG] Error sending modification emails:', err);
+            }
+          } else if (bgUpdateContext.newGuests.length === 0) {
+            console.log('ℹ️ [BG] Email de modificación omitido - solo cambios de imagen/info');
+          }
+        }
+      } catch (bgError) {
+        console.error('⚠️ [BG] Error en procesamiento de QR/emails:', bgError);
+      }
+    });
   } catch (error) {
     console.error('Update access error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });

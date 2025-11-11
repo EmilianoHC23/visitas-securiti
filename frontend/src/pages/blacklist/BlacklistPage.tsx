@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { BlacklistEntry } from '../../types';
 import * as api from '../../services/api';
 import { Search, UserX, Mail, AlertCircle, Camera, Upload, Trash2, X, ShieldBan } from 'lucide-react';
@@ -10,6 +11,7 @@ export const BlacklistPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [errorAlert, setErrorAlert] = useState<{ show: boolean; message: string } | null>(null);
   const [newEntry, setNewEntry] = useState({
     visitorName: '',
     email: '',
@@ -47,13 +49,13 @@ export const BlacklistPage: React.FC = () => {
     if (file) {
       // Validar tamaño (5MB máximo)
       if (file.size > 5 * 1024 * 1024) {
-        alert('El archivo es demasiado grande. Máximo 5MB.');
+        setErrorAlert({ show: true, message: 'El archivo es demasiado grande. Máximo 5MB.' });
         return;
       }
 
       // Validar tipo
       if (!file.type.match(/image\/(jpeg|jpg|png|gif|webp)/)) {
-        alert('Solo se permiten archivos de imagen (jpeg, jpg, png, gif, webp)');
+        setErrorAlert({ show: true, message: 'Solo se permiten archivos de imagen (jpeg, jpg, png, gif, webp)' });
         return;
       }
 
@@ -70,14 +72,14 @@ export const BlacklistPage: React.FC = () => {
     e.preventDefault();
     
     if (!newEntry.visitorName || !newEntry.email || !newEntry.reason) {
-      alert('El nombre, correo electrónico y motivo son requeridos');
+      setErrorAlert({ show: true, message: 'El nombre, correo electrónico y motivo son requeridos' });
       return;
     }
 
     // Validar formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newEntry.email)) {
-      alert('Por favor, ingrese un correo electrónico válido');
+      setErrorAlert({ show: true, message: 'Por favor, ingrese un correo electrónico válido' });
       return;
     }
     
@@ -103,7 +105,7 @@ export const BlacklistPage: React.FC = () => {
     } catch (error) {
       console.error('❌ Error adding to blacklist:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      alert(`Error al agregar a la lista negra: ${errorMessage}`);
+      setErrorAlert({ show: true, message: errorMessage });
     }
   };
 
@@ -141,7 +143,8 @@ export const BlacklistPage: React.FC = () => {
       closeConfirm();
     } catch (error) {
       console.error('Error removing from blacklist:', error);
-      alert('Error al eliminar de la lista negra');
+      closeConfirm();
+      setErrorAlert({ show: true, message: 'Error al eliminar de la lista negra' });
     } finally {
       setLoading(false);
     }
@@ -575,6 +578,57 @@ export const BlacklistPage: React.FC = () => {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Modal de Error - Modernizado */}
+      {errorAlert?.show && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden"
+          >
+            {/* Header con gradiente gris */}
+            <div className="relative p-8 rounded-t-2xl bg-gradient-to-br from-gray-900 to-gray-700">
+              <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
+              <div className="relative flex items-start justify-between text-white">
+                <div className="flex items-start gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-1 ring-white/30">
+                    <AlertCircle className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl md:text-2xl font-bold text-white">Error al agregar</h3>
+                    <p className="text-sm text-white/90 mt-1">No se pudo completar la operación</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setErrorAlert(null)}
+                  className="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-all"
+                  aria-label="Cerrar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenido */}
+            <div className="p-6 rounded-b-2xl bg-white">
+              <p className="text-sm text-gray-700 mb-6 leading-relaxed">
+                {errorAlert.message}
+              </p>
+
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => setErrorAlert(null)}
+                  className="px-6 py-2.5 text-white bg-gradient-to-br from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 rounded-xl shadow-md hover:shadow-lg transition-all font-medium"
+                >
+                  Aceptar
+                </button>
+              </div>
+            </div>
+          </motion.div>
         </div>
       )}
 

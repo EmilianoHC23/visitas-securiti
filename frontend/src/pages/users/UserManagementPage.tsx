@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User as UserIcon, Users, FileText, UserPlus, Mail, Upload, Trash2, X, Shield, ChevronDown, CheckCircle, AlertCircle, Info, AlertTriangle, Camera } from 'lucide-react';
+import { User as UserIcon, Users, FileText, UserPlus, Mail, Upload, Trash2, X, Shield, ChevronDown, CheckCircle, AlertCircle, Info, AlertTriangle, Camera, Search, Filter } from 'lucide-react';
 import { User, UserRole } from '../../types';
 import * as api from '../../services/api';
 
@@ -926,6 +926,11 @@ export const UserManagementPage: React.FC = () => {
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [previewUser, setPreviewUser] = useState<User | null>(null);
 
+    // Estados para búsqueda y filtros
+    const [searchTerm, setSearchTerm] = useState('');
+    const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'registered' | 'pending'>('all');
+
     // Detect mobile
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -1016,6 +1021,27 @@ export const UserManagementPage: React.FC = () => {
         window.setTimeout(() => setNotification(null), 4500);
     }, []);
 
+    // Filtrar usuarios según búsqueda y filtros
+    const filteredUsers = useMemo(() => {
+        return users.filter(user => {
+            // Filtro de búsqueda (nombre o email)
+            const matchesSearch = searchTerm === '' || 
+                `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                user.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+            // Filtro de rol
+            const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+
+            // Filtro de status
+            const userStatus = user.invitationStatus || 'none';
+            const matchesStatus = statusFilter === 'all' || 
+                (statusFilter === 'registered' && userStatus === 'registered') ||
+                (statusFilter === 'pending' && userStatus === 'pending');
+
+            return matchesSearch && matchesRole && matchesStatus;
+        });
+    }, [users, searchTerm, roleFilter, statusFilter]);
+
     const handleConfirmPrimary = useCallback(async () => {
         if (!confirmData) return closeConfirm();
         const { type, user } = confirmData;
@@ -1088,6 +1114,87 @@ export const UserManagementPage: React.FC = () => {
                 </button>
             </div>
 
+            {/* Barra de búsqueda y filtros */}
+            <div className={`mb-6 ${isMobile ? 'px-3' : 'px-6'}`}>
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-gray-200/50 p-4">
+                    <div className={`flex ${isMobile ? 'flex-col gap-3' : 'flex-row gap-4 items-center'}`}>
+                        {/* Barra de búsqueda */}
+                        <div className="flex-1">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por nombre o correo..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg bg-white placeholder-gray-400 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Filtro por rol */}
+                        <div className={isMobile ? 'w-full' : 'w-48'}>
+                            <div className="relative">
+                                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
+                                <select
+                                    value={roleFilter}
+                                    onChange={(e) => setRoleFilter(e.target.value as UserRole | 'all')}
+                                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg bg-white shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all appearance-none cursor-pointer"
+                                >
+                                    <option value="all">Todos los roles</option>
+                                    <option value={UserRole.ADMIN}>Administrador</option>
+                                    <option value={UserRole.RECEPTION}>Recepcionista</option>
+                                    <option value={UserRole.HOST}>Host</option>
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                            </div>
+                        </div>
+
+                        {/* Filtro por status */}
+                        <div className={isMobile ? 'w-full' : 'w-48'}>
+                            <div className="relative">
+                                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value as 'all' | 'registered' | 'pending')}
+                                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg bg-white shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all appearance-none cursor-pointer"
+                                >
+                                    <option value="all">Todos los status</option>
+                                    <option value="registered">Registrado</option>
+                                    <option value="pending">Pendiente</option>
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                            </div>
+                        </div>
+
+                        {/* Contador de resultados */}
+                        {(searchTerm || roleFilter !== 'all' || statusFilter !== 'all') && (
+                            <div className={`${isMobile ? 'w-full text-center' : ''} flex items-center gap-2 text-sm text-gray-600`}>
+                                <span className="font-medium">{filteredUsers.length}</span>
+                                <span>resultado{filteredUsers.length !== 1 ? 's' : ''}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Botón para limpiar filtros */}
+                    {(searchTerm || roleFilter !== 'all' || statusFilter !== 'all') && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                            <button
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setRoleFilter('all');
+                                    setStatusFilter('all');
+                                }}
+                                className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors flex items-center gap-2"
+                            >
+                                <X className="w-4 h-4" />
+                                Limpiar filtros
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             {/* Main card containing the table - modernizado con colores de SettingsPage */}
             <div className={`bg-white/80 backdrop-blur-sm ${isMobile ? 'p-3' : 'p-6'} rounded-2xl shadow-xl border border-gray-200/50`}>
                 {isMobile ? (
@@ -1098,8 +1205,18 @@ export const UserManagementPage: React.FC = () => {
                                 <div className={`inline-block animate-spin rounded-full ${isMobile ? 'h-12 w-12 border-4' : 'h-16 w-16 border-4'} border-gray-200 border-t-gray-900`}></div>
                                 <p className={`${isMobile ? 'mt-4 text-base' : 'mt-6 text-lg'} text-gray-600 font-medium`}>Cargando usuarios...</p>
                             </div>
+                        ) : filteredUsers.length === 0 ? (
+                            <div className="text-center py-12 bg-white rounded-2xl shadow-md border border-gray-200">
+                                <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                <p className="text-gray-500 font-medium">No se encontraron usuarios</p>
+                                <p className="text-sm text-gray-400 mt-1">
+                                    {searchTerm || roleFilter !== 'all' || statusFilter !== 'all' 
+                                        ? 'Intenta ajustar los filtros de búsqueda' 
+                                        : 'Comienza invitando a un nuevo usuario'}
+                                </p>
+                            </div>
                         ) : (
-                            users.map(user => (
+                            filteredUsers.map(user => (
                                 <div
                                     key={user._id}
                                     onClick={() => {
@@ -1183,6 +1300,16 @@ export const UserManagementPage: React.FC = () => {
                                 <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-gray-900"></div>
                                 <p className="mt-6 text-lg text-gray-600 font-medium">Cargando usuarios...</p>
                             </div>
+                        ) : filteredUsers.length === 0 ? (
+                            <div className="text-center py-20 bg-white rounded-2xl shadow-md border border-gray-200">
+                                <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                <p className="text-lg text-gray-500 font-medium">No se encontraron usuarios</p>
+                                <p className="text-sm text-gray-400 mt-2">
+                                    {searchTerm || roleFilter !== 'all' || statusFilter !== 'all' 
+                                        ? 'Intenta ajustar los filtros de búsqueda' 
+                                        : 'Comienza invitando a un nuevo usuario'}
+                                </p>
+                            </div>
                         ) : (
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
@@ -1196,7 +1323,7 @@ export const UserManagementPage: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-100">
-                                    {users.map((user, rowIndex) => (
+                                    {filteredUsers.map((user, rowIndex) => (
                                         <tr
                                             key={user._id}
                                             className="group bg-white even:bg-gray-50/50 border-b border-gray-100 cursor-pointer transition-all duration-200 hover:bg-gradient-to-r hover:from-gray-50 hover:to-transparent"

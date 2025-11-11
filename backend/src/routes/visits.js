@@ -423,114 +423,70 @@ router.post('/force-register', auth, async (req, res) => {
     await visit.save();
     await visit.populate('host', 'firstName lastName email profileImage');
 
-    // Crear evento de check-in si aplica (antes de responder)
+    // Continuar con la lógica normal (emails, eventos, etc.)
+    if ((req.body.visitType === 'access-code' || req.body.fromAccessEvent === true) && initialStatus === 'approved') {
+      try {
+        const Access = require('../models/Access');
+        const access = await Access.findOne({ accessCode: req.body.accessCode }).populate('creatorId', 'firstName lastName email');
+        
+        if (access && access.creatorId) {
+          const guest = access.invitedUsers.find(u => 
+            u.email === visitorEmail || u.phone === req.body.visitorPhone
+          );
+          
+          if (guest && guest.addedViaPreRegistration === true) {
+            await require('../services/emailService').sendGuestArrivedEmail({
+              visitId: visit._id,
+              creatorEmail: access.creatorId.email,
+              creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+              guestName: visitorName,
+              guestEmail: visitorEmail || 'No proporcionado',
+              guestCompany: visitorCompany || 'No proporcionado',
+              guestPhoto: req.body.visitorPhoto,
+              accessTitle: access.eventName,
+              companyName: (company && company.name) || 'SecurITI',
+              companyId: company?.companyId || null,
+              companyLogo: company?.logo || null
+            });
+          }
+        }
+      } catch (emailError) {
+        console.error('⚠️ Error enviando email de llegada:', emailError);
+      }
+    }
+
     if (initialStatus === 'checked-in') {
       await new VisitEvent({ visitId: visit._id, type: 'check-in' }).save();
     }
 
     const isAccessEvent = req.body.visitType === 'access-code' || req.body.fromAccessEvent === true;
     
-    // RESPUESTA RÁPIDA: responder inmediatamente al frontend
+    if (!autoApproval && !isAccessEvent) {
+      const approval = Approval.createWithExpiry(visit._id, host._id, 48);
+      await approval.save();
+
+      const FE = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+      const approveUrl = `${FE}/api/visits/approve/${approval.token}`;
+      const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
+      await require('../services/emailService').sendApprovalRequestEmail({
+        visitId: visit._id,
+        hostEmail: host.email,
+        hostName: `${host.firstName} ${host.lastName}`,
+        companyName: (company && company.name) || 'SecurITI',
+        companyId: company?.companyId || null,
+        companyLogo: company?.logo || null,
+        visitorName,
+        visitorCompany,
+        visitorPhoto: req.body.visitorPhoto,
+        reason,
+        scheduledDate,
+        approveUrl,
+        rejectUrl
+      });
+    }
+
     console.log('✅ [FORCE REGISTER] Visit created (blacklist ignored)');
     res.status(201).json(visit);
-
-    // PROCESAMIENTO EN SEGUNDO PLANO: Emails se envían completos pero sin bloquear respuesta HTTP
-    // Capturar datos necesarios antes de setImmediate para evitar problemas de scope
-    const emailContext = {
-      visitType: req.body.visitType,
-      fromAccessEvent: req.body.fromAccessEvent,
-      accessCode: req.body.accessCode,
-      visitorEmail,
-      visitorPhone: req.body.visitorPhone,
-      visitorName,
-      visitorCompany,
-      visitorPhoto: req.body.visitorPhoto,
-      initialStatus,
-      visitId: visit._id.toString(),
-      hostEmail: host.email,
-      hostFirstName: host.firstName,
-      hostLastName: host.lastName,
-      hostId: host._id.toString(),
-      reason,
-      scheduledDate,
-      companyName: (company && company.name) || 'SecurITI',
-      companyId: company?.companyId || null,
-      companyLogo: company?.logo || null,
-      autoApproval,
-      isAccessEvent
-    };
-
-    setImmediate(async () => {
-      try {
-        // Email de llegada para eventos con pre-registro
-        if ((emailContext.visitType === 'access-code' || emailContext.fromAccessEvent === true) && emailContext.initialStatus === 'approved') {
-          try {
-            const Access = require('../models/Access');
-            const access = await Access.findOne({ accessCode: emailContext.accessCode }).populate('creatorId', 'firstName lastName email');
-            
-            if (access && access.creatorId) {
-              const guest = access.invitedUsers.find(u => 
-                u.email === emailContext.visitorEmail || u.phone === emailContext.visitorPhone
-              );
-              
-              if (guest && guest.addedViaPreRegistration === true) {
-                await require('../services/emailService').sendGuestArrivedEmail({
-                  visitId: emailContext.visitId,
-                  creatorEmail: access.creatorId.email,
-                  creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-                  guestName: emailContext.visitorName,
-                  guestEmail: emailContext.visitorEmail || 'No proporcionado',
-                  guestCompany: emailContext.visitorCompany || 'No proporcionado',
-                  guestPhoto: emailContext.visitorPhoto,
-                  accessTitle: access.eventName,
-                  companyName: emailContext.companyName,
-                  companyId: emailContext.companyId,
-                  companyLogo: emailContext.companyLogo
-                });
-              }
-            }
-          } catch (emailError) {
-            console.error('⚠️ [BG] Error enviando email de llegada:', emailError);
-          }
-        }
-
-        // Email de aprobación si aplica
-        if (!emailContext.autoApproval && !emailContext.isAccessEvent) {
-          try {
-            const Approval = require('../models/Approval');
-            const User = require('../models/User');
-            
-            const hostDoc = await User.findById(emailContext.hostId);
-            const approval = Approval.createWithExpiry(emailContext.visitId, emailContext.hostId, 48);
-            await approval.save();
-
-            const FE = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
-            const approveUrl = `${FE}/api/visits/approve/${approval.token}`;
-            const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
-            
-            await require('../services/emailService').sendApprovalRequestEmail({
-              visitId: emailContext.visitId,
-              hostEmail: emailContext.hostEmail,
-              hostName: `${emailContext.hostFirstName} ${emailContext.hostLastName}`,
-              companyName: emailContext.companyName,
-              companyId: emailContext.companyId,
-              companyLogo: emailContext.companyLogo,
-              visitorName: emailContext.visitorName,
-              visitorCompany: emailContext.visitorCompany,
-              visitorPhoto: emailContext.visitorPhoto,
-              reason: emailContext.reason,
-              scheduledDate: emailContext.scheduledDate,
-              approveUrl,
-              rejectUrl
-            });
-          } catch (emailError) {
-            console.error('⚠️ [BG] Error enviando email de aprobación:', emailError);
-          }
-        }
-      } catch (bgError) {
-        console.error('⚠️ [BG] Error en procesamiento de emails:', bgError);
-      }
-    });
   } catch (error) {
     console.error('Force register visit error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });

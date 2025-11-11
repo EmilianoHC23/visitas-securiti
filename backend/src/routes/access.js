@@ -342,6 +342,9 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
     // Esto mejora dramáticamente la velocidad cuando hay muchos invitados
     if (access.settings.sendAccessByEmail) {
       const creator = access.creatorId;
+      
+      // IMPORTANTE: Capturar TODOS los datos necesarios antes del setImmediate
+      // para evitar problemas de scope y asegurar que los datos estén disponibles
       const accessData = {
         _id: access._id.toString(),
         eventName: access.eventName,
@@ -353,9 +356,16 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
         eventImage: access.eventImage,
         additionalInfo: access.additionalInfo,
         noExpiration: access.noExpiration || false,
-        invitedUsers: access.invitedUsers,
+        invitedUsers: JSON.parse(JSON.stringify(access.invitedUsers)), // Deep copy
         creatorName: `${creator.firstName} ${creator.lastName}`,
         creatorEmail: creator.email
+      };
+
+      const companyData = {
+        name: company.name,
+        logo: company.logo,
+        _id: company._id.toString(),
+        location: company.location
       };
 
       setImmediate(async () => {
@@ -373,9 +383,9 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
             location: accessData.location,
             accessCode: accessData.accessCode,
             invitedCount: accessData.invitedUsers.length,
-            companyName: company.name,
-            companyLogo: company.logo,
-            companyId: company._id.toString(),
+            companyName: companyData.name,
+            companyLogo: companyData.logo,
+            companyId: companyData._id,
             noExpiration: accessData.noExpiration
           });
 
@@ -414,11 +424,11 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
                   eventImage: accessData.eventImage,
                   additionalInfo: accessData.additionalInfo,
                   hostName: accessData.creatorName,
-                  companyName: company.name,
-                  companyLogo: company.logo,
-                  companyId: company._id,
+                  companyName: companyData.name,
+                  companyLogo: companyData.logo,
+                  companyId: companyData._id,
                   accessId: accessData._id,
-                  companyLocation: company.location,
+                  companyLocation: companyData.location,
                   noExpiration: accessData.noExpiration
                 });
               } catch (emailError) {
@@ -533,44 +543,68 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
       if (newGuests.length > 0 && access.settings.sendAccessByEmail) {
         const company = await Company.findOne({ companyId: access.companyId });
         
+        // Capturar datos necesarios antes del setImmediate
+        const accessEmailData = {
+          _id: access._id.toString(),
+          accessCode: access.accessCode,
+          eventName: access.eventName,
+          type: access.type,
+          startDate: access.startDate,
+          endDate: access.endDate,
+          location: access.location,
+          eventImage: access.eventImage,
+          additionalInfo: access.additionalInfo,
+          noExpiration: access.noExpiration || false,
+          creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`
+        };
+
+        const companyEmailData = {
+          name: company?.name || 'SecurITI',
+          logo: company?.logo,
+          _id: company?._id?.toString(),
+          location: company?.location
+        };
+
+        const guestsToEmail = JSON.parse(JSON.stringify(newGuests)); // Deep copy
+
         setImmediate(async () => {
           try {
-            const emailPromises = newGuests
+            const emailPromises = guestsToEmail
               .filter(guest => guest.email)
               .map(async (guest) => {
                 try {
                   const qrData = {
                     type: 'access-invitation',
-                    accessId: access._id.toString(),
-                    accessCode: access.accessCode,
+                    accessId: accessEmailData._id,
+                    accessCode: accessEmailData.accessCode,
                     guestName: guest.name,
                     guestEmail: guest.email || '',
-                    eventName: access.eventName,
-                    eventDate: access.startDate
+                    eventName: accessEmailData.eventName,
+                    eventDate: accessEmailData.startDate
                   };
 
                   await emailService.sendAccessInvitationEmail({
                     invitedEmail: guest.email,
                     invitedName: guest.name,
-                    creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-                    accessTitle: access.eventName,
-                    accessType: access.type,
-                    startDate: access.startDate,
-                    endDate: access.endDate,
-                    startTime: formatTime(access.startDate),
-                    endTime: formatTime(access.endDate),
-                    location: access.location,
-                    accessCode: access.accessCode,
+                    creatorName: accessEmailData.creatorName,
+                    accessTitle: accessEmailData.eventName,
+                    accessType: accessEmailData.type,
+                    startDate: accessEmailData.startDate,
+                    endDate: accessEmailData.endDate,
+                    startTime: formatTime(accessEmailData.startDate),
+                    endTime: formatTime(accessEmailData.endDate),
+                    location: accessEmailData.location,
+                    accessCode: accessEmailData.accessCode,
                     qrData: JSON.stringify(qrData),
-                    eventImage: access.eventImage,
-                    additionalInfo: access.additionalInfo,
-                    hostName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-                    companyName: company.name,
-                    companyLogo: company.logo,
-                    companyId: company._id,
-                    accessId: access._id.toString(),
-                    companyLocation: company.location,
-                    noExpiration: access.noExpiration || false
+                    eventImage: accessEmailData.eventImage,
+                    additionalInfo: accessEmailData.additionalInfo,
+                    hostName: accessEmailData.creatorName,
+                    companyName: companyEmailData.name,
+                    companyLogo: companyEmailData.logo,
+                    companyId: companyEmailData._id,
+                    accessId: accessEmailData._id,
+                    companyLocation: companyEmailData.location,
+                    noExpiration: accessEmailData.noExpiration
                   });
                 } catch (emailError) {
                   console.error(`⚠️ [BACKGROUND] Error sending invitation to ${guest.email}:`, emailError);

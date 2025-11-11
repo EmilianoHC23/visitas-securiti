@@ -335,6 +335,46 @@ export const Header: React.FC<{
                                         setDropdownOpen(false);
                                     }}
                                     className="dropdown-item d-flex align-items-center"
+                                    onMouseDown={(e) => {
+                                        e.preventDefault();
+                                    }}
+                                    onFocus={(e) => {
+                                        const t = e.currentTarget as HTMLButtonElement;
+                                        try {
+                                            t.style.outline = 'none';
+                                            t.style.boxShadow = 'none';
+                                            t.style.border = 'none';
+                                            t.style.backgroundColor = 'transparent';
+                                        } catch (err) {
+                                            // ignore
+                                        }
+                                    }}
+                                    onBlur={(e) => {
+                                        const t = e.currentTarget as HTMLButtonElement;
+                                        try {
+                                            t.style.outline = '';
+                                            t.style.boxShadow = '';
+                                            t.style.border = '';
+                                            t.style.backgroundColor = '';
+                                        } catch (err) {
+                                            // ignore
+                                        }
+                                    }}
+                                    style={{ 
+                                        outline: 'none', 
+                                        boxShadow: 'none', 
+                                        border: 'none',
+                                        backgroundColor: 'transparent',
+                                        WebkitTapHighlightColor: 'transparent'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        const t = e.currentTarget as HTMLButtonElement;
+                                        t.style.backgroundColor = '#f8f9fa';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        const t = e.currentTarget as HTMLButtonElement;
+                                        t.style.backgroundColor = 'transparent';
+                                    }}
                                 >
                                     <motion.span variants={actionIconVariants} className="me-2 d-inline-flex align-items-center justify-content-center">
                                         <FaRegUser />
@@ -359,6 +399,46 @@ export const Header: React.FC<{
                                         }
                                     }}
                                     className="dropdown-item d-flex align-items-center"
+                                    onMouseDown={(e) => {
+                                        e.preventDefault();
+                                    }}
+                                    onFocus={(e) => {
+                                        const t = e.currentTarget as HTMLButtonElement;
+                                        try {
+                                            t.style.outline = 'none';
+                                            t.style.boxShadow = 'none';
+                                            t.style.border = 'none';
+                                            t.style.backgroundColor = 'transparent';
+                                        } catch (err) {
+                                            // ignore
+                                        }
+                                    }}
+                                    onBlur={(e) => {
+                                        const t = e.currentTarget as HTMLButtonElement;
+                                        try {
+                                            t.style.outline = '';
+                                            t.style.boxShadow = '';
+                                            t.style.border = '';
+                                            t.style.backgroundColor = '';
+                                        } catch (err) {
+                                            // ignore
+                                        }
+                                    }}
+                                    style={{ 
+                                        outline: 'none', 
+                                        boxShadow: 'none', 
+                                        border: 'none',
+                                        backgroundColor: 'transparent',
+                                        WebkitTapHighlightColor: 'transparent'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        const t = e.currentTarget as HTMLButtonElement;
+                                        t.style.backgroundColor = '#f8f9fa';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        const t = e.currentTarget as HTMLButtonElement;
+                                        t.style.backgroundColor = 'transparent';
+                                    }}
                                 >
                                     <motion.span variants={actionIconVariants} className="me-2 d-inline-flex align-items-center justify-content-center">
                                         <LogoutIcon />

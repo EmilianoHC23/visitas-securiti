@@ -346,59 +346,87 @@ export const BlacklistPage: React.FC = () => {
         </div>
       )}
 
-      {/* Modal para agregar entrada */}
+      {/* Modal para agregar entrada - Modernizado */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50 animate-fadeIn">
-          <div className={`bg-white rounded-2xl ${isMobile ? 'max-w-sm' : 'max-w-2xl'} w-full shadow-2xl animate-slideUp max-h-[90vh] overflow-y-auto`}>
-            {/* Header */}
-            <div className={`${isMobile ? 'p-4' : 'p-6'} border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10`}>
-              <div className="flex items-center justify-between">
-                <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-3'}`}>
-                  <div className={`${isMobile ? 'p-1.5' : 'p-2'} bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg shadow-sm`}>
-                    <UserX className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-gray-700`} />
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 z-50 animate-fadeIn">
+          <div className={`bg-white rounded-3xl ${isMobile ? 'max-w-sm' : 'max-w-2xl'} w-full shadow-2xl animate-slideUp max-h-[92vh] overflow-hidden`}>
+            {/* Decorative Header Background */}
+            <div className="relative overflow-hidden">
+              {/* Gradient Background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700">
+                {/* Decorative circles */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-slate-600/30 rounded-full blur-3xl transform translate-x-32 -translate-y-32"></div>
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-slate-600/20 rounded-full blur-3xl transform -translate-x-32 translate-y-32"></div>
+              </div>
+              
+              {/* Header Content */}
+              <div className={`relative ${isMobile ? 'px-6 py-6' : 'px-8 py-8'}`}>
+                <div className="flex items-start justify-between">
+                  <div className={`flex items-center ${isMobile ? 'gap-3' : 'gap-4'}`}>
+                    <div className={`${isMobile ? 'w-12 h-12' : 'w-14 h-14'} bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center shadow-lg border border-white/20`}>
+                      <ShieldBan className={`${isMobile ? 'w-6 h-6' : 'w-7 h-7'} text-white`} />
+                    </div>
+                    <div>
+                      <h3 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-white mb-1`}>
+                        {isMobile ? 'Agregar a Lista' : 'Agregar a Lista Negra'}
+                      </h3>
+                      <p className="text-slate-300 text-sm">Restringir acceso a las instalaciones</p>
+                    </div>
                   </div>
-                  <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-gray-900`}>
-                    {isMobile ? 'Agregar a Lista' : 'Agregar a Lista Negra'}
-                  </h3>
+                  <button
+                    onClick={() => setShowAddForm(false)}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-all border border-white/20 text-white"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setShowAddForm(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <X className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-gray-500`} />
-                </button>
               </div>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleAdd} className={`${isMobile ? 'p-4 space-y-4' : 'p-6 space-y-6'}`}>
-              {/* Photo Upload */}
-              <div>
-                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-700 ${isMobile ? 'mb-2' : 'mb-3'}`}>
-                  Foto del visitante (opcional)
-                </label>
-                <div className={`flex flex-col sm:flex-row items-start sm:items-center ${isMobile ? 'gap-3' : 'gap-4'}`}>
-                  {newEntry.photo ? (
-                    <div className="relative flex-shrink-0">
-                      <img
-                        src={newEntry.photo}
-                        alt="Preview"
-                        className={`${isMobile ? 'w-24 h-24' : 'w-32 h-32'} rounded-xl object-cover border-2 border-gray-200`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setNewEntry({ ...newEntry, photo: '' })}
-                        className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className={`${isMobile ? 'w-24 h-24' : 'w-32 h-32'} rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 flex-shrink-0`}>
-                      <Camera className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} text-gray-400`} />
-                    </div>
-                  )}
-                  <div className="flex-1 w-full">
+            <form onSubmit={handleAdd} className={`${isMobile ? 'p-6 space-y-6' : 'p-8 space-y-8'} overflow-y-auto max-h-[calc(92vh-180px)]`}>
+              {/* Photo Upload Section - Rediseñada */}
+              <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border border-slate-200/60 shadow-sm">
+                <div className="flex items-center gap-2 mb-5">
+                  <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center">
+                    <Upload className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800">Foto del Visitante</h3>
+                    <p className="text-xs text-slate-500">Identificación visual (opcional)</p>
+                  </div>
+                </div>
+                
+                <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} items-center gap-6`}>
+                  {/* Vista previa de la imagen */}
+                  <div className="relative group">
+                    {newEntry.photo ? (
+                      <div className="relative">
+                        <div className={`${isMobile ? 'w-28 h-28' : 'w-32 h-32'} rounded-2xl overflow-hidden border-4 border-white shadow-xl ring-2 ring-slate-200`}>
+                          <img
+                            src={newEntry.photo}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setNewEntry({ ...newEntry, photo: '' })}
+                          className="absolute -top-2 -right-2 w-9 h-9 bg-red-500 text-white rounded-xl flex items-center justify-center hover:bg-red-600 transition-all shadow-lg hover:scale-110 transform"
+                          title="Eliminar foto"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className={`${isMobile ? 'w-28 h-28' : 'w-32 h-32'} rounded-2xl bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center border-4 border-white shadow-xl ring-2 ring-slate-200`}>
+                        <Camera className={`${isMobile ? 'w-12 h-12' : 'w-14 h-14'} text-slate-400`} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Botón de carga mejorado */}
+                  <div className="flex-1 space-y-3 w-full">
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -409,77 +437,140 @@ export const BlacklistPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3'} bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium flex items-center justify-center gap-2`}
+                      className={`w-full ${isMobile ? 'px-4 py-3' : 'px-5 py-3.5'} bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-all flex items-center justify-center gap-3 font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02]`}
                     >
-                      <Upload className={isMobile ? "w-4 h-4" : "w-5 h-5"} />
+                      <Upload className="w-5 h-5" />
                       {newEntry.photo ? 'Cambiar foto' : 'Subir foto'}
                     </button>
-                    <p className="text-xs text-gray-500 mt-2">
-                      JPG, PNG o GIF. Máximo 5MB.
-                    </p>
+                    <div className="flex items-start gap-2 bg-white/70 rounded-lg p-3 border border-slate-200">
+                      <svg className="w-4 h-4 text-slate-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="text-xs text-slate-600 leading-relaxed">
+                        <p className="font-medium mb-1">Formatos permitidos:</p>
+                        <p>JPG, PNG o GIF • Máximo 5MB</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Visitor Name */}
-              <div>
-                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-700 mb-2`}>
-                  Nombre del visitante *
-                </label>
-                <input
-                  type="text"
-                  value={newEntry.visitorName}
-                  onChange={(e) => setNewEntry({ ...newEntry, visitorName: e.target.value })}
-                  className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3'} border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all`}
-                  placeholder="Nombre completo"
-                  required
-                />
+              {/* Información del Visitante - Rediseñada */}
+              <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border border-slate-200/60 shadow-sm">
+                <div className="flex items-center gap-2 mb-5">
+                  <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center">
+                    <UserX className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800">Datos del Visitante</h3>
+                    <p className="text-xs text-slate-500">Información de identificación</p>
+                  </div>
+                </div>
+
+                <div className="space-y-5">
+                  {/* Nombre del visitante */}
+                  <div className="space-y-2">
+                    <label htmlFor="visitorName" className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-800"></div>
+                      Nombre completo <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        id="visitorName"
+                        value={newEntry.visitorName}
+                        onChange={(e) => setNewEntry({ ...newEntry, visitorName: e.target.value })}
+                        className="w-full px-4 py-3.5 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-all outline-none bg-white placeholder:text-slate-400 text-slate-800 font-medium shadow-sm"
+                        placeholder="Nombre completo del visitante"
+                        required
+                      />
+                      {newEntry.visitorName && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-800"></div>
+                      Correo electrónico <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <input
+                        type="email"
+                        id="email"
+                        value={newEntry.email}
+                        onChange={(e) => setNewEntry({ ...newEntry, email: e.target.value })}
+                        className="w-full pl-11 pr-4 py-3.5 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-all outline-none bg-white placeholder:text-slate-400 text-slate-800 font-medium shadow-sm"
+                        placeholder="correo@ejemplo.com"
+                        required
+                      />
+                      {newEntry.email && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Email */}
-              <div>
-                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-700 mb-2`}>
-                  Correo electrónico *
-                </label>
-                <input
-                  type="email"
-                  value={newEntry.email}
-                  onChange={(e) => setNewEntry({ ...newEntry, email: e.target.value })}
-                  className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3'} border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all`}
-                  placeholder="correo@ejemplo.com"
-                  required
-                />
+              {/* Motivo - Sección separada */}
+              <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl p-6 border border-red-200/60 shadow-sm">
+                <div className="flex items-center gap-2 mb-5">
+                  <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+                    <AlertCircle className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800">Motivo de Restricción</h3>
+                    <p className="text-xs text-slate-500">Por qué se agrega a la lista negra</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="reason" className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-600"></div>
+                    Descripción del motivo <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    id="reason"
+                    value={newEntry.reason}
+                    onChange={(e) => setNewEntry({ ...newEntry, reason: e.target.value })}
+                    className="w-full px-4 py-3.5 border-2 border-red-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all outline-none bg-white placeholder:text-slate-400 text-slate-800 font-medium shadow-sm resize-none"
+                    rows={isMobile ? 3 : 4}
+                    placeholder="Describe el motivo por el cual se agrega a la lista negra..."
+                    required
+                  />
+                </div>
               </div>
 
-              {/* Reason */}
-              <div>
-                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-700 mb-2`}>
-                  Motivo *
-                </label>
-                <textarea
-                  value={newEntry.reason}
-                  onChange={(e) => setNewEntry({ ...newEntry, reason: e.target.value })}
-                  className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3'} border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all resize-none`}
-                  rows={isMobile ? 3 : 4}
-                  placeholder="Describe el motivo por el cual se agrega a la lista negra..."
-                  required
-                />
-              </div>
-
-              {/* Buttons */}
-              <div className={`flex gap-3 ${isMobile ? 'pt-3' : 'pt-4'} sticky bottom-0 bg-white pb-2`}>
+              {/* Buttons - Rediseñados */}
+              <div className="flex gap-4 pt-6 mt-2">
                 <button
                   type="button"
                   onClick={() => setShowAddForm(false)}
-                  className={`flex-1 ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3'} bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-semibold`}
+                  className={`flex-1 ${isMobile ? 'px-4 py-3' : 'px-6 py-3.5'} border-2 border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 hover:border-slate-400 font-semibold transition-all shadow-sm hover:shadow-md transform hover:scale-[1.02] hover:-translate-y-0.5`}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className={`flex-1 ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3'} bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-xl hover:from-gray-800 hover:to-gray-900 transition-all shadow-lg font-semibold`}
+                  className={`flex-1 ${isMobile ? 'px-4 py-3' : 'px-6 py-3.5'} bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-xl hover:from-slate-900 hover:to-slate-950 font-semibold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2.5 transform hover:scale-[1.02] hover:-translate-y-0.5`}
                 >
-                  Agregar
+                  <ShieldBan className="w-5 h-5" />
+                  <span>Agregar a Lista</span>
                 </button>
               </div>
             </form>

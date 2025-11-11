@@ -1310,35 +1310,6 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                   </div>
                 </div>
 
-                {/* Sin Vencimiento Toggle */}
-                <div className="bg-white rounded-xl border-2 border-gray-200 p-4 hover:border-gray-300 transition-all">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className="w-10 h-10 bg-gradient-to-br from-gray-900 to-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
-                        <Timer className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <label htmlFor="noExpiration" className="block text-sm font-semibold text-gray-900 cursor-pointer mb-1">
-                          Sin Vencimiento
-                        </label>
-                        <p className="text-xs text-gray-600">
-                          El acceso no expirará automáticamente
-                        </p>
-                      </div>
-                    </div>
-                    <label htmlFor="noExpiration" className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                      <input
-                        type="checkbox"
-                        id="noExpiration"
-                        checked={formData.noExpiration}
-                        onChange={(e) => setFormData({ ...formData, noExpiration: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-900/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
-                    </label>
-                  </div>
-                </div>
-
                 {/* Fecha y hora de finalización */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -1364,6 +1335,30 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
                       onChange={(value) => setFormData({ ...formData, endTime: value })}
                       disabled={formData.noExpiration}
                     />
+                  </div>
+                </div>
+
+                {/* Sin Vencimiento Toggle */}
+                <div className="bg-white rounded-xl border-2 border-gray-200 p-4 hover:border-gray-300 transition-all">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <label htmlFor="noExpiration" className="block text-sm font-semibold text-gray-900 cursor-pointer mb-1">
+                        Sin Vencimiento
+                      </label>
+                      <p className="text-xs text-gray-600">
+                        El acceso no expirará automáticamente
+                      </p>
+                    </div>
+                    <label htmlFor="noExpiration" className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                      <input
+                        type="checkbox"
+                        id="noExpiration"
+                        checked={formData.noExpiration}
+                        onChange={(e) => setFormData({ ...formData, noExpiration: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-900/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
+                    </label>
                   </div>
                 </div>
               </div>

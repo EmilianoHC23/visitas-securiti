@@ -40,7 +40,7 @@ const getPageTitle = (pathname: string, isMobile: boolean = false): string => {
     // Títulos completos para desktop
     switch (pathname) {
         case '/':
-            return 'Dashboard';
+            return 'Dashboard prueba';
         case '/visits':
             return 'Gestión de Visitas';
         case '/agenda':

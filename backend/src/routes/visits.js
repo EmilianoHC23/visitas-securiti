@@ -1286,25 +1286,31 @@ router.post('/checkout/:id', auth, async (req, res) => {
     await new VisitEvent({ visitId: visit._id, type: 'check-out', photos: limitedPhotos }).save();
     const elapsedMs = visit.checkInTime ? (visit.checkOutTime - visit.checkInTime) : null;
     
-    // Enviar email de despedida al visitante
+    // OPTIMIZACIÓN: Enviar email de despedida en segundo plano (no bloquear respuesta)
     if (visit.visitorEmail) {
-      try {
-        await require('../services/emailService').sendCheckoutEmail({
-          visitorEmail: visit.visitorEmail,
-          visitorName: visit.visitorName,
-          visitorCompany: visit.visitorCompany || 'N/A',
-          hostName: `${visit.host.firstName} ${visit.host.lastName}`,
-          companyName: company?.name || 'SecurITI',
-          companyId: company?.companyId || null,
-          companyLogo: company?.logo || null,
-          registrationTime: visit.createdAt, // Hora de registro
-          checkInTime: visit.checkInTime, // Hora de entrada física
-          checkOutTime: visit.checkOutTime // Hora de salida
-        });
-      } catch (mailErr) {
-        console.warn('Email checkout error:', mailErr?.message || mailErr);
-      }
+      const emailData = {
+        visitorEmail: visit.visitorEmail,
+        visitorName: visit.visitorName,
+        visitorCompany: visit.visitorCompany || 'N/A',
+        hostName: `${visit.host.firstName} ${visit.host.lastName}`,
+        companyName: company?.name || 'SecurITI',
+        companyId: company?.companyId || null,
+        companyLogo: company?.logo || null,
+        registrationTime: visit.createdAt,
+        checkInTime: visit.checkInTime,
+        checkOutTime: visit.checkOutTime
+      };
+
+      setImmediate(async () => {
+        try {
+          await require('../services/emailService').sendCheckoutEmail(emailData);
+          console.log('✅ [BACKGROUND] Email de checkout enviado');
+        } catch (mailErr) {
+          console.warn('⚠️ [BACKGROUND] Email checkout error:', mailErr?.message || mailErr);
+        }
+      });
     }
+    
     res.json({ visit, elapsedMs });
   } catch (e) {
     console.error('Check-out error:', e);

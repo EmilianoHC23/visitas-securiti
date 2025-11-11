@@ -24,6 +24,7 @@ import {
   Copy,
   Download,
   AlertCircle,
+  AlertTriangle,
   QrCode,
   Shield,
   FileWarning,
@@ -2354,31 +2355,61 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ access, onClose, onFinalize
 
           {/* Confirmation Dialog */}
           {showConfirmDialog && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
-              <div className="bg-white rounded-xl p-6 max-w-md mx-4 shadow-xl">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">¿Finalizar acceso?</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Esta acción marcará el acceso como finalizado y cambiará el estado de todos los invitados pendientes a "No asistió". Esta acción no se puede deshacer.
-                </p>
-                <div className="flex gap-3 justify-end">
-                  <button
-                    onClick={() => setShowConfirmDialog(false)}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={() => {
-                      onFinalize(access._id);
-                      setShowConfirmDialog(false);
-                      onClose();
-                    }}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                  >
-                    Finalizar
-                  </button>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden"
+              >
+                {/* Header con gradiente gris */}
+                <div className="relative p-8 bg-gradient-to-br from-gray-900 to-gray-700">
+                  <div className="absolute inset-0 bg-black/10"></div>
+                  <div className="relative flex items-start justify-between text-white">
+                    <div className="flex items-start gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-1 ring-white/30">
+                        <CheckCircle className="w-7 h-7 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl md:text-2xl font-bold text-white">¿Finalizar acceso?</h3>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowConfirmDialog(false)}
+                      className="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-all"
+                      aria-label="Cerrar"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
-              </div>
+
+                <div className="p-6 bg-white">
+                  <p className="text-sm text-gray-700 mb-6 leading-relaxed">
+                    Esta acción marcará el acceso como finalizado y cambiará el estado de todos los invitados pendientes a "No asistió". Esta acción no se puede deshacer.
+                  </p>
+
+                  <div className="flex items-center justify-center gap-3">
+                    <button
+                      onClick={() => setShowConfirmDialog(false)}
+                      className="px-6 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all font-medium"
+                    >
+                      Cancelar
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        onFinalize(access._id);
+                        setShowConfirmDialog(false);
+                        onClose();
+                      }}
+                      className="px-6 py-2.5 text-white bg-gradient-to-br from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 rounded-xl shadow-md hover:shadow-lg transition-all font-medium"
+                    >
+                      Finalizar
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           )}
         </div>

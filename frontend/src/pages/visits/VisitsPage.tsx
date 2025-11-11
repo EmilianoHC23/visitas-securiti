@@ -17,6 +17,28 @@ import { VscSignIn, VscSignOut } from 'react-icons/vsc';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import jsQR from 'jsqr';
 import { useAuth } from '../../contexts/AuthContext';
+import { LuScanQrCode, LuClipboardPenLine, LuBuilding2, LuDoorOpen } from "react-icons/lu";
+import { LiaUserTieSolid } from "react-icons/lia";
+import { MdOutlinePendingActions } from "react-icons/md";
+import { TbClipboardCheck } from "react-icons/tb";
+
+const RegistrarIcon = ({ className }: { className?: string }) => (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 4C16.93 4 17.395 4 17.7765 4.10222C18.8117 4.37962 19.6204 5.18827 19.8978 6.22354C20 6.60504 20 7.07003 20 8V17.2C20 18.8802 20 19.7202 19.673 20.362C19.3854 20.9265 18.9265 21.3854 18.362 21.673C17.7202 22 16.8802 22 15.2 22H8.8C7.11984 22 6.27976 22 5.63803 21.673C5.07354 21.3854 4.6146 20.9265 4.32698 20.362C4 19.7202 4 18.8802 4 17.2V8C4 7.07003 4 6.60504 4.10222 6.22354C4.37962 5.18827 5.18827 4.37962 6.22354 4.10222C6.60504 4 7.07003 4 8 4M12 17V11M9 14H15M9.6 6H14.4C14.9601 6 15.2401 6 15.454 5.89101C15.6422 5.79513 15.7951 5.64215 15.891 5.45399C16 5.24008 16 4.96005 16 4.4V3.6C16 3.03995 16 2.75992 15.891 2.54601C15.7951 2.35785 15.6422 2.20487 15.454 2.10899C15.2401 2 14.9601 2 14.4 2H9.6C9.03995 2 8.75992 2 8.54601 2.10899C8.35785 2.20487 8.20487 2.35785 8.10899 2.54601C8 2.75992 8 3.03995 8 3.6V4.4C8 4.96005 8 5.24008 8.10899 5.45399C8.20487 5.64215 8.35785 5.79513 8.54601 5.89101C8.75992 6 9.03995 6 9.6 6Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
+
+const EntradaIcon = ({ className }: { className?: string }) => (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6 17C6 17.3513 6 17.5269 6.01567 17.6796C6.14575 18.9474 7.0626 19.9946 8.30206 20.2911C8.45134 20.3268 8.6255 20.35 8.97368 20.3965L15.5656 21.2754C17.442 21.5256 18.3803 21.6507 19.1084 21.3611C19.7478 21.1069 20.2803 20.6407 20.6168 20.0406C21 19.357 21 18.4105 21 16.5175V7.48244C21 5.5894 21 4.64288 20.6168 3.95935C20.2803 3.35923 19.7478 2.893 19.1084 2.6388C18.3803 2.34926 17.442 2.47435 15.5656 2.72455L8.97368 3.60347C8.62546 3.6499 8.45135 3.67311 8.30206 3.70883C7.0626 4.00532 6.14575 5.05254 6.01567 6.3203C6 6.47301 6 6.64866 6 6.99996M12 7.99996L16 12M16 12L12 16M16 12H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
+
+const SalidaIcon = ({ className }: { className?: string }) => (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 16.9999L21 11.9999M21 11.9999L16 6.99994M21 11.9999H9M12 16.9999C12 17.2955 12 17.4433 11.989 17.5713C11.8748 18.9019 10.8949 19.9968 9.58503 20.2572C9.45903 20.2823 9.31202 20.2986 9.01835 20.3312L7.99694 20.4447C6.46248 20.6152 5.69521 20.7005 5.08566 20.5054C4.27293 20.2453 3.60942 19.6515 3.26118 18.8724C3 18.2881 3 17.5162 3 15.9722V8.02764C3 6.4837 3 5.71174 3.26118 5.12746C3.60942 4.34842 4.27293 3.75454 5.08566 3.49447C5.69521 3.29941 6.46246 3.38466 7.99694 3.55516L9.01835 3.66865C9.31212 3.70129 9.45901 3.71761 9.58503 3.74267C10.8949 4.0031 11.8748 5.09798 11.989 6.42855C12 6.55657 12 6.70436 12 6.99994" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
 
 // Hook para calcular y actualizar el tiempo de espera en tiempo real
 function useElapsedTime(startDate: string) {
@@ -1527,9 +1549,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                             onClick={() => setRegisterMenuOpen(!registerMenuOpen)}
                             className={`${isMobile ? 'w-full justify-center' : ''} px-4 py-2.5 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 text-white rounded-lg hover:from-gray-800 hover:to-gray-600 font-medium flex items-center gap-2 transition-all shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-700`}
                         >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
+                            <RegistrarIcon className="w-5 h-5" />
                             Registrar
                         </button>
                         <AnimatePresence>
@@ -1550,7 +1570,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                         }}
                                         className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
                                     >
-                                        <VscSignIn className="w-4 h-4" />
+                                        <EntradaIcon className="w-4 h-4" />
                                         Entrada de Visitante
                                     </motion.button>
 
@@ -1562,7 +1582,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                         }}
                                         className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2 border-t"
                                     >
-                                        <VscSignOut className="w-4 h-4" />
+                                        <SalidaIcon className="w-4 h-4" />
                                         Salida de Visitante
                                     </motion.button>
                                 </motion.div>
@@ -1632,7 +1652,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-900 via-orange-600 to-orange-400 flex items-center justify-center shadow-lg ring-1 ring-white/10">
-                                        <ClockIcon aria-hidden="true" className="w-6 h-6 text-white" />
+                                        <MdOutlinePendingActions aria-hidden="true" className="w-6 h-6 text-white" />
                                     </div>
                                     <div>
                                         <div className="text-3xl font-bold text-gray-800">{pendingVisits.length}</div>
@@ -1690,7 +1710,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-900 via-green-600 to-green-400 flex items-center justify-center shadow-lg ring-1 ring-white/10">
-                                        <CheckCircleIcon aria-hidden="true" className="w-6 h-6 text-white" />
+                                        <TbClipboardCheck aria-hidden="true" className="w-6 h-6 text-white" />
                                     </div>
                                     <div>
                                         <div className="text-3xl font-bold text-gray-800">{respondedVisits.length}</div>
@@ -1751,7 +1771,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-900 via-cyan-600 to-cyan-400 flex items-center justify-center shadow-lg ring-1 ring-white/10">
-                                        <LoginIcon aria-hidden="true" className="w-6 h-6 text-white" />
+                                        <LuDoorOpen aria-hidden="true" className="w-6 h-6 text-white" />
                                     </div>
                                     <div>
                                         <div className="text-3xl font-bold text-gray-800">{checkedInVisits.length}</div>

@@ -6,6 +6,8 @@ import { X, Camera, User as UserIcon, Mail, Briefcase, MapPin, Users, FileText, 
 import { MdOutlineQrCodeScanner } from 'react-icons/md';
 import { VscSignIn } from 'react-icons/vsc';
 import { FaRegUser } from 'react-icons/fa';
+import { LuScanQrCode, LuClipboardPenLine, LuBuilding2 } from "react-icons/lu";
+import { LiaUserTieSolid } from "react-icons/lia";
 import jsQR from 'jsqr';
 import * as api from '../../services/api';
 import { useToast } from '../../components/common/Toast';
@@ -448,7 +450,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
                 className="w-full p-6 border-2 border-gray-200 rounded-xl hover:border-gray-900 hover:bg-gray-50 transition-all flex items-center gap-4 group"
               >
                 <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-gray-900 transition-colors">
-                  <MdOutlineQrCodeScanner className="w-6 h-6 text-gray-600 group-hover:text-white" />
+                  <LuScanQrCode className="w-6 h-6 text-gray-600 group-hover:text-white" />
                 </div>
                 <div className="text-left">
                   <h3 className="font-semibold text-gray-800">Registro Rápido con QR</h3>
@@ -461,7 +463,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
                 className="w-full p-6 border-2 border-gray-200 rounded-xl hover:border-gray-900 hover:bg-gray-50 transition-all flex items-center gap-4 group"
               >
                 <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-gray-900 transition-colors">
-                  <UserIcon className="w-6 h-6 text-gray-600 group-hover:text-white" />
+                  <LuClipboardPenLine className="w-6 h-6 text-gray-600 group-hover:text-white" />
                 </div>
                 <div className="text-left">
                   <h3 className="font-semibold text-gray-800">Registro Manual</h3>
@@ -572,7 +574,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
                   <div className="flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-gray-400" />
+                    <LuBuilding2 className="w-4 h-4 text-gray-400" />
                     <span>Empresa</span>
                   </div>
                 </label>
@@ -604,7 +606,7 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
                   <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-gray-400" />
+                    <LiaUserTieSolid className="w-4 h-4 text-gray-400" />
                     <span>A quién visita *</span>
                   </div>
                 </label>

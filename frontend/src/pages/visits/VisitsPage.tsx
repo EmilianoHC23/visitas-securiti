@@ -1150,11 +1150,35 @@ export const VisitsPage: React.FC = () => {
     // Handler para checkout desde el modal
     const handleCheckoutFromModal = async (visitId: string) => {
         try {
-            const result = await api.checkOutVisit(visitId, []);
-            setVisits(prevVisits => prevVisits.map(v => v._id === visitId ? result.visit : v));
+            // Feedback optimista: actualizar UI inmediatamente
+            setVisits(prevVisits => prevVisits.map(v => 
+                v._id === visitId 
+                    ? { ...v, status: VisitStatus.COMPLETED, checkOutTime: new Date().toISOString() }
+                    : v
+            ));
+            
+            // Cerrar modal inmediatamente
             setCheckedInModalVisit(null);
+            
+            // Toast de confirmación
+            window.dispatchEvent(new CustomEvent('app-toast', {
+                detail: { message: '✅ Salida registrada correctamente', severity: 'success' }
+            }));
+            
+            // Hacer la llamada real al backend en segundo plano
+            const result = await api.checkOutVisit(visitId, []);
+            
+            // Actualizar con datos reales del servidor
+            setVisits(prevVisits => prevVisits.map(v => v._id === visitId ? result.visit : v));
         } catch (error) {
             console.error('Failed to check out:', error);
+            
+            // Recargar visitas en caso de error para sincronizar estado
+            fetchVisits();
+            
+            window.dispatchEvent(new CustomEvent('app-toast', {
+                detail: { message: '❌ Error al registrar la salida', severity: 'error' }
+            }));
         }
     };
 
@@ -1372,6 +1396,11 @@ export const VisitsPage: React.FC = () => {
         try {
             const { visitData } = registerBlacklistAlert;
             
+            // Feedback optimista inmediato
+            window.dispatchEvent(new CustomEvent('app-toast', {
+                detail: { message: '⏳ Registrando visita...', severity: 'info' }
+            }));
+            
             // Mapear correctamente los campos para el backend
             const forceVisitData = {
                 visitorName: visitData.visitorName,
@@ -1390,12 +1419,18 @@ export const VisitsPage: React.FC = () => {
             // Usar force-register para continuar a pesar de la alerta
             await api.forceCreateVisit(forceVisitData);
             
+            window.dispatchEvent(new CustomEvent('app-toast', {
+                detail: { message: '✅ Visita registrada correctamente', severity: 'success' }
+            }));
+            
             setRegisterBlacklistAlert(null);
             setIsModalOpen(false); // Cerrar el side panel
             fetchVisits();
         } catch (error) {
             console.error('Failed to force register visit:', error);
-            alert('Error al registrar la visita');
+            window.dispatchEvent(new CustomEvent('app-toast', {
+                detail: { message: '❌ Error al registrar la visita', severity: 'error' }
+            }));
         }
     };
 
@@ -1407,13 +1442,45 @@ export const VisitsPage: React.FC = () => {
     const handleCheckoutConfirm = async (photos: string[]) => {
         try {
             if (!checkoutVisit) return;
-            const result = await api.checkOutVisit(checkoutVisit._id, photos);
-            setVisits(prevVisits => prevVisits.map(v => v._id === checkoutVisit._id ? result.visit : v));
-        } catch (error) {
-            console.error('Failed to check out:', error);
-        } finally {
+            
+            // Feedback optimista: actualizar UI inmediatamente
+            const optimisticVisit: Visit = {
+                ...checkoutVisit,
+                status: VisitStatus.COMPLETED,
+                checkOutTime: new Date().toISOString()
+            };
+            
+            setVisits(prevVisits => prevVisits.map(v => 
+                v._id === checkoutVisit._id ? optimisticVisit : v
+            ));
+            
+            // Cerrar modal inmediatamente para mejor UX
             setIsCheckoutOpen(false);
             setCheckoutVisit(null);
+            
+            // Toast de confirmación
+            window.dispatchEvent(new CustomEvent('app-toast', {
+                detail: { message: '✅ Salida registrada correctamente', severity: 'success' }
+            }));
+            
+            // Hacer la llamada real al backend en segundo plano
+            const result = await api.checkOutVisit(checkoutVisit._id, photos);
+            
+            // Actualizar con datos reales del servidor (por si acaso hubo diferencia)
+            setVisits(prevVisits => prevVisits.map(v => 
+                v._id === checkoutVisit._id ? result.visit : v
+            ));
+        } catch (error) {
+            console.error('Failed to check out:', error);
+            
+            // Revertir cambio optimista en caso de error
+            setVisits(prevVisits => prevVisits.map(v => 
+                v._id === checkoutVisit?._id ? checkoutVisit : v
+            ));
+            
+            window.dispatchEvent(new CustomEvent('app-toast', {
+                detail: { message: '❌ Error al registrar la salida', severity: 'error' }
+            }));
         }
     };
 

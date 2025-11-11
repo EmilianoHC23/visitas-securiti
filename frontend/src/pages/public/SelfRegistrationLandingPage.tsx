@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Calendar, Building2 } from 'lucide-react';
+import { LuClipboardPen } from 'react-icons/lu';
 import * as api from '../../services/api';
 
 interface CompanyInfo {
@@ -107,7 +108,7 @@ export const SelfRegistrationLandingPage: React.FC = () => {
             className="group bg-white rounded-2xl shadow-lg border-2 border-gray-200 p-8 hover:border-gray-900 hover:shadow-2xl transition-all transform hover:scale-105"
           >
             <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-600 transition-colors">
-              <Users className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors" />
+              <LuClipboardPen className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Visita</h2>
             <p className="text-gray-600">

@@ -216,4 +216,54 @@ router.get('/check', async (req, res) => {
   }
 });
 
+// Check multiple emails in batch (optimized for bulk checking)
+router.post('/check-batch', async (req, res) => {
+  try {
+    const { emails } = req.body;
+    
+    if (!emails || !Array.isArray(emails) || emails.length === 0) {
+      return res.json([]);
+    }
+
+    // Normalize emails
+    const normalizedEmails = emails.map(e => e.toLowerCase());
+    
+    // Get companyId from auth user if available
+    const companyId = req.user?.companyId;
+    
+    // Build query for batch checking
+    const query = {
+      $or: [
+        { email: { $in: normalizedEmails } },
+        { identifier: { $in: normalizedEmails } }
+      ],
+      isActive: true
+    };
+
+    if (companyId) {
+      query.companyId = companyId;
+    }
+
+    // Fetch all blacklisted entries matching any of the emails
+    // Use .lean() for better performance (returns plain JS objects)
+    const blacklistedEntries = await Blacklist.find(query).lean();
+
+    // Create a map of email -> blacklist entry for fast lookup
+    const blacklistMap = {};
+    blacklistedEntries.forEach(entry => {
+      const key = (entry.email || entry.identifier).toLowerCase();
+      blacklistMap[key] = entry;
+    });
+
+    // Return array in the same order as input emails
+    // null for non-blacklisted, entry for blacklisted
+    const results = normalizedEmails.map(email => blacklistMap[email] || null);
+
+    res.json(results);
+  } catch (error) {
+    console.error('Check batch blacklist error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 module.exports = router;

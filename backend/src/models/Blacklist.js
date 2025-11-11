@@ -54,8 +54,10 @@ const blacklistSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index compuesto para búsquedas rápidas
-blacklistSchema.index({ identifier: 1, companyId: 1 });
-blacklistSchema.index({ email: 1, companyId: 1 }); // Legacy
+// Índices compuestos para búsquedas rápidas optimizadas
+blacklistSchema.index({ identifier: 1, companyId: 1, isActive: 1 });
+blacklistSchema.index({ email: 1, companyId: 1, isActive: 1 }); // Legacy
+// Índice adicional para consultas batch
+blacklistSchema.index({ companyId: 1, isActive: 1 });
 
 module.exports = mongoose.model('Blacklist', blacklistSchema);

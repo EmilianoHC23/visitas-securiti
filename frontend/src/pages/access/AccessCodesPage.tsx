@@ -32,7 +32,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { MdEvent, MdEventAvailable, MdEventBusy } from "react-icons/md";
-import { getAccesses, createAccess, updateAccess, cancelAccess, finalizeAccess, getUsers, checkBlacklist } from '../../services/api';
+import { getAccesses, createAccess, updateAccess, cancelAccess, finalizeAccess, getUsers, checkBlacklist, checkBlacklistBatch } from '../../services/api';
 import { Access, InvitedUser, UserRole } from '../../types';
 import { formatDate, formatDateTime } from '../../utils/dateUtils';
 import { DatePicker, TimePicker } from '../../components/common/DatePicker';
@@ -1075,9 +1075,9 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
           email: u.email
         }));
 
-      // Check for blacklisted emails
-      const blacklistPromises = validInvitedUsers.map(u => checkBlacklist(u.email));
-      const blacklistResults = await Promise.all(blacklistPromises);
+      // Check for blacklisted emails using batch endpoint (optimized)
+      const emails = validInvitedUsers.map(u => u.email);
+      const blacklistResults = await checkBlacklistBatch(emails);
       const blacklistedUsers = blacklistResults.filter(r => r !== null);
 
       if (blacklistedUsers.length > 0) {
@@ -1764,9 +1764,9 @@ const EditAccessModal: React.FC<EditAccessModalProps> = ({ access, onClose, onSu
           return;
         }
 
-        // Verificar lista negra para nuevos invitados
-        const blacklistPromises = newInvitedUsers.map(u => checkBlacklist(u.email));
-        const blacklistResults = await Promise.all(blacklistPromises);
+        // Verificar lista negra para nuevos invitados usando batch (optimizado)
+        const emails = newInvitedUsers.map(u => u.email);
+        const blacklistResults = await checkBlacklistBatch(emails);
         const blacklistedUsers = blacklistResults.filter(r => r !== null);
 
         if (blacklistedUsers.length > 0) {

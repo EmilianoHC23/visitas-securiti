@@ -254,30 +254,10 @@ export const Header: React.FC<{
                     >
                         {/* user clickable block only (search & notifications removed as requested) */}
                         <button
-                            className="btn d-flex align-items-center p-0"
+                            className="btn d-flex align-items-center p-0 no-focus-ring"
                             onClick={() => setDropdownOpen(!dropdownOpen)}
                             aria-expanded={dropdownOpen}
-                            onFocus={(e) => {
-                                const t = e.currentTarget as HTMLButtonElement;
-                                try {
-                                    t.style.outline = 'none';
-                                    t.style.boxShadow = 'none';
-                                    t.style.border = 'none';
-                                } catch (err) {
-                                    // ignore
-                                }
-                            }}
-                            onBlur={(e) => {
-                                const t = e.currentTarget as HTMLButtonElement;
-                                try {
-                                    t.style.outline = '';
-                                    t.style.boxShadow = '';
-                                    t.style.border = '';
-                                } catch (err) {
-                                    // ignore
-                                }
-                            }}
-                            style={{ background: 'transparent', outline: 'none', boxShadow: 'none', border: 'none', WebkitTapHighlightColor: 'transparent' }}
+                            style={{ background: 'transparent', WebkitTapHighlightColor: 'transparent' }}
                         >
                             {user.profileImage && user.profileImage.trim() !== '' ? (
                                 <span className={`${isMobile ? '' : 'me-2'} d-inline-flex align-items-center justify-content-center rounded-circle bg-gray-200 position-relative`} style={{ width: isMobile ? 36 : 44, height: isMobile ? 36 : 44 }}>

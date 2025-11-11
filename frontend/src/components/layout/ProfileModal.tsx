@@ -130,69 +130,109 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onS
 
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                    initial={{ opacity: 0, scale: 0.9, y: 30 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto"
+                    exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                    className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-hidden"
                 >
-                    {/* Header */}
-                    <div className="sticky top-0 z-10 bg-gradient-to-br from-slate-800 to-slate-700 text-white px-6 py-5 rounded-t-2xl flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                                <User className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <h2 className="text-xl font-bold">Mi Perfil</h2>
-                                <p className="text-sm text-slate-300">Actualiza tu información personal</p>
-                            </div>
+                    {/* Decorative Header Background */}
+                    <div className="relative overflow-hidden">
+                        {/* Gradient Background */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700">
+                            {/* Decorative circles */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-slate-600/30 rounded-full blur-3xl transform translate-x-32 -translate-y-32"></div>
+                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-slate-600/20 rounded-full blur-3xl transform -translate-x-32 translate-y-32"></div>
                         </div>
-                        <button
-                            onClick={onClose}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
-                            disabled={loading}
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
+                        
+                        {/* Header Content */}
+                        <div className="relative px-8 py-8">
+                            <div className="flex items-start justify-between mb-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-14 h-14 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center shadow-lg border border-white/20">
+                                        <User className="w-7 h-7 text-white" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-3xl font-bold text-white mb-1">Mi Perfil</h2>
+                                        <p className="text-slate-300 text-sm">Gestiona tu información personal</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={onClose}
+                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-all border border-white/20 text-white"
+                                    disabled={loading}
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            
+                            {/* User info preview */}
+                            {user && (
+                                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-xl rounded-2xl px-5 py-3 border border-white/20">
+                                    <div className="flex items-center gap-3 flex-1">
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center text-white font-semibold text-lg shadow-lg">
+                                            {user.firstName?.[0]}{user.lastName?.[0]}
+                                        </div>
+                                        <div>
+                                            <p className="text-white font-medium">{user.firstName} {user.lastName}</p>
+                                            <p className="text-slate-300 text-sm">{user.email}</p>
+                                        </div>
+                                    </div>
+                                    <div className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-lg text-xs font-medium text-white border border-white/30">
+                                        {user.role === 'admin' ? '👑 Admin' : user.role === 'host' ? '🏢 Host' : '📋 Recepción'}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Body */}
-                    <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                        {/* Foto de perfil */}
-                        <div className="space-y-3">
-                            <label className="block text-sm font-semibold text-slate-700">
-                                Foto de perfil
-                            </label>
-                            <div className="flex items-center gap-4">
-                                {/* Vista previa de la imagen */}
-                                <div className="relative">
+                    <form onSubmit={handleSubmit} className="p-8 space-y-8 overflow-y-auto max-h-[calc(92vh-240px)]">
+                        {/* Foto de perfil - Sección destacada */}
+                        <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border border-slate-200/60 shadow-sm">
+                            <div className="flex items-center gap-2 mb-5">
+                                <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center">
+                                    <Upload className="w-4 h-4 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-800">Foto de Perfil</h3>
+                                    <p className="text-xs text-slate-500">Tu imagen personal en el sistema</p>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-6">
+                                {/* Vista previa de la imagen - Mejorada */}
+                                <div className="relative group">
                                     {previewImage ? (
-                                        <div className="relative w-24 h-24">
-                                            <img
-                                                src={previewImage}
-                                                alt="Preview"
-                                                className="w-24 h-24 rounded-full object-cover border-4 border-slate-200"
-                                            />
+                                        <div className="relative">
+                                            <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-white shadow-xl ring-2 ring-slate-200">
+                                                <img
+                                                    src={previewImage}
+                                                    alt="Preview"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
                                             <button
                                                 type="button"
                                                 onClick={handleRemoveImage}
-                                                className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg"
+                                                className="absolute -top-2 -right-2 w-9 h-9 bg-red-500 text-white rounded-xl flex items-center justify-center hover:bg-red-600 transition-all shadow-lg hover:scale-110 transform"
                                                 disabled={loading}
+                                                title="Eliminar foto"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
                                     ) : (
-                                        <div className="w-24 h-24 rounded-full bg-slate-200 flex items-center justify-center border-4 border-slate-300">
-                                            <User className="w-10 h-10 text-slate-400" />
+                                        <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center border-4 border-white shadow-xl ring-2 ring-slate-200">
+                                            <User className="w-14 h-14 text-slate-400" />
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Botón de carga */}
-                                <div className="flex-1">
+                                {/* Botón de carga mejorado */}
+                                <div className="flex-1 space-y-3">
                                     <input
                                         type="file"
                                         ref={fileInputRef}
@@ -204,98 +244,137 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onS
                                     <button
                                         type="button"
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="px-4 py-2.5 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-all flex items-center gap-2 font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full px-5 py-3.5 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-all flex items-center justify-center gap-3 font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02]"
                                         disabled={loading}
                                     >
-                                        <Upload className="w-4 h-4" />
-                                        Cambiar foto
+                                        <Upload className="w-5 h-5" />
+                                        {previewImage ? 'Cambiar foto' : 'Subir foto'}
                                     </button>
-                                    <p className="text-xs text-slate-500 mt-2">
-                                        JPG, PNG o GIF. Máximo 5MB.
-                                    </p>
+                                    <div className="flex items-start gap-2 bg-white/70 rounded-lg p-3 border border-slate-200">
+                                        <svg className="w-4 h-4 text-slate-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <div className="text-xs text-slate-600 leading-relaxed">
+                                            <p className="font-medium mb-1">Formatos permitidos:</p>
+                                            <p>JPG, PNG o GIF • Máximo 5MB</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Información del usuario */}
-                        <div className="space-y-4 pt-4 border-t border-slate-200">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
-                                    <User className="w-4 h-4 text-slate-600" />
+                        {/* Información del usuario - Rediseñada */}
+                        <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border border-slate-200/60 shadow-sm">
+                            <div className="flex items-center gap-2 mb-5">
+                                <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center">
+                                    <User className="w-4 h-4 text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-semibold text-slate-700">Información del usuario</h3>
-                                    <p className="text-xs text-slate-500">Actualiza los datos del usuario</p>
+                                    <h3 className="text-lg font-bold text-slate-800">Información Personal</h3>
+                                    <p className="text-xs text-slate-500">Actualiza tus datos básicos</p>
                                 </div>
                             </div>
 
-                            {/* Nombre y Apellido */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Nombre y Apellido - Grid mejorado */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 {/* Nombre */}
                                 <div className="space-y-2">
-                                    <label htmlFor="firstName" className="block text-sm font-medium text-slate-700">
+                                    <label htmlFor="firstName" className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-800"></div>
                                         Nombre <span className="text-red-500">*</span>
                                     </label>
-                                    <input
-                                        type="text"
-                                        id="firstName"
-                                        name="firstName"
-                                        value={formData.firstName}
-                                        onChange={handleChange}
-                                        placeholder="Ingresa tu nombre"
-                                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all outline-none disabled:bg-slate-50 disabled:cursor-not-allowed"
-                                        required
-                                        disabled={loading}
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            id="firstName"
+                                            name="firstName"
+                                            value={formData.firstName}
+                                            onChange={handleChange}
+                                            placeholder="Tu nombre"
+                                            className="w-full px-4 py-3.5 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-all outline-none disabled:bg-slate-100 disabled:cursor-not-allowed bg-white placeholder:text-slate-400 text-slate-800 font-medium shadow-sm"
+                                            required
+                                            disabled={loading}
+                                        />
+                                        {formData.firstName && (
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                                                    <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Apellido */}
                                 <div className="space-y-2">
-                                    <label htmlFor="lastName" className="block text-sm font-medium text-slate-700">
+                                    <label htmlFor="lastName" className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-800"></div>
                                         Apellido <span className="text-red-500">*</span>
                                     </label>
-                                    <input
-                                        type="text"
-                                        id="lastName"
-                                        name="lastName"
-                                        value={formData.lastName}
-                                        onChange={handleChange}
-                                        placeholder="Ingresa tu apellido"
-                                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all outline-none disabled:bg-slate-50 disabled:cursor-not-allowed"
-                                        required
-                                        disabled={loading}
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            id="lastName"
+                                            name="lastName"
+                                            value={formData.lastName}
+                                            onChange={handleChange}
+                                            placeholder="Tu apellido"
+                                            className="w-full px-4 py-3.5 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-all outline-none disabled:bg-slate-100 disabled:cursor-not-allowed bg-white placeholder:text-slate-400 text-slate-800 font-medium shadow-sm"
+                                            required
+                                            disabled={loading}
+                                        />
+                                        {formData.lastName && (
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                                                    <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Footer con botones */}
-                        <div className="flex gap-3 pt-4 border-t border-slate-200">
-                            <button
+                        {/* Footer con botones rediseñados */}
+                        <div className="flex gap-4 pt-6 mt-2">
+                            <motion.button
                                 type="button"
                                 onClick={onClose}
-                                className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex-1 px-6 py-3.5 border-2 border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 hover:border-slate-400 font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50 shadow-sm hover:shadow-md"
                                 disabled={loading}
+                                whileHover={{ scale: 1.02, y: -1 }}
+                                whileTap={{ scale: 0.98 }}
                             >
                                 Cancelar
-                            </button>
-                            <button
+                            </motion.button>
+                            <motion.button
                                 type="submit"
-                                className="flex-1 px-4 py-2.5 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-all font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex-1 px-6 py-3.5 bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-xl hover:from-slate-900 hover:to-slate-950 font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2.5 shadow-lg hover:shadow-xl"
                                 disabled={loading}
+                                whileHover={{ scale: 1.02, y: -1 }}
+                                whileTap={{ scale: 0.98 }}
                             >
                                 {loading ? (
-                                    <span className="flex items-center justify-center gap-2">
-                                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <span className="flex items-center justify-center gap-2.5">
+                                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
-                                        Guardando...
+                                        Guardando cambios...
                                     </span>
                                 ) : (
-                                    'Guardar cambios'
+                                    <>
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        <span>Guardar cambios</span>
+                                    </>
                                 )}
-                            </button>
+                            </motion.button>
                         </div>
                     </form>
                 </motion.div>

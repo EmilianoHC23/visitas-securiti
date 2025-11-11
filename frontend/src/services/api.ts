@@ -382,6 +382,21 @@ export const checkBlacklist = async (email: string): Promise<Blacklist | null> =
   }
 };
 
+// Check multiple emails in a single batch request (optimized)
+export const checkBlacklistBatch = async (emails: string[]): Promise<(Blacklist | null)[]> => {
+  try {
+    if (!emails || emails.length === 0) return [];
+    return apiRequest('/blacklist/check-batch', {
+      method: 'POST',
+      body: JSON.stringify({ emails }),
+    });
+  } catch (error) {
+    console.error('Error checking blacklist batch:', error);
+    // Return array of nulls in case of error
+    return emails.map(() => null);
+  }
+};
+
 // --- ACCESS CODES / EVENTS ---
 export const getAccesses = async (status?: string): Promise<Access[]> => {
   const query = status ? `?status=${status}` : '';

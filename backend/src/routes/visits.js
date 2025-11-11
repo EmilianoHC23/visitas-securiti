@@ -159,18 +159,17 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ message: 'Todos los campos requeridos deben ser proporcionados' });
     }
 
-    // Verificar lista negra (alerta preventiva)
+    // Verificar lista negra (alerta preventiva) - Optimizada con índices
     if (visitorEmail) {
       const Blacklist = require('../models/Blacklist');
       const blacklistEntry = await Blacklist.findOne({
         $or: [
           { email: visitorEmail.toLowerCase() },
-          { identifier: visitorEmail.toLowerCase() },
-          { visitorName: new RegExp(`^${visitorName}$`, 'i') }
+          { identifier: visitorEmail.toLowerCase() }
         ],
         companyId: req.user.companyId,
         isActive: true
-      });
+      }).lean(); // .lean() para mejorar performance al no retornar un documento mongoose completo
 
       if (blacklistEntry) {
         console.log('⚠️ [REGISTER] Visitante encontrado en lista negra:', {

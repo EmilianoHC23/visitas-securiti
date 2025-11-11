@@ -14,6 +14,7 @@ import {
     Settings 
 } from 'lucide-react';
 import { IoQrCodeOutline } from 'react-icons/io5';
+import { BsClipboardData } from "react-icons/bs";
 
 const DashboardIcon = ({ className }: { className?: string }) => (
     <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -95,7 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { to: "/access-codes", label: "Accesos/Eventos", icon: <AccessIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
         { to: "/public-registration", label: "Auto-registro", icon: <UserPlus className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
         { to: "/blacklist", label: "Lista Negra", icon: <BlacklistIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },
-        { to: "/reports", label: "Reportes", icon: <BarChart3 className="w-5 h-5" />, roles: [UserRole.ADMIN] },
+        { to: "/reports", label: "Reportes", icon: <BsClipboardData className="w-5 h-5" />, roles: [UserRole.ADMIN] },
         { to: "/settings", label: "Configuración", icon: <Settings className="w-5 h-5" />, roles: [UserRole.ADMIN] },
     ];
 

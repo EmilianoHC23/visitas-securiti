@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaRegUser } from 'react-icons/fa';
 import { BarChart3, Download, Search, Calendar, FileText, CheckCircle, XCircle } from 'lucide-react';
+import { LuClipboardCheck, LuClipboardX, LuClipboard, LuClipboardList } from "react-icons/lu";
 import { Visit, VisitStatus } from '../../types';
 import * as api from '../../services/api';
 import { formatDateTime, formatLongDate } from '../../utils/dateUtils';
@@ -438,7 +439,7 @@ export default function ReportsPage() {
                   <p className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-gray-900`}>{filteredVisits.length}</p>
                 </div>
                 <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} bg-gray-900 rounded-xl flex items-center justify-center`}>
-                  <FileText className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
+                  <LuClipboardList className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
                 </div>
               </div>
             </div>
@@ -452,7 +453,7 @@ export default function ReportsPage() {
                   </p>
                 </div>
                 <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} bg-green-600 rounded-xl flex items-center justify-center`}>
-                  <CheckCircle className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
+                  <LuClipboardCheck className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
                 </div>
               </div>
             </div>
@@ -466,7 +467,7 @@ export default function ReportsPage() {
                   </p>
                 </div>
                 <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} bg-red-600 rounded-xl flex items-center justify-center`}>
-                  <XCircle className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
+                  <LuClipboardX className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
                 </div>
               </div>
             </div>
@@ -482,7 +483,7 @@ export default function ReportsPage() {
         ) : filteredVisits.length === 0 ? (
           <div className={`text-center ${isMobile ? 'py-12' : 'py-20'} bg-white rounded-2xl shadow-xl border border-gray-200`}>
             <div className={`${isMobile ? 'w-16 h-16' : 'w-24 h-24'} mx-auto ${isMobile ? 'mb-4' : 'mb-6'} rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center`}>
-              <FileText className={`${isMobile ? 'w-8 h-8' : 'w-12 h-12'} text-gray-400`} />
+              <LuClipboard className={`${isMobile ? 'w-8 h-8' : 'w-12 h-12'} text-gray-400`} />
             </div>
             <h3 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-gray-900 ${isMobile ? 'mb-2' : 'mb-3'}`}>No hay visitas registradas</h3>
             <p className={`text-gray-500 ${isMobile ? 'text-sm' : 'text-base'}`}>No se encontraron visitas para la fecha seleccionada</p>

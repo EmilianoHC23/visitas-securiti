@@ -200,7 +200,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onS
                                         </div>
                                     </div>
                                     <div className={`${isMobile ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1 text-xs'} bg-white/20 backdrop-blur-sm rounded-lg font-medium text-white border border-white/30 flex-shrink-0`}>
-                                        {user.role === 'admin' ? '👑 Admin' : user.role === 'host' ? '🏢 Host' : '📋 Recep.'}
+                                        {user.role === 'admin' ? 'Admin' : user.role === 'host' ? '🏢 Host' : '📋 Recep.'}
                                     </div>
                                 </div>
                             )}

@@ -305,6 +305,169 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
     return <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusStyles[status] || statusStyles.none}`}>{statusLabels[status] || 'Sin Invitar'}</span>
 };
 
+// RoleFilterDropdown: Dropdown animado para filtro de roles
+const RoleFilterDropdown: React.FC<{ value: UserRole | 'all'; onChange: (r: UserRole | 'all') => void }> = memo(({ value, onChange }) => {
+    const options: { value: UserRole | 'all'; label: string; icon: React.ReactNode }[] = [
+        { value: 'all', label: 'Todos los roles', icon: <Filter className="w-4 h-4" /> },
+        { value: UserRole.ADMIN, label: 'Administrador', icon: <Shield className="w-4 h-4" /> },
+        { value: UserRole.RECEPTION, label: 'Recepcionista', icon: <Users className="w-4 h-4" /> },
+        { value: UserRole.HOST, label: 'Host', icon: <UserIcon className="w-4 h-4" /> },
+    ];
+
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selected = options.find(o => o.value === value) || options[0];
+
+    const wrapper: any = {
+        open: { scaleY: 1, opacity: 1, transition: { when: 'beforeChildren', staggerChildren: 0.06 } },
+        closed: { scaleY: 0, opacity: 0, transition: { when: 'afterChildren', staggerChildren: 0.04 } },
+    };
+
+    const item: any = {
+        open: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } },
+        closed: { opacity: 0, y: -6, transition: { duration: 0.12 } },
+    };
+
+    const chevron: any = { open: { rotate: 180 }, closed: { rotate: 0 } };
+
+    return (
+        <div className="relative" ref={ref}>
+            <button
+                type="button"
+                onClick={() => setOpen(o => !o)}
+                className="w-full text-left px-3 py-2.5 border border-gray-200 rounded-lg flex items-center gap-3 bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent shadow-sm transition-all"
+                aria-haspopup="listbox"
+                aria-expanded={open}
+            >
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className="text-gray-500 flex-shrink-0">{selected.icon}</span>
+                    <span className="text-sm font-medium text-gray-800 truncate">{selected.label}</span>
+                </div>
+                <motion.span className="inline-block flex-shrink-0" variants={chevron} animate={open ? 'open' : 'closed'}>
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                </motion.span>
+            </button>
+
+            <AnimatePresence>
+                {open && (
+                    <motion.div
+                        initial="closed"
+                        animate="open"
+                        exit="closed"
+                        variants={wrapper}
+                        style={{ transformOrigin: 'top' }}
+                        className="absolute z-[100] mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-64 overflow-auto"
+                    >
+                        {options.map(o => (
+                            <motion.button
+                                key={o.value}
+                                type="button"
+                                variants={item}
+                                onClick={() => { onChange(o.value); setOpen(false); }}
+                                className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left transition-colors"
+                            >
+                                <span className="text-gray-500 flex-shrink-0">{o.icon}</span>
+                                <span className="text-sm font-medium text-gray-800 flex-1">{o.label}</span>
+                                {o.value === value && <CheckCircle className="w-4 h-4 text-gray-900 flex-shrink-0" />}
+                            </motion.button>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+});
+
+// StatusFilterDropdown: Dropdown animado para filtro de status
+const StatusFilterDropdown: React.FC<{ value: 'all' | 'registered' | 'pending'; onChange: (s: 'all' | 'registered' | 'pending') => void }> = memo(({ value, onChange }) => {
+    const options: { value: 'all' | 'registered' | 'pending'; label: string; icon: React.ReactNode; color: string }[] = [
+        { value: 'all', label: 'Todos los status', icon: <Filter className="w-4 h-4" />, color: 'text-gray-600' },
+        { value: 'registered', label: 'Registrado', icon: <CheckCircle className="w-4 h-4" />, color: 'text-green-600' },
+        { value: 'pending', label: 'Pendiente', icon: <AlertCircle className="w-4 h-4" />, color: 'text-yellow-600' },
+    ];
+
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selected = options.find(o => o.value === value) || options[0];
+
+    const wrapper: any = {
+        open: { scaleY: 1, opacity: 1, transition: { when: 'beforeChildren', staggerChildren: 0.06 } },
+        closed: { scaleY: 0, opacity: 0, transition: { when: 'afterChildren', staggerChildren: 0.04 } },
+    };
+
+    const item: any = {
+        open: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } },
+        closed: { opacity: 0, y: -6, transition: { duration: 0.12 } },
+    };
+
+    const chevron: any = { open: { rotate: 180 }, closed: { rotate: 0 } };
+
+    return (
+        <div className="relative" ref={ref}>
+            <button
+                type="button"
+                onClick={() => setOpen(o => !o)}
+                className="w-full text-left px-3 py-2.5 border border-gray-200 rounded-lg flex items-center gap-3 bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent shadow-sm transition-all"
+                aria-haspopup="listbox"
+                aria-expanded={open}
+            >
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className={`flex-shrink-0 ${selected.color}`}>{selected.icon}</span>
+                    <span className="text-sm font-medium text-gray-800 truncate">{selected.label}</span>
+                </div>
+                <motion.span className="inline-block flex-shrink-0" variants={chevron} animate={open ? 'open' : 'closed'}>
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                </motion.span>
+            </button>
+
+            <AnimatePresence>
+                {open && (
+                    <motion.div
+                        initial="closed"
+                        animate="open"
+                        exit="closed"
+                        variants={wrapper}
+                        style={{ transformOrigin: 'top' }}
+                        className="absolute z-[100] mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-64 overflow-auto"
+                    >
+                        {options.map(o => (
+                            <motion.button
+                                key={o.value}
+                                type="button"
+                                variants={item}
+                                onClick={() => { onChange(o.value); setOpen(false); }}
+                                className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left transition-colors"
+                            >
+                                <span className={`flex-shrink-0 ${o.color}`}>{o.icon}</span>
+                                <span className="text-sm font-medium text-gray-800 flex-1">{o.label}</span>
+                                {o.value === value && <CheckCircle className="w-4 h-4 text-gray-900 flex-shrink-0" />}
+                            </motion.button>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+});
+
 // RoleSelect: con animaciones de Framer Motion estilo AgendaPage
 const RoleSelect: React.FC<{ value: UserRole; onChange: (r: UserRole) => void }> = memo(({ value, onChange }) => {
     const options: { value: UserRole; label: string; icon: React.ReactNode }[] = [
@@ -1115,7 +1278,7 @@ export const UserManagementPage: React.FC = () => {
             </div>
 
             {/* Barra de búsqueda y filtros */}
-            <div className={`mb-6 ${isMobile ? 'px-3' : 'px-6'}`}>
+            <div className={`mb-6 ${isMobile ? 'px-3' : 'px-6'} relative z-10`}>
                 <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md border border-gray-200/50 p-4">
                     <div className={`flex ${isMobile ? 'flex-col gap-3' : 'flex-row gap-4 items-center'}`}>
                         {/* Barra de búsqueda */}
@@ -1134,37 +1297,18 @@ export const UserManagementPage: React.FC = () => {
 
                         {/* Filtro por rol */}
                         <div className={isMobile ? 'w-full' : 'w-48'}>
-                            <div className="relative">
-                                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
-                                <select
-                                    value={roleFilter}
-                                    onChange={(e) => setRoleFilter(e.target.value as UserRole | 'all')}
-                                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg bg-white shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all appearance-none cursor-pointer"
-                                >
-                                    <option value="all">Todos los roles</option>
-                                    <option value={UserRole.ADMIN}>Administrador</option>
-                                    <option value={UserRole.RECEPTION}>Recepcionista</option>
-                                    <option value={UserRole.HOST}>Host</option>
-                                </select>
-                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-                            </div>
+                            <RoleFilterDropdown
+                                value={roleFilter}
+                                onChange={setRoleFilter}
+                            />
                         </div>
 
                         {/* Filtro por status */}
                         <div className={isMobile ? 'w-full' : 'w-48'}>
-                            <div className="relative">
-                                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
-                                <select
-                                    value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value as 'all' | 'registered' | 'pending')}
-                                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg bg-white shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all appearance-none cursor-pointer"
-                                >
-                                    <option value="all">Todos los status</option>
-                                    <option value="registered">Registrado</option>
-                                    <option value="pending">Pendiente</option>
-                                </select>
-                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-                            </div>
+                            <StatusFilterDropdown
+                                value={statusFilter}
+                                onChange={setStatusFilter}
+                            />
                         </div>
 
                         {/* Contador de resultados */}
@@ -1196,7 +1340,7 @@ export const UserManagementPage: React.FC = () => {
             </div>
 
             {/* Main card containing the table - modernizado con colores de SettingsPage */}
-            <div className={`bg-white/80 backdrop-blur-sm ${isMobile ? 'p-3' : 'p-6'} rounded-2xl shadow-xl border border-gray-200/50`}>
+            <div className={`bg-white/80 backdrop-blur-sm ${isMobile ? 'p-3' : 'p-6'} rounded-2xl shadow-xl border border-gray-200/50 relative z-0`}>
                 {isMobile ? (
                     // Vista móvil: Cards en lugar de tabla
                     <div className="space-y-3">

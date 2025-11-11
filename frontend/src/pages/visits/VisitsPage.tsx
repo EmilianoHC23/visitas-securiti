@@ -1372,6 +1372,11 @@ export const VisitsPage: React.FC = () => {
         try {
             const { visitData } = registerBlacklistAlert;
             
+            // Feedback optimista inmediato
+            window.dispatchEvent(new CustomEvent('app-toast', {
+                detail: { message: '⏳ Registrando visita...', severity: 'info' }
+            }));
+            
             // Mapear correctamente los campos para el backend
             const forceVisitData = {
                 visitorName: visitData.visitorName,
@@ -1390,12 +1395,18 @@ export const VisitsPage: React.FC = () => {
             // Usar force-register para continuar a pesar de la alerta
             await api.forceCreateVisit(forceVisitData);
             
+            window.dispatchEvent(new CustomEvent('app-toast', {
+                detail: { message: '✅ Visita registrada correctamente', severity: 'success' }
+            }));
+            
             setRegisterBlacklistAlert(null);
             setIsModalOpen(false); // Cerrar el side panel
             fetchVisits();
         } catch (error) {
             console.error('Failed to force register visit:', error);
-            alert('Error al registrar la visita');
+            window.dispatchEvent(new CustomEvent('app-toast', {
+                detail: { message: '❌ Error al registrar la visita', severity: 'error' }
+            }));
         }
     };
 

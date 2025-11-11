@@ -423,37 +423,41 @@ router.post('/force-register', auth, async (req, res) => {
     await visit.save();
     await visit.populate('host', 'firstName lastName email profileImage');
 
-    // Continuar con la lógica normal (emails, eventos, etc.)
-    if ((req.body.visitType === 'access-code' || req.body.fromAccessEvent === true) && initialStatus === 'approved') {
+    // OPTIMIZACIÓN: Ejecutar emails y lógica pesada en segundo plano (no bloquear respuesta)
+    // Esto mejora la velocidad de respuesta de forma significativa
+    setImmediate(async () => {
       try {
-        const Access = require('../models/Access');
-        const access = await Access.findOne({ accessCode: req.body.accessCode }).populate('creatorId', 'firstName lastName email');
-        
-        if (access && access.creatorId) {
-          const guest = access.invitedUsers.find(u => 
-            u.email === visitorEmail || u.phone === req.body.visitorPhone
-          );
+        // Continuar con la lógica normal (emails, eventos, etc.) en segundo plano
+        if ((req.body.visitType === 'access-code' || req.body.fromAccessEvent === true) && initialStatus === 'approved') {
+          const Access = require('../models/Access');
+          const access = await Access.findOne({ accessCode: req.body.accessCode }).populate('creatorId', 'firstName lastName email');
           
-          if (guest && guest.addedViaPreRegistration === true) {
-            await require('../services/emailService').sendGuestArrivedEmail({
-              visitId: visit._id,
-              creatorEmail: access.creatorId.email,
-              creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
-              guestName: visitorName,
-              guestEmail: visitorEmail || 'No proporcionado',
-              guestCompany: visitorCompany || 'No proporcionado',
-              guestPhoto: req.body.visitorPhoto,
-              accessTitle: access.eventName,
-              companyName: (company && company.name) || 'SecurITI',
-              companyId: company?.companyId || null,
-              companyLogo: company?.logo || null
-            });
+          if (access && access.creatorId) {
+            const guest = access.invitedUsers.find(u => 
+              u.email === visitorEmail || u.phone === req.body.visitorPhone
+            );
+            
+            if (guest && guest.addedViaPreRegistration === true) {
+              await require('../services/emailService').sendGuestArrivedEmail({
+                visitId: visit._id,
+                creatorEmail: access.creatorId.email,
+                creatorName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+                guestName: visitorName,
+                guestEmail: visitorEmail || 'No proporcionado',
+                guestCompany: visitorCompany || 'No proporcionado',
+                guestPhoto: req.body.visitorPhoto,
+                accessTitle: access.eventName,
+                companyName: (company && company.name) || 'SecurITI',
+                companyId: company?.companyId || null,
+                companyLogo: company?.logo || null
+              });
+            }
           }
         }
       } catch (emailError) {
-        console.error('⚠️ Error enviando email de llegada:', emailError);
+        console.error('⚠️ [BACKGROUND] Error enviando email de llegada:', emailError);
       }
-    }
+    });
 
     if (initialStatus === 'checked-in') {
       await new VisitEvent({ visitId: visit._id, type: 'check-in' }).save();
@@ -461,27 +465,34 @@ router.post('/force-register', auth, async (req, res) => {
 
     const isAccessEvent = req.body.visitType === 'access-code' || req.body.fromAccessEvent === true;
     
+    // OPTIMIZACIÓN: Enviar emails de aprobación en segundo plano para no bloquear respuesta
     if (!autoApproval && !isAccessEvent) {
-      const approval = Approval.createWithExpiry(visit._id, host._id, 48);
-      await approval.save();
+      setImmediate(async () => {
+        try {
+          const approval = Approval.createWithExpiry(visit._id, host._id, 48);
+          await approval.save();
 
-      const FE = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
-      const approveUrl = `${FE}/api/visits/approve/${approval.token}`;
-      const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
-      await require('../services/emailService').sendApprovalRequestEmail({
-        visitId: visit._id,
-        hostEmail: host.email,
-        hostName: `${host.firstName} ${host.lastName}`,
-        companyName: (company && company.name) || 'SecurITI',
-        companyId: company?.companyId || null,
-        companyLogo: company?.logo || null,
-        visitorName,
-        visitorCompany,
-        visitorPhoto: req.body.visitorPhoto,
-        reason,
-        scheduledDate,
-        approveUrl,
-        rejectUrl
+          const FE = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+          const approveUrl = `${FE}/api/visits/approve/${approval.token}`;
+          const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
+          await require('../services/emailService').sendApprovalRequestEmail({
+            visitId: visit._id,
+            hostEmail: host.email,
+            hostName: `${host.firstName} ${host.lastName}`,
+            companyName: (company && company.name) || 'SecurITI',
+            companyId: company?.companyId || null,
+            companyLogo: company?.logo || null,
+            visitorName,
+            visitorCompany,
+            visitorPhoto: req.body.visitorPhoto,
+            reason,
+            scheduledDate,
+            approveUrl,
+            rejectUrl
+          });
+        } catch (error) {
+          console.error('⚠️ [BACKGROUND] Error enviando email de aprobación:', error);
+        }
       });
     }
 

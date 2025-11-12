@@ -12,6 +12,7 @@ const router = express.Router();
 // ==================== LAZY HELPERS: FINALIZATION + REMINDERS ====================
 // Marca como 'finalized' todos los accesos activos cuyo endDate ya pasó
 // y cambia invitados 'pendiente' -> 'no-asistio'. Idempotente.
+// IMPORTANTE: Respeta el flag 'noExpiration' - los accesos sin vencimiento no se finalizan automáticamente.
 async function finalizeExpiredAccesses() {
   try {
     const now = new Date();
@@ -20,6 +21,12 @@ async function finalizeExpiredAccesses() {
     if (!expired.length) return;
 
     for (const access of expired) {
+      // ⚠️ IMPORTANTE: No finalizar accesos con "Sin Vencimiento" activado
+      if (access.settings?.noExpiration === true) {
+        console.log(`ℹ️ Acceso "${access.eventName}" (${access.accessCode}) marcado como "Sin Vencimiento" - se omite finalización automática`);
+        continue;
+      }
+
       access.status = 'finalized';
       let modified = false;
       for (const guest of access.invitedUsers) {

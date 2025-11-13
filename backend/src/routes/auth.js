@@ -2,51 +2,77 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
+const { loginLimiter } = require('../middleware/rateLimiter');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
-// Login
-router.post('/login', async (req, res) => {
+// Login - Protected with rate limiting
+router.post('/login', loginLimiter, async (req, res) => {
   try {
-    console.log('Login request received');
-    console.log('Request body:', req.body);
-    console.log('Content-Type:', req.headers['content-type']);
+    logger.log('Login request received');
     
     const { email, password } = req.body;
-    
-    console.log('Login attempt for:', email);
-    console.log('Password provided:', !!password);
 
     if (!email || !password) {
-      console.log('Missing credentials - email:', !!email, 'password:', !!password);
+      logger.log('Missing credentials');
       return res.status(400).json({ message: 'Email y contraseña son requeridos' });
     }
 
     // Find user and include password for comparison
     const user = await User.findOne({ email });
-    console.log('User found:', !!user);
     
     if (!user) {
-      console.log('User not found for email:', email);
+      logger.security('Login attempt for non-existent user', { email });
       return res.status(401).json({ message: 'Credenciales incorrectas' });
     }
 
+    // Check if account is locked
+    if (user.isLocked) {
+      const lockTimeRemaining = Math.ceil((user.lockUntil - Date.now()) / 1000 / 60);
+      logger.security('Login attempt for locked account', { email });
+      return res.status(423).json({ 
+        message: `Cuenta bloqueada temporalmente. Intente de nuevo en ${lockTimeRemaining} minutos.`,
+        lockUntil: user.lockUntil
+      });
+    }
+
     if (!user.isActive) {
-      console.log('User is inactive:', email);
+      logger.security('Login attempt for inactive user', { email });
       return res.status(401).json({ message: 'Usuario desactivado' });
     }
 
     // Check password
     const isMatch = await user.comparePassword(password);
-    console.log('Password match:', isMatch);
     
     if (!isMatch) {
-      console.log('Password mismatch for:', email);
-      return res.status(401).json({ message: 'Credenciales incorrectas' });
+      logger.security('Failed login attempt', { email, attempts: user.loginAttempts + 1 });
+      
+      // Increment login attempts
+      await user.incLoginAttempts();
+      
+      // Reload user to get updated attempts
+      const updatedUser = await User.findById(user._id);
+      const attemptsLeft = 5 - updatedUser.loginAttempts;
+      
+      if (updatedUser.isLocked) {
+        return res.status(423).json({ 
+          message: 'Demasiados intentos fallidos. Cuenta bloqueada temporalmente por 30 minutos.'
+        });
+      }
+      
+      return res.status(401).json({ 
+        message: `Credenciales incorrectas. ${attemptsLeft} intentos restantes.`
+      });
+    }
+
+    // Reset login attempts on successful login
+    if (user.loginAttempts > 0 || user.lockUntil) {
+      await user.resetLoginAttempts();
     }
 
     if (!process.env.JWT_SECRET) {
-      console.error('JWT_SECRET not configured');
+      logger.error('JWT_SECRET not configured');
       return res.status(500).json({ message: 'Error de configuración del servidor' });
     }
 
@@ -61,7 +87,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    console.log('Login successful for:', email);
+    logger.audit('Login successful', user._id, { email: user.email, role: user.role });
 
     // Return user without password
     const userResponse = user.toJSON();
@@ -71,7 +97,7 @@ router.post('/login', async (req, res) => {
       user: userResponse
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
@@ -81,7 +107,7 @@ router.get('/me', auth, async (req, res) => {
   try {
     res.json(req.user);
   } catch (error) {
-    console.error('Get me error:', error);
+    logger.error('Get me error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
@@ -101,30 +127,7 @@ router.post('/refresh', auth, async (req, res) => {
 
     res.json({ token });
   } catch (error) {
-    console.error('Refresh token error:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
-  }
-});
-
-// DEBUG: Get available users (temporal - remove in production)
-router.get('/debug/users', async (req, res) => {
-  try {
-    if (process.env.NODE_ENV === 'production') {
-      return res.status(404).json({ message: 'Not found' });
-    }
-    
-    const users = await User.find({}, 'email firstName lastName role isActive');
-    res.json({
-      message: 'Available users for testing',
-      users: users.map(user => ({
-        email: user.email,
-        name: `${user.firstName} ${user.lastName}`,
-        role: user.role,
-        isActive: user.isActive
-      }))
-    });
-  } catch (error) {
-    console.error('Debug users error:', error);
+    logger.error('Refresh token error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

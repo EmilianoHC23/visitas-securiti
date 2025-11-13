@@ -101,6 +101,28 @@ node scripts/test-email.js
 
 ---
 
+### `add-lockout-fields.js`
+Migración para agregar campos de account lockout a usuarios existentes.
+
+**Uso:**
+```bash
+cd backend
+node scripts/add-lockout-fields.js
+```
+
+**¿Qué hace?**
+- Agrega campo `loginAttempts` (contador de intentos fallidos)
+- Agrega campo `lockUntil` (timestamp de bloqueo)
+- Solo afecta usuarios que no tengan estos campos
+- Seguro ejecutar múltiples veces
+
+**¿Cuándo ejecutar?**
+- Después de actualizar a versión con account lockout
+- Si actualizaste el modelo User con nuevos campos de seguridad
+- Solo necesario una vez por base de datos
+
+---
+
 ### `remove-qrcode-index.js`
 Elimina el índice obsoleto `qrCode_1` de la colección `accesses`.
 

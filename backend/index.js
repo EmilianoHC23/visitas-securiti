@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const helmet = require('helmet');
+const logger = require('./src/utils/logger');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 // Import routes
@@ -19,6 +21,12 @@ const invitationRoutes = require('./src/routes/invitations');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Security: Helmet middleware for secure HTTP headers
+app.use(helmet({
+    contentSecurityPolicy: false, // Disable CSP to avoid breaking Vercel/frontend
+    crossOriginEmbedderPolicy: false, // Allow embedding for dev/preview
+}));
+
 // CORS configuration
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
@@ -27,26 +35,19 @@ app.use(cors({
     credentials: true
 }));
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
-// Debug middleware to log request details
+// Request logging middleware
 app.use((req, res, next) => {
-    console.log(`📡 ${req.method} ${req.path} - ${new Date().toISOString()}`);
-    if (req.method === 'POST' && req.path.includes('/login')) {
-        console.log('📦 Login request body keys:', Object.keys(req.body || {}));
-        console.log('📦 Request headers:', {
-            'content-type': req.headers['content-type'],
-            'content-length': req.headers['content-length']
-        });
-    }
+    logger.log(`📡 ${req.method} ${req.path} - ${new Date().toISOString()}`);
     next();
 });
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || process.env.DATABASE_URL)
-.then(() => console.log('✅ Connected to MongoDB Atlas'))
-.catch(err => console.error('❌ MongoDB connection error:', err));
+.then(() => logger.log('✅ Connected to MongoDB Atlas'))
+.catch(err => logger.error('❌ MongoDB connection error:', err));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -62,26 +63,20 @@ app.use('/api/invitations', invitationRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-    console.log('🏥 Health check requested');
+    logger.log('🏥 Health check requested');
     res.json({ 
         status: 'OK', 
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV,
+        environment: process.env.NODE_ENV || 'development',
         hasJwtSecret: !!process.env.JWT_SECRET,
         hasDatabase: !!(process.env.MONGODB_URI || process.env.DATABASE_URL),
         routes: 'API routes loaded successfully'
     });
 });
 
-// Debug middleware to log all requests
-app.use((req, res, next) => {
-    console.log(`📡 ${req.method} ${req.path} - ${new Date().toISOString()}`);
-    next();
-});
-
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
+    logger.error('Unhandled error:', err);
     res.status(500).json({ 
         message: 'Something went wrong!',
         error: process.env.NODE_ENV === 'development' ? err.message : {}
@@ -96,7 +91,8 @@ app.use('*', (req, res) => {
 // For local development
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
+        logger.log(`🚀 Server running on port ${PORT}`);
+        logger.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
 }
 

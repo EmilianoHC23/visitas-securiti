@@ -43,8 +43,8 @@ export const LoginPage: React.FC = () => {
             setPasswordError('La contraseña es requerida');
             return false;
         }
-        if (password.length < 3) {
-            setPasswordError('La contraseña debe tener al menos 3 caracteres');
+        if (password.length < 8) {
+            setPasswordError('La contraseña debe tener al menos 8 caracteres');
             return false;
         }
         setPasswordError(null);
@@ -100,7 +100,14 @@ export const LoginPage: React.FC = () => {
                 } catch {}
             }, 1200);
         } catch (err: any) {
-            setError('Email o contraseña incorrectos.');
+            // Handle account lockout and rate limiting
+            if (err.response?.status === 423) {
+                setError(err.response.data.message || 'Cuenta bloqueada temporalmente.');
+            } else if (err.response?.status === 429) {
+                setError('Demasiados intentos. Por favor, intente más tarde.');
+            } else {
+                setError(err.response?.data?.message || 'Email o contraseña incorrectos.');
+            }
         }
     };
 

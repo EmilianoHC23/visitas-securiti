@@ -76,18 +76,29 @@ const AppRoutes: React.FC = () => {
     return (
         <DashboardLayout>
             <Routes>
-                <Route path="/" element={<Dashboard />} />
+                {/* Dashboard solo para Admin */}
+                {user?.role === UserRole.ADMIN && (
+                    <Route path="/" element={<Dashboard />} />
+                )}
+                
+                {/* Visitas y Agenda - todos los roles autenticados */}
                 <Route path="/visits" element={<VisitsPage />} />
                 <Route path="/agenda" element={<AgendaPage />} />
                 
-                {(user?.role === UserRole.ADMIN || user?.role === UserRole.RECEPTION) && (
-                    <>
-                        <Route path="/access-codes" element={<AccessCodesPage />} />
-                        <Route path="/public-registration" element={<PublicRegistrationPage />} />
-                        <Route path="/blacklist" element={<BlacklistPage />} />
-                    </>
+                {/* Accesos/Eventos - Admin, Reception y Host */}
+                <Route path="/access-codes" element={<AccessCodesPage />} />
+                
+                {/* Auto-registro - solo Admin */}
+                {user?.role === UserRole.ADMIN && (
+                    <Route path="/public-registration" element={<PublicRegistrationPage />} />
                 )}
                 
+                {/* Lista negra - Admin y Reception */}
+                {(user?.role === UserRole.ADMIN || user?.role === UserRole.RECEPTION) && (
+                    <Route path="/blacklist" element={<BlacklistPage />} />
+                )}
+                
+                {/* Reportes, Settings y Users - solo Admin */}
                 {user?.role === UserRole.ADMIN && (
                     <>
                         <Route path="/users" element={<UserManagementPage />} />
@@ -100,7 +111,11 @@ const AppRoutes: React.FC = () => {
                 {/* Public routes available to authenticated users */}
                 <Route path="/register" element={<VisitorRegistrationPage />} />
                 <Route path="/public/:qrCode" element={<PublicRegistrationWrapper />} />
-                <Route path="*" element={<Navigate to="/" />} />
+                
+                {/* Redirect por defecto según rol */}
+                <Route path="*" element={
+                    <Navigate to={user?.role === UserRole.ADMIN ? "/" : "/visits"} />
+                } />
             </Routes>
         </DashboardLayout>
     );

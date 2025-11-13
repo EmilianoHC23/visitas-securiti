@@ -8,6 +8,7 @@ import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/common/Toast';
+import { UserRole } from '../types';
 
 // Fixed emailError undefined issue - all variables properly declared
 export const LoginPage: React.FC = () => {
@@ -81,14 +82,22 @@ export const LoginPage: React.FC = () => {
         }
 
         try {
-            await login(email, password);
+            const loggedInUser = await login(email, password);
             // show success toast and local success Alert with icon, then navigate shortly after
             try { showToast('Sesión iniciada correctamente', 'success'); } catch {}
             setSuccessMessage('Sesión iniciada correctamente');
-            // auto-dismiss alert after 3.5s and navigate to dashboard
+            // auto-dismiss alert after 1.2s and navigate based on user role
             setTimeout(() => {
                 setSuccessMessage(null);
-                try { navigate('/'); } catch {}
+                try {
+                    // Redirigir según el rol del usuario
+                    // Admin va a Dashboard, Reception y Host van a Visits
+                    if (loggedInUser && loggedInUser.role === UserRole.ADMIN) {
+                        navigate('/');
+                    } else {
+                        navigate('/visits');
+                    }
+                } catch {}
             }, 1200);
         } catch (err: any) {
             setError('Email o contraseña incorrectos.');

@@ -5,7 +5,7 @@ import * as api from '../services/api';
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<User>;
   logout: () => void;
   updateUser: (updatedUser: User) => void;
   // loading: true during login/logout actions
@@ -48,6 +48,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const { token, user: loggedInUser } = await api.login(username, password);
       localStorage.setItem('securitiToken', token);
       setUser(loggedInUser);
+      return loggedInUser; // Retornar el usuario para usar en el componente
     } catch (error) {
         console.error("Login failed:", error);
         throw error; // Re-throw to be caught in the component

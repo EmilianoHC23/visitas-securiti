@@ -63,6 +63,7 @@ Principales acciones:
   - Copiar enlace de pre-registro (si está habilitado y activo)
   - Finalizar (marcar como finalizado)
 
+
 Notas de uso:
 - Los Hosts solo ven los accesos que crearon.
 - "Sin vencimiento" deshabilita fecha/hora de fin y mantiene el acceso activo hasta que lo finalices manualmente.
@@ -82,6 +83,7 @@ Qué verás:
 Cómo usarlo:
 1) Descarga el PDF y imprime el QR.
 2) Colócalo en recepción. Los visitantes abren la cámara del celular, escanean y completan su registro.
+
 
 ---
 
@@ -112,6 +114,7 @@ Buenas prácticas:
 - Verifica identidad con la foto tomada.
 - Si el invitado trae un QR de correo, escanéalo para agilizar el registro.
 
+
 ---
 
 ## Agenda Page (Agenda de Eventos)
@@ -129,6 +132,7 @@ Uso típico:
 1) Define el rango (hoy + próximos días/semana).
 2) Filtra por anfitrión si lo necesitas.
 3) Alterna tabla/calendario según tu preferencia.
+
 
 ---
 
@@ -148,6 +152,7 @@ Consejos:
 - Usa fotos de perfil para facilitar identificación.
 - Define correctamente los roles según responsabilidades.
 
+
 ---
 
 ## Blacklist Page (Lista Negra)
@@ -162,6 +167,7 @@ Funciones:
 
 Integración:
 - Al crear accesos, el sistema verifica si algún invitado está en la lista negra y te muestra un aviso con detalles para que decidas continuar o cancelar.
+
 
 ---
 
@@ -178,6 +184,7 @@ Funciones:
 
 Notas:
 - El reporte considera visitas Completadas y Rechazadas con motivo.
+
 
 ---
 
@@ -200,7 +207,10 @@ Consejos:
 - Actualiza el logo para que aparezca en PDFs/QR.
 - Mantén al día la dirección y mapa para facilitar la llegada.
 
+
 ---
+
+
 
 ## Preguntas frecuentes y tips
 

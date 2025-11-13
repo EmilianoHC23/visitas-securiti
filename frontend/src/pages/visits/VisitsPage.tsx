@@ -1561,14 +1561,21 @@ export const VisitsPage: React.FC = () => {
     };
 
     // Arrays de visitas por status (asegúrate que estén antes del return)
-const pendingVisits = visits.filter(v => v.status === VisitStatus.PENDING);
-const approvedVisits = visits.filter(v => v.status === VisitStatus.APPROVED);
+// Filtrar visitas según el rol del usuario
+let filteredVisits = visits;
+if (user?.role === UserRole.HOST) {
+    // El host solo ve visitas destinadas a él
+    filteredVisits = visits.filter(v => v.host._id === user._id);
+}
+
+const pendingVisits = filteredVisits.filter(v => v.status === VisitStatus.PENDING);
+const approvedVisits = filteredVisits.filter(v => v.status === VisitStatus.APPROVED);
 // Solo visitas rechazadas SIN razón asignada (esperando que se especifique la razón)
-const rejectedVisits = visits.filter(v => v.status === VisitStatus.REJECTED && !v.rejectionReason);
+const rejectedVisits = filteredVisits.filter(v => v.status === VisitStatus.REJECTED && !v.rejectionReason);
 const respondedVisits = [...approvedVisits, ...rejectedVisits].sort((a, b) => 
     new Date(b.updatedAt || b.createdAt || '').getTime() - new Date(a.updatedAt || a.createdAt || '').getTime()
 );
-const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
+const checkedInVisits = filteredVisits.filter(v => v.status === VisitStatus.CHECKED_IN);
 
 // Filtrar visitas de hoy
     const today = new Date();
@@ -1610,7 +1617,8 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                         {!isMobile && 'Ver agenda'}
                     </button>
                     
-                    {/* Botón Registrar con submenú */}
+                    {/* Botón Registrar con submenú - OCULTO para el rol HOST */}
+                    {user?.role !== UserRole.HOST && (
                     <div className={`relative ${isMobile ? 'flex-1' : ''}`}>
                         <button
                             onClick={() => setRegisterMenuOpen(!registerMenuOpen)}
@@ -1656,6 +1664,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                             )}
                         </AnimatePresence>
                     </div>
+                    )}
                 </div>
             </div>
 
@@ -1666,7 +1675,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                 </div>
             ) : (
                 <>
-                    {/* Tabs para móvil */}
+                    {/* Tabs para móvil - Host solo ve "En espera" y "Dentro" */}
                     {isMobile && (
                         <div className="mb-4 flex gap-2 overflow-x-auto pb-2">
                             <button
@@ -1682,6 +1691,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                     <span className="text-xs">En espera</span>
                                 </div>
                             </button>
+                            {user?.role !== UserRole.HOST && (
                             <button
                                 onClick={() => setMobileActiveTab('responded')}
                                 className={`flex-1 min-w-[100px] px-3 py-2.5 rounded-lg font-medium text-sm transition-all ${
@@ -1695,6 +1705,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                     <span className="text-xs">Respondidas</span>
                                 </div>
                             </button>
+                            )}
                             <button
                                 onClick={() => setMobileActiveTab('checkedIn')}
                                 className={`flex-1 min-w-[100px] px-3 py-2.5 rounded-lg font-medium text-sm transition-all ${
@@ -1711,7 +1722,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                         </div>
                     )}
 
-                    <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'} gap-4 lg:gap-5`}>
+                    <div className={`grid ${isMobile ? 'grid-cols-1' : user?.role === UserRole.HOST ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 lg:grid-cols-3'} gap-4 lg:gap-5`}>
                     {/* Columna 1: En espera */}
                     {(!isMobile || mobileActiveTab === 'pending') && (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
@@ -1728,6 +1739,8 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                 </div>
                             </div>
                             <h2 className="text-lg font-bold text-gray-800 mb-3">En espera</h2>
+                            {/* Toggle de auto-aprobación - OCULTO para el rol HOST */}
+                            {user?.role !== UserRole.HOST && (
                             <label className="flex items-center gap-2 cursor-pointer group">
                                 <div className="relative">
                                     <input 
@@ -1740,6 +1753,7 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                                 </div>
                                 <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">Auto aprobación</span>
                             </label>
+                            )}
                         </div>
                         <div className="p-4 flex-1 flex flex-col">
                             <div className="relative mb-3">
@@ -1770,8 +1784,8 @@ const checkedInVisits = visits.filter(v => v.status === VisitStatus.CHECKED_IN);
                     </div>
                     )}
 
-                    {/* Columna 2: Respuesta recibida */}
-                    {(!isMobile || mobileActiveTab === 'responded') && (
+                    {/* Columna 2: Respuesta recibida - OCULTA para el rol HOST */}
+                    {user?.role !== UserRole.HOST && (!isMobile || mobileActiveTab === 'responded') && (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
                         <div className="bg-gradient-to-br from-green-50 to-white p-5 border-b border-gray-200">
                             <div className="flex items-start justify-between mb-4">

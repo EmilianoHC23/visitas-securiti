@@ -19,6 +19,50 @@ node scripts/reset-admin.js
 
 ---
 
+### `reset-database.js`
+**⚠️ RESET COMPLETO DE BASE DE DATOS - USA CON PRECAUCIÓN**
+
+Elimina **TODOS** los registros operativos de la base de datos:
+- ✅ Elimina todas las visitas
+- ✅ Elimina todos los accesos/eventos
+- ✅ Elimina toda la lista negra
+- ✅ Elimina todas las invitaciones
+- ✅ Elimina todas las aprobaciones
+- ✅ Elimina todos los eventos de visitas
+- ✅ Elimina todos los usuarios (excepto el admin)
+- ✅ Preserva la configuración de la empresa
+
+**Uso básico (admin por defecto):**
+```bash
+cd backend
+node scripts/reset-database.js
+```
+
+**Uso con email personalizado:**
+```bash
+cd backend
+node scripts/reset-database.js tu-email@empresa.com
+```
+
+**Credenciales admin después del reset:**
+- Email: `admin@securiti.com` (o el email que especifiques)
+- Password: `Admin2025!`
+
+**⚠️ ADVERTENCIAS:**
+1. Esta operación es **IRREVERSIBLE**
+2. Se perderán **TODOS** los datos históricos
+3. Solo se preserva **UN** usuario administrador
+4. Hacer backup antes de ejecutar en producción
+5. La configuración de empresa (Company) se mantiene
+
+**¿Cuándo usar este script?**
+- Cuando necesites empezar desde cero
+- Para limpiar datos de prueba
+- Para resetear el sistema a estado inicial
+- Después de hacer backup de datos importantes
+
+---
+
 ### `init-db-production.js`
 Inicializa la base de datos de producción con datos básicos.
 

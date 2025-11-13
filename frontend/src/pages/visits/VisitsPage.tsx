@@ -22,6 +22,9 @@ import { LiaUserTieSolid } from "react-icons/lia";
 import { MdOutlinePendingActions } from "react-icons/md";
 import { TbClipboardCheck } from "react-icons/tb";
 
+// Only log in development
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
 const RegistrarIcon = ({ className }: { className?: string }) => (
     <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M16 4C16.93 4 17.395 4 17.7765 4.10222C18.8117 4.37962 19.6204 5.18827 19.8978 6.22354C20 6.60504 20 7.07003 20 8V17.2C20 18.8802 20 19.7202 19.673 20.362C19.3854 20.9265 18.9265 21.3854 18.362 21.673C17.7202 22 16.8802 22 15.2 22H8.8C7.11984 22 6.27976 22 5.63803 21.673C5.07354 21.3854 4.6146 20.9265 4.32698 20.362C4 19.7202 4 18.8802 4 17.2V8C4 7.07003 4 6.60504 4.10222 6.22354C4.37962 5.18827 5.18827 4.37962 6.22354 4.10222C6.60504 4 7.07003 4 8 4M12 17V11M9 14H15M9.6 6H14.4C14.9601 6 15.2401 6 15.454 5.89101C15.6422 5.79513 15.7951 5.64215 15.891 5.45399C16 5.24008 16 4.96005 16 4.4V3.6C16 3.03995 16 2.75992 15.891 2.54601C15.7951 2.35785 15.6422 2.20487 15.454 2.10899C15.2401 2 14.9601 2 14.4 2H9.6C9.03995 2 8.75992 2 8.54601 2.10899C8.35785 2.20487 8.20487 2.35785 8.10899 2.54601C8 2.75992 8 3.03995 8 3.6V4.4C8 4.96005 8 5.24008 8.10899 5.45399C8.20487 5.64215 8.35785 5.79513 8.54601 5.89101C8.75992 6 9.03995 6 9.6 6Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -242,7 +245,7 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
             }
             setIsCameraOn(true);
         } catch (error) {
-            console.error('Camera error:', error);
+            if (isLocalhost) console.error('Camera error:', error);
             alert('No se pudo acceder a la cámara. Verifica los permisos.');
         }
     };
@@ -296,7 +299,7 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
             // Iniciar detección QR con jsQR
             scanQRCode();
         } catch (error) {
-            console.error('QR Scanner error:', error);
+            if (isLocalhost) console.error('QR Scanner error:', error);
             alert('No se pudo acceder a la cámara para escanear QR. Ingresa el código manualmente.');
         }
     };
@@ -318,14 +321,14 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
                     const code = jsQR(imageData.data, imageData.width, imageData.height);
                     
                     if (code) {
-                        console.log('✅ QR detectado en VisitFormModal:', code.data);
+                        if (isLocalhost) console.log('✅ QR detectado en VisitFormModal:', code.data);
                         try {
                             const qrData = JSON.parse(code.data);
-                            console.log('📋 QR Data parsed:', qrData);
+                            if (isLocalhost) console.log('📋 QR Data parsed:', qrData);
                             
                             // Si es del tipo visitor-info, auto-completar el formulario
                             if (qrData.type === 'visitor-info') {
-                                console.log('🔄 Autocompletando formulario con datos del QR');
+                                if (isLocalhost) console.log('🔄 Autocompletando formulario con datos del QR');
                                 setVisitorName(qrData.visitorName || '');
                                 setVisitorCompany(qrData.visitorCompany || '');
                                 setVisitorEmail(qrData.visitorEmail || '');
@@ -339,7 +342,7 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
                             
                             // Si es del tipo visit-checkin (QR del correo de aprobación)
                             if (qrData.type === 'visit-checkin') {
-                                console.log('📧 QR de visita aprobada detectado, guardando token');
+                                if (isLocalhost) console.log('📧 QR de visita aprobada detectado, guardando token');
                                 setQrCode(code.data);
                                 setHasQrInvitation(false);
                                 stopQrScanner();
@@ -348,13 +351,13 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
                             }
                             
                             // Si es otro tipo de QR, solo guardar el código
-                            console.log('📝 QR de tipo desconocido, guardando como texto');
+                            if (isLocalhost) console.log('📝 QR de tipo desconocido, guardando como texto');
                             setQrCode(code.data);
                             setHasQrInvitation(false);
                             stopQrScanner();
                         } catch (e) {
                             // Si no es JSON válido, guardar como texto plano
-                            console.log('⚠️ QR no es JSON, guardando como texto plano');
+                            if (isLocalhost) console.log('⚠️ QR no es JSON, guardando como texto plano');
                             setQrCode(code.data);
                             setHasQrInvitation(false);
                             stopQrScanner();
@@ -421,7 +424,7 @@ const VisitFormModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (
             setReason('');
             setHostId('');
         } catch (error) {
-            console.error("Failed to create visit:", error);
+            if (isLocalhost) console.error("Failed to create visit:", error);
         }
     };
 
@@ -717,7 +720,7 @@ const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits:
             // Iniciar detección QR con jsQR
             scanExitQRCode();
         } catch (error) {
-            console.error('Exit QR Scanner error:', error);
+            if (isLocalhost) console.error('Exit QR Scanner error:', error);
             alert('No se pudo acceder a la cámara para escanear QR.');
         }
     };
@@ -739,7 +742,7 @@ const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits:
                     const code = jsQR(imageData.data, imageData.width, imageData.height);
                     
                     if (code) {
-                        console.log('✅ QR detectado en Exit Modal:', code.data);
+                        if (isLocalhost) console.log('✅ QR detectado en Exit Modal:', code.data);
                         setQrCode(code.data);
                         setIsScanning(false);
                         stopQrScanner();
@@ -814,7 +817,7 @@ const ExitVisitorModal: React.FC<{ isOpen: boolean; onClose: () => void; visits:
             
             alert(`Esta visita está en estado "${visit.status}" y no puede ser procesada en este momento.`);
         } catch (error) {
-            console.error('Error processing QR:', error);
+            if (isLocalhost) console.error('Error processing QR:', error);
             alert('Error al procesar el código QR.');
         }
     };
@@ -1057,7 +1060,7 @@ export const VisitsPage: React.FC = () => {
 
     // Handler para aprobar desde el modal
     const handleApproveFromModal = async (visitId: string) => {
-        console.log('🟢 [APPROVE] Starting approval for visit:', visitId);
+        if (isLocalhost) console.log('🟢 [APPROVE] Starting approval for visit:', visitId);
         try {
             // Cerrar modal inmediatamente para mejor UX
             setPendingModalVisit(null);
@@ -1065,7 +1068,7 @@ export const VisitsPage: React.FC = () => {
             // Actualización optimista: actualizar UI inmediatamente
             setVisits(prevVisits => prevVisits.map(v => {
                 if (v._id === visitId) {
-                    console.log('✅ [APPROVE] Optimistic update - changing status to APPROVED');
+                    if (isLocalhost) console.log('✅ [APPROVE] Optimistic update - changing status to APPROVED');
                     return { ...v, status: VisitStatus.APPROVED };
                 }
                 return v;
@@ -1073,12 +1076,12 @@ export const VisitsPage: React.FC = () => {
 
             // Luego hacer la llamada API en segundo plano
             const updatedVisit = await api.approveVisit(visitId);
-            console.log('✅ [APPROVE] Successfully approved visit:', visitId, 'new status:', updatedVisit.status);
+            if (isLocalhost) console.log('✅ [APPROVE] Successfully approved visit:', visitId, 'new status:', updatedVisit.status);
             
             // Actualizar con la respuesta real del servidor
             setVisits(prevVisits => prevVisits.map(v => v._id === visitId ? updatedVisit : v));
         } catch (error) {
-            console.error('❌ [APPROVE] Failed to approve visit:', error);
+            if (isLocalhost) console.error('❌ [APPROVE] Failed to approve visit:', error);
             // Recargar visitas en caso de error para revertir el cambio optimista
             fetchVisits();
         }
@@ -1130,7 +1133,7 @@ export const VisitsPage: React.FC = () => {
             }
         } catch (error) {
             alert('No se pudo rechazar la visita.');
-            console.error('Failed to reject visit:', error);
+            if (isLocalhost) console.error('Failed to reject visit:', error);
             // Recargar visitas en caso de error
             fetchVisits();
         }
@@ -1143,7 +1146,7 @@ export const VisitsPage: React.FC = () => {
             setVisits(prevVisits => prevVisits.map(v => v._id === visitId ? response : v));
             setApprovedModalVisit(null);
         } catch (error) {
-            console.error('Failed to check in:', error);
+            if (isLocalhost) console.error('Failed to check in:', error);
         }
     };
 
@@ -1171,7 +1174,7 @@ export const VisitsPage: React.FC = () => {
             // Actualizar con datos reales del servidor
             setVisits(prevVisits => prevVisits.map(v => v._id === visitId ? result.visit : v));
         } catch (error) {
-            console.error('Failed to check out:', error);
+            if (isLocalhost) console.error('Failed to check out:', error);
             
             // Recargar visitas en caso de error para sincronizar estado
             fetchVisits();
@@ -1222,7 +1225,7 @@ export const VisitsPage: React.FC = () => {
         const updatedVisit = await api.updateVisitStatus(rejectVisitId, VisitStatus.REJECTED, reason);
         setVisits(prevVisits => prevVisits.map(v => v._id === rejectVisitId ? updatedVisit : v));
       } catch (error) {
-        console.error('Failed to reject visit:', error);
+        if (isLocalhost) console.error('Failed to reject visit:', error);
       } finally {
         setIsRejectModalOpen(false);
         setRejectVisitId(null);
@@ -1246,7 +1249,7 @@ export const VisitsPage: React.FC = () => {
             
             setVisits(filteredVisits);
         } catch (error) {
-            console.error("Failed to fetch visits:", error);
+            if (isLocalhost) console.error("Failed to fetch visits:", error);
         } finally {
             setLoading(false);
         }
@@ -1257,14 +1260,14 @@ export const VisitsPage: React.FC = () => {
         try {
             const scheduledDate = new Date().toISOString();
             
-            console.log('📝 Datos de visita recibidos:', visitData);
-            console.log('🔍 fromAccessEvent:', visitData.fromAccessEvent);
+            if (isLocalhost) console.log('📝 Datos de visita recibidos:', visitData);
+            if (isLocalhost) console.log('🔍 fromAccessEvent:', visitData.fromAccessEvent);
             
             let response: any;
             
             // Si viene de un acceso/evento, crear como aprobada (irá a "Respuesta recibida")
             if (visitData.fromAccessEvent) {
-                console.log('🎫 Procesando visita de ACCESO/EVENTO - irá a "Respuesta recibida"');
+                if (isLocalhost) console.log('🎫 Procesando visita de ACCESO/EVENTO - irá a "Respuesta recibida"');
                 
                 response = await api.createVisit({
                     visitorName: visitData.visitorName,
@@ -1280,20 +1283,20 @@ export const VisitsPage: React.FC = () => {
                     fromAccessEvent: true
                 });
                 
-                console.log('✅ Visita creada como aprobada');
+                if (isLocalhost) console.log('✅ Visita creada como aprobada');
                 
                 // Si autoCheckIn está activado, hacer check-in automático
                 if (autoCheckIn && response && response._id) {
-                    console.log('🔄 Auto check-in activado - registrando entrada automáticamente');
+                    if (isLocalhost) console.log('🔄 Auto check-in activado - registrando entrada automáticamente');
                     try {
                         await api.checkInVisit(response._id);
-                        console.log('✅ Check-in automático completado');
+                        if (isLocalhost) console.log('✅ Check-in automático completado');
                     } catch (checkInError) {
-                        console.error('❌ Error en check-in automático:', checkInError);
+                        if (isLocalhost) console.error('❌ Error en check-in automático:', checkInError);
                     }
                 }
             } else {
-                console.log('👤 Procesando visita REGULAR - flujo normal');
+                if (isLocalhost) console.log('👤 Procesando visita REGULAR - flujo normal');
                 
                 // Flujo normal para visitas regulares
                 response = await api.createVisit({
@@ -1310,7 +1313,7 @@ export const VisitsPage: React.FC = () => {
             
             // Verificar si hay alerta de lista negra
             if (response && response.warning === 'blacklist' && response.blacklistInfo) {
-                console.log('⚠️ [REGISTER] Alerta de lista negra detectada');
+                if (isLocalhost) console.log('⚠️ [REGISTER] Alerta de lista negra detectada');
                 setRegisterBlacklistAlert({
                     visitData: {
                         ...visitData,
@@ -1326,7 +1329,7 @@ export const VisitsPage: React.FC = () => {
             
             fetchVisits();
         } catch (error) {
-            console.error('Failed to create visit:', error);
+            if (isLocalhost) console.error('Failed to create visit:', error);
             alert('Error al registrar la visita. Por favor intenta de nuevo.');
         }
     };
@@ -1335,13 +1338,15 @@ export const VisitsPage: React.FC = () => {
         fetchVisits();
         api.getHosts()
             .then(hosts => {
-                console.log('🔍 Hosts recibidos del backend:', hosts.length);
-                hosts.forEach(h => {
-                    console.log(`  - ${h.firstName} ${h.lastName} (${h.email}): role=${h.role}`);
-                });
+                if (isLocalhost) console.log('🔍 Hosts recibidos del backend:', hosts.length);
+                if (isLocalhost) {
+                    hosts.forEach(h => {
+                        console.log(`  - ${h.firstName} ${h.lastName} (${h.email}): role=${h.role}`);
+                    });
+                }
                 setHosts(hosts);
             })
-            .catch(err => console.error("Failed to fetch hosts:", err));
+            .catch(err => { if (isLocalhost) console.error("Failed to fetch hosts:", err) });
     }, [fetchVisits]);
 
     const updateVisitStatus = async (id: string, status: VisitStatus) => {
@@ -1349,7 +1354,7 @@ export const VisitsPage: React.FC = () => {
             const updatedVisit = await api.updateVisitStatus(id, status);
             setVisits(prevVisits => prevVisits.map(v => v._id === id ? updatedVisit : v));
         } catch (error) {
-            console.error("Failed to update visit status:", error);
+            if (isLocalhost) console.error("Failed to update visit status:", error);
         }
     };
 
@@ -1369,7 +1374,7 @@ export const VisitsPage: React.FC = () => {
             // Actualizar con la respuesta real del servidor
             setVisits(prevVisits => prevVisits.map(v => v._id === id ? updatedVisit : v));
         } catch (error) {
-            console.error('Failed to approve visit:', error);
+            if (isLocalhost) console.error('Failed to approve visit:', error);
             // Recargar visitas en caso de error para revertir el cambio optimista
             fetchVisits();
         }
@@ -1380,7 +1385,7 @@ export const VisitsPage: React.FC = () => {
             const response: any = await api.checkInVisit(id);
             setVisits(prevVisits => prevVisits.map(v => v._id === id ? response : v));
         } catch (error) {
-            console.error('Failed to check in:', error);
+            if (isLocalhost) console.error('Failed to check in:', error);
         }
     };
 
@@ -1427,7 +1432,7 @@ export const VisitsPage: React.FC = () => {
             setIsModalOpen(false); // Cerrar el side panel
             fetchVisits();
         } catch (error) {
-            console.error('Failed to force register visit:', error);
+            if (isLocalhost) console.error('Failed to force register visit:', error);
             window.dispatchEvent(new CustomEvent('app-toast', {
                 detail: { message: '❌ Error al registrar la visita', severity: 'error' }
             }));
@@ -1471,7 +1476,7 @@ export const VisitsPage: React.FC = () => {
                 v._id === checkoutVisit._id ? result.visit : v
             ));
         } catch (error) {
-            console.error('Failed to check out:', error);
+            if (isLocalhost) console.error('Failed to check out:', error);
             
             // Revertir cambio optimista en caso de error
             setVisits(prevVisits => prevVisits.map(v => 
@@ -1498,7 +1503,7 @@ export const VisitsPage: React.FC = () => {
                 setAutoApprove(config.settings.autoApproval || false);
                 setAutoCheckIn(config.settings.autoCheckIn || false);
             } catch (error) {
-                console.error('Failed to fetch settings:', error);
+                if (isLocalhost) console.error('Failed to fetch settings:', error);
             }
         };
 
@@ -1517,7 +1522,7 @@ export const VisitsPage: React.FC = () => {
                 }
             });
         } catch (error) {
-            console.error('Failed to update auto-approval:', error);
+            if (isLocalhost) console.error('Failed to update auto-approval:', error);
             setAutoApprove(!checked); // Revertir si falla
         }
     };
@@ -1534,7 +1539,7 @@ export const VisitsPage: React.FC = () => {
                 }
             });
         } catch (error) {
-            console.error('Failed to update auto-checkin:', error);
+            if (isLocalhost) console.error('Failed to update auto-checkin:', error);
             setAutoCheckIn(!checked); // Revertir si falla
         }
     };
@@ -1921,7 +1926,7 @@ const checkedInVisits = filteredVisits.filter(v => v.status === VisitStatus.CHEC
                         fetchVisits();
                         setShowExitModal(false);
                     } catch (error) {
-                        console.error('Failed to checkout:', error);
+                        if (isLocalhost) console.error('Failed to checkout:', error);
                         alert('Error al registrar la salida');
                     }
                 }}

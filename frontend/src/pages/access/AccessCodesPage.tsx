@@ -140,7 +140,7 @@ export const AccessCodesPage: React.FC = () => {
       
       setAccesses(filteredData);
     } catch (error) {
-      console.error('Error loading accesses:', error);
+      // Error loading accesses - silent in production
     } finally {
       setLoading(false);
     }
@@ -175,7 +175,6 @@ export const AccessCodesPage: React.FC = () => {
       setShowDeleteConfirm(false);
       setAccessToDelete(null);
     } catch (error) {
-      console.error('Error canceling access:', error);
       alert('Error al cancelar el acceso');
     }
   };
@@ -193,7 +192,6 @@ export const AccessCodesPage: React.FC = () => {
         detail: { message: 'Acceso finalizado correctamente', severity: 'success' }
       }));
     } catch (error) {
-      console.error('Error finalizing access:', error);
       window.dispatchEvent(new CustomEvent('app-toast', {
         detail: { message: 'Error al finalizar el acceso', severity: 'error' }
       }));
@@ -1022,7 +1020,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
           photo: h.profileImage || h.photo || h.avatar || h.picture || ''
         })));
       } catch (error) {
-        console.error('Error loading hosts:', error);
+        // Error loading hosts - handled silently
       }
     };
     loadHosts();
@@ -1145,7 +1143,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
 
       onSuccess();
     } catch (error) {
-      console.error('Error creating access:', error);
+      // Error creating access - shown to user via toast
       window.dispatchEvent(new CustomEvent('app-toast', {
         detail: { message: '❌ Error al crear el acceso', severity: 'error' }
       }));
@@ -1181,7 +1179,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
       setBlacklistAlert(null);
       onSuccess();
     } catch (error) {
-      console.error('Error creating access:', error);
+      // Error creating access - shown to user via toast
       window.dispatchEvent(new CustomEvent('app-toast', {
         detail: { message: '❌ Error al crear el acceso', severity: 'error' }
       }));
@@ -1811,7 +1809,7 @@ const EditAccessModal: React.FC<EditAccessModalProps> = ({ access, onClose, onSu
 
       onSuccess();
     } catch (error) {
-      console.error('Error updating access:', error);
+      // Error updating access - shown to user via toast
       window.dispatchEvent(new CustomEvent('app-toast', {
         detail: { message: '❌ Error al actualizar el acceso', severity: 'error' }
       }));
@@ -1847,7 +1845,7 @@ const EditAccessModal: React.FC<EditAccessModalProps> = ({ access, onClose, onSu
       setBlacklistAlert(null);
       onSuccess();
     } catch (error) {
-      console.error('Error updating access:', error);
+      // Error updating access - shown to user via toast
       window.dispatchEvent(new CustomEvent('app-toast', {
         detail: { message: '❌ Error al actualizar el acceso', severity: 'error' }
       }));

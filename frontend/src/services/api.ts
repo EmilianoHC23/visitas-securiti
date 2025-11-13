@@ -34,9 +34,11 @@ const BASE_URL = isLocalhost
   ? (import.meta.env.VITE_API_URL || 'http://localhost:3001/api')
   : '/api'; // En producción, usar ruta relativa
 
-console.log('🌐 API Base URL:', BASE_URL);
-console.log('🌍 Environment:', isLocalhost ? 'localhost' : 'production');
-console.log('🔗 Current hostname:', typeof window !== 'undefined' ? window.location.hostname : 'SSR');
+// Only log in development mode
+if (isLocalhost) {
+  console.log('🌐 API Base URL:', BASE_URL);
+  console.log('🌍 Environment:', 'localhost');
+}
 
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => { // eslint-disable-line no-undef
   const token = localStorage.getItem('securitiToken');
@@ -49,10 +51,12 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => { // e
   }
 
   try {
-    console.log(`🌐 API Request: ${options.method || 'GET'} ${BASE_URL}${endpoint}`);
-    if (options.body) {
-      console.log('📦 Request body:', options.body);
+    // Only log in localhost - NEVER in production
+    if (isLocalhost) {
+      console.log(`🌐 API Request: ${options.method || 'GET'} ${BASE_URL}${endpoint}`);
+      // Never log request body even in development (may contain passwords)
     }
+    
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       ...options,
       headers: {
@@ -61,14 +65,20 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => { // e
       },
     });
 
-    console.log(`📡 API Response: ${response.status} ${response.statusText}`);
+    // Only log response status in localhost
+    if (isLocalhost) {
+      console.log(`📡 API Response: ${response.status}`);
+    }
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ 
         message: 'Error de conexión con el servidor' 
       }));
       
-      console.error(`❌ API Error: ${response.status}`, errorData);
+      // Only log errors in localhost
+      if (isLocalhost) {
+        console.error(`❌ API Error: ${response.status}`, errorData);
+      }
       
       // Create enhanced error object with response details
       const error = new Error(errorData.message || `Error ${response.status}: ${response.statusText}`) as any;
@@ -87,7 +97,10 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => { // e
 
     return response.json();
   } catch (error) {
-    console.error('API Request Error:', error);
+    // Only log in localhost
+    if (isLocalhost) {
+      console.error('API Request Error:', error);
+    }
     
     // Handle network errors
     if (error instanceof TypeError && error.message.includes('fetch')) {

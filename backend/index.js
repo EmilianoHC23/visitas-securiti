@@ -21,6 +21,10 @@ const invitationRoutes = require('./src/routes/invitations');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust proxy - Required for Vercel and rate limiting to work correctly
+// This allows Express to read X-Forwarded-For headers from Vercel's proxy
+app.set('trust proxy', 1);
+
 // Security: Helmet middleware for secure HTTP headers
 app.use(helmet({
     contentSecurityPolicy: false, // Disable CSP to avoid breaking Vercel/frontend

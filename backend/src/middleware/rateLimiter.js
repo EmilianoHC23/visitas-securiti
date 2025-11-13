@@ -9,6 +9,8 @@ const loginLimiter = rateLimit({
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   // Skip successful requests (only count failed ones)
   skipSuccessfulRequests: false,
+  // Validate X-Forwarded-For header (for Vercel/production)
+  validate: { xForwardedForHeader: false },
   // Custom handler
   handler: (req, res) => {
     res.status(429).json({
@@ -24,7 +26,8 @@ const apiLimiter = rateLimit({
   max: 100, // Limit each IP to 100 requests per windowMs
   message: 'Demasiadas solicitudes desde esta IP, por favor intente más tarde.',
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false }
 });
 
 // Strict limiter for sensitive operations (password reset, account creation, etc.)
@@ -33,7 +36,8 @@ const strictLimiter = rateLimit({
   max: 3, // Limit each IP to 3 requests per hour
   message: 'Demasiadas solicitudes. Por favor, intente más tarde.',
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false }
 });
 
 module.exports = {

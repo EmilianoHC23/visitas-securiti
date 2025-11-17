@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { Visit, VisitStatus, DashboardStats, Access } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -66,7 +66,7 @@ const Toast: React.FC<{
     );
 };
 
-// Modern Stat Card Component
+// Modern Stat Card Component with Sparkline
 const StatCard: React.FC<{
   title: string;
   value: number | string;
@@ -74,8 +74,11 @@ const StatCard: React.FC<{
   trend?: { value: number; isPositive: boolean } | null;
   color: string;
   onClick?: () => void;
-}> = ({ title, value, icon, trend, color, onClick }) => {
+  sparklineData?: number[];
+}> = ({ title, value, icon, trend, color, onClick, sparklineData }) => {
   const [isHovered, setIsHovered] = useState(false);
+
+  const sparkData = sparklineData?.map((val, idx) => ({ index: idx, value: val })) || [];
 
   return (
     <motion.div
@@ -85,7 +88,7 @@ const StatCard: React.FC<{
       onMouseLeave={() => setIsHovered(false)}
       className={`bg-white rounded-xl p-6 border-2 border-gray-200 shadow-md hover:shadow-xl transition-all ${onClick ? 'cursor-pointer' : ''}`}
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <p className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">{title}</p>
           <p className="text-3xl font-bold text-gray-900 mb-1">
@@ -95,7 +98,7 @@ const StatCard: React.FC<{
             <div className={`flex items-center gap-1 text-sm font-medium ${trend.isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
               {trend.isPositive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
               <span>{Math.abs(trend.value)}%</span>
-              <span className="text-gray-500 text-xs ml-1">vs periodo anterior</span>
+              <span className="text-gray-500 text-xs ml-1">últimos 7 días</span>
             </div>
           )}
         </div>
@@ -103,6 +106,22 @@ const StatCard: React.FC<{
           <div className="text-white">{icon}</div>
         </div>
       </div>
+      {sparkData.length > 0 && (
+        <div className="h-16 -mx-2 mt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={sparkData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+              <Line 
+                type="monotone" 
+                dataKey="value" 
+                stroke="#9ca3af" 
+                strokeWidth={2.5} 
+                dot={false}
+                isAnimationActive={true}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </motion.div>
   );
 };
@@ -178,26 +197,23 @@ const ActivityItem: React.FC<{ visit: Visit }> = ({ visit }) => {
   );
 };
 
-// Frequent Visitor Component
-const FrequentVisitorItem: React.FC<{
-  visitor: { id: string; name: string; company: string; photo: string; count: number };
-}> = ({ visitor }) => (
-  <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-all group">
-    <div className="relative">
-      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden ring-2 ring-gray-200 group-hover:ring-gray-400 transition-all shadow-sm">
-        {visitor.photo ? (
-          <img src={visitor.photo} alt={visitor.name} className="w-full h-full object-cover" />
-        ) : (
-          <FaRegUser className="w-6 h-6 text-gray-400" />
-        )}
+// Daily Summary Stats Component
+const DailySummaryCard: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  color: string;
+  bgColor: string;
+}> = ({ icon, label, value, color, bgColor }) => (
+  <div className={`${bgColor} rounded-xl p-5 border-2 ${color.replace('text-', 'border-')} shadow-sm hover:shadow-md transition-all group cursor-default`}>
+    <div className="flex items-center gap-4">
+      <div className={`w-14 h-14 rounded-lg ${color.replace('text-', 'bg-')} ${color.replace('text-', 'bg-opacity-10')} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+        <div className={color}>{icon}</div>
       </div>
-      <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br from-gray-900 to-gray-700 text-white flex items-center justify-center text-xs font-bold shadow-lg ring-2 ring-white">
-        {visitor.count}
+      <div className="flex-1">
+        <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-1">{label}</p>
+        <p className={`text-3xl font-bold ${color}`}>{value}</p>
       </div>
-    </div>
-    <div className="flex-1 min-w-0">
-      <p className="text-sm font-semibold text-gray-900 truncate">{visitor.name}</p>
-      <p className="text-xs text-gray-500 truncate">{visitor.company}</p>
     </div>
   </div>
 );
@@ -330,6 +346,22 @@ export const Dashboard: React.FC = () => {
     };
   });
 
+  // Sparkline data for each stat card (últimos 7 días)
+  const sparklineActive = chartData.slice(-7).map(d => d.activas);
+  const sparklinePending = chartData.slice(-7).map(d => d.pendientes);
+  const sparklineApproved = chartData.slice(-7).map(d => d.aprobadas);
+  const sparklineCompleted = chartData.slice(-7).map(d => d.completadas);
+
+  // Calcular trends
+  const calculateTrend = (data: number[]) => {
+    if (data.length < 2) return null;
+    const recent = data.slice(-3).reduce((a, b) => a + b, 0) / 3;
+    const previous = data.slice(0, 3).reduce((a, b) => a + b, 0) / 3;
+    if (previous === 0) return null;
+    const change = ((recent - previous) / previous) * 100;
+    return { value: Math.abs(Math.round(change)), isPositive: change > 0 };
+  };
+
   // Company distribution
   const companyMap = new Map<string, number>();
   allVisits.forEach(v => {
@@ -341,25 +373,31 @@ export const Dashboard: React.FC = () => {
     .sort((a, b) => b.value - a.value)
     .slice(0, 6);
 
-  // Frequent visitors
-  const visitorMap = new Map<string, { id: string; name: string; company: string; photo: string; count: number }>();
+  // Frequent visitors para gráfico
+  const visitorMap = new Map<string, { id: string; name: string; count: number }>();
   allVisits.forEach(v => {
     const id = v.visitorEmail || v.visitorName || v._id;
+    const name = v.visitorName || 'Sin nombre';
     if (!visitorMap.has(id)) {
-      visitorMap.set(id, {
-        id,
-        name: v.visitorName || 'Sin nombre',
-        company: v.visitorCompany || 'Sin empresa',
-        photo: v.visitorPhoto || '',
-        count: 0
-      });
+      visitorMap.set(id, { id, name, count: 0 });
     }
     const visitor = visitorMap.get(id)!;
     visitor.count++;
   });
-  const frequentVisitors = Array.from(visitorMap.values())
+  const frequentVisitorsData = Array.from(visitorMap.values())
     .sort((a, b) => b.count - a.count)
     .slice(0, 8);
+
+  // Stats del día de hoy
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayVisits = allVisits.filter(v => {
+    const visitDate = new Date(v.createdAt || v.scheduledDate);
+    return visitDate >= today;
+  });
+  const todayApproved = todayVisits.filter(v => v.status === VisitStatus.APPROVED || v.status === VisitStatus.CHECKED_IN || v.status === VisitStatus.COMPLETED).length;
+  const todayRejected = todayVisits.filter(v => v.status === VisitStatus.REJECTED).length;
+  const todayTotal = todayVisits.length;
 
   const COLORS = ['#111827', '#374151', '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b'];
 
@@ -421,6 +459,8 @@ export const Dashboard: React.FC = () => {
             icon={<UserCheck className="w-7 h-7" />}
             color="bg-gradient-to-br from-emerald-500 to-green-600"
             onClick={() => navigate('/visits?status=checkedIn')}
+            sparklineData={sparklineActive}
+            trend={calculateTrend(sparklineActive)}
           />
           <StatCard
             title="Pendientes"
@@ -428,6 +468,8 @@ export const Dashboard: React.FC = () => {
             icon={<Clock className="w-7 h-7" />}
             color="bg-gradient-to-br from-yellow-500 to-amber-600"
             onClick={() => navigate('/visits?status=pending')}
+            sparklineData={sparklinePending}
+            trend={calculateTrend(sparklinePending)}
           />
           <StatCard
             title="Pre-aprobadas"
@@ -435,6 +477,8 @@ export const Dashboard: React.FC = () => {
             icon={<CheckCircle className="w-7 h-7" />}
             color="bg-gradient-to-br from-blue-500 to-cyan-600"
             onClick={() => navigate('/visits?status=approved')}
+            sparklineData={sparklineApproved}
+            trend={calculateTrend(sparklineApproved)}
           />
           <StatCard
             title="Completadas Hoy"
@@ -442,6 +486,8 @@ export const Dashboard: React.FC = () => {
             icon={<BarChart3 className="w-7 h-7" />}
             color="bg-gradient-to-br from-gray-700 to-gray-900"
             onClick={() => navigate('/reports')}
+            sparklineData={sparklineCompleted}
+            trend={calculateTrend(sparklineCompleted)}
           />
         </div>
 
@@ -487,8 +533,8 @@ export const Dashboard: React.FC = () => {
               <BarChart3 className="w-6 h-6" />
               Actividad de Visitas
             </h2>
-            <ResponsiveContainer width="100%" height={320}>
-              <AreaChart data={chartData}>
+            <ResponsiveContainer width="100%" height={340}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="completadas" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
@@ -543,7 +589,7 @@ export const Dashboard: React.FC = () => {
             </h2>
             {companyData.length > 0 ? (
               <>
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={240}>
                   <PieChart>
                     <Pie
                       data={companyData}
@@ -614,62 +660,85 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Frequent Visitors */}
+          {/* Frequent Visitors Chart */}
           <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <Users className="w-6 h-6" />
               Visitantes Frecuentes
             </h2>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {frequentVisitors.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">
-                  <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No hay datos suficientes</p>
-                </div>
-              ) : (
-                frequentVisitors.map(visitor => (
-                  <FrequentVisitorItem key={visitor.id} visitor={visitor} />
-                ))
-              )}
-            </div>
+            {frequentVisitorsData.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No hay datos suficientes</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={340}>
+                <BarChart data={frequentVisitorsData} layout="vertical" margin={{ left: 5, right: 15, top: 10, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
+                  <XAxis type="number" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                  <YAxis 
+                    type="category" 
+                    dataKey="name" 
+                    stroke="#6b7280" 
+                    style={{ fontSize: '11px' }} 
+                    width={110}
+                    tickFormatter={(value) => value.length > 18 ? value.substring(0, 18) + '...' : value}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '2px solid #e5e7eb', 
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                    }}
+                    cursor={{ fill: 'rgba(17, 24, 39, 0.05)' }}
+                  />
+                  <Bar dataKey="count" fill="#111827" radius={[0, 8, 8, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
-          {/* Recent Activity */}
+          {/* Daily Summary */}
           <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
               <Activity className="w-6 h-6" />
-              Actividad Reciente
+              Resumen del Día
             </h2>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {recentVisits.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">
-                  <Activity className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No hay actividad reciente</p>
-                </div>
-              ) : (
-                recentVisits.map(visit => (
-                  <ActivityItem key={visit._id} visit={visit} />
-                ))
-              )}
+            <div className="space-y-4">
+              <DailySummaryCard
+                icon={<CheckCircle className="w-6 h-6" />}
+                label="Aprobadas"
+                value={todayApproved}
+                color="text-emerald-600"
+                bgColor="bg-emerald-50"
+              />
+              <DailySummaryCard
+                icon={<Minus className="w-6 h-6" />}
+                label="Rechazadas"
+                value={todayRejected}
+                color="text-red-600"
+                bgColor="bg-red-50"
+              />
+              <DailySummaryCard
+                icon={<BarChart3 className="w-6 h-6" />}
+                label="Total del Día"
+                value={todayTotal}
+                color="text-gray-900"
+                bgColor="bg-gray-50"
+              />
             </div>
           </div>
         </div>
 
         {/* Admin Only Stats */}
         {user?.role === 'admin' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="max-w-md">
             <StatCard
               title="Total Usuarios"
               value={stats.totalUsers}
               icon={<Users className="w-7 h-7" />}
               color="bg-gradient-to-br from-indigo-500 to-purple-600"
-              onClick={() => navigate('/users')}
-            />
-            <StatCard
-              title="Hosts Disponibles"
-              value={stats.totalHosts}
-              icon={<UserCheck className="w-7 h-7" />}
-              color="bg-gradient-to-br from-pink-500 to-rose-600"
               onClick={() => navigate('/users')}
             />
           </div>

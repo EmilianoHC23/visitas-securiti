@@ -1,0 +1,1180 @@
+import React, { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts';
+import { Visit, VisitStatus, DashboardStats, Access } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { QrIcon, VisitsIcon, AgendaIcon } from '../components/common/icons';
+import { FaRegUser } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
+import * as api from '../services/api';
+
+// Floating toast notification component
+const Toast: React.FC<{ 
+    message: string; 
+    type: 'success' | 'error' | 'warning' | 'info'; 
+    onClose: () => void;
+}> = ({ message, type, onClose }) => {
+    const config = {
+        success: { 
+            bg: 'bg-gradient-to-r from-emerald-500 to-green-600', 
+            icon: (
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+            )
+        },
+        error: { 
+            bg: 'bg-gradient-to-r from-red-500 to-red-600', 
+            icon: (
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            )
+        },
+        warning: { 
+            bg: 'bg-gradient-to-r from-yellow-500 to-amber-600', 
+            icon: (
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            )
+        },
+        info: { 
+            bg: 'bg-gradient-to-r from-blue-500 to-cyan-600', 
+            icon: (
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            )
+        }
+    };
+
+    const { bg, icon } = config[type];
+
+    useEffect(() => {
+        const timer = setTimeout(() => onClose(), 4500);
+        return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0, y: -50, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -50, scale: 0.95 }}
+                className="fixed top-4 right-4 z-[9999] max-w-md"
+            >
+                <div className={`${bg} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3`}>
+                    <div className="flex-shrink-0">
+                        {icon}
+                    </div>
+                    <span className="font-medium flex-1">{message}</span>
+                    <button
+                        onClick={onClose}
+                        className="flex-shrink-0 text-white/80 hover:text-white transition-colors"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </motion.div>
+        </AnimatePresence>
+    );
+};
+
+const Sparkline: React.FC<{ data: number[]; color?: string; width?: number; height?: number; onClick?: () => void; title?: string }> = ({ data, color = '#6366f1', width = 120, height = 36, onClick, title }) => {
+    if (!data || data.length === 0) return null;
+    const chartData = data.map((v, i) => ({ name: i.toString(), value: v }));
+    const [focused, setFocused] = useState(false);
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (!onClick) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+        }
+    };
+
+    return (
+        <div
+            role={onClick ? 'button' : undefined}
+            tabIndex={onClick ? 0 : -1}
+            aria-label={title}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            style={{ width, height, cursor: onClick ? 'pointer' : 'default', outline: focused ? '3px solid rgba(59,130,246,0.12)' : undefined, borderRadius: 6 }}
+            title={title}
+            onClick={onClick}
+        >
+            <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 2, right: 6, left: 6, bottom: 2 }}>
+                    <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={false} />
+                    <Tooltip
+                        wrapperStyle={{ borderRadius: 8 }}
+                        formatter={(value: any) => [value, 'Visitas']}
+                        labelFormatter={() => ''}
+                    />
+                </LineChart>
+            </ResponsiveContainer>
+        </div>
+    );
+};
+
+const StatCard: React.FC<{ title: string; value: string | number; icon: React.ReactNode; color: string; sparkData?: number[]; sparkColor?: string; deltaPercent?: number | null | undefined; deltaTooltip?: string; onSparkClick?: () => void; sparkTitle?: string; isActive?: boolean }> = ({ title, value, icon, color, sparkData, sparkColor, deltaPercent, deltaTooltip, onSparkClick, sparkTitle, isActive }) => {
+    // If color is a hex value (starts with #), apply it as backgroundColor style
+    const isHex = color && color.startsWith && color.startsWith('#');
+    const bgStyle: React.CSSProperties = isHex
+        ? { backgroundColor: color }
+        : {};
+
+    const classNames = isHex ? 'd-flex align-items-center justify-content-center' : `d-flex align-items-center justify-content-center ${color}`;
+
+    return (
+        <div className="card shadow-sm border-0 mb-3 h-100" style={{ minHeight: 96, height: '100%', border: isActive ? '1px solid rgba(59,130,246,0.15)' : undefined, boxShadow: isActive ? '0 6px 18px rgba(59,130,246,0.06)' : undefined }}>
+            <div className="card-body d-flex align-items-center justify-content-between" style={{ gap: 12, height: '100%' }}>
+                {/* Icon square with rounded corners to match design sample */}
+                <div
+                    className={classNames}
+                    style={{ width: 56, height: 56, borderRadius: 12, boxShadow: '0 6px 18px rgba(2,6,23,0.06)', ...bgStyle }}
+                >
+                    <span style={{ width: 32, height: 32, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {icon}
+                    </span>
+                </div>
+                <div className="ms-3" style={{ flex: 1, minWidth: 0 }}>
+                    <div className="d-flex align-items-center justify-content-between">
+                        {/* Left: number */}
+                        <div style={{ minWidth: 0, flexShrink: 0 }}>
+                            <div className="h3 mb-0 fw-bold text-dark" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {typeof value === 'number' ? (
+                                    <AnimatedNumber value={value} duration={1.2} />
+                                ) : (
+                                    value
+                                )}
+                            </div>
+                            {/* Delta percent / small badge */}
+                            {deltaPercent !== undefined && (
+                                <div className="small mt-1" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    {deltaPercent === null ? (
+                                        <span className="badge bg-success" title={deltaTooltip || "No hubo datos en el periodo anterior"}>Nuevo</span>
+                                    ) : (
+                                        <span className={deltaPercent > 0 ? 'text-success' : (deltaPercent < 0 ? 'text-danger' : 'text-muted')} title={deltaTooltip || `Cambio respecto al periodo anterior`}>
+                                            {deltaPercent > 0 ? '▲' : (deltaPercent < 0 ? '▼' : '–')} {Math.abs(deltaPercent)}%
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Right (md+): sparkline on top, title below */}
+                        <div className="ms-3 d-none d-md-flex" style={{ width: 140, flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                            {sparkData && sparkData.length > 0 ? (
+                                <Sparkline data={sparkData} color={sparkColor || '#6366f1'} width={120} height={36} onClick={onSparkClick} title={sparkTitle} />
+                            ) : (
+                                <div style={{ width: 120, height: 36 }} />
+                            )}
+                            <div className="small mt-2" style={{ color: '#6b7280', textAlign: 'center' }}>{title}</div>
+                        </div>
+                    </div>
+
+                    {/* On small screens, show title under the number */}
+                    <div className="d-md-none mt-2">
+                        <div className="small" style={{ color: '#6b7280' }}>{title}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const SkeletonStatCard: React.FC = () => {
+    return (
+        <div className="card shadow-sm border-0 mb-3" style={{ minHeight: 96 }}>
+            <div className="card-body d-flex align-items-center justify-content-between">
+                <div className="bg-gray-200 rounded" style={{ width: 56, height: 56, borderRadius: 12 }} />
+                <div className="ms-3" style={{ flex: 1 }}>
+                    <div className="bg-gray-200 rounded" style={{ width: 120, height: 20, marginBottom: 6 }} />
+                    <div className="bg-gray-100 rounded" style={{ width: 80, height: 12 }} />
+                </div>
+                <div className="d-none d-md-flex" style={{ width: 140, flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 120, height: 36, background: 'rgba(99,102,241,0.06)', borderRadius: 4 }} />
+                    <div style={{ width: 80, height: 12, marginTop: 8, background: 'rgba(0,0,0,0.04)', borderRadius: 4 }} />
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const AnimatedNumber: React.FC<{ value: number; duration?: number }> = ({ value, duration = 1.2 }) => {
+    const [display, setDisplay] = useState<number>(0);
+    const startRef = React.useRef<number | null>(null);
+    const fromRef = React.useRef<number>(0);
+
+    useEffect(() => {
+        // animate from previous displayed value to new value
+        const start = performance.now();
+        startRef.current = start;
+        const from = fromRef.current ?? 0;
+        const to = value;
+
+        let raf = 0;
+        const tick = (now: number) => {
+            const elapsed = (now - start) / 1000;
+            const t = Math.min(1, elapsed / duration);
+            const current = Math.round(from + (to - from) * t);
+            setDisplay(current);
+            if (t < 1) raf = requestAnimationFrame(tick);
+            else fromRef.current = to;
+        };
+
+        raf = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf);
+    }, [value, duration]);
+
+    return <>{display.toLocaleString()}</>;
+};
+
+const RecentActivityItem: React.FC<{ visit: Visit }> = ({ visit }) => {
+    const getStatusInfo = () => {
+        switch (visit.status) {
+            case VisitStatus.CHECKED_IN: return { text: "hizo check-in.", color: "text-green-500" };
+            case VisitStatus.APPROVED: return { text: "fue aprobada.", color: "text-blue-500" };
+            case VisitStatus.PENDING: return { text: "está pendiente de aprobación.", color: "text-yellow-500" };
+            case VisitStatus.COMPLETED: return { text: "ha finalizado.", color: "text-gray-500" };
+            default: return { text: "ha finalizado.", color: "text-gray-500" };
+        }
+    };
+    const statusInfo = getStatusInfo();
+    const timeAgo = new Date(visit.createdAt || visit.scheduledDate).toLocaleDateString();
+
+    return (
+        <li className="flex items-center space-x-3 py-3 border-b last:border-b-0">
+            <span className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                {visit.visitorPhoto ? (
+                    <img 
+                        className="w-10 h-10 object-cover" 
+                        src={visit.visitorPhoto} 
+                        alt={visit.visitorName}
+                        onError={e => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const fallback = target.nextElementSibling as HTMLElement;
+                            if (fallback) fallback.style.display = 'inline';
+                        }}
+                    />
+                ) : null}
+                <FaRegUser className="w-7 h-7 text-gray-400" style={{ display: visit.visitorPhoto ? 'none' : 'inline' }} />
+            </span>
+            <div className="flex-1">
+                <p className="text-sm text-gray-700">
+                    <span className="font-semibold">{visit.visitorName}</span> de {visit.visitorCompany}
+                </p>
+                <p className={`text-xs ${statusInfo.color}`}>La visita {statusInfo.text}</p>
+                <p className="text-xs text-gray-400">{timeAgo}</p>
+            </div>
+        </li>
+    );
+};
+
+// Próximas llegadas de hoy
+const UpcomingToday: React.FC = () => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    const startIso = start.toISOString();
+    const endIso = end.toISOString();
+
+    const { data: visitsData, isLoading: visitsLoading, error: visitsError } = useQuery<Visit[], Error>({
+        queryKey: ['agenda', 'today', startIso, endIso],
+        queryFn: async () => {
+            const res = await api.getAgenda({ from: startIso, to: endIso });
+            // Some implementations return array directly, others under { events }
+            return Array.isArray(res) ? res as Visit[] : (res?.events || []);
+        }
+    });
+
+    const { data: accessesData, isLoading: accessesLoading } = useQuery<Access[], Error>({
+        queryKey: ['accessAgenda', 'today', startIso, endIso],
+        queryFn: async () => {
+            const res = await api.getAccessesForAgenda(startIso, endIso);
+            return Array.isArray(res) ? res as Access[] : [];
+        }
+    });
+
+    const upcoming = (visitsData || [])
+        .filter(v => v.status !== VisitStatus.COMPLETED)
+        .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())
+        .slice(0, 5);
+
+    const upcomingAccesses = (accessesData || [])
+        .filter(a => a.status === 'active')
+        .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+        .slice(0, 3);
+
+    const isLoading = visitsLoading || accessesLoading;
+    const error = visitsError;
+
+    return (
+        <div className="card shadow-sm border-0 mb-3">
+            <div className="card-body">
+                <h5 className="card-title fw-semibold mb-3">Próximas llegadas de hoy</h5>
+                {isLoading ? (
+                    <div className="text-muted">Cargando...</div>
+                ) : error ? (
+                    <div className="text-danger small">No se pudo cargar la agenda</div>
+                ) : upcoming.length === 0 && upcomingAccesses.length === 0 ? (
+                    <div className="text-muted small">No hay llegadas pendientes para hoy</div>
+                ) : (
+                    <ul className="list-unstyled mb-0">
+                        {upcoming.map(v => {
+                            const time = new Date(v.scheduledDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                            const hostName = (v as any)?.host?.firstName ? `${(v as any).host.firstName} ${(v as any).host.lastName || ''}` : '';
+                            return (
+                                <li key={v._id} className="d-flex align-items-center py-2 border-bottom last:border-bottom-0">
+                                    <span className="icon-tile me-3" style={{ width: 40, height: 40 }}>
+                                        <VisitsIcon className="w-5 h-5" />
+                                    </span>
+                                    <div className="flex-1">
+                                        <div className="fw-semibold text-dark" style={{ lineHeight: 1.2 }}>{v.visitorName} · <span className="text-muted fw-normal">{time}</span></div>
+                                        <div className="small text-muted" style={{ lineHeight: 1.2 }}>{v.visitorCompany || 'Sin empresa'} {hostName ? `· Host: ${hostName}` : ''}</div>
+                                    </div>
+                                </li>
+                            );
+                        })}
+                        {upcomingAccesses.map(access => {
+                            const time = new Date(access.startDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                            const creatorName = access.creatorId ? `${(access.creatorId as any).firstName} ${(access.creatorId as any).lastName || ''}`.trim() : '';
+                            const invitedCount = access.invitedUsers?.length || 0;
+                            const attendedCount = access.invitedUsers?.filter(u => u.attendanceStatus === 'asistio').length || 0;
+                            
+                            return (
+                                <li key={access._id} className="py-2 border-bottom last:border-bottom-0">
+                                    <div className="d-flex align-items-center">
+                                        <span className="icon-tile me-3" style={{ width: 40, height: 40 }}>
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </span>
+                                        <div className="flex-1">
+                                            <div className="fw-semibold text-dark" style={{ lineHeight: 1.2 }}>
+                                                {access.eventName} · <span className="text-muted fw-normal">{time}</span>
+                                            </div>
+                                            <div className="small text-muted" style={{ lineHeight: 1.2 }}>
+                                                {access.location || 'Sin ubicación'} {creatorName ? `· Host: ${creatorName}` : ''}
+                                            </div>
+                                            {invitedCount > 0 && (
+                                                <div className="small mt-1" style={{ lineHeight: 1.4 }}>
+                                                    <span className="badge bg-primary bg-opacity-10 text-primary me-1" style={{ fontSize: '0.7rem', fontWeight: 500 }}>
+                                                        {invitedCount} invitado{invitedCount !== 1 ? 's' : ''}
+                                                    </span>
+                                                    {attendedCount > 0 && (
+                                                        <span className="badge bg-success bg-opacity-10 text-success" style={{ fontSize: '0.7rem', fontWeight: 500 }}>
+                                                            {attendedCount} registrado{attendedCount !== 1 ? 's' : ''}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {invitedCount > 0 && (
+                                                <div className="mt-2" style={{ fontSize: '0.75rem' }}>
+                                                    <details className="text-muted">
+                                                        <summary className="cursor-pointer hover:text-primary" style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                            Ver invitados ({invitedCount})
+                                                        </summary>
+                                                        <ul className="list-unstyled mt-2 ps-3">
+                                                            {access.invitedUsers.map((guest, idx) => (
+                                                                <li key={idx} className="d-flex align-items-center py-1">
+                                                                    <span className={`me-2 ${guest.attendanceStatus === 'asistio' ? 'text-success' : 'text-muted'}`}>
+                                                                        {guest.attendanceStatus === 'asistio' ? '✓' : '○'}
+                                                                    </span>
+                                                                    <span className="flex-1">
+                                                                        {guest.name}
+                                                                        {guest.company && <span className="text-muted"> · {guest.company}</span>}
+                                                                    </span>
+                                                                    {guest.checkInTime && (
+                                                                        <span className="text-muted small">
+                                                                            {new Date(guest.checkInTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                                                        </span>
+                                                                    )}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </details>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export const Dashboard: React.FC = () => {
+    const { user } = useAuth();
+    const navigate = useNavigate();
+    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
+    const [stats, setStats] = useState<DashboardStats>({ 
+        active: 0, 
+        pending: 0, 
+        approved: 0, 
+        checkedIn: 0, 
+        completed: 0, 
+        totalUsers: 0, 
+        totalHosts: 0 
+    });
+    const [recentVisits, setRecentVisits] = useState<Visit[]>([]);
+    const [frequentCompanies, setFrequentCompanies] = useState<Array<{ company: string; count: number }>>([]);
+    const [frequentVisitors, setFrequentVisitors] = useState<Array<{ id: string; name: string; company?: string; photo?: string; count: number }>>([]);
+    const [analyticsStatusData, setAnalyticsStatusData] = useState<any[]>([]);
+    const [period, setPeriod] = useState<'week' | 'month'>('week');
+    const [prevPeriodSums, setPrevPeriodSums] = useState<{ pending?: number | undefined | null; approved?: number | undefined | null; checkedIn?: number | undefined | null; completed?: number | undefined | null; }>({});
+    const [sparkFilter, setSparkFilter] = useState<'pending' | 'approved' | 'checkedIn' | 'completed' | null>(null);
+
+    // Use React Query to fetch data and keep it cached/refetched in background
+    const statsQuery = useQuery<DashboardStats, Error>({ queryKey: ['dashboardStats'], queryFn: api.getDashboardStats });
+    const recent5Query = useQuery<Visit[], Error>({ queryKey: ['recentVisits', 5], queryFn: () => api.getRecentVisits(5) });
+    const recentLargeQuery = useQuery<Visit[], Error>({ queryKey: ['recentVisits', 200], queryFn: () => api.getRecentVisits(200) });
+    const analyticsQuery = useQuery<any[], Error>({ queryKey: ['analytics', period], queryFn: () => api.getAnalytics(period) });
+
+    const prevAnalyticsQuery = useQuery<any[], Error>({ queryKey: ['prevAdvancedAnalytics', period], queryFn: async () => {
+        const days = period === 'week' ? 7 : 30;
+        const endDate = new Date();
+        endDate.setHours(0, 0, 0, 0);
+        const startDate = new Date(endDate);
+        startDate.setDate(endDate.getDate() - (days - 1));
+
+        const prevEndDate = new Date(startDate);
+        prevEndDate.setDate(startDate.getDate() - 1);
+        const prevStartDate = new Date(prevEndDate);
+        prevStartDate.setDate(prevEndDate.getDate() - (days - 1));
+
+        const prevStartIso = prevStartDate.toISOString().slice(0, 10);
+        const prevEndIso = prevEndDate.toISOString().slice(0, 10);
+
+        return api.getAdvancedAnalytics({ startDate: prevStartIso, endDate: prevEndIso });
+    }, enabled: true });
+
+    // Mirror query results into local state used by the component (keeps UI code stable)
+    useEffect(() => {
+        setIsLoading(statsQuery.isLoading || recent5Query.isLoading || recentLargeQuery.isLoading || analyticsQuery.isLoading || prevAnalyticsQuery.isLoading);
+        if (statsQuery.data) setStats(statsQuery.data);
+        if (recent5Query.data) setRecentVisits(recent5Query.data);
+
+        // Build frequent companies & visitors from the larger sample when available
+        try {
+            const source = (recentLargeQuery.data && recentLargeQuery.data.length > 0) ? recentLargeQuery.data : (recent5Query.data || []);
+            const map = new Map<string, number>();
+            source.forEach((v: Visit) => {
+                const name = (v.visitorCompany || 'Sin empresa').trim() || 'Sin empresa';
+                map.set(name, (map.get(name) || 0) + 1);
+            });
+            const arr = Array.from(map.entries()).map(([company, count]) => ({ company, count }));
+            arr.sort((a, b) => b.count - a.count);
+            setFrequentCompanies(arr.slice(0, 8));
+
+            const vmap = new Map<string, { id: string; name: string; company?: string; photo?: string; count: number }>();
+            source.forEach((v: Visit) => {
+                const id = (v.visitorEmail || v.visitorName || v._id) as string;
+                const name = v.visitorName || (v.visitorEmail ? v.visitorEmail.split('@')[0] : 'Visitante');
+                const company = v.visitorCompany || '';
+                const photo = v.visitorPhoto || '';
+                if (!vmap.has(id)) {
+                    vmap.set(id, { id, name, company, photo, count: 0 });
+                }
+                const cur = vmap.get(id)!;
+                cur.count = (cur.count || 0) + 1;
+            });
+            const varr = Array.from(vmap.values());
+            varr.sort((a, b) => b.count - a.count);
+            setFrequentVisitors(varr.slice(0, 5));
+        } catch (err) {
+            console.warn('Could not compute frequent lists from queries:', err);
+            setNotification({ 
+                message: 'No se pudieron calcular las listas de visitantes frecuentes', 
+                type: 'warning' 
+            });
+        }
+
+        // Build analyticsStatusData from the recent visits sample (client-side)
+        try {
+            const visitsSource: Visit[] = (recentLargeQuery.data && recentLargeQuery.data.length > 0) ? recentLargeQuery.data : (recent5Query.data || []);
+            const days = period === 'week' ? 7 : 30;
+            const end = new Date();
+            end.setHours(0, 0, 0, 0);
+            const dateKeys: string[] = [];
+            for (let i = days - 1; i >= 0; i--) {
+                const d = new Date(end);
+                d.setDate(end.getDate() - i);
+                dateKeys.push(d.toISOString().slice(0, 10));
+            }
+
+            const seriesMap = new Map<string, any>();
+            dateKeys.forEach(k => {
+                const d = new Date(k + 'T00:00:00');
+                seriesMap.set(k, {
+                    day: d.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit' }),
+                    completed: 0,
+                    rejected: 0
+                });
+            });
+
+            visitsSource.forEach((v: Visit) => {
+                const d = new Date(v.scheduledDate || v.createdAt || v._id);
+                const key = d.toISOString().slice(0, 10);
+                if (!seriesMap.has(key)) return;
+                const obj = seriesMap.get(key);
+                switch (v.status) {
+                    case VisitStatus.COMPLETED:
+                        obj.completed = (obj.completed || 0) + 1;
+                        break;
+                    case VisitStatus.REJECTED:
+                        obj.rejected = (obj.rejected || 0) + 1;
+                        break;
+                    default:
+                        // Ignorar otros estados
+                        break;
+                }
+            });
+
+            const statusSeries = Array.from(seriesMap.values());
+            setAnalyticsStatusData(statusSeries);
+        } catch (err) {
+            console.warn('Could not compute analyticsStatusData from queries:', err);
+            setNotification({ 
+                message: 'No se pudieron procesar los datos de análisis de estatus', 
+                type: 'warning' 
+            });
+        }
+
+        // Compute prevPeriodSums from prevAnalyticsQuery
+        try {
+            const prevAnalytics = prevAnalyticsQuery.data;
+            const computePrev = (key: string): number | undefined => {
+                if (!prevAnalytics) return undefined;
+                if (Array.isArray(prevAnalytics) && prevAnalytics.length > 0) {
+                    const first = prevAnalytics[0] as any;
+                    if (first && first[key] !== undefined) {
+                        return prevAnalytics.reduce((s: number, a: any) => s + (a[key] || 0), 0);
+                    }
+                    if (first && (first.status !== undefined) && (first.total !== undefined || first.count !== undefined)) {
+                        const map = new Map<string, number>();
+                        (prevAnalytics as any[]).forEach(a => {
+                            const st = String(a.status || a._id || '').toLowerCase();
+                            map.set(st, (a.count || a.total || 0));
+                        });
+                        return map.get(key) || 0;
+                    }
+                }
+                return undefined;
+            };
+
+            const prevPending = computePrev('pending');
+            const prevApproved = computePrev('approved');
+            const prevCheckedIn = computePrev('checkedIn');
+            const prevCompleted = computePrev('completed');
+            setPrevPeriodSums({ pending: prevPending, approved: prevApproved, checkedIn: prevCheckedIn, completed: prevCompleted });
+        } catch (err) {
+            console.warn('Could not map prev analytics to prevPeriodSums:', err);
+            setNotification({ 
+                message: 'No se pudieron calcular las estadísticas del periodo anterior', 
+                type: 'info' 
+            });
+            setPrevPeriodSums({});
+        }
+
+    }, [statsQuery.data, recent5Query.data, recentLargeQuery.data, analyticsQuery.data, prevAnalyticsQuery.data, statsQuery.isLoading, recent5Query.isLoading, recentLargeQuery.isLoading, analyticsQuery.isLoading, prevAnalyticsQuery.isLoading, period]);
+
+    // Current period sums (derived from analyticsStatusData)
+    const currSums = {
+        completed: analyticsStatusData.reduce((s, d) => s + (d.completed || 0), 0),
+        rejected: analyticsStatusData.reduce((s, d) => s + (d.rejected || 0), 0),
+    };
+
+    const calcDelta = (curr: number, prev: number | undefined | null) : number | null | undefined => {
+        if (prev === undefined) return undefined; // cannot compute
+        if (prev === null) return undefined; // cannot compute
+        if (prev === 0) {
+            if (curr === 0) return 0;
+            return null; // indicate "Nuevo" (no data previous period)
+        }
+        return Math.round(((curr - prev) / prev) * 100);
+    };
+
+    if (isLoading && stats.active === 0) {
+        // Show modern loading spinner for initial load
+        return (
+            <div className="container-fluid px-0">
+                <div className="text-center py-20 bg-white rounded-2xl shadow-xl border border-gray-200">
+                    <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-gray-900"></div>
+                    <p className="mt-6 text-lg text-gray-600 font-medium">Cargando dashboard...</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="container-fluid px-0">
+            {error && (
+                <div className="alert alert-danger d-flex justify-content-between align-items-center mb-4" role="alert">
+                    <div className="d-flex align-items-center" style={{ gap: 12 }}>
+                        {/* Error icon */}
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ width: 20, height: 20 }} aria-hidden>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12A9 9 0 1112 3a9 9 0 019 9z" />
+                        </svg>
+                        <span>{error}</span>
+                    </div>
+                    <button onClick={() => setError(null)} className="btn-close" aria-label="Cerrar"></button>
+                </div>
+            )}
+
+            {/* Hero banner: reemplaza el rectángulo de título por un banner grande y redondeado */}
+            <div className="mb-4">
+                <div
+                    className="rounded-2xl p-3 p-md-4 mb-3"
+                    style={{
+                        background: 'linear-gradient(90deg, rgba(99,102,241,0.10) 0%, rgba(99,102,241,0.04) 100%)',
+                        border: '1px solid rgba(99,102,241,0.06)'
+                    }}
+                >
+                    <div className="d-flex justify-content-between align-items-start flex-column flex-md-row">
+                        <div>
+                            <h2 className="h2 fw-semibold text-dark mb-1" style={{ fontSize: 20 }}>
+                                Bienvenido de nuevo, {user?.firstName}!
+                            </h2>
+                            <div className="text-muted" style={{ fontSize: 14 }}>
+                                Aquí tienes un resumen de la actividad de hoy
+                            </div>
+                        </div>
+
+                        {/* espacio para botones/avatares o indicadores (opcionales) */}
+                        <div className="mt-2 mt-md-0 d-flex align-items-center">
+                            {/* reservado para futuras acciones */}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-3" style={{ alignItems: 'stretch' }}>
+                <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate('/visits')}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/visits'); }}
+                    aria-label="Ir a Visitas - Visitas Activas"
+                    style={{ cursor: 'pointer', height: '100%' }}
+                >
+                <StatCard
+                    title="Visitas Activas"
+                    value={stats.checkedIn}
+                    sparkData={analyticsStatusData && analyticsStatusData.length > 0 ? analyticsStatusData.map(d => d.checkedIn || 0) : []}
+                    sparkColor="#34d399"
+                    onSparkClick={() => setSparkFilter('checkedIn')}
+                    sparkTitle="Haz clic para filtrar actividad: Visitas Activas"
+                    isActive={sparkFilter === 'checkedIn'}
+                    icon={
+                        <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M23 20v-2a4 4 0 0 0-3-3.87" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                    }
+                    color="icon-tile"
+                />
+                </div>
+                <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate('/visits')}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/visits'); }}
+                    aria-label="Ir a Visitas - Pendientes"
+                    style={{ cursor: 'pointer', height: '100%' }}
+                >
+                <StatCard
+                    title="Pendientes"
+                    value={stats.pending}
+                    sparkData={analyticsStatusData && analyticsStatusData.length > 0 ? analyticsStatusData.map(d => d.pending || 0) : []}
+                    sparkColor="#f6ad55"
+                    onSparkClick={() => setSparkFilter('pending')}
+                    sparkTitle="Haz clic para filtrar actividad: Pendientes"
+                    isActive={sparkFilter === 'pending'}
+                    icon={
+                        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3" /><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={2} fill="none" /></svg>
+                    }
+                    color="icon-tile"
+                />
+                </div>
+                <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate('/visits')}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/visits'); }}
+                    aria-label="Ir a Visitas - Pre-aprobadas"
+                    style={{ cursor: 'pointer', height: '100%' }}
+                >
+                <StatCard
+                    title="Pre-aprobadas"
+                    value={stats.approved}
+                    sparkData={analyticsStatusData && analyticsStatusData.length > 0 ? analyticsStatusData.map(d => d.approved || 0) : []}
+                    sparkColor="#60a5fa"
+                    onSparkClick={() => setSparkFilter('approved')}
+                    sparkTitle="Haz clic para filtrar actividad: Pre-aprobadas"
+                    isActive={sparkFilter === 'approved'}
+                    icon={
+                        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    }
+                    color="icon-tile"
+                />
+                </div>
+                <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate('/reports')}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/reports'); }}
+                    aria-label="Ir a Reportes - Completadas Hoy"
+                    style={{ cursor: 'pointer', height: '100%' }}
+                >
+                <StatCard
+                    title="Completadas Hoy"
+                    value={stats.completed}
+                    sparkData={analyticsStatusData && analyticsStatusData.length > 0 ? analyticsStatusData.map(d => d.completed || 0) : []}
+                    sparkColor="#9ca3af"
+                    deltaPercent={calcDelta(currSums.completed, prevPeriodSums.completed)}
+                    deltaTooltip={`Cambio respecto al periodo anterior: ${period === 'week' ? '7 días previos' : '30 días previos'}`}
+                    onSparkClick={() => setSparkFilter('completed')}
+                    sparkTitle="Haz clic para filtrar actividad: Completadas"
+                    isActive={sparkFilter === 'completed'}
+                    icon={
+                        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3" /><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={2} fill="none" /></svg>
+                    }
+                    color="icon-tile"
+                />
+                </div>
+            </div>
+
+            {/* Quick actions */}
+            <div className="row g-3 mb-4">
+                <div className="col-12">
+                    <div className="card border-0 shadow-sm">
+                        <div className="card-body d-flex flex-wrap gap-3">
+                            <button className="btn btn-light d-flex align-items-center px-3 py-2 border rounded-3 transition-smooth" onClick={() => navigate('/visits?openPanel=true')}>
+                                <span className="icon-tile me-2" style={{ width: 40, height: 40 }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>
+                                </span>
+                                <div className="text-start">
+                                    <div className="fw-semibold">Registrar visita</div>
+                                    <div className="small text-muted">Crear una nueva visita</div>
+                                </div>
+                            </button>
+
+                            <button className="btn btn-light d-flex align-items-center px-3 py-2 border rounded-3 transition-smooth" onClick={() => navigate('/visits?status=pending')}>
+                                <span className="icon-tile me-2" style={{ width: 40, height: 40 }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+                                </span>
+                                <div className="text-start">
+                                    <div className="fw-semibold">Aprobar pendientes</div>
+                                    <div className="small text-muted">Revisar solicitudes</div>
+                                </div>
+                            </button>
+
+                            <button className="btn btn-light d-flex align-items-center px-3 py-2 border rounded-3 transition-smooth" onClick={() => navigate('/access-codes')}>
+                                <span className="icon-tile me-2" style={{ width: 40, height: 40 }}>
+                                    <QrIcon className="w-5 h-5" />
+                                </span>
+                                <div className="text-start">
+                                    <div className="fw-semibold">Accesos & eventos</div>
+                                    <div className="small text-muted">Gestionar invitaciones</div>
+                                </div>
+                            </button>
+
+                            <button className="btn btn-light d-flex align-items-center px-3 py-2 border rounded-3 transition-smooth" onClick={() => navigate('/agenda')}>
+                                <span className="icon-tile me-2" style={{ width: 40, height: 40 }}>
+                                    <AgendaIcon className="w-5 h-5" />
+                                </span>
+                                <div className="text-start">
+                                    <div className="fw-semibold">Agenda de hoy</div>
+                                    <div className="small text-muted">Ver próximas llegadas</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {user?.role === 'admin' && (
+                <div className="row g-3 mb-3">
+                    <div className="col-12 col-md-6">
+                         <div
+                             role="button"
+                             tabIndex={0}
+                             onClick={() => navigate('/users')}
+                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/users'); }}
+                             aria-label="Ir a Usuarios - Total Usuarios"
+                             style={{ cursor: 'pointer' }}
+                         >
+                         <StatCard 
+                             title="Total Usuarios" 
+                             value={stats.totalUsers} 
+                             icon={
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" className="w-8 h-8 text-white">
+                             <path strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                             </svg>
+                }
+                    color="icon-tile"
+                        />
+                        </div>
+                    </div>
+                    <div className="col-12 col-md-6">
+                        <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => navigate('/users')}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/users'); }}
+                            aria-label="Ir a Usuarios - Hosts Disponibles"
+                            style={{ cursor: 'pointer' }}
+                        >
+                        <StatCard 
+                            title="Hosts Disponibles" 
+                            value={stats.totalHosts} 
+                            icon={
+                                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="7" width="18" height="13" rx="2" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 3v4M8 3v4" /></svg>
+                            }
+                            color="icon-tile"
+                        />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Layout principal reorganizado */}
+            <div className="row g-3 mb-3">
+                <div className="col-12">
+                    {/* Chart card - Ancho completo */}
+                    <div className="card shadow-sm border-0">
+                        <div className="card-body">
+                            <div className="d-flex justify-content-between items-center mb-2">
+                                <h5 className="card-title fw-semibold mb-0">Visitas</h5>
+                            </div>
+
+                            <div className="d-flex justify-content-end align-items-center gap-2 mb-2">
+                                <div className="btn-group me-2" role="group" aria-label="Periodo">
+                                    <button onClick={() => setPeriod('week')} className={`px-3 py-1 rounded-lg text-sm ${period === 'week' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700'}`}>7 días</button>
+                                    <button onClick={() => setPeriod('month')} className={`px-3 py-1 rounded-lg text-sm ${period === 'month' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700'}`}>30 días</button>
+                                </div>
+                            </div>
+                            <div style={{ width: '100%', height: 300 }}>
+                                <ResponsiveContainer>
+                                    <BarChart
+                                        data={analyticsStatusData.length > 0 ? analyticsStatusData : [
+                                        { day: 'Lun', completed: 0, rejected: 0 },
+                                        { day: 'Mar', completed: 0, rejected: 0 },
+                                        { day: 'Mié', completed: 0, rejected: 0 },
+                                        { day: 'Jue', completed: 0, rejected: 0 },
+                                        { day: 'Vie', completed: 0, rejected: 0 },
+                                        { day: 'Sáb', completed: 0, rejected: 0 },
+                                        { day: 'Dom', completed: 0, rejected: 0 },
+                                    ]}
+                                        barCategoryGap="20%"
+                                        barGap={6}
+                                    >
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false}/>
+                                        <XAxis dataKey="day" tick={{fontSize: 12}}/>
+                                        <YAxis allowDecimals={false} tick={{fontSize: 12}} />
+                                        <Tooltip 
+                                            wrapperClassName="shadow rounded border p-2" 
+                                            cursor={{fill: 'rgba(34, 131, 229, 0.06)'}} 
+                                            labelFormatter={(label) => `${label}`}
+                                            content={({ active, payload, label }: any) => {
+                                                if (!active || !payload || !payload.length) return null;
+                                                return (
+                                                    <div className="shadow rounded bg-white p-2" style={{ minWidth: 140 }}>
+                                                        <div className="fw-semibold mb-1">{label}</div>
+                                                        {payload.map((p: any) => (
+                                                            <div key={p.dataKey} className="d-flex justify-content-between small" style={{ color: p.fill }}>
+                                                                <div>{p.name}</div>
+                                                                <div className="fw-bold">{p.value}</div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                );
+                                            }}
+                                        />
+
+                                        <Bar dataKey="completed" name="Completadas" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                                        <Bar dataKey="rejected" name="Rechazadas" fill="#ef4444" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Segunda fila: Próximas llegadas y Actividad Reciente */}
+            <div className="row g-3 mb-3">
+                <div className="col-12 col-lg-6">
+                    {/* Próximas llegadas hoy */}
+                    <UpcomingToday />
+                </div>
+                <div className="col-12 col-lg-6">
+                    {/* Actividad Reciente card - con altura máxima y scroll */}
+                    <div className="card shadow-sm border-0" style={{ height: '100%', maxHeight: '400px' }}>
+                        <div className="card-body d-flex flex-column" style={{ height: '100%' }}>
+                            <h5 className="card-title fw-semibold mb-3">Actividad Reciente</h5>
+
+                            {/* Sparkline filter pill */}
+                            {sparkFilter && (
+                                <div className="mb-2 d-flex align-items-center gap-2">
+                                    <span className="badge bg-primary">Filtrando: {sparkFilter}</span>
+                                    <button className="btn btn-sm btn-outline-secondary" onClick={() => setSparkFilter(null)}>Limpiar</button>
+                                </div>
+                            )}
+
+                            <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+                                {((sparkFilter ? recentVisits.filter(rv => {
+                                    const map: any = {
+                                        pending: VisitStatus.PENDING,
+                                        approved: VisitStatus.APPROVED,
+                                        checkedIn: VisitStatus.CHECKED_IN,
+                                        completed: VisitStatus.COMPLETED
+                                    };
+                                    return rv.status === map[sparkFilter as keyof typeof map];
+                                }) : recentVisits).length > 0) ? (
+                                    <ul className="list-unstyled mb-0">
+                                        {(sparkFilter ? recentVisits.filter(rv => {
+                                            const map: any = {
+                                                pending: VisitStatus.PENDING,
+                                                approved: VisitStatus.APPROVED,
+                                                checkedIn: VisitStatus.CHECKED_IN,
+                                                completed: VisitStatus.COMPLETED
+                                            };
+                                            return rv.status === map[sparkFilter as keyof typeof map];
+                                        }) : recentVisits).map(visit => (
+                                            <RecentActivityItem key={visit._id} visit={visit} />
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <div className="text-center py-5">
+                                        <div className="text-muted mb-2">No hay actividad reciente</div>
+                                        <div className="small text-secondary">Las visitas aparecerán aquí cuando se registren</div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Tercera fila: Visitantes y Empresas frecuentes */}
+            <div className="row g-3">
+                <div className="col-12 col-lg-6">
+                    {/* Visitantes frecuentes card */}
+                    <div className="card shadow-sm border-0 h-100">
+                        <div className="card-body">
+                            <h6 className="mb-3 fw-semibold">Visitantes frecuentes</h6>
+                            {frequentVisitors.length > 0 ? (
+                                (() => {
+                                    const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#06b6d4', '#3b82f6'];
+                                    const total = frequentVisitors.reduce((s, v) => s + v.count, 0) || 1;
+                                    const chartData = frequentVisitors.map((v, idx) => ({
+                                        name: v.name,
+                                        value: v.count,
+                                        percent: Math.round((v.count / total) * 100),
+                                        company: v.company,
+                                        color: COLORS[idx % COLORS.length]
+                                    }));
+
+                                    const renderCustomLabel = (entry: any) => {
+                                        return `${entry.percent}%`;
+                                    };
+
+                                    return (
+                                        <div className="d-flex flex-column align-items-center">
+                                            {/* Gráfico circular */}
+                                            <ResponsiveContainer width="100%" height={280}>
+                                                <PieChart>
+                                                    <Pie
+                                                        data={chartData}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        labelLine={false}
+                                                        label={renderCustomLabel}
+                                                        outerRadius={90}
+                                                        innerRadius={50}
+                                                        fill="#8884d8"
+                                                        dataKey="value"
+                                                        paddingAngle={3}
+                                                    >
+                                                        {chartData.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip 
+                                                        formatter={(value: any, name: string, props: any) => [
+                                                            `${value} visitas (${props.payload.percent}%)`,
+                                                            props.payload.company || 'Sin empresa'
+                                                        ]}
+                                                        contentStyle={{ 
+                                                            background: 'rgba(255, 255, 255, 0.98)', 
+                                                            border: '1px solid rgba(0,0,0,0.1)',
+                                                            borderRadius: '8px',
+                                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                                        }}
+                                                    />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+
+                                            {/* Leyenda personalizada */}
+                                            <div className="w-100 mt-3" style={{ maxHeight: 200, overflowY: 'auto' }}>
+                                                <div className="row g-2">
+                                                    {chartData.map((item, idx) => (
+                                                        <div key={idx} className="col-12">
+                                                            <div className="d-flex align-items-center justify-content-between p-2 rounded" style={{ background: 'rgba(0,0,0,0.02)' }}>
+                                                                <div className="d-flex align-items-center gap-2 flex-1" style={{ minWidth: 0 }}>
+                                                                    <div 
+                                                                        style={{ 
+                                                                            width: 12, 
+                                                                            height: 12, 
+                                                                            borderRadius: '50%', 
+                                                                            backgroundColor: item.color,
+                                                                            flexShrink: 0
+                                                                        }} 
+                                                                    />
+                                                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                                                        <div className="text-sm fw-medium text-gray-800 text-truncate" title={item.name}>
+                                                                            {item.name}
+                                                                        </div>
+                                                                        {item.company && (
+                                                                            <div className="text-xs text-muted text-truncate" title={item.company}>
+                                                                                {item.company}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="text-sm fw-semibold text-gray-700 ms-2" style={{ flexShrink: 0 }}>
+                                                                    {item.value} · {item.percent}%
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })()
+                            ) : (
+                                <div className="text-center text-muted py-4">No hay visitantes frecuentes</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+                <div className="col-12 col-lg-6">
+                    {/* Empresas frecuentes card */}
+                    <div className="card shadow-sm border-0 h-100">
+                        <div className="card-body">
+                            <h5 className="card-title fw-semibold mb-3">Empresas frecuentes</h5>
+                            {frequentCompanies.length > 0 ? (
+                                (() => {
+                                    const total = frequentCompanies.reduce((s, c) => s + c.count, 0) || 1;
+                                    const maxCount = Math.max(...frequentCompanies.map(c => c.count));
+                                    
+                                    return (
+                                        <div className="w-100">
+                                            {/* Gráfico de barras horizontales con gradiente */}
+                                            <ResponsiveContainer width="100%" height={280}>
+                                                <BarChart 
+                                                    data={frequentCompanies.map(fc => ({
+                                                        name: fc.company.length > 20 ? fc.company.substring(0, 20) + '...' : fc.company,
+                                                        fullName: fc.company,
+                                                        value: fc.count,
+                                                        percent: Math.round((fc.count / total) * 100)
+                                                    }))}
+                                                    layout="vertical"
+                                                    margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                                                >
+                                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                                                    <XAxis type="number" allowDecimals={false} />
+                                                    <YAxis 
+                                                        type="category" 
+                                                        dataKey="name" 
+                                                        width={120}
+                                                        tick={{ fontSize: 12 }}
+                                                    />
+                                                    <Tooltip 
+                                                        formatter={(value: any, name: string, props: any) => [
+                                                            `${value} visitas (${props.payload.percent}%)`,
+                                                            props.payload.fullName
+                                                        ]}
+                                                        contentStyle={{ 
+                                                            background: 'rgba(255, 255, 255, 0.98)', 
+                                                            border: '1px solid rgba(0,0,0,0.1)',
+                                                            borderRadius: '8px',
+                                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                                        }}
+                                                        cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
+                                                    />
+                                                    <Bar 
+                                                        dataKey="value" 
+                                                        fill="url(#colorCompanies)" 
+                                                        radius={[0, 8, 8, 0]}
+                                                        maxBarSize={28}
+                                                    >
+                                                        <defs>
+                                                            <linearGradient id="colorCompanies" x1="0" y1="0" x2="1" y2="0">
+                                                                <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                                                                <stop offset="100%" stopColor="#8b5cf6" stopOpacity={1}/>
+                                                            </linearGradient>
+                                                        </defs>
+                                                    </Bar>
+                                                </BarChart>
+                                            </ResponsiveContainer>
+
+                                            {/* Resumen estadístico debajo */}
+                                            <div className="mt-3 pt-3 border-top">
+                                                <div className="row g-2 text-center">
+                                                    <div className="col-4">
+                                                        <div className="text-muted small">Total empresas</div>
+                                                        <div className="fw-bold text-primary h5 mb-0">{frequentCompanies.length}</div>
+                                                    </div>
+                                                    <div className="col-4">
+                                                        <div className="text-muted small">Total visitas</div>
+                                                        <div className="fw-bold text-success h5 mb-0">{total}</div>
+                                                    </div>
+                                                    <div className="col-4">
+                                                        <div className="text-muted small">Top empresa</div>
+                                                        <div className="fw-bold text-purple h5 mb-0">{maxCount}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })()
+                            ) : (
+                                <div className="text-center py-4 text-sm text-muted">No hay datos de empresas frecuentes</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Toast Notification */}
+            {notification && (
+                <Toast
+                    message={notification.message}
+                    type={notification.type}
+                    onClose={() => setNotification(null)}
+                />
+            )}
+        </div>
+    );
+};

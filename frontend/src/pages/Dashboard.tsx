@@ -107,14 +107,14 @@ const StatCard: React.FC<{
         </div>
       </div>
       {sparkData.length > 0 && (
-        <div className="h-16 -mx-2 mt-2">
+        <div className="h-14 -mx-2 mt-1">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={sparkData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+            <LineChart data={sparkData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
               <Line 
                 type="monotone" 
                 dataKey="value" 
                 stroke="#9ca3af" 
-                strokeWidth={2.5} 
+                strokeWidth={2} 
                 dot={false}
                 isAnimationActive={true}
               />
@@ -197,26 +197,7 @@ const ActivityItem: React.FC<{ visit: Visit }> = ({ visit }) => {
   );
 };
 
-// Daily Summary Stats Component
-const DailySummaryCard: React.FC<{
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-  color: string;
-  bgColor: string;
-}> = ({ icon, label, value, color, bgColor }) => (
-  <div className={`${bgColor} rounded-xl p-5 border-2 ${color.replace('text-', 'border-')} shadow-sm hover:shadow-md transition-all group cursor-default`}>
-    <div className="flex items-center gap-4">
-      <div className={`w-14 h-14 rounded-lg ${color.replace('text-', 'bg-')} ${color.replace('text-', 'bg-opacity-10')} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-        <div className={color}>{icon}</div>
-      </div>
-      <div className="flex-1">
-        <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-1">{label}</p>
-        <p className={`text-3xl font-bold ${color}`}>{value}</p>
-      </div>
-    </div>
-  </div>
-);
+
 
 // Upcoming Item Component  
 const UpcomingItem: React.FC<{ item: Visit | Access; type: 'visit' | 'access' }> = ({ item, type }) => {
@@ -388,17 +369,6 @@ export const Dashboard: React.FC = () => {
     .sort((a, b) => b.count - a.count)
     .slice(0, 8);
 
-  // Stats del día de hoy
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayVisits = allVisits.filter(v => {
-    const visitDate = new Date(v.createdAt || v.scheduledDate);
-    return visitDate >= today;
-  });
-  const todayApproved = todayVisits.filter(v => v.status === VisitStatus.APPROVED || v.status === VisitStatus.CHECKED_IN || v.status === VisitStatus.COMPLETED).length;
-  const todayRejected = todayVisits.filter(v => v.status === VisitStatus.REJECTED).length;
-  const todayTotal = todayVisits.length;
-
   const COLORS = ['#111827', '#374151', '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b'];
 
   const isLoading = statsQuery.isLoading || recentVisitsQuery.isLoading || analyticsQuery.isLoading;
@@ -533,8 +503,8 @@ export const Dashboard: React.FC = () => {
               <BarChart3 className="w-6 h-6" />
               Actividad de Visitas
             </h2>
-            <ResponsiveContainer width="100%" height={340}>
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
                 <defs>
                   <linearGradient id="completadas" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
@@ -589,7 +559,7 @@ export const Dashboard: React.FC = () => {
             </h2>
             {companyData.length > 0 ? (
               <>
-                <ResponsiveContainer width="100%" height={240}>
+                <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie
                       data={companyData}
@@ -633,47 +603,22 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom Row - 3 columns */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Upcoming Today */}
-          <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Calendar className="w-6 h-6" />
-              Próximas Llegadas
-            </h2>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {upcomingVisits.length === 0 && upcomingAccesses.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">
-                  <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No hay llegadas pendientes</p>
-                </div>
-              ) : (
-                <>
-                  {upcomingVisits.map(v => (
-                    <UpcomingItem key={v._id} item={v} type="visit" />
-                  ))}
-                  {upcomingAccesses.map(a => (
-                    <UpcomingItem key={a._id} item={a} type="access" />
-                  ))}
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Frequent Visitors Chart */}
+        {/* Bottom Row - 2 columns optimized */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column: Visitantes Frecuentes */}
           <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <Users className="w-6 h-6" />
               Visitantes Frecuentes
             </h2>
             {frequentVisitorsData.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
+              <div className="text-center py-12 text-gray-400">
                 <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">No hay datos suficientes</p>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={340}>
-                <BarChart data={frequentVisitorsData} layout="vertical" margin={{ left: 5, right: 15, top: 10, bottom: 10 }}>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={frequentVisitorsData} layout="vertical" margin={{ left: 5, right: 20, top: 5, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
                   <XAxis type="number" stroke="#6b7280" style={{ fontSize: '12px' }} />
                   <YAxis 
@@ -681,8 +626,8 @@ export const Dashboard: React.FC = () => {
                     dataKey="name" 
                     stroke="#6b7280" 
                     style={{ fontSize: '11px' }} 
-                    width={110}
-                    tickFormatter={(value) => value.length > 18 ? value.substring(0, 18) + '...' : value}
+                    width={120}
+                    tickFormatter={(value) => value.length > 20 ? value.substring(0, 20) + '...' : value}
                   />
                   <Tooltip 
                     contentStyle={{ 
@@ -699,34 +644,51 @@ export const Dashboard: React.FC = () => {
             )}
           </div>
 
-          {/* Daily Summary */}
-          <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <Activity className="w-6 h-6" />
-              Resumen del Día
-            </h2>
-            <div className="space-y-4">
-              <DailySummaryCard
-                icon={<CheckCircle className="w-6 h-6" />}
-                label="Aprobadas"
-                value={todayApproved}
-                color="text-emerald-600"
-                bgColor="bg-emerald-50"
-              />
-              <DailySummaryCard
-                icon={<Minus className="w-6 h-6" />}
-                label="Rechazadas"
-                value={todayRejected}
-                color="text-red-600"
-                bgColor="bg-red-50"
-              />
-              <DailySummaryCard
-                icon={<BarChart3 className="w-6 h-6" />}
-                label="Total del Día"
-                value={todayTotal}
-                color="text-gray-900"
-                bgColor="bg-gray-50"
-              />
+          {/* Right Column: Próximas Llegadas y Actividad Reciente */}
+          <div className="space-y-6">
+            {/* Upcoming Today */}
+            <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Calendar className="w-6 h-6" />
+                Próximas Llegadas
+              </h2>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {upcomingVisits.length === 0 && upcomingAccesses.length === 0 ? (
+                  <div className="text-center py-6 text-gray-400">
+                    <Calendar className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No hay llegadas pendientes</p>
+                  </div>
+                ) : (
+                  <>
+                    {upcomingVisits.slice(0, 3).map(v => (
+                      <UpcomingItem key={v._id} item={v} type="visit" />
+                    ))}
+                    {upcomingAccesses.slice(0, 2).map(a => (
+                      <UpcomingItem key={a._id} item={a} type="access" />
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Activity className="w-6 h-6" />
+                Actividad Reciente
+              </h2>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {recentVisits.length === 0 ? (
+                  <div className="text-center py-6 text-gray-400">
+                    <Activity className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No hay actividad reciente</p>
+                  </div>
+                ) : (
+                  recentVisits.slice(0, 5).map(visit => (
+                    <ActivityItem key={visit._id} visit={visit} />
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>

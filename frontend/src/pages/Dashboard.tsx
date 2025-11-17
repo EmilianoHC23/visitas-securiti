@@ -178,6 +178,30 @@ const ActivityItem: React.FC<{ visit: Visit }> = ({ visit }) => {
   );
 };
 
+// Frequent Visitor Component
+const FrequentVisitorItem: React.FC<{
+  visitor: { id: string; name: string; company: string; photo: string; count: number };
+}> = ({ visitor }) => (
+  <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-all group">
+    <div className="relative">
+      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden ring-2 ring-gray-200 group-hover:ring-gray-400 transition-all shadow-sm">
+        {visitor.photo ? (
+          <img src={visitor.photo} alt={visitor.name} className="w-full h-full object-cover" />
+        ) : (
+          <FaRegUser className="w-6 h-6 text-gray-400" />
+        )}
+      </div>
+      <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br from-gray-900 to-gray-700 text-white flex items-center justify-center text-xs font-bold shadow-lg ring-2 ring-white">
+        {visitor.count}
+      </div>
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-sm font-semibold text-gray-900 truncate">{visitor.name}</p>
+      <p className="text-xs text-gray-500 truncate">{visitor.company}</p>
+    </div>
+  </div>
+);
+
 // Upcoming Item Component  
 const UpcomingItem: React.FC<{ item: Visit | Access; type: 'visit' | 'access' }> = ({ item, type }) => {
   if (type === 'visit') {
@@ -247,6 +271,11 @@ export const Dashboard: React.FC = () => {
     queryFn: () => api.getRecentVisits(10) 
   });
 
+  const allVisitsQuery = useQuery<Visit[], Error>({ 
+    queryKey: ['recentVisits', 200], 
+    queryFn: () => api.getRecentVisits(200) 
+  });
+
   const analyticsQuery = useQuery<any[], Error>({ 
     queryKey: ['analytics', period], 
     queryFn: () => api.getAnalytics(period) 
@@ -277,6 +306,7 @@ export const Dashboard: React.FC = () => {
   const stats = statsQuery.data || { active: 0, pending: 0, approved: 0, checkedIn: 0, completed: 0, totalUsers: 0, totalHosts: 0 };
   const recentVisits = recentVisitsQuery.data || [];
   const analytics = analyticsQuery.data || [];
+  const allVisits = allVisitsQuery.data || [];
 
   const upcomingVisits = (upcomingVisitsQuery.data || [])
     .filter(v => v.status !== VisitStatus.COMPLETED)
@@ -302,7 +332,7 @@ export const Dashboard: React.FC = () => {
 
   // Company distribution
   const companyMap = new Map<string, number>();
-  recentVisits.forEach(v => {
+  allVisits.forEach(v => {
     const company = v.visitorCompany || 'Sin empresa';
     companyMap.set(company, (companyMap.get(company) || 0) + 1);
   });
@@ -310,6 +340,26 @@ export const Dashboard: React.FC = () => {
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 6);
+
+  // Frequent visitors
+  const visitorMap = new Map<string, { id: string; name: string; company: string; photo: string; count: number }>();
+  allVisits.forEach(v => {
+    const id = v.visitorEmail || v.visitorName || v._id;
+    if (!visitorMap.has(id)) {
+      visitorMap.set(id, {
+        id,
+        name: v.visitorName || 'Sin nombre',
+        company: v.visitorCompany || 'Sin empresa',
+        photo: v.visitorPhoto || '',
+        count: 0
+      });
+    }
+    const visitor = visitorMap.get(id)!;
+    visitor.count++;
+  });
+  const frequentVisitors = Array.from(visitorMap.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
 
   const COLORS = ['#111827', '#374151', '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b'];
 
@@ -430,14 +480,14 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Main Chart */}
-          <div className="lg:col-span-2 bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
+          <div className="lg:col-span-3 bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <BarChart3 className="w-6 h-6" />
               Actividad de Visitas
             </h2>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={320}>
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="completadas" x1="0" y1="0" x2="0" y2="1">
@@ -486,14 +536,14 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* Company Distribution */}
-          <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
+          <div className="lg:col-span-2 bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <Building2 className="w-6 h-6" />
-              Empresas
+              Empresas Frecuentes
             </h2>
             {companyData.length > 0 ? (
               <>
-                <ResponsiveContainer width="100%" height={240}>
+                <ResponsiveContainer width="100%" height={220}>
                   <PieChart>
                     <Pie
                       data={companyData}
@@ -537,19 +587,19 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Bottom Row - 3 columns */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Upcoming Today */}
           <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <Calendar className="w-6 h-6" />
-              Próximas Llegadas Hoy
+              Próximas Llegadas
             </h2>
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {upcomingVisits.length === 0 && upcomingAccesses.length === 0 ? (
                 <div className="text-center py-8 text-gray-400">
                   <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>No hay llegadas pendientes para hoy</p>
+                  <p className="text-sm">No hay llegadas pendientes</p>
                 </div>
               ) : (
                 <>
@@ -564,6 +614,26 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
+          {/* Frequent Visitors */}
+          <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Users className="w-6 h-6" />
+              Visitantes Frecuentes
+            </h2>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {frequentVisitors.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No hay datos suficientes</p>
+                </div>
+              ) : (
+                frequentVisitors.map(visitor => (
+                  <FrequentVisitorItem key={visitor.id} visitor={visitor} />
+                ))
+              )}
+            </div>
+          </div>
+
           {/* Recent Activity */}
           <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -574,7 +644,7 @@ export const Dashboard: React.FC = () => {
               {recentVisits.length === 0 ? (
                 <div className="text-center py-8 text-gray-400">
                   <Activity className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>No hay actividad reciente</p>
+                  <p className="text-sm">No hay actividad reciente</p>
                 </div>
               ) : (
                 recentVisits.map(visit => (

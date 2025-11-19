@@ -1,4 +1,3 @@
-import { LiaUserTieSolid } from 'react-icons/lia';
 const UsersSummary: React.FC<{ userInvitations?: any[]; totalUsers?: number }> = ({ userInvitations, totalUsers }) => {
   const list = Array.isArray(userInvitations) ? userInvitations : [];
   const recent = list

@@ -32,8 +32,8 @@ const ReportsSummary: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col md:flex-row items-center justify-between gap-6 mb-6">
-      <div className="flex-1 flex flex-col md:flex-row gap-6">
+    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 px-4 py-5 flex flex-col md:flex-row items-center justify-between gap-4 mb-4 max-w-full md:max-w-[420px] mx-auto w-full min-w-0">
+      <div className="flex-1 flex flex-col md:flex-row gap-4 items-center justify-center">
         <div className="flex items-center gap-3">
           <BarChart3 className="w-8 h-8 text-blue-600" />
           <div>
@@ -56,7 +56,7 @@ const ReportsSummary: React.FC = () => {
           </div>
         </div>
       </div>
-      <div className="flex flex-col gap-2 items-end">
+      <div className="flex flex-col gap-2 items-end min-w-[120px] w-fit">
         <button
           onClick={() => window.location.href = '/reports'}
           className="px-6 py-3 bg-gradient-to-br from-blue-600 to-cyan-600 text-white rounded-xl font-semibold shadow-lg hover:from-blue-700 hover:to-cyan-700 transition-all text-sm mb-2"
@@ -98,8 +98,8 @@ const BlacklistSummary: React.FC = () => {
   const recent = [...blacklist].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3);
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col md:flex-row items-center justify-between gap-6 mb-6">
-      <div className="flex-1 flex flex-col md:flex-row gap-6">
+    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 px-4 py-5 flex flex-col md:flex-row items-center justify-between gap-4 mb-4 max-w-full md:max-w-[420px] mx-auto w-full min-w-0">
+      <div className="flex-1 flex flex-col md:flex-row gap-4 items-center justify-center">
         <div className="flex items-center gap-3">
           <Ban className="w-8 h-8 text-red-600" />
           <div>
@@ -123,7 +123,7 @@ const BlacklistSummary: React.FC = () => {
       </div>
       <button
         onClick={() => window.location.href = '/blacklist'}
-        className="px-6 py-3 bg-gradient-to-br from-red-600 to-gray-700 text-white rounded-xl font-semibold shadow-lg hover:from-red-700 hover:to-gray-800 transition-all text-sm"
+        className="px-4 py-2 bg-gradient-to-br from-red-600 to-gray-700 text-white rounded-xl font-semibold shadow-lg hover:from-red-700 hover:to-gray-800 transition-all text-xs whitespace-nowrap"
       >
         Gestionar Lista Negra
       </button>
@@ -156,8 +156,8 @@ const AccessCodesSummary: React.FC = () => {
   const soon = accesses.filter(a => a.status === 'active' && new Date(a.endDate) > now && (new Date(a.endDate).getTime() - now.getTime()) < 48 * 3600 * 1000).length;
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col md:flex-row items-center justify-between gap-6 mb-6">
-      <div className="flex-1 flex flex-col md:flex-row gap-6">
+    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 px-4 py-5 flex flex-col md:flex-row items-center justify-between gap-4 mb-4 max-w-full md:max-w-[420px] mx-auto w-full min-w-0">
+      <div className="flex-1 flex flex-col md:flex-row gap-4 items-center justify-center">
         <div className="flex items-center gap-3">
           <QrCode className="w-8 h-8 text-purple-700" />
           <div>
@@ -182,7 +182,7 @@ const AccessCodesSummary: React.FC = () => {
       </div>
       <button
         onClick={() => window.location.href = '/access-codes'}
-        className="px-6 py-3 bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-indigo-700 transition-all text-sm"
+        className="px-4 py-2 bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-indigo-700 transition-all text-xs whitespace-nowrap"
       >
         Gestionar Accesos
       </button>
@@ -702,7 +702,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Summary Section: Access Codes, Blacklist, Reports */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-2">
+        <div className="w-full flex flex-col md:flex-row gap-4 md:gap-6 justify-center items-stretch mb-2">
           <AccessCodesSummary />
           <BlacklistSummary />
           <ReportsSummary />
@@ -751,7 +751,7 @@ export const Dashboard: React.FC = () => {
         {/* Quick Actions */}
         <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 mb-8">
           <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <AiOutlineThunderbolt className="w-6 h-6 text-white" />
+            <AiOutlineThunderbolt className="w-6 h-6 text-black" />
             Acciones Rápidas
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

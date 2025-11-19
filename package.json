@@ -7,7 +7,7 @@
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev",
-  "build": "cd frontend && npm install --include=dev && npm run build",
+    "build": "cd frontend && npm install --include=dev && npm run build",
     "postinstall": "cd backend && npm install",
     "start": "cd backend && npm start",
     "preview": "cd frontend && npm run preview",
@@ -31,5 +31,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/EmilianoHC23/visitas-securiti.git"
+  },
+  "dependencies": {
+    "react-icons": "^5.5.0"
   }
 }

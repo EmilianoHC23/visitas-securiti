@@ -1,31 +1,38 @@
-// Card de usuarios: nuevos, invitados, eliminados
-const UsersSummary: React.FC<{ userInvitations?: any[] }> = ({ userInvitations }) => {
+const UsersSummary: React.FC<{ userInvitations?: any[]; totalUsers?: number }> = ({ userInvitations, totalUsers }) => {
   const list = Array.isArray(userInvitations) ? userInvitations : [];
-  const nuevos = list.filter(u => u.status === 'new').length;
-  const invitados = list.filter(u => u.status === 'invited').length;
-  const eliminados = list.filter(u => u.status === 'deleted').length;
+  // Filtrar solo actividades relevantes: nuevos registros y cambios de rol
+  const recent = list
+    .filter(u => u.status === 'new' || u.activityType === 'roleChange')
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
   return (
     <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 px-4 py-5 flex flex-col items-center gap-4 mb-4 max-w-full md:max-w-[420px] mx-auto w-full min-w-0">
       <div className="w-full flex flex-col gap-2 items-center">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 mb-2">
           <Users className="w-8 h-8 text-black" />
           <div>
             <div className="text-lg font-bold text-black">Usuarios</div>
+            <div className="text-xs text-gray-500">Total: <span className="font-bold text-black">{totalUsers ?? '-'}</span></div>
           </div>
         </div>
-        <div className="flex gap-6 mt-2">
-          <div className="flex flex-col items-center">
-            <span className="text-xl font-bold text-black">{nuevos}</span>
-            <span className="text-xs text-black">Nuevos</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-xl font-bold text-black">{invitados}</span>
-            <span className="text-xs text-black">Invitados</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-xl font-bold text-black">{eliminados}</span>
-            <span className="text-xs text-black">Eliminados</span>
-          </div>
+        <div className="w-full">
+          <div className="text-xs text-black font-semibold mb-1">Actividad reciente:</div>
+          {recent.length === 0 ? (
+            <div className="text-xs text-gray-400">Sin actividad reciente</div>
+          ) : recent.map((item, idx) => (
+            <div key={item._id || idx} className="flex items-center gap-2 text-xs text-black mb-1">
+              {item.status === 'new' ? (
+                <UserPlus className="w-4 h-4 text-emerald-600" />
+              ) : (
+                <Shield className="w-4 h-4 text-blue-600" />
+              )}
+              <span className="font-medium">{item.firstName} {item.lastName}</span>
+              <span className="text-gray-400">{new Date(item.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</span>
+              {item.activityType === 'roleChange' && (
+                <span className="italic text-blue-600">Rol: {item.newRole}</span>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -623,11 +630,29 @@ export const Dashboard: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
+
               <h1
-                className="flex items-center gap-3 text-3xl md:text-4xl font-bold mb-2 text-black"
+                className="flex items-center gap-3 text-3xl md:text-4xl font-bold mb-2 text-black drop-shadow-[0_0_8px_rgba(255,255,255,0.9)] bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent animate-pulse"
+                style={{
+                  textShadow: '0 0 8px #fff, 0 0 16px #fff, 0 0 32px #e0e7ff, 0 0 48px #fff',
+                  WebkitTextStroke: '1px #fff',
+                }}
               >
-                <span>Bienvenido, {user?.firstName}</span>
-                <span className="inline-flex text-black">
+                <span
+                  style={{
+                    textShadow: '0 0 8px #fff, 0 0 16px #fff, 0 0 32px #e0e7ff, 0 0 48px #fff',
+                    WebkitTextStroke: '1px #fff',
+                  }}
+                >
+                  Bienvenido, {user?.firstName}
+                </span>
+                <span
+                  className="inline-flex"
+                  style={{
+                    textShadow: '0 0 8px #fff, 0 0 16px #fff, 0 0 32px #e0e7ff, 0 0 48px #fff',
+                    WebkitTextStroke: '1px #fff',
+                  }}
+                >
                   <PiHandPalmBold size={38} />
                 </span>
               </h1>
@@ -683,7 +708,7 @@ export const Dashboard: React.FC = () => {
         {/* Access Codes & Blacklist Summary Cards (moved below stats) */}
         <div className="w-full grid grid-cols-1 gap-4 md:gap-6 mb-8 max-w-5xl mx-auto">
           <div className="flex">
-            <UsersSummary userInvitations={userInvitations} />
+            <UsersSummary userInvitations={userInvitations} totalUsers={stats.totalUsers} />
           </div>
         </div>
 

@@ -1,3 +1,4 @@
+import { PiHandPalmBold } from "react-icons/pi";
 import { getBlacklist } from '../services/api';
 // Componente resumen de Blacklist
 const BlacklistSummary: React.FC = () => {
@@ -589,44 +590,30 @@ export const Dashboard: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-                Bienvenido, {user?.firstName} 👋
+              <h1
+                className="flex items-center gap-3 text-3xl md:text-4xl font-bold mb-2 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)] bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent animate-pulse"
+                style={{
+                  textShadow: '0 0 8px #fff, 0 0 16px #fff, 0 0 32px #e0e7ff, 0 0 48px #fff',
+                  WebkitTextStroke: '1px #fff',
+                }}
+              >
+                <span>Bienvenido, {user?.firstName}</span>
+                <span className="inline-flex" style={{
+                  textShadow: '0 0 8px #fff, 0 0 16px #fff, 0 0 32px #e0e7ff, 0 0 48px #fff',
+                  WebkitTextStroke: '1px #fff',
+                }}>
+                  <PiHandPalmBold size={38} />
+                </span>
               </h1>
               <p className="text-gray-600">Aquí tienes un resumen de la actividad de hoy</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setPeriod('week')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  period === 'week'
-                    ? 'bg-gray-900 text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                7 días
-              </button>
-              <button
-                onClick={() => setPeriod('month')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  period === 'month'
-                    ? 'bg-gray-900 text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                30 días
-              </button>
             </div>
           </div>
         </div>
 
-        {/* Summary Section: Access Codes, Blacklist */}
-        <div className="w-full flex flex-col md:flex-row gap-4 md:gap-6 justify-center items-stretch mb-2">
-          <AccessCodesSummary />
-          <BlacklistSummary />
-        </div>
+
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
           <StatCard
             title="Pendientes"
             value={stats.pending}
@@ -663,6 +650,16 @@ export const Dashboard: React.FC = () => {
             sparklineData={sparklineCompleted}
             trend={calculateTrend(sparklineCompleted)}
           />
+        </div>
+
+        {/* Access Codes & Blacklist Summary Cards (moved below stats) */}
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8 max-w-3xl mx-auto">
+          <div className="flex">
+            <AccessCodesSummary />
+          </div>
+          <div className="flex">
+            <BlacklistSummary />
+          </div>
         </div>
 
         {/* Quick Actions */}
@@ -718,10 +715,34 @@ export const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
           {/* Modern Daily Stats Bar Chart */}
           <div className="lg:col-span-3 bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col justify-center">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <BarChart3 className="w-6 h-6" />
-              Resumen de Visitas Hoy
-            </h2>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <BarChart3 className="w-6 h-6" />
+                Resumen de Visitas Hoy
+              </h2>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setPeriod('week')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    period === 'week'
+                      ? 'bg-gray-900 text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  7 días
+                </button>
+                <button
+                  onClick={() => setPeriod('month')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    period === 'month'
+                      ? 'bg-gray-900 text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  30 días
+                </button>
+              </div>
+            </div>
             {/* KPIs de visitas del día */}
             <div className="flex flex-wrap gap-6 mb-4 justify-center">
               <div className="flex flex-col items-center">
@@ -824,7 +845,7 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom Row - 3 columns: Visitantes Frecuentes, Próximas Llegadas, Actividad Usuarios */}
+        {/* Bottom Row - 3 columns: Visitantes Frecuentes, Próximas Llegadas, Actividad Reciente (visitas) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Visitantes Frecuentes */}
           <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
@@ -890,26 +911,21 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Actividad reciente de usuarios */}
+          {/* Actividad Reciente (visitas) */}
           <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <UserPlus className="w-6 h-6 text-indigo-600" />
-              Actividad Usuarios
+              <Eye className="w-6 h-6 text-black" />
+              Actividad Reciente
             </h2>
             <div className="space-y-2 max-h-80 overflow-y-auto">
-              {loadingInvitations ? (
+              {recentVisits.length === 0 ? (
                 <div className="text-center py-6 text-gray-400">
-                  <Activity className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Cargando actividad...</p>
-                </div>
-              ) : userInvitations.length === 0 ? (
-                <div className="text-center py-6 text-gray-400">
-                  <UserPlus className="w-10 h-10 mx-auto mb-2 opacity-50 text-indigo-600" />
+                  <Eye className="w-10 h-10 mx-auto mb-2 opacity-50 text-black" />
                   <p className="text-sm">No hay actividad reciente</p>
                 </div>
               ) : (
-                userInvitations.slice(0, 8).map((inv, idx) => (
-                  <UserActivityItem key={inv._id || idx} invitation={inv} />
+                recentVisits.slice(0, 8).map((visit, idx) => (
+                  <ActivityItem key={visit._id || idx} visit={visit} />
                 ))
               )}
             </div>

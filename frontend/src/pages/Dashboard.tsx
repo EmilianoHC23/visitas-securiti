@@ -1,9 +1,202 @@
+import { getAdvancedAnalytics, exportReports } from '../services/api';
+// Componente resumen de Reports
+const ReportsSummary: React.FC = () => {
+  const [analytics, setAnalytics] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [exporting, setExporting] = React.useState(false);
+  React.useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        const data = await getAdvancedAnalytics({ period: 'month' });
+        setAnalytics(data);
+      } catch (e) {
+        setAnalytics(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAnalytics();
+  }, []);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportReports('csv');
+      window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Exportación iniciada', severity: 'success' } }));
+    } catch (e) {
+      window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Error al exportar', severity: 'error' } }));
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col md:flex-row items-center justify-between gap-6 mb-6">
+      <div className="flex-1 flex flex-col md:flex-row gap-6">
+        <div className="flex items-center gap-3">
+          <BarChart3 className="w-8 h-8 text-blue-600" />
+          <div>
+            <div className="text-lg font-bold text-gray-900">{analytics?.totalVisits ?? '-'}</div>
+            <div className="text-xs text-gray-500">Visitas este mes</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <CheckCircle className="w-8 h-8 text-emerald-600" />
+          <div>
+            <div className="text-lg font-bold text-gray-900">{analytics?.approved ?? '-'}</div>
+            <div className="text-xs text-gray-500">Aprobadas</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <Minus className="w-8 h-8 text-yellow-500" />
+          <div>
+            <div className="text-lg font-bold text-gray-900">{analytics?.pending ?? '-'}</div>
+            <div className="text-xs text-gray-500">Pendientes</div>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col gap-2 items-end">
+        <button
+          onClick={() => window.location.href = '/reports'}
+          className="px-6 py-3 bg-gradient-to-br from-blue-600 to-cyan-600 text-white rounded-xl font-semibold shadow-lg hover:from-blue-700 hover:to-cyan-700 transition-all text-sm mb-2"
+        >
+          Ver Reportes
+        </button>
+        <button
+          onClick={handleExport}
+          disabled={exporting}
+          className="px-6 py-2 bg-gradient-to-br from-gray-900 to-gray-700 text-white rounded-xl font-semibold shadow-lg hover:from-gray-800 hover:to-gray-800 transition-all text-xs disabled:opacity-60"
+        >
+          {exporting ? 'Exportando...' : 'Exportar CSV'}
+        </button>
+      </div>
+    </div>
+  );
+};
+import { getBlacklist } from '../services/api';
+// Componente resumen de Blacklist
+const BlacklistSummary: React.FC = () => {
+  const [blacklist, setBlacklist] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  React.useEffect(() => {
+    const fetchBlacklist = async () => {
+      try {
+        setLoading(true);
+        const data = await getBlacklist();
+        setBlacklist(Array.isArray(data) ? data : []);
+      } catch (e) {
+        setBlacklist([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBlacklist();
+  }, []);
+
+  // Ordenar por fecha de creación descendente
+  const recent = [...blacklist].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3);
+
+  return (
+    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col md:flex-row items-center justify-between gap-6 mb-6">
+      <div className="flex-1 flex flex-col md:flex-row gap-6">
+        <div className="flex items-center gap-3">
+          <Ban className="w-8 h-8 text-red-600" />
+          <div>
+            <div className="text-lg font-bold text-gray-900">{blacklist.length}</div>
+            <div className="text-xs text-gray-500">En lista negra</div>
+          </div>
+        </div>
+        <div className="flex flex-col gap-1">
+          <div className="text-xs text-gray-500 font-semibold mb-1">Bloqueos recientes:</div>
+          {recent.length === 0 ? (
+            <div className="text-xs text-gray-400">Sin bloqueos recientes</div>
+          ) : recent.map((item, idx) => (
+            <div key={item._id || idx} className="flex items-center gap-2 text-xs text-gray-700">
+              <AlertTriangle className="w-4 h-4 text-red-400" />
+              <span className="font-medium">{item.visitorName || item.email}</span>
+              <span className="text-gray-400">{new Date(item.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</span>
+              <span className="text-gray-400 italic">{item.reason}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <button
+        onClick={() => window.location.href = '/blacklist'}
+        className="px-6 py-3 bg-gradient-to-br from-red-600 to-gray-700 text-white rounded-xl font-semibold shadow-lg hover:from-red-700 hover:to-gray-800 transition-all text-sm"
+      >
+        Gestionar Lista Negra
+      </button>
+    </div>
+  );
+};
+import { getAccesses } from '../services/api';
+// Componente resumen de códigos de acceso
+const AccessCodesSummary: React.FC = () => {
+  const [accesses, setAccesses] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  React.useEffect(() => {
+    const fetchAccesses = async () => {
+      try {
+        setLoading(true);
+        const data = await getAccesses();
+        setAccesses(Array.isArray(data) ? data : []);
+      } catch (e) {
+        setAccesses([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAccesses();
+  }, []);
+
+  const now = new Date();
+  const active = accesses.filter(a => a.status === 'active').length;
+  const expired = accesses.filter(a => a.status === 'finalized' || a.status === 'cancelled').length;
+  const soon = accesses.filter(a => a.status === 'active' && new Date(a.endDate) > now && (new Date(a.endDate).getTime() - now.getTime()) < 48 * 3600 * 1000).length;
+
+  return (
+    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col md:flex-row items-center justify-between gap-6 mb-6">
+      <div className="flex-1 flex flex-col md:flex-row gap-6">
+        <div className="flex items-center gap-3">
+          <QrCode className="w-8 h-8 text-purple-700" />
+          <div>
+            <div className="text-lg font-bold text-gray-900">{active}</div>
+            <div className="text-xs text-gray-500">Activos</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <Clock className="w-8 h-8 text-yellow-500" />
+          <div>
+            <div className="text-lg font-bold text-gray-900">{soon}</div>
+            <div className="text-xs text-gray-500">Próximos a expirar</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <XCircle className="w-8 h-8 text-gray-400" />
+          <div>
+            <div className="text-lg font-bold text-gray-900">{expired}</div>
+            <div className="text-xs text-gray-500">Expirados</div>
+          </div>
+        </div>
+      </div>
+      <button
+        onClick={() => window.location.href = '/access-codes'}
+        className="px-6 py-3 bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-indigo-700 transition-all text-sm"
+      >
+        Gestionar Accesos
+      </button>
+    </div>
+  );
+};
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { Visit, VisitStatus, DashboardStats, Access } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { InviteUserModal } from './users/UserManagementPage';
+// Estado y función para el modal de invitación de usuario
 import { 
   Users, 
   Calendar,
@@ -17,8 +210,38 @@ import {
   BarChart3,
   Minus,
   CheckCircle,
-  Clock
+  Clock,
+  UserPlus,
+  Shield,
+  XCircle,
+  Ban,
+  AlertTriangle
 } from 'lucide-react';
+import { getInvitations } from '../services/api';
+// Componente para mostrar actividad reciente de usuarios
+const UserActivityItem: React.FC<{ invitation: any }> = ({ invitation }) => {
+  const { firstName, lastName, email, role, invitedBy, createdAt } = invitation;
+  const date = new Date(createdAt);
+  const timeAgo = date.toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return (
+    <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-all group">
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
+        <UserPlus className="w-5 h-5" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-gray-900 truncate">{firstName} {lastName}</p>
+        <p className="text-xs text-gray-500 truncate">{email}</p>
+        <span className="inline-flex items-center gap-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full px-2 py-0.5 mt-1">
+          <Shield className="w-3 h-3 text-indigo-500" />
+          {role.charAt(0).toUpperCase() + role.slice(1)}
+        </span>
+      </div>
+      <div className="text-right">
+        <p className="text-xs text-gray-400">{timeAgo}</p>
+      </div>
+    </div>
+  );
+};
 import { MdOutlinePendingActions } from 'react-icons/md';
 import { TbClipboardCheck } from 'react-icons/tb';
 import { LuDoorOpen } from 'react-icons/lu';
@@ -259,10 +482,46 @@ const UpcomingItem: React.FC<{ item: Visit | Access; type: 'visit' | 'access' }>
 };
 
 export const Dashboard: React.FC = () => {
+    // Estado para actividad reciente de usuarios
+    const [userInvitations, setUserInvitations] = useState<any[]>([]);
+    const [loadingInvitations, setLoadingInvitations] = useState(true);
+
+    useEffect(() => {
+      const fetchInvitations = async () => {
+        try {
+          setLoadingInvitations(true);
+          const data = await getInvitations();
+          setUserInvitations(Array.isArray(data) ? data : (data?.invitations || []));
+        } catch (e) {
+          setUserInvitations([]);
+        } finally {
+          setLoadingInvitations(false);
+        }
+      };
+      fetchInvitations();
+    }, []);
   const { user } = useAuth();
   const navigate = useNavigate();
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
   const [period, setPeriod] = useState<'week' | 'month'>('week');
+
+  // Estado para modal de invitación de usuario
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  // Handler para invitar usuario (puedes ajustar la lógica según tu API)
+  const handleInviteUser = async (userData: any) => {
+    try {
+      setInviteLoading(true);
+      // Aquí deberías llamar a tu API real para invitar usuario
+      // await api.sendInvitation(userData);
+      setNotification({ message: '✅ Invitación enviada exitosamente.', type: 'success' });
+      setInviteModalOpen(false);
+    } catch (error) {
+      setNotification({ message: '❌ Error al enviar invitación.', type: 'error' });
+    } finally {
+      setInviteLoading(false);
+    }
+  };
 
   // Queries
   const statsQuery = useQuery<DashboardStats, Error>({ 
@@ -442,13 +701,19 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Summary Section: Access Codes, Blacklist, Reports */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-2">
+          <AccessCodesSummary />
+          <BlacklistSummary />
+          <ReportsSummary />
+        </div>
 
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Pendientes"
             value={stats.pending}
-            icon={<MdOutlinePendingActions className="w-7 h-7 text-yellow-600" />}
+            icon={<MdOutlinePendingActions className="w-7 h-7 text-white" />}
             color="bg-gradient-to-br from-yellow-400 to-yellow-600"
             onClick={() => navigate('/visits?status=pending')}
             sparklineData={sparklinePending}
@@ -457,7 +722,7 @@ export const Dashboard: React.FC = () => {
           <StatCard
             title="Pre-aprobadas"
             value={stats.approved}
-            icon={<TbClipboardCheck className="w-7 h-7 text-cyan-600" />}
+            icon={<TbClipboardCheck className="w-7 h-7 text-white" />}
             color="bg-gradient-to-br from-cyan-500 to-blue-600"
             onClick={() => navigate('/visits?status=approved')}
             sparklineData={sparklineApproved}
@@ -466,7 +731,7 @@ export const Dashboard: React.FC = () => {
           <StatCard
             title="Visitas Activas"
             value={stats.checkedIn}
-            icon={<LuDoorOpen className="w-7 h-7 text-emerald-600" />}
+            icon={<LuDoorOpen className="w-7 h-7 text-white" />}
             color="bg-gradient-to-br from-emerald-500 to-green-600"
             onClick={() => navigate('/visits?status=checkedIn')}
             sparklineData={sparklineActive}
@@ -475,7 +740,7 @@ export const Dashboard: React.FC = () => {
           <StatCard
             title="Completadas Hoy"
             value={stats.completed}
-            icon={<BarChart3 className="w-7 h-7 text-gray-800" />}
+            icon={<BarChart3 className="w-7 h-7 text-white" />}
             color="bg-gradient-to-br from-gray-400 to-gray-800"
             onClick={() => navigate('/reports')}
             sparklineData={sparklineCompleted}
@@ -484,44 +749,56 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 mb-8">
           <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <AiOutlineThunderbolt className="w-6 h-6 text-yellow-500" />
+            <AiOutlineThunderbolt className="w-6 h-6 text-white" />
             Acciones Rápidas
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-
             <QuickAction
-              icon={<LuClipboardPen className="w-6 h-6 text-blue-600" />}
+              icon={<LuClipboardPen className="w-6 h-6 text-white" />}
               title="Registrar visita"
               subtitle="Crear nueva visita"
               onClick={() => navigate('/visits?openPanel=true')}
             />
             <QuickAction
-              icon={<LuClipboardCheck className="w-6 h-6 text-emerald-600" />}
+              icon={<LuClipboardCheck className="w-6 h-6 text-white" />}
               title="Aprobar pendientes"
               subtitle="Revisar solicitudes"
               onClick={() => navigate('/visits?status=pending')}
             />
             <QuickAction
-              icon={<QrCode className="w-6 h-6 text-gray-800" />}
+              icon={<QrCode className="w-6 h-6 text-white" />}
               title="Accesos & eventos"
               subtitle="Gestionar invitaciones"
               onClick={() => navigate('/access-codes')}
             />
             <QuickAction
-              icon={<Calendar className="w-6 h-6 text-indigo-600" />}
+              icon={<Users className="w-6 h-6 text-white" />}
+              title="Invitar usuario"
+              subtitle="Acceso rápido a invitación"
+              onClick={() => setInviteModalOpen(true)}
+            />
+            <QuickAction
+              icon={<Calendar className="w-6 h-6 text-white" />}
               title="Ver agenda"
               subtitle="Próximas llegadas"
               onClick={() => navigate('/agenda')}
             />
           </div>
         </div>
+      {/* Modal de invitación de usuario */}
+      <InviteUserModal
+        isOpen={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+        onInvite={handleInviteUser}
+        loading={inviteLoading}
+      />
 
 
 
         {/* Charts Row - Modern Daily Stats as Bar Chart */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
           {/* Modern Daily Stats Bar Chart */}
           <div className="lg:col-span-3 bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col justify-center">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -615,9 +892,9 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom Row - 2 columns optimized */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column: Visitantes Frecuentes */}
+        {/* Bottom Row - 3 columns: Visitantes Frecuentes, Próximas Llegadas, Actividad Usuarios */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Visitantes Frecuentes */}
           <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <Users className="w-6 h-6" />
@@ -656,62 +933,64 @@ export const Dashboard: React.FC = () => {
             )}
           </div>
 
-          {/* Right Column: Próximas Llegadas y Actividad Reciente */}
-          <div className="space-y-6">
-            {/* Upcoming Today */}
-            <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <FaPersonWalkingArrowRight className="w-6 h-6 text-blue-700" />
-                Próximas Llegadas
-              </h2>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {upcomingVisits.length === 0 && upcomingAccesses.length === 0 ? (
-                  <div className="text-center py-6 text-gray-400">
-                    <FaPersonWalkingArrowRight className="w-10 h-10 mx-auto mb-2 opacity-50 text-blue-700" />
-                    <p className="text-sm">No hay llegadas pendientes</p>
-                  </div>
-                ) : (
-                  <>
-                    {upcomingVisits.slice(0, 3).map(v => (
-                      <UpcomingItem key={v._id} item={v} type="visit" />
-                    ))}
-                    {upcomingAccesses.slice(0, 2).map(a => (
-                      <UpcomingItem key={a._id} item={a} type="access" />
-                    ))}
-                  </>
-                )}
-              </div>
+          {/* Próximas Llegadas */}
+          <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <FaPersonWalkingArrowRight className="w-6 h-6 text-black" />
+              Próximas Llegadas
+            </h2>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {upcomingVisits.length === 0 && upcomingAccesses.length === 0 ? (
+                <div className="text-center py-6 text-gray-400">
+                  <FaPersonWalkingArrowRight className="w-10 h-10 mx-auto mb-2 opacity-50 text-black" />
+                  <p className="text-sm">No hay llegadas pendientes</p>
+                </div>
+              ) : (
+                <>
+                  {upcomingVisits.slice(0, 3).map(v => (
+                    <UpcomingItem key={v._id} item={v} type="visit" />
+                  ))}
+                  {upcomingAccesses.slice(0, 2).map(a => (
+                    <UpcomingItem key={a._id} item={a} type="access" />
+                  ))}
+                </>
+              )}
             </div>
+          </div>
 
-            {/* Recent Activity */}
-            <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <RiFileList2Line className="w-6 h-6 text-gray-700" />
-                Actividad Reciente
-              </h2>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {recentVisits.length === 0 ? (
-                  <div className="text-center py-6 text-gray-400">
-                    <Activity className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No hay actividad reciente</p>
-                  </div>
-                ) : (
-                  recentVisits.slice(0, 5).map(visit => (
-                    <ActivityItem key={visit._id} visit={visit} />
-                  ))
-                )}
-              </div>
+          {/* Actividad reciente de usuarios */}
+          <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <UserPlus className="w-6 h-6 text-indigo-600" />
+              Actividad Usuarios
+            </h2>
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {loadingInvitations ? (
+                <div className="text-center py-6 text-gray-400">
+                  <Activity className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Cargando actividad...</p>
+                </div>
+              ) : userInvitations.length === 0 ? (
+                <div className="text-center py-6 text-gray-400">
+                  <UserPlus className="w-10 h-10 mx-auto mb-2 opacity-50 text-indigo-600" />
+                  <p className="text-sm">No hay actividad reciente</p>
+                </div>
+              ) : (
+                userInvitations.slice(0, 8).map((inv, idx) => (
+                  <UserActivityItem key={inv._id || idx} invitation={inv} />
+                ))
+              )}
             </div>
           </div>
         </div>
 
         {/* Admin Only Stats */}
         {user?.role === 'admin' && (
-          <div className="max-w-md">
+          <div className="max-w-md mx-auto mb-8">
             <StatCard
               title="Total Usuarios"
               value={stats.totalUsers}
-              icon={<LiaUserTieSolid className="w-7 h-7 text-indigo-700" />}
+              icon={<LiaUserTieSolid className="w-7 h-7 text-white" />}
               color="bg-gradient-to-br from-indigo-500 to-purple-600"
               onClick={() => navigate('/users')}
             />

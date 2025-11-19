@@ -548,7 +548,7 @@ const RoleSelect: React.FC<{ value: UserRole; onChange: (r: UserRole) => void }>
     );
 });
 
-const InviteUserModal: React.FC<{
+export const InviteUserModal: React.FC<{
     isOpen: boolean;
     onClose: () => void;
     onInvite: (userData: NewUserData) => void;

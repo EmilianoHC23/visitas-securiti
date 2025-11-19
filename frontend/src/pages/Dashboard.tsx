@@ -1,205 +1,10 @@
-const UsersSummary: React.FC<{ userInvitations?: any[]; totalUsers?: number }> = ({ userInvitations, totalUsers }) => {
-  const list = Array.isArray(userInvitations) ? userInvitations : [];
-  const recent = list
-    .filter(u => u.status === 'new' || u.activityType === 'roleChange')
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
-  return (
-    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 px-4 py-5 flex flex-col items-center gap-4 mb-4 max-w-full md:max-w-[420px] mx-auto w-full min-w-0">
-      <div className="w-full flex flex-col gap-2 items-center">
-        <div className="flex items-center gap-3 mb-2">
-          <LiaUserTieSolid className="w-8 h-8 text-black" />
-          <div>
-            <div className="text-lg font-bold text-black">Usuarios</div>
-            <div className="text-xs text-gray-500">Total: <span className="font-bold text-black">{totalUsers ?? '-'}</span></div>
-          </div>
-        </div>
-        <div className="w-full">
-          <div className="text-xs text-black font-semibold mb-1">Actividad reciente:</div>
-          {recent.length === 0 ? (
-            <div className="text-xs text-gray-400">Sin actividad reciente</div>
-          ) : recent.map((item, idx) => (
-            <div key={item._id || idx} className="flex items-center gap-2 text-xs text-black mb-1">
-              {item.status === 'new' ? (
-                <UserPlus className="w-4 h-4 text-emerald-600" />
-              ) : (
-                <Shield className="w-4 h-4 text-blue-600" />
-              )}
-              <span className="font-medium">{item.firstName} {item.lastName}</span>
-              <span className="text-gray-400">{new Date(item.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</span>
-              {item.activityType === 'roleChange' && (
-                <span className="italic text-blue-600">Rol: {item.newRole}</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-import { PiHandPalmBold } from "react-icons/pi";
-import { getBlacklist } from '../services/api';
-// Componente resumen de Blacklist
-const BlacklistSummary: React.FC = () => {
-  const [blacklist, setBlacklist] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  React.useEffect(() => {
-    const fetchBlacklist = async () => {
-      try {
-        setLoading(true);
-        const data = await getBlacklist();
-        setBlacklist(Array.isArray(data) ? data : []);
-      } catch (e) {
-        setBlacklist([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchBlacklist();
-  }, []);
-
-  // Ordenar por fecha de creación descendente
-  const recent = [...blacklist].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3);
-
-  return (
-    <div
-      className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 px-4 py-5 flex flex-col items-center gap-4 mb-4 max-w-full md:max-w-[420px] mx-auto w-full min-w-0 cursor-pointer hover:shadow-2xl transition-shadow"
-      onClick={() => window.location.href = '/blacklist'}
-    >
-      <div className="w-full flex flex-col md:flex-row gap-4 items-center justify-center">
-        <div className="flex items-center gap-3">
-          <Ban className="w-8 h-8 text-black" />
-          <div>
-            <div className="text-lg font-bold text-black">{blacklist.length}</div>
-            <div className="text-xs text-black">En lista negra</div>
-          </div>
-        </div>
-        <div className="flex flex-col gap-1">
-          <div className="text-xs text-black font-semibold mb-1">Bloqueos recientes:</div>
-          {recent.length === 0 ? (
-            <div className="text-xs text-gray-400">Sin bloqueos recientes</div>
-          ) : recent.map((item, idx) => (
-            <div key={item._id || idx} className="flex items-center gap-2 text-xs text-black">
-              <AlertTriangle className="w-4 h-4 text-black" />
-              <span className="font-medium">{item.visitorName || item.email}</span>
-              <span className="text-gray-400">{new Date(item.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</span>
-              <span className="text-gray-400 italic">{item.reason}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-import { getAccesses } from '../services/api';
-// Componente resumen de códigos de acceso
-const AccessCodesSummary: React.FC = () => {
-  const [accesses, setAccesses] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  React.useEffect(() => {
-    const fetchAccesses = async () => {
-      try {
-        setLoading(true);
-        const data = await getAccesses();
-        setAccesses(Array.isArray(data) ? data : []);
-      } catch (e) {
-        setAccesses([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAccesses();
-  }, []);
-
-  const now = new Date();
-  const active = accesses.filter(a => a.status === 'active').length;
-  const expired = accesses.filter(a => a.status === 'finalized' || a.status === 'cancelled').length;
-  const soon = accesses.filter(a => a.status === 'active' && new Date(a.endDate) > now && (new Date(a.endDate).getTime() - now.getTime()) < 48 * 3600 * 1000).length;
-
-  return (
-    <div
-      className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 px-4 py-5 flex flex-col items-center gap-4 mb-4 max-w-full md:max-w-[420px] mx-auto w-full min-w-0 cursor-pointer hover:shadow-2xl transition-shadow"
-      onClick={() => window.location.href = '/access-codes'}
-    >
-      <div className="w-full flex flex-col md:flex-row gap-4 items-center justify-center">
-        <div className="flex items-center gap-3">
-          <QrCode className="w-8 h-8 text-black" />
-          <div>
-            <div className="text-lg font-bold text-black">{active}</div>
-            <div className="text-xs text-black">Activos</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Clock className="w-8 h-8 text-black" />
-          <div>
-            <div className="text-lg font-bold text-black">{soon}</div>
-            <div className="text-xs text-black">Próximos a expirar</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <XCircle className="w-8 h-8 text-black" />
-          <div>
-            <div className="text-lg font-bold text-black">{expired}</div>
-            <div className="text-xs text-black">Expirados</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { Visit, VisitStatus, DashboardStats, Access } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { InviteUserModal } from './users/UserManagementPage';
-// Estado y función para el modal de invitación de usuario
-import { 
-  Users, 
-  Calendar,
-  TrendingUp,
-  TrendingDown,
-  Building2,
-  ArrowRight,
-  Eye,
-  QrCode,
-  Activity,
-  BarChart3,
-  Minus,
-  CheckCircle,
-  Clock,
-  UserPlus,
-  Shield,
-  XCircle,
-  Ban,
-  AlertTriangle
-} from 'lucide-react';
-import { getInvitations } from '../services/api';
-// Componente para mostrar actividad reciente de usuarios
-const UserActivityItem: React.FC<{ invitation: any }> = ({ invitation }) => {
-  const { firstName, lastName, email, role, invitedBy, createdAt } = invitation;
-  const date = new Date(createdAt);
-  const timeAgo = date.toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-  return (
-    <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-all group">
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
-        <UserPlus className="w-5 h-5" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 truncate">{firstName} {lastName}</p>
-        <p className="text-xs text-gray-500 truncate">{email}</p>
-        <span className="inline-flex items-center gap-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full px-2 py-0.5 mt-1">
-          <Shield className="w-3 h-3 text-indigo-500" />
-          {role.charAt(0).toUpperCase() + role.slice(1)}
-        </span>
-      </div>
-      <div className="text-right">
-        <p className="text-xs text-gray-400">{timeAgo}</p>
-      </div>
-    </div>
-  );
-};
+import * as api from '../services/api';
+import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { BarChart3, Building2, Eye } from 'lucide-react';
 import { MdOutlinePendingActions } from 'react-icons/md';
 import { TbClipboardCheck } from 'react-icons/tb';
 import { LuDoorOpen } from 'react-icons/lu';
@@ -209,8 +14,11 @@ import { FaRegUser } from 'react-icons/fa';
 import { FaPersonWalkingArrowRight } from 'react-icons/fa6';
 import { LiaUserTieSolid } from 'react-icons/lia';
 import { RiFileList2Line } from 'react-icons/ri';
+import { UserPlus, Shield, CheckCircle, Activity, Clock, TrendingUp, TrendingDown, ArrowRight, QrCode, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import * as api from '../services/api';
+import { Visit, VisitStatus, Access, DashboardStats } from '../types';
+import { InviteUserModal } from './users/UserManagementPage';
+import { Calendar } from 'lucide-react';
 
 // Toast notification component
 const Toast: React.FC<{ 
@@ -439,6 +247,46 @@ const UpcomingItem: React.FC<{ item: Visit | Access; type: 'visit' | 'access' }>
   }
 };
 
+const UsersSummary: React.FC<{ userInvitations?: any[]; totalUsers?: number }> = ({ userInvitations, totalUsers }) => {
+  const list = Array.isArray(userInvitations) ? userInvitations : [];
+  const recent = list
+    .filter(u => u.status === 'new' || u.activityType === 'roleChange')
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
+  return (
+    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 px-4 py-5 flex flex-col items-center gap-4 mb-4 max-w-full md:max-w-[420px] mx-auto w-full min-w-0">
+      <div className="w-full flex flex-col gap-2 items-center">
+        <div className="flex items-center gap-3 mb-2">
+          <LiaUserTieSolid className="w-8 h-8 text-black" />
+          <div>
+            <div className="text-lg font-bold text-black">Usuarios</div>
+            <div className="text-xs text-gray-500">Total: <span className="font-bold text-black">{totalUsers ?? '-'}</span></div>
+          </div>
+        </div>
+        <div className="w-full">
+          <div className="text-xs text-black font-semibold mb-1">Actividad reciente:</div>
+          {recent.length === 0 ? (
+            <div className="text-xs text-gray-400">Sin actividad reciente</div>
+          ) : recent.map((item, idx) => (
+            <div key={item._id || idx} className="flex items-center gap-2 text-xs text-black mb-1">
+              {item.status === 'new' ? (
+                <UserPlus className="w-4 h-4 text-emerald-600" />
+              ) : (
+                <Shield className="w-4 h-4 text-blue-600" />
+              )}
+              <span className="font-medium">{item.firstName} {item.lastName}</span>
+              <span className="text-gray-400">{new Date(item.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</span>
+              {item.activityType === 'roleChange' && (
+                <span className="italic text-blue-600">Rol: {item.newRole}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const Dashboard: React.FC = () => {
     // Estado para actividad reciente de usuarios
     const [userInvitations, setUserInvitations] = useState<any[]>([]);
@@ -448,7 +296,7 @@ export const Dashboard: React.FC = () => {
       const fetchInvitations = async () => {
         try {
           setLoadingInvitations(true);
-          const data = await getInvitations();
+          const data = await api.getInvitations();
           setUserInvitations(Array.isArray(data) ? data : (data?.invitations || []));
         } catch (e) {
           setUserInvitations([]);
@@ -529,11 +377,7 @@ export const Dashboard: React.FC = () => {
   const analytics = analyticsQuery.data || [];
   const allVisits = allVisitsQuery.data || [];
 
-  const upcomingVisits = (upcomingVisitsQuery.data || [])
-    .filter(v => v.status !== VisitStatus.COMPLETED)
-    .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())
-    .slice(0, 5);
-
+  const upcomingVisits = upcomingVisitsQuery.data || [];
   const upcomingAccesses = (upcomingAccessesQuery.data || [])
     .filter(a => a.status === 'active')
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
@@ -645,15 +489,7 @@ export const Dashboard: React.FC = () => {
                 >
                   Bienvenido, {user?.firstName}
                 </span>
-                <span
-                  className="inline-flex"
-                  style={{
-                    textShadow: '0 0 8px #fff, 0 0 16px #fff, 0 0 32px #e0e7ff, 0 0 48px #fff',
-                    WebkitTextStroke: '1px #fff',
-                  }}
-                >
-                  <PiHandPalmBold size={38} />
-                </span>
+                {/* Removed PiHandPalmBold icon as requested */}
               </h1>
          
               <p className="text-gray-600">Aquí tienes un resumen de la actividad de hoy</p>
@@ -664,7 +500,7 @@ export const Dashboard: React.FC = () => {
 
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
           <StatCard
             title="Pendientes"
             value={stats.pending}
@@ -701,7 +537,6 @@ export const Dashboard: React.FC = () => {
             sparklineData={sparklineCompleted}
             trend={calculateTrend(sparklineCompleted)}
           />
-          <div className="flex h-full items-stretch"><UsersSummary userInvitations={userInvitations} totalUsers={stats.totalUsers} /></div>
         </div>
 
         {/* Access Codes & Blacklist Summary Cards (moved below stats) */}
@@ -722,22 +557,16 @@ export const Dashboard: React.FC = () => {
               onClick={() => navigate('/visits?openPanel=true')}
             />
             <QuickAction
-              icon={<LuClipboardCheck className="w-6 h-6 text-white" />}
-              title="Aprobar pendientes"
-              subtitle="Revisar solicitudes"
-              onClick={() => navigate('/visits?status=pending')}
-            />
-            <QuickAction
-              icon={<QrCode className="w-6 h-6 text-white" />}
-              title="Accesos & eventos"
-              subtitle="Gestionar invitaciones"
-              onClick={() => navigate('/access-codes')}
-            />
-            <QuickAction
               icon={<Users className="w-6 h-6 text-white" />}
               title="Invitar usuario"
               subtitle="Acceso rápido a invitación"
-              onClick={() => setInviteModalOpen(true)}
+              onClick={() => navigate('/visits?openPanel=true')}
+            />
+            <QuickAction
+              icon={<QrCode className="w-6 h-6 text-white" />}
+              title="Crear acceso"
+              subtitle="Generar código de acceso"
+              onClick={() => navigate('/access-codes?openPanel=true')}
             />
             <QuickAction
               icon={<Calendar className="w-6 h-6 text-white" />}
@@ -891,49 +720,10 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom Row - 3 columns: Visitantes Frecuentes, Próximas Llegadas, Actividad Reciente (visitas) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Visitantes Frecuentes */}
-          <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Users className="w-6 h-6" />
-              Visitantes Frecuentes
-            </h2>
-            {frequentVisitorsData.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
-                <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No hay datos suficientes</p>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={frequentVisitorsData} layout="vertical" margin={{ left: 5, right: 20, top: 5, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
-                  <XAxis type="number" stroke="#6b7280" style={{ fontSize: '12px' }} />
-                  <YAxis 
-                    type="category" 
-                    dataKey="name" 
-                    stroke="#6b7280" 
-                    style={{ fontSize: '11px' }} 
-                    width={120}
-                    tickFormatter={(value) => value.length > 20 ? value.substring(0, 20) + '...' : value}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'white', 
-                      border: '2px solid #e5e7eb', 
-                      borderRadius: '12px',
-                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                    }}
-                    cursor={{ fill: 'rgba(17, 24, 39, 0.05)' }}
-                  />
-                  <Bar dataKey="count" fill="#111827" radius={[0, 8, 8, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-
+        {/* Bottom Row - 3 columns: Próximas Llegadas, Actividad Reciente, Usuarios */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {/* Próximas Llegadas */}
-          <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
+          <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <FaPersonWalkingArrowRight className="w-6 h-6 text-black" />
               Próximas Llegadas
@@ -958,7 +748,7 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* Actividad Reciente (visitas) */}
-          <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
+          <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <Eye className="w-6 h-6 text-black" />
               Actividad Reciente
@@ -975,6 +765,11 @@ export const Dashboard: React.FC = () => {
                 ))
               )}
             </div>
+          </div>
+
+          {/* Usuarios */}
+          <div className="flex flex-col h-full">
+            <UsersSummary userInvitations={userInvitations} totalUsers={stats.totalUsers} />
           </div>
         </div>
 

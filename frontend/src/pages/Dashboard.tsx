@@ -1,79 +1,3 @@
-import { getAdvancedAnalytics, exportReports } from '../services/api';
-// Componente resumen de Reports
-const ReportsSummary: React.FC = () => {
-  const [analytics, setAnalytics] = React.useState<any>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [exporting, setExporting] = React.useState(false);
-  React.useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        setLoading(true);
-        const data = await getAdvancedAnalytics({ period: 'month' });
-        setAnalytics(data);
-      } catch (e) {
-        setAnalytics(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAnalytics();
-  }, []);
-
-  const handleExport = async () => {
-    setExporting(true);
-    try {
-      await exportReports('csv');
-      window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Exportación iniciada', severity: 'success' } }));
-    } catch (e) {
-      window.dispatchEvent(new CustomEvent('app-toast', { detail: { message: 'Error al exportar', severity: 'error' } }));
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 px-4 py-5 flex flex-col md:flex-row items-center justify-between gap-4 mb-4 max-w-full md:max-w-[420px] mx-auto w-full min-w-0">
-      <div className="flex-1 flex flex-col md:flex-row gap-4 items-center justify-center">
-        <div className="flex items-center gap-3">
-          <BarChart3 className="w-8 h-8 text-blue-600" />
-          <div>
-            <div className="text-lg font-bold text-gray-900">{analytics?.totalVisits ?? '-'}</div>
-            <div className="text-xs text-gray-500">Visitas este mes</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <CheckCircle className="w-8 h-8 text-emerald-600" />
-          <div>
-            <div className="text-lg font-bold text-gray-900">{analytics?.approved ?? '-'}</div>
-            <div className="text-xs text-gray-500">Aprobadas</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Minus className="w-8 h-8 text-yellow-500" />
-          <div>
-            <div className="text-lg font-bold text-gray-900">{analytics?.pending ?? '-'}</div>
-            <div className="text-xs text-gray-500">Pendientes</div>
-          </div>
-        </div>
-      </div>
-      <div className="flex flex-col gap-2 items-end min-w-[120px] w-fit">
-        <button
-          onClick={() => window.location.href = '/reports'}
-          className="px-6 py-3 bg-gradient-to-br from-blue-600 to-cyan-600 text-white rounded-xl font-semibold shadow-lg hover:from-blue-700 hover:to-cyan-700 transition-all text-sm mb-2"
-        >
-          Ver Reportes
-        </button>
-        <button
-          onClick={handleExport}
-          disabled={exporting}
-          className="px-6 py-2 bg-gradient-to-br from-gray-900 to-gray-700 text-white rounded-xl font-semibold shadow-lg hover:from-gray-800 hover:to-gray-800 transition-all text-xs disabled:opacity-60"
-        >
-          {exporting ? 'Exportando...' : 'Exportar CSV'}
-        </button>
-      </div>
-    </div>
-  );
-};
 import { getBlacklist } from '../services/api';
 // Componente resumen de Blacklist
 const BlacklistSummary: React.FC = () => {
@@ -98,8 +22,11 @@ const BlacklistSummary: React.FC = () => {
   const recent = [...blacklist].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3);
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 px-4 py-5 flex flex-col md:flex-row items-center justify-between gap-4 mb-4 max-w-full md:max-w-[420px] mx-auto w-full min-w-0">
-      <div className="flex-1 flex flex-col md:flex-row gap-4 items-center justify-center">
+    <div
+      className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 px-4 py-5 flex flex-col items-center gap-4 mb-4 max-w-full md:max-w-[420px] mx-auto w-full min-w-0 cursor-pointer hover:shadow-2xl transition-shadow"
+      onClick={() => window.location.href = '/blacklist'}
+    >
+      <div className="w-full flex flex-col md:flex-row gap-4 items-center justify-center">
         <div className="flex items-center gap-3">
           <Ban className="w-8 h-8 text-red-600" />
           <div>
@@ -121,12 +48,6 @@ const BlacklistSummary: React.FC = () => {
           ))}
         </div>
       </div>
-      <button
-        onClick={() => window.location.href = '/blacklist'}
-        className="px-4 py-2 bg-gradient-to-br from-red-600 to-gray-700 text-white rounded-xl font-semibold shadow-lg hover:from-red-700 hover:to-gray-800 transition-all text-xs whitespace-nowrap"
-      >
-        Gestionar Lista Negra
-      </button>
     </div>
   );
 };
@@ -156,8 +77,11 @@ const AccessCodesSummary: React.FC = () => {
   const soon = accesses.filter(a => a.status === 'active' && new Date(a.endDate) > now && (new Date(a.endDate).getTime() - now.getTime()) < 48 * 3600 * 1000).length;
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 px-4 py-5 flex flex-col md:flex-row items-center justify-between gap-4 mb-4 max-w-full md:max-w-[420px] mx-auto w-full min-w-0">
-      <div className="flex-1 flex flex-col md:flex-row gap-4 items-center justify-center">
+    <div
+      className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 px-4 py-5 flex flex-col items-center gap-4 mb-4 max-w-full md:max-w-[420px] mx-auto w-full min-w-0 cursor-pointer hover:shadow-2xl transition-shadow"
+      onClick={() => window.location.href = '/access-codes'}
+    >
+      <div className="w-full flex flex-col md:flex-row gap-4 items-center justify-center">
         <div className="flex items-center gap-3">
           <QrCode className="w-8 h-8 text-purple-700" />
           <div>
@@ -180,12 +104,6 @@ const AccessCodesSummary: React.FC = () => {
           </div>
         </div>
       </div>
-      <button
-        onClick={() => window.location.href = '/access-codes'}
-        className="px-4 py-2 bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-indigo-700 transition-all text-xs whitespace-nowrap"
-      >
-        Gestionar Accesos
-      </button>
     </div>
   );
 };
@@ -701,11 +619,10 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Summary Section: Access Codes, Blacklist, Reports */}
+        {/* Summary Section: Access Codes, Blacklist */}
         <div className="w-full flex flex-col md:flex-row gap-4 md:gap-6 justify-center items-stretch mb-2">
           <AccessCodesSummary />
           <BlacklistSummary />
-          <ReportsSummary />
         </div>
 
         {/* Stats Grid */}
@@ -805,6 +722,21 @@ export const Dashboard: React.FC = () => {
               <BarChart3 className="w-6 h-6" />
               Resumen de Visitas Hoy
             </h2>
+            {/* KPIs de visitas del día */}
+            <div className="flex flex-wrap gap-6 mb-4 justify-center">
+              <div className="flex flex-col items-center">
+                <span className="text-2xl font-bold text-gray-900">{totalToday}</span>
+                <span className="text-xs text-gray-500">Total hoy</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-2xl font-bold text-emerald-600">{approvedToday}</span>
+                <span className="text-xs text-gray-500">Aprobadas</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-2xl font-bold text-red-500">{rejectedToday}</span>
+                <span className="text-xs text-gray-500">Rechazadas</span>
+              </div>
+            </div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart
                 data={[{ name: 'Hoy', Total: totalToday, Aprobadas: approvedToday, Rechazadas: rejectedToday }]}

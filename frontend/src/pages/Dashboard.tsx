@@ -1,6 +1,6 @@
+import { LiaUserTieSolid } from 'react-icons/lia';
 const UsersSummary: React.FC<{ userInvitations?: any[]; totalUsers?: number }> = ({ userInvitations, totalUsers }) => {
   const list = Array.isArray(userInvitations) ? userInvitations : [];
-  // Filtrar solo actividades relevantes: nuevos registros y cambios de rol
   const recent = list
     .filter(u => u.status === 'new' || u.activityType === 'roleChange')
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -9,7 +9,7 @@ const UsersSummary: React.FC<{ userInvitations?: any[]; totalUsers?: number }> =
     <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 px-4 py-5 flex flex-col items-center gap-4 mb-4 max-w-full md:max-w-[420px] mx-auto w-full min-w-0">
       <div className="w-full flex flex-col gap-2 items-center">
         <div className="flex items-center gap-3 mb-2">
-          <Users className="w-8 h-8 text-black" />
+          <LiaUserTieSolid className="w-8 h-8 text-black" />
           <div>
             <div className="text-lg font-bold text-black">Usuarios</div>
             <div className="text-xs text-gray-500">Total: <span className="font-bold text-black">{totalUsers ?? '-'}</span></div>
@@ -656,8 +656,7 @@ export const Dashboard: React.FC = () => {
                   <PiHandPalmBold size={38} />
                 </span>
               </h1>
-
-              // Card de usuarios: nuevos, invitados, eliminados
+         
               <p className="text-gray-600">Aquí tienes un resumen de la actividad de hoy</p>
             </div>
           </div>
@@ -666,7 +665,7 @@ export const Dashboard: React.FC = () => {
 
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-4">
           <StatCard
             title="Pendientes"
             value={stats.pending}
@@ -703,14 +702,12 @@ export const Dashboard: React.FC = () => {
             sparklineData={sparklineCompleted}
             trend={calculateTrend(sparklineCompleted)}
           />
+          <div className="flex h-full items-stretch"><UsersSummary userInvitations={userInvitations} totalUsers={stats.totalUsers} /></div>
         </div>
 
         {/* Access Codes & Blacklist Summary Cards (moved below stats) */}
-        <div className="w-full grid grid-cols-1 gap-4 md:gap-6 mb-8 max-w-5xl mx-auto">
-          <div className="flex">
-            <UsersSummary userInvitations={userInvitations} totalUsers={stats.totalUsers} />
-          </div>
-        </div>
+        {/* Espacio para separación visual */}
+        <div className="mb-8"></div>
 
         {/* Quick Actions */}
         <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 mb-8">
@@ -983,17 +980,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Admin Only Stats */}
-        {user?.role === 'admin' && (
-          <div className="max-w-md mx-auto mb-8">
-            <StatCard
-              title="Total Usuarios"
-              value={stats.totalUsers}
-              icon={<LiaUserTieSolid className="w-7 h-7 text-white" />}
-              color="bg-gradient-to-br from-indigo-500 to-purple-600"
-              onClick={() => navigate('/users')}
-            />
-          </div>
-        )}
+        {/* StatCard de Total Usuarios eliminado, ya que está en la card de Usuarios */}
       </div>
 
       {/* Toast */}

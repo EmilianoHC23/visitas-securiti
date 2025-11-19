@@ -576,29 +576,20 @@ export const Dashboard: React.FC = () => {
             />
           </div>
         </div>
-      {/* Modal de invitación de usuario */}
-      <InviteUserModal
-        isOpen={inviteModalOpen}
-        onClose={() => setInviteModalOpen(false)}
-        onInvite={handleInviteUser}
-        loading={inviteLoading}
-      />
 
-
-
-        {/* Charts Row - Modern Daily Stats as Bar Chart */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
-          {/* Modern Daily Stats Bar Chart */}
-          <div className="lg:col-span-3 bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col justify-center">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        {/* Charts Row - 3 gráficas principales */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Resumen de Visitas - Período seleccionado */}
+          <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col">
+            <div className="flex flex-col gap-3 mb-4">
               <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                 <BarChart3 className="w-6 h-6" />
-                Resumen de Visitas Hoy
+                Resumen de Visitas
               </h2>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setPeriod('week')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-all ${
                     period === 'week'
                       ? 'bg-gray-900 text-white shadow-lg'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -608,7 +599,7 @@ export const Dashboard: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setPeriod('month')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-all ${
                     period === 'month'
                       ? 'bg-gray-900 text-white shadow-lg'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -619,57 +610,60 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
             {/* KPIs de visitas del día */}
-            <div className="flex flex-wrap gap-6 mb-4 justify-center">
+            <div className="flex flex-wrap gap-4 mb-4 justify-center">
               <div className="flex flex-col items-center">
-                <span className="text-2xl font-bold text-gray-900">{totalToday}</span>
+                <span className="text-xl font-bold text-gray-900">{totalToday}</span>
                 <span className="text-xs text-gray-500">Total hoy</span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="text-2xl font-bold text-emerald-600">{approvedToday}</span>
+                <span className="text-xl font-bold text-emerald-600">{approvedToday}</span>
                 <span className="text-xs text-gray-500">Aprobadas</span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="text-2xl font-bold text-red-500">{rejectedToday}</span>
+                <span className="text-xl font-bold text-red-500">{rejectedToday}</span>
                 <span className="text-xs text-gray-500">Rechazadas</span>
               </div>
             </div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart
-                data={[{ name: 'Hoy', Total: totalToday, Aprobadas: approvedToday, Rechazadas: rejectedToday }]}
-                margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
-                barCategoryGap={40}
+                data={chartData}
+                margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="name" tick={{ fontSize: 14, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 14, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: 'white', border: '2px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
-                  labelStyle={{ fontWeight: 600, color: '#111827' }}
-                  formatter={(value: any, name: string) => [value, name]}
+                <XAxis 
+                  dataKey="name" 
+                  tick={{ fontSize: 11, fill: '#6b7280' }} 
+                  axisLine={false} 
+                  tickLine={false}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
                 />
-                <Bar dataKey="Total" fill="#111827" radius={[8, 8, 0, 0]} maxBarSize={40} />
-                <Bar dataKey="Aprobadas" fill="#10b981" radius={[8, 8, 0, 0]} maxBarSize={40} />
-                <Bar dataKey="Rechazadas" fill="#ef4444" radius={[8, 8, 0, 0]} maxBarSize={40} />
+                <YAxis 
+                  allowDecimals={false} 
+                  tick={{ fontSize: 11, fill: '#6b7280' }} 
+                  axisLine={false} 
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={{ 
+                    backgroundColor: 'white', 
+                    border: '2px solid #e5e7eb', 
+                    borderRadius: '12px', 
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    fontSize: '12px'
+                  }}
+                  labelStyle={{ fontWeight: 600, color: '#111827' }}
+                />
+                <Bar dataKey="completadas" name="Completadas" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="activas" name="Activas" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="pendientes" name="Pendientes" fill="#f59e0b" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-            <div className="flex justify-center gap-8 mt-6">
-              <div className="flex items-center gap-2">
-                <span className="inline-block w-4 h-4 rounded bg-[#111827]"></span>
-                <span className="text-sm text-gray-700">Total</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-block w-4 h-4 rounded bg-[#10b981]"></span>
-                <span className="text-sm text-gray-700">Aprobadas</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-block w-4 h-4 rounded bg-[#ef4444]"></span>
-                <span className="text-sm text-gray-700">Rechazadas</span>
-              </div>
-            </div>
           </div>
 
           {/* Company Distribution */}
-          <div className="lg:col-span-2 bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
+          <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <Building2 className="w-6 h-6" />
               Empresas Frecuentes
@@ -718,9 +712,70 @@ export const Dashboard: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Visitantes Frecuentes */}
+          <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Users className="w-6 h-6" />
+              Visitantes Frecuentes
+            </h2>
+            {frequentVisitorsData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart
+                    data={frequentVisitorsData}
+                    layout="vertical"
+                    margin={{ top: 5, right: 20, left: 5, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis 
+                      type="number" 
+                      allowDecimals={false}
+                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      type="category" 
+                      dataKey="name" 
+                      tick={{ fontSize: 10, fill: '#6b7280' }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={80}
+                    />
+                    <Tooltip
+                      contentStyle={{ 
+                        backgroundColor: 'white', 
+                        border: '2px solid #e5e7eb', 
+                        borderRadius: '12px',
+                        fontSize: '12px'
+                      }}
+                      labelStyle={{ fontWeight: 600, color: '#111827' }}
+                      formatter={(value: any) => [`${value} visitas`, 'Total']}
+                    />
+                    <Bar 
+                      dataKey="count" 
+                      fill="#6366f1" 
+                      radius={[0, 8, 8, 0]}
+                      maxBarSize={20}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+                <div className="mt-4 text-center">
+                  <p className="text-xs text-gray-500">
+                    Mostrando los {frequentVisitorsData.length} visitantes más frecuentes
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400">
+                <p>No hay datos</p>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Bottom Row - 3 columns: Próximas Llegadas, Actividad Reciente, Usuarios */}
+        {/* Bottom Row - 3 columns: Próximas Llegadas, Actividad Reciente, Usuarios */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {/* Próximas Llegadas */}
           <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col">
@@ -775,16 +830,24 @@ export const Dashboard: React.FC = () => {
 
         {/* Admin Only Stats */}
         {/* StatCard de Total Usuarios eliminado, ya que está en la card de Usuarios */}
-      </div>
 
-      {/* Toast */}
-      {notification && (
-        <Toast
-          message={notification.message}
-          type={notification.type}
-          onClose={() => setNotification(null)}
+        {/* Modal de invitación de usuario */}
+        <InviteUserModal
+          isOpen={inviteModalOpen}
+          onClose={() => setInviteModalOpen(false)}
+          onInvite={handleInviteUser}
+          loading={inviteLoading}
         />
-      )}
+
+        {/* Toast */}
+        {notification && (
+          <Toast
+            message={notification.message}
+            type={notification.type}
+            onClose={() => setNotification(null)}
+          />
+        )}
+      </div>
     </div>
   );
 };

@@ -444,11 +444,12 @@ export const Dashboard: React.FC = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
           <StatCard
             title="Pendientes"
             value={stats.pending}
-            icon={<MdOutlinePendingActions className="w-7 h-7 text-yellow-500" />}
-            color="bg-gradient-to-br from-yellow-500 to-amber-600"
+            icon={<MdOutlinePendingActions className="w-7 h-7 text-yellow-600" />}
+            color="bg-gradient-to-br from-yellow-400 to-yellow-600"
             onClick={() => navigate('/visits?status=pending')}
             sparklineData={sparklinePending}
             trend={calculateTrend(sparklinePending)}
@@ -456,8 +457,8 @@ export const Dashboard: React.FC = () => {
           <StatCard
             title="Pre-aprobadas"
             value={stats.approved}
-            icon={<TbClipboardCheck className="w-7 h-7 text-emerald-600" />}
-            color="bg-gradient-to-br from-blue-500 to-cyan-600"
+            icon={<TbClipboardCheck className="w-7 h-7 text-cyan-600" />}
+            color="bg-gradient-to-br from-cyan-500 to-blue-600"
             onClick={() => navigate('/visits?status=approved')}
             sparklineData={sparklineApproved}
             trend={calculateTrend(sparklineApproved)}
@@ -465,7 +466,7 @@ export const Dashboard: React.FC = () => {
           <StatCard
             title="Visitas Activas"
             value={stats.checkedIn}
-            icon={<LuDoorOpen className="w-7 h-7 text-cyan-600" />}
+            icon={<LuDoorOpen className="w-7 h-7 text-emerald-600" />}
             color="bg-gradient-to-br from-emerald-500 to-green-600"
             onClick={() => navigate('/visits?status=checkedIn')}
             sparklineData={sparklineActive}
@@ -474,8 +475,8 @@ export const Dashboard: React.FC = () => {
           <StatCard
             title="Completadas Hoy"
             value={stats.completed}
-            icon={<BarChart3 className="w-7 h-7" />}
-            color="bg-gradient-to-br from-gray-700 to-gray-900"
+            icon={<BarChart3 className="w-7 h-7 text-gray-800" />}
+            color="bg-gradient-to-br from-gray-400 to-gray-800"
             onClick={() => navigate('/reports')}
             sparklineData={sparklineCompleted}
             trend={calculateTrend(sparklineCompleted)}
@@ -489,8 +490,9 @@ export const Dashboard: React.FC = () => {
             Acciones Rápidas
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
             <QuickAction
-              icon={<LuClipboardPen className="w-6 h-6 text-blue-700" />}
+              icon={<LuClipboardPen className="w-6 h-6 text-blue-600" />}
               title="Registrar visita"
               subtitle="Crear nueva visita"
               onClick={() => navigate('/visits?openPanel=true')}
@@ -502,13 +504,13 @@ export const Dashboard: React.FC = () => {
               onClick={() => navigate('/visits?status=pending')}
             />
             <QuickAction
-              icon={<QrCode className="w-6 h-6" />}
+              icon={<QrCode className="w-6 h-6 text-gray-800" />}
               title="Accesos & eventos"
               subtitle="Gestionar invitaciones"
               onClick={() => navigate('/access-codes')}
             />
             <QuickAction
-              icon={<Calendar className="w-6 h-6" />}
+              icon={<Calendar className="w-6 h-6 text-indigo-600" />}
               title="Ver agenda"
               subtitle="Próximas llegadas"
               onClick={() => navigate('/agenda')}
@@ -517,33 +519,46 @@ export const Dashboard: React.FC = () => {
         </div>
 
 
-        {/* Charts Row - Modern Daily Stats */}
+
+        {/* Charts Row - Modern Daily Stats as Bar Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Modern Daily Stats Chart */}
+          {/* Modern Daily Stats Bar Chart */}
           <div className="lg:col-span-3 bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col justify-center">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <BarChart3 className="w-6 h-6" />
               Resumen de Visitas Hoy
             </h2>
-            <div className="flex flex-col md:flex-row gap-6 justify-center items-center h-full">
-              <div className="flex-1 flex flex-col items-center justify-center">
-                <div className="flex gap-6 w-full max-w-md justify-center">
-                  <div className="flex flex-col items-center bg-gradient-to-br from-gray-50 to-white rounded-xl border-2 border-gray-200 p-6 w-40 shadow-md">
-                    <span className="text-gray-600 font-medium mb-1">Total</span>
-                    <span className="text-4xl font-bold text-gray-900 mb-2">{totalToday}</span>
-                    <LuClipboardList className="w-8 h-8 text-gray-900" />
-                  </div>
-                  <div className="flex flex-col items-center bg-gradient-to-br from-green-50 to-white rounded-xl border-2 border-green-200 p-6 w-40 shadow-md">
-                    <span className="text-green-600 font-medium mb-1">Aprobadas</span>
-                    <span className="text-4xl font-bold text-green-600 mb-2">{approvedToday}</span>
-                    <LuClipboardCheck className="w-8 h-8 text-green-600" />
-                  </div>
-                  <div className="flex flex-col items-center bg-gradient-to-br from-red-50 to-white rounded-xl border-2 border-red-200 p-6 w-40 shadow-md">
-                    <span className="text-red-600 font-medium mb-1">Rechazadas</span>
-                    <span className="text-4xl font-bold text-red-600 mb-2">{rejectedToday}</span>
-                    <LuClipboardX className="w-8 h-8 text-red-600" />
-                  </div>
-                </div>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart
+                data={[{ name: 'Hoy', Total: totalToday, Aprobadas: approvedToday, Rechazadas: rejectedToday }]}
+                margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+                barCategoryGap={40}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="name" tick={{ fontSize: 14, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 14, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: 'white', border: '2px solid #e5e7eb', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                  labelStyle={{ fontWeight: 600, color: '#111827' }}
+                  formatter={(value: any, name: string) => [value, name]}
+                />
+                <Bar dataKey="Total" fill="#111827" radius={[8, 8, 0, 0]} maxBarSize={40} />
+                <Bar dataKey="Aprobadas" fill="#10b981" radius={[8, 8, 0, 0]} maxBarSize={40} />
+                <Bar dataKey="Rechazadas" fill="#ef4444" radius={[8, 8, 0, 0]} maxBarSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="flex justify-center gap-8 mt-6">
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-4 h-4 rounded bg-[#111827]"></span>
+                <span className="text-sm text-gray-700">Total</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-4 h-4 rounded bg-[#10b981]"></span>
+                <span className="text-sm text-gray-700">Aprobadas</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-4 h-4 rounded bg-[#ef4444]"></span>
+                <span className="text-sm text-gray-700">Rechazadas</span>
               </div>
             </div>
           </div>

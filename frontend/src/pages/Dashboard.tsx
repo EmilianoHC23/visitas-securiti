@@ -827,27 +827,24 @@ export const Dashboard: React.FC = () => {
             <UsersSummary userInvitations={userInvitations} totalUsers={stats.totalUsers} />
           </div>
         </div>
-
-        {/* Admin Only Stats */}
-        {/* StatCard de Total Usuarios eliminado, ya que está en la card de Usuarios */}
-
-        {/* Modal de invitación de usuario */}
-        <InviteUserModal
-          isOpen={inviteModalOpen}
-          onClose={() => setInviteModalOpen(false)}
-          onInvite={handleInviteUser}
-          loading={inviteLoading}
-        />
-
-        {/* Toast */}
-        {notification && (
-          <Toast
-            message={notification.message}
-            type={notification.type}
-            onClose={() => setNotification(null)}
-          />
-        )}
       </div>
+
+      {/* Modal de invitación de usuario */}
+      <InviteUserModal
+        isOpen={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+        onInvite={handleInviteUser}
+        loading={inviteLoading}
+      />
+
+      {/* Toast */}
+      {notification && (
+        <Toast
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
+      )}
     </div>
   );
 };

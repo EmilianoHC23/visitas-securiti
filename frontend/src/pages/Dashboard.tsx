@@ -775,7 +775,7 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom Row - 3 columns: Próximas Llegadas, Actividad Reciente, Usuarios */
+        {/* Bottom Row - 3 columns: Próximas Llegadas, Actividad Reciente, Usuarios */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {/* Próximas Llegadas */}
           <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col">
@@ -829,7 +829,6 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal de invitación de usuario */}
       <InviteUserModal
         isOpen={inviteModalOpen}
         onClose={() => setInviteModalOpen(false)}
@@ -837,7 +836,6 @@ export const Dashboard: React.FC = () => {
         loading={inviteLoading}
       />
 
-      {/* Toast */}
       {notification && (
         <Toast
           message={notification.message}

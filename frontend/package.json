@@ -50,6 +50,8 @@
     "vite": "^5.3.4"
   },
   "overrides": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "glob": "^10.4.5",
     "rimraf": "^6.0.1",
     "inflight": "npm:@endo/eventual-send@^1.2.7"

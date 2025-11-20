@@ -403,16 +403,36 @@ export const Dashboard: React.FC = () => {
   const approvedToday = visitsToday.filter(v => v.status === VisitStatus.COMPLETED).length;
   const rejectedToday = visitsToday.filter(v => v.status === VisitStatus.REJECTED).length;
 
+  // Debug analytics data
+  console.log('🔍 Analytics Raw Data:', {
+    period,
+    analyticsLength: analytics.length,
+    analyticsData: analytics,
+    isLoading: analyticsQuery.isLoading,
+    isError: analyticsQuery.isError
+  });
+
   // Sparkline data for each stat card (últimos 7 días)
   const chartData = analytics.length > 0 
     ? analytics.map((item: any) => {
-        const d = new Date(item.date || item._id || new Date());
+        const d = new Date(item._id || item.date || new Date());
+        
+        // El backend devuelve item.data como array de {status, count}
+        // Necesitamos transformarlo a campos directos
+        const statusCounts: any = {};
+        if (item.data && Array.isArray(item.data)) {
+          item.data.forEach((s: any) => {
+            statusCounts[s.status] = s.count;
+          });
+        }
+        
         return {
           name: d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }),
-          completadas: item.completed || 0,
-          pendientes: item.pending || 0,
-          aprobadas: item.approved || 0,
-          activas: item.checkedIn || 0
+          completadas: statusCounts['completed'] || 0,
+          pendientes: statusCounts['pending'] || 0,
+          aprobadas: statusCounts['approved'] || 0,
+          activas: statusCounts['checked-in'] || 0,
+          rechazadas: statusCounts['rejected'] || 0
         };
       })
     : [];
@@ -422,13 +442,16 @@ export const Dashboard: React.FC = () => {
   const sparklineApproved = chartData.slice(-7).map(d => d.aprobadas);
   const sparklineCompleted = chartData.slice(-7).map(d => d.completadas);
 
-  // Debug: Log sparkline data
-  console.log('📊 Sparkline Data:', {
-    active: sparklineActive,
-    pending: sparklinePending,
-    approved: sparklineApproved,
-    completed: sparklineCompleted,
-    chartDataLength: chartData.length
+  // Debug: Log chart data
+  console.log('📊 Chart Data:', {
+    chartDataLength: chartData.length,
+    chartData,
+    sparklines: {
+      active: sparklineActive,
+      pending: sparklinePending,
+      approved: sparklineApproved,
+      completed: sparklineCompleted
+    }
   });
 
   // Calcular trends
@@ -645,42 +668,52 @@ export const Dashboard: React.FC = () => {
                 <span className="text-xs text-gray-500">Rechazadas</span>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart
-                data={chartData}
-                margin={{ top: 10, right: 10, left: -20, bottom: 10 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 11, fill: '#6b7280' }} 
-                  axisLine={false} 
-                  tickLine={false}
-                  angle={-45}
-                  textAnchor="end"
-                  height={60}
-                />
-                <YAxis 
-                  allowDecimals={false} 
-                  tick={{ fontSize: 11, fill: '#6b7280' }} 
-                  axisLine={false} 
-                  tickLine={false}
-                />
-                <Tooltip
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
-                    border: '2px solid #e5e7eb', 
-                    borderRadius: '12px', 
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                    fontSize: '12px'
-                  }}
-                  labelStyle={{ fontWeight: 600, color: '#111827' }}
-                />
-                <Bar dataKey="completadas" name="Completadas" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="activas" name="Activas" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="pendientes" name="Pendientes" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart
+                  data={chartData}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 10 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fontSize: 11, fill: '#6b7280' }} 
+                    axisLine={false} 
+                    tickLine={false}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis 
+                    allowDecimals={false} 
+                    tick={{ fontSize: 11, fill: '#6b7280' }} 
+                    axisLine={false} 
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '2px solid #e5e7eb', 
+                      borderRadius: '12px', 
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                      fontSize: '12px'
+                    }}
+                    labelStyle={{ fontWeight: 600, color: '#111827' }}
+                  />
+                  <Bar dataKey="completadas" name="Completadas" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="activas" name="Activas" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="pendientes" name="Pendientes" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[240px] flex items-center justify-center text-gray-400">
+                <div className="text-center">
+                  <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">No hay datos para el período seleccionado</p>
+                  <p className="text-xs mt-1">Período: {period === 'week' ? '7 días' : '30 días'}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Company Distribution */}

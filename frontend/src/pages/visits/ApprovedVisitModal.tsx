@@ -102,17 +102,19 @@ export const ApprovedVisitModal: React.FC<ApprovedVisitModalProps> = ({
             </div>
 
             {/* Foto Host */}
-            <div className="text-center flex-1">
-              <div className="w-20 h-20 rounded-full border-4 border-blue-400 overflow-hidden bg-gray-100 flex items-center justify-center mx-auto mb-2 flex-shrink-0">
-                {visit.host.profileImage ? (
-                  <img src={visit.host.profileImage} alt={`${visit.host.firstName} ${visit.host.lastName}`} className="w-full h-full object-cover object-center" />
-                ) : (
-                  <FaRegUser className="w-10 h-10 text-gray-400" />
-                )}
+            {visit.host && (
+              <div className="text-center flex-1">
+                <div className="w-20 h-20 rounded-full border-4 border-blue-400 overflow-hidden bg-gray-100 flex items-center justify-center mx-auto mb-2 flex-shrink-0">
+                  {visit.host.profileImage ? (
+                    <img src={visit.host.profileImage} alt={`${visit.host.firstName} ${visit.host.lastName}`} className="w-full h-full object-cover object-center" />
+                  ) : (
+                    <FaRegUser className="w-10 h-10 text-gray-400" />
+                  )}
+                </div>
+                <p className="font-semibold text-sm text-gray-800 truncate px-1 max-w-[100px] mx-auto">{visit.host.firstName} {visit.host.lastName}</p>
+                <p className="text-xs text-gray-500 truncate px-1 max-w-[100px] mx-auto">SecurITI</p>
               </div>
-              <p className="font-semibold text-sm text-gray-800 truncate px-1 max-w-[100px] mx-auto">{visit.host.firstName} {visit.host.lastName}</p>
-              <p className="text-xs text-gray-500 truncate px-1 max-w-[100px] mx-auto">SecurITI</p>
-            </div>
+            )}
           </div>
 
           {/* Recurso asignado */}

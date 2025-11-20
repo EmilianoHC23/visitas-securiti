@@ -105,7 +105,7 @@ export const VisitTimelineModal: React.FC<VisitTimelineModalProps> = ({
       timeline.push({
         type: 'approved',
         title: 'Visita aprobada',
-        description: `Aprobada por ${visit.host.firstName} ${visit.host.lastName}`,
+        description: visit.host ? `Aprobada por ${visit.host.firstName} ${visit.host.lastName}` : 'Visita aprobada',
         timestamp: visit.approvedAt || visit.updatedAt || visit.scheduledDate,
         icon: CheckCircle,
         color: 'green'
@@ -114,7 +114,9 @@ export const VisitTimelineModal: React.FC<VisitTimelineModalProps> = ({
       timeline.push({
         type: 'rejected',
         title: 'Visita rechazada',
-        description: `Rechazada por ${visit.host.firstName} ${visit.host.lastName}${visit.rejectionReason ? `: ${visit.rejectionReason}` : ''}`,
+        description: visit.host 
+          ? `Rechazada por ${visit.host.firstName} ${visit.host.lastName}${visit.rejectionReason ? `: ${visit.rejectionReason}` : ''}`
+          : `Visita rechazada${visit.rejectionReason ? `: ${visit.rejectionReason}` : ''}`,
         timestamp: visit.rejectedAt || visit.updatedAt || visit.scheduledDate,
         icon: XCircle,
         color: 'red'
@@ -201,12 +203,14 @@ export const VisitTimelineModal: React.FC<VisitTimelineModalProps> = ({
               <div className={`bg-white rounded-lg ${isMobile ? 'p-3' : 'p-4'} shadow-sm`}>
                 <h4 className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-700 ${isMobile ? 'mb-2' : 'mb-3'}`}>Información de la Visita</h4>
                 <div className={isMobile ? "space-y-2" : "space-y-3"}>
-                  <div>
-                    <p className="text-xs text-gray-500">Anfitrión</p>
-                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-900`}>
-                      {visit.host.firstName} {visit.host.lastName}
-                    </p>
-                  </div>
+                  {visit.host && (
+                    <div>
+                      <p className="text-xs text-gray-500">Anfitrión</p>
+                      <p className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium text-gray-900`}>
+                        {visit.host.firstName} {visit.host.lastName}
+                      </p>
+                    </div>
+                  )}
                   
                   <div>
                     <p className="text-xs text-gray-500">Motivo</p>

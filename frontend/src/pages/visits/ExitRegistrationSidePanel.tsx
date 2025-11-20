@@ -365,12 +365,14 @@ export const ExitRegistrationSidePanel: React.FC<ExitRegistrationSidePanelProps>
 
                 {/* Detalles de la visita */}
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-sm font-medium text-gray-600">A quién visitó</span>
-                    <span className="text-sm font-semibold text-gray-800">
-                      {selectedVisit.host.firstName} {selectedVisit.host.lastName}
-                    </span>
-                  </div>
+                  {selectedVisit.host && (
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                      <span className="text-sm font-medium text-gray-600">A quién visitó</span>
+                      <span className="text-sm font-semibold text-gray-800">
+                        {selectedVisit.host.firstName} {selectedVisit.host.lastName}
+                      </span>
+                    </div>
+                  )}
 
                   {selectedVisit.assignedResource && (
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">

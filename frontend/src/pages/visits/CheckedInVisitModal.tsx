@@ -98,13 +98,15 @@ export const CheckedInVisitModal: React.FC<CheckedInVisitModalProps> = ({
 
           {/* Detalles de la visita */}
           <div className="space-y-3 mb-6">
-            <div className="flex justify-between items-start py-2 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-600">A quién visitas</span>
-              <div className="text-right">
-                <p className="text-sm font-semibold text-cyan-600">{visit.host.firstName} {visit.host.lastName}</p>
-                <p className="text-xs text-gray-500">SecurITI</p>
+            {visit.host && (
+              <div className="flex justify-between items-start py-2 border-b border-gray-100">
+                <span className="text-sm font-medium text-gray-600">A quién visitas</span>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-cyan-600">{visit.host.firstName} {visit.host.lastName}</p>
+                  <p className="text-xs text-gray-500">SecurITI</p>
+                </div>
               </div>
-            </div>
+            )}
 
             {visit.assignedResource && (
               <div className="flex justify-between items-start py-2 border-b border-gray-100">

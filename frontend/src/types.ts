@@ -33,7 +33,7 @@ export interface Visit {
   visitorName: string;
   visitorCompany: string;
   visitorPhoto?: string;
-  host: User;
+  host?: User;
   reason: string;
   status: VisitStatus;
   scheduledDate: string;

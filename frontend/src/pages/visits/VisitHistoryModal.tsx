@@ -80,18 +80,20 @@ export const VisitHistoryModal: React.FC<Props> = ({ visitId, isOpen, onClose })
                     <span><strong>Visitante:</strong> {visit.visitorName}</span>
                   </div>
                   <div><strong>Empresa:</strong> {visit.visitorCompany || 'No especificada'}</div>
-                  <div className="flex items-center gap-2">
-                    {visit.host.profileImage ? (
-                      <img src={visit.host.profileImage} alt="Foto anfitrión" className="w-10 h-10 rounded-full object-cover border-2 border-blue-300" />
-                    ) : (
-                      <span className="flex w-10 h-10 rounded-full bg-blue-100 items-center justify-center text-blue-600">
-                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                        </svg>
-                      </span>
-                    )}
-                    <span><strong>Anfitrión:</strong> {visit.host.firstName} {visit.host.lastName}</span>
-                  </div>
+                  {visit.host && (
+                    <div className="flex items-center gap-2">
+                      {visit.host.profileImage ? (
+                        <img src={visit.host.profileImage} alt="Foto anfitrión" className="w-10 h-10 rounded-full object-cover border-2 border-blue-300" />
+                      ) : (
+                        <span className="flex w-10 h-10 rounded-full bg-blue-100 items-center justify-center text-blue-600">
+                          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      )}
+                      <span><strong>Anfitrión:</strong> {visit.host.firstName} {visit.host.lastName}</span>
+                    </div>
+                  )}
                   <div><strong>Motivo:</strong> {visit.reason}</div>
                   <div><strong>Estado:</strong> {visit.status}</div>
                   <div><strong>Fecha:</strong> {new Date(visit.scheduledDate).toLocaleString()}</div>

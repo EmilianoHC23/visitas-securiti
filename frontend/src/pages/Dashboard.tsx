@@ -457,20 +457,41 @@ export const Dashboard: React.FC = () => {
     isError: analyticsQuery.isError
   });
 
-  // Función para transformar datos de analytics
-  const transformAnalyticsData = (data: any[]) => {
-    return data.map((item: any) => {
-      const d = new Date(item._id || item.date || new Date());
-      
-      // El backend devuelve item.data como array de {status, count}
+  // Función para generar array de fechas completo
+  const generateDateRange = (days: number) => {
+    const dates = [];
+    const today = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      dates.push(date.toISOString().split('T')[0]); // YYYY-MM-DD
+    }
+    return dates;
+  };
+
+  // Función para transformar y rellenar datos de analytics
+  const transformAnalyticsData = (data: any[], days: number) => {
+    // Crear un mapa con los datos del backend
+    const dataMap = new Map();
+    data.forEach((item: any) => {
+      const dateKey = item._id || item.date;
       const statusCounts: any = {};
       if (item.data && Array.isArray(item.data)) {
         item.data.forEach((s: any) => {
           statusCounts[s.status] = s.count;
         });
       }
+      dataMap.set(dateKey, statusCounts);
+    });
+
+    // Generar array completo de fechas y rellenar con datos
+    const dateRange = generateDateRange(days);
+    return dateRange.map(dateStr => {
+      const d = new Date(dateStr);
+      const statusCounts = dataMap.get(dateStr) || {};
       
       return {
+        date: dateStr,
         name: d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }),
         completadas: statusCounts['completed'] || 0,
         pendientes: statusCounts['pending'] || 0,
@@ -482,10 +503,11 @@ export const Dashboard: React.FC = () => {
   };
 
   // Chart data para la gráfica principal (usa el período seleccionado)
-  const chartData = analytics.length > 0 ? transformAnalyticsData(analytics) : [];
+  const daysToShow = period === 'week' ? 7 : 30;
+  const chartData = transformAnalyticsData(analytics, daysToShow);
   
   // Sparkline data para las stat cards (siempre últimos 7 días)
-  const sparklineData = sparklineAnalytics.length > 0 ? transformAnalyticsData(sparklineAnalytics) : [];
+  const sparklineData = transformAnalyticsData(sparklineAnalytics, 7);
   
   const sparklineActive = sparklineData.map(d => d.activas);
   const sparklinePending = sparklineData.map(d => d.pendientes);

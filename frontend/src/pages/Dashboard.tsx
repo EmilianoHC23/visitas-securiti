@@ -14,6 +14,7 @@ import { FaRegUser } from 'react-icons/fa';
 import { FaPersonWalkingArrowRight } from 'react-icons/fa6';
 import { LiaUserTieSolid } from 'react-icons/lia';
 import { RiFileList2Line } from 'react-icons/ri';
+import { PiHandWaving } from 'react-icons/pi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Visit, VisitStatus, Access, DashboardStats } from '../types';
 import { InviteUserModal } from './users/UserManagementPage';
@@ -251,10 +252,46 @@ const UpcomingItem: React.FC<{ item: Visit | Access; type: 'visit' | 'access' }>
 
 const UsersSummary: React.FC<{ userInvitations?: any[]; totalUsers?: number }> = ({ userInvitations, totalUsers }) => {
   const list = Array.isArray(userInvitations) ? userInvitations : [];
+  
+  // Obtener actividad reciente de usuarios: invitados, registrados, cambios de rol
   const recent = list
-    .filter(u => u.status === 'new' || u.activityType === 'roleChange')
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .map(u => {
+      // Determinar el tipo de actividad
+      let activityType = 'unknown';
+      let activityText = '';
+      let icon = null;
+      let iconColor = '';
+      
+      if (u.invitationStatus === 'pending') {
+        activityType = 'invited';
+        activityText = 'Invitado';
+        icon = <UserPlus className="w-4 h-4" />;
+        iconColor = 'text-blue-600';
+      } else if (u.invitationStatus === 'registered') {
+        activityType = 'registered';
+        activityText = 'Se registró';
+        icon = <CheckCircle className="w-4 h-4" />;
+        iconColor = 'text-emerald-600';
+      } else if (u.isActive === false) {
+        activityType = 'deleted';
+        activityText = 'Eliminado';
+        icon = <AlertCircle className="w-4 h-4" />;
+        iconColor = 'text-red-600';
+      } else if (u.activityType === 'roleChange') {
+        activityType = 'roleChange';
+        activityText = `Rol: ${u.newRole || u.role}`;
+        icon = <Shield className="w-4 h-4" />;
+        iconColor = 'text-purple-600';
+      } else {
+        return null;
+      }
+      
+      return { ...u, activityType, activityText, icon, iconColor };
+    })
+    .filter(u => u !== null)
+    .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
     .slice(0, 5);
+  
   return (
     <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col gap-4 h-full">
       <div className="w-full flex flex-col gap-2 items-center">
@@ -271,16 +308,10 @@ const UsersSummary: React.FC<{ userInvitations?: any[]; totalUsers?: number }> =
             <div className="text-xs text-gray-400">Sin actividad reciente</div>
           ) : recent.map((item, idx) => (
             <div key={item._id || idx} className="flex items-center gap-2 text-xs text-black mb-1">
-              {item.status === 'new' ? (
-                <UserPlus className="w-4 h-4 text-emerald-600" />
-              ) : (
-                <Shield className="w-4 h-4 text-blue-600" />
-              )}
+              <span className={item.iconColor}>{item.icon}</span>
               <span className="font-medium">{item.firstName} {item.lastName}</span>
-              <span className="text-gray-400">{new Date(item.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</span>
-              {item.activityType === 'roleChange' && (
-                <span className="italic text-blue-600">Rol: {item.newRole}</span>
-              )}
+              <span className="text-gray-400">{new Date(item.updatedAt || item.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</span>
+              <span className={`italic ${item.iconColor}`}>{item.activityText}</span>
             </div>
           ))}
         </div>
@@ -354,6 +385,12 @@ export const Dashboard: React.FC = () => {
     queryFn: () => api.getAnalytics(period) 
   });
 
+  // Query separada para sparklines (siempre 7 días)
+  const sparklineQuery = useQuery<any[], Error>({ 
+    queryKey: ['analytics', 'week'], 
+    queryFn: () => api.getAnalytics('week') 
+  });
+
   // Upcoming today
   const start = new Date();
   start.setHours(0, 0, 0, 0);
@@ -379,11 +416,18 @@ export const Dashboard: React.FC = () => {
   const stats = statsQuery.data || { active: 0, pending: 0, approved: 0, checkedIn: 0, completed: 0, totalUsers: 0, totalHosts: 0 };
   const recentVisits = recentVisitsQuery.data || [];
   const analytics = analyticsQuery.data || [];
+  const sparklineAnalytics = sparklineQuery.data || [];
   const allVisits = allVisitsQuery.data || [];
 
   const upcomingVisits = upcomingVisitsQuery.data || [];
   const upcomingAccesses = (upcomingAccessesQuery.data || [])
-    .filter(a => a.status === 'active')
+    .filter(a => {
+      // Solo mostrar accesos activos de tipo 'visita'
+      if (a.status !== 'active' || a.type !== 'visita') return false;
+      // Solo mostrar si hay invitados pendientes (no han asistido)
+      const hasPendingGuests = a.invitedUsers?.some(u => u.attendanceStatus === 'pendiente');
+      return hasPendingGuests;
+    })
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
     .slice(0, 3);
 
@@ -408,39 +452,45 @@ export const Dashboard: React.FC = () => {
     period,
     analyticsLength: analytics.length,
     analyticsData: analytics,
+    sparklineAnalyticsLength: sparklineAnalytics.length,
     isLoading: analyticsQuery.isLoading,
     isError: analyticsQuery.isError
   });
 
-  // Sparkline data for each stat card (últimos 7 días)
-  const chartData = analytics.length > 0 
-    ? analytics.map((item: any) => {
-        const d = new Date(item._id || item.date || new Date());
-        
-        // El backend devuelve item.data como array de {status, count}
-        // Necesitamos transformarlo a campos directos
-        const statusCounts: any = {};
-        if (item.data && Array.isArray(item.data)) {
-          item.data.forEach((s: any) => {
-            statusCounts[s.status] = s.count;
-          });
-        }
-        
-        return {
-          name: d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }),
-          completadas: statusCounts['completed'] || 0,
-          pendientes: statusCounts['pending'] || 0,
-          aprobadas: statusCounts['approved'] || 0,
-          activas: statusCounts['checked-in'] || 0,
-          rechazadas: statusCounts['rejected'] || 0
-        };
-      })
-    : [];
+  // Función para transformar datos de analytics
+  const transformAnalyticsData = (data: any[]) => {
+    return data.map((item: any) => {
+      const d = new Date(item._id || item.date || new Date());
+      
+      // El backend devuelve item.data como array de {status, count}
+      const statusCounts: any = {};
+      if (item.data && Array.isArray(item.data)) {
+        item.data.forEach((s: any) => {
+          statusCounts[s.status] = s.count;
+        });
+      }
+      
+      return {
+        name: d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }),
+        completadas: statusCounts['completed'] || 0,
+        pendientes: statusCounts['pending'] || 0,
+        aprobadas: statusCounts['approved'] || 0,
+        activas: statusCounts['checked-in'] || 0,
+        rechazadas: statusCounts['rejected'] || 0
+      };
+    });
+  };
+
+  // Chart data para la gráfica principal (usa el período seleccionado)
+  const chartData = analytics.length > 0 ? transformAnalyticsData(analytics) : [];
   
-  const sparklineActive = chartData.slice(-7).map(d => d.activas);
-  const sparklinePending = chartData.slice(-7).map(d => d.pendientes);
-  const sparklineApproved = chartData.slice(-7).map(d => d.aprobadas);
-  const sparklineCompleted = chartData.slice(-7).map(d => d.completadas);
+  // Sparkline data para las stat cards (siempre últimos 7 días)
+  const sparklineData = sparklineAnalytics.length > 0 ? transformAnalyticsData(sparklineAnalytics) : [];
+  
+  const sparklineActive = sparklineData.map(d => d.activas);
+  const sparklinePending = sparklineData.map(d => d.pendientes);
+  const sparklineApproved = sparklineData.map(d => d.aprobadas);
+  const sparklineCompleted = sparklineData.map(d => d.completadas);
 
   // Debug: Log chart data
   console.log('📊 Chart Data:', {
@@ -531,11 +581,21 @@ export const Dashboard: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-
-              <h1 className="text-3xl md:text-4xl font-bold mb-2 text-gray-900">
+              <h1 
+                className="flex items-center gap-3 text-3xl md:text-4xl font-bold mb-2"
+                style={{
+                  background: 'linear-gradient(135deg, #111827 0%, #374151 50%, #4b5563 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  filter: 'brightness(1.2) contrast(1.1)',
+                  textShadow: '0 0 10px rgba(0,0,0,0.3), 0 0 20px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.3)',
+                  WebkitFilter: 'brightness(1.2) contrast(1.1)'
+                }}
+              >
                 Bienvenido, {user?.firstName}
+                <PiHandWaving className="text-yellow-500" style={{ filter: 'drop-shadow(0 0 8px rgba(234, 179, 8, 0.6))' }} />
               </h1>
-         
               <p className="text-gray-600">Aquí tienes un resumen de la actividad de hoy</p>
             </div>
           </div>

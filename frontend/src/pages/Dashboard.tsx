@@ -72,7 +72,10 @@ const StatCard: React.FC<{
 }> = ({ title, value, icon, trend, color, onClick, sparklineData }) => {
   const [isHovered, setIsHovered] = useState(false);
 
-  const sparkData = sparklineData?.map((val, idx) => ({ index: idx, value: val })) || [];
+  // Generar datos de sparkline con valores por defecto si no hay datos
+  const sparkData = sparklineData && sparklineData.length > 0
+    ? sparklineData.map((val, idx) => ({ index: idx, value: val }))
+    : [];
 
   return (
     <motion.div
@@ -101,16 +104,17 @@ const StatCard: React.FC<{
         </div>
       </div>
       {sparkData.length > 0 && (
-        <div className="h-16 -mx-2 mt-2">
+        <div className="h-16 -mx-2 mt-2 opacity-50">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={sparkData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+            <LineChart data={sparkData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
               <Line 
                 type="monotone" 
                 dataKey="value" 
-                stroke="#9ca3af" 
+                stroke="currentColor" 
                 strokeWidth={2} 
                 dot={false}
-                isAnimationActive={true}
+                isAnimationActive={false}
+                className="text-gray-400"
               />
             </LineChart>
           </ResponsiveContainer>
@@ -400,20 +404,32 @@ export const Dashboard: React.FC = () => {
   const rejectedToday = visitsToday.filter(v => v.status === VisitStatus.REJECTED).length;
 
   // Sparkline data for each stat card (últimos 7 días)
-  const chartData = analytics.map((item: any) => {
-    const d = new Date(item.date || item._id || new Date());
-    return {
-      name: d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }),
-      completadas: item.completed || 0,
-      pendientes: item.pending || 0,
-      aprobadas: item.approved || 0,
-      activas: item.checkedIn || 0
-    };
-  });
+  const chartData = analytics.length > 0 
+    ? analytics.map((item: any) => {
+        const d = new Date(item.date || item._id || new Date());
+        return {
+          name: d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }),
+          completadas: item.completed || 0,
+          pendientes: item.pending || 0,
+          aprobadas: item.approved || 0,
+          activas: item.checkedIn || 0
+        };
+      })
+    : [];
+  
   const sparklineActive = chartData.slice(-7).map(d => d.activas);
   const sparklinePending = chartData.slice(-7).map(d => d.pendientes);
   const sparklineApproved = chartData.slice(-7).map(d => d.aprobadas);
   const sparklineCompleted = chartData.slice(-7).map(d => d.completadas);
+
+  // Debug: Log sparkline data
+  console.log('📊 Sparkline Data:', {
+    active: sparklineActive,
+    pending: sparklinePending,
+    approved: sparklineApproved,
+    completed: sparklineCompleted,
+    chartDataLength: chartData.length
+  });
 
   // Calcular trends
   const calculateTrend = (data: number[]) => {

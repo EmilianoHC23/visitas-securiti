@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { IoQrCodeOutline } from 'react-icons/io5';
 import { BsClipboardData } from "react-icons/bs";
+import { LiaUserTieSolid } from "react-icons/lia";
 
 const DashboardIcon = ({ className }: { className?: string }) => (
     <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -92,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const navLinks = [
         { to: "/", label: "Dashboard", icon: <DashboardIcon className="w-5 h-5" />, roles: [UserRole.ADMIN] },
         { to: "/visits", label: "Visitas", icon: <ClipboardList className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
-        { to: "/users", label: "Usuarios", icon: <Users className="w-5 h-5" />, roles: [UserRole.ADMIN] },
+        { to: "/users", label: "Usuarios", icon: <LiaUserTieSolid className="w-5 h-5" />, roles: [UserRole.ADMIN] },
         { to: "/access-codes", label: "Accesos/Eventos", icon: <AccessIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION, UserRole.HOST] },
         { to: "/public-registration", label: "Auto-registro", icon: <UserPlus className="w-5 h-5" />, roles: [UserRole.ADMIN] },
         { to: "/blacklist", label: "Lista Negra", icon: <BlacklistIcon className="w-5 h-5" />, roles: [UserRole.ADMIN, UserRole.RECEPTION] },

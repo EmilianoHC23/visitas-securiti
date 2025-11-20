@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User as UserIcon, Users, FileText, UserPlus, Mail, Upload, Trash2, X, Shield, ChevronDown, CheckCircle, AlertCircle, Info, AlertTriangle, Camera, Search, Filter } from 'lucide-react';
+import { LiaUserTieSolid } from "react-icons/lia";
+import { PiUserPlusBold, PiUserCircleLight, PiUserList } from "react-icons/pi";
+import { BiMailSend } from "react-icons/bi";
 import { User, UserRole } from '../../types';
 import * as api from '../../services/api';
 
@@ -242,11 +245,11 @@ interface EditUserData {
 const RoleBadge: React.FC<{ role: UserRole }> = ({ role }) => {
     const roleStyles: Record<UserRole, string> = {
     // Admin: dark blue for a stronger, professional tone (slight transparency)
-    [UserRole.ADMIN]: 'bg-blue-900/80 text-white',
+    [UserRole.ADMIN]: 'bg-blue-600 text-white',
     // Reception: darker yellow/amber with slightly more transparency
-    [UserRole.RECEPTION]: 'bg-amber-500/60 text-amber-900',
+    [UserRole.RECEPTION]: 'bg-amber-600 text-white',
         // Host: slightly darker orange for better contrast (slight transparency)
-        [UserRole.HOST]: 'bg-orange-300/80 text-orange-900',
+        [UserRole.HOST]: 'bg-orange-600 text-white',
     };
     return (
         <span className={`px-2 py-1 text-xs font-medium rounded-full ${roleStyles[role]}`}>
@@ -293,9 +296,9 @@ const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
     const statusStyles: Record<string, string> = {
-        'registered': 'bg-green-100 text-green-800',
-        'pending': 'bg-yellow-100 text-yellow-800',
-        'none': 'bg-gray-100 text-gray-800',
+        'registered': 'bg-green-600 text-white',
+        'pending': 'bg-yellow-500 text-black',
+        'none': 'bg-gray-600 text-white',
     };
     const statusLabels: Record<string, string> = {
         'registered': 'Registrado',
@@ -670,7 +673,7 @@ export const InviteUserModal: React.FC<{
                                             className="w-full h-full object-cover"
                                         />
                                     ) : (
-                                        <UserIcon className="w-10 h-10 text-gray-400" />
+                                        <PiUserCircleLight className="w-10 h-10 text-gray-400" />
                                     )}
                                 </div>
                                 {previewImage && (
@@ -711,7 +714,7 @@ export const InviteUserModal: React.FC<{
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-6 border border-gray-200/50 shadow-sm mb-6">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center text-white">
-                                <FileText className="w-5 h-5" />
+                                <PiUserList className="w-5 h-5" />
                             </div>
                             <div>
                                 <h4 className="text-sm font-semibold text-gray-800">Información del usuario</h4>
@@ -799,7 +802,10 @@ export const InviteUserModal: React.FC<{
                                     Invitando...
                                 </span>
                             ) : (
-                                'Enviar Invitación'
+                                <span className="flex items-center gap-2">
+                                    <BiMailSend className="w-4 h-4" />
+                                    Enviar Invitación
+                                </span>
                             )}
                         </button>
                     </div>
@@ -932,7 +938,7 @@ const EditUserModal: React.FC<{
                                             className="w-full h-full object-cover"
                                         />
                                     ) : (
-                                        <UserIcon className="w-10 h-10 text-gray-400" />
+                                        <PiUserCircleLight className="w-10 h-10 text-gray-400" />
                                     )}
                                 </div>
                                 {previewImage && (
@@ -973,7 +979,7 @@ const EditUserModal: React.FC<{
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-6 border border-gray-200/50 shadow-sm mb-6">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center text-white">
-                                <FileText className="w-5 h-5" />
+                                <PiUserList className="w-5 h-5" />
                             </div>
                             <div>
                                 <h4 className="text-sm font-semibold text-gray-800">Información del usuario</h4>
@@ -1252,7 +1258,7 @@ export const UserManagementPage: React.FC = () => {
             <div className={`mb-8 flex ${isMobile ? 'flex-col gap-4' : 'justify-between items-start'} ${isMobile ? 'px-3' : 'px-6'}`}>
                 <div className="flex items-start gap-3 md:gap-5">
                     <div className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0`}>
-                        <Users className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-white`} />
+                        <LiaUserTieSolid className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-white`} />
                     </div>
                     <div className="flex-1">
                         <h2 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-gray-900 mb-2`}>
@@ -1271,7 +1277,7 @@ export const UserManagementPage: React.FC = () => {
                     className={`${isMobile ? 'w-full justify-center px-4 py-2.5 text-sm' : 'px-6 py-3'} group relative font-semibold text-white bg-gradient-to-br from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 rounded-xl shadow-lg hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-900 transition-all duration-200 transform hover:scale-105 flex-shrink-0`}
                 >
                     <span className="inline-flex items-center gap-2">
-                        <UserPlus className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                        <PiUserPlusBold className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
                         <span>{isMobile ? 'Invitar' : 'Invitar Usuario'}</span>
                     </span>
                 </button>
@@ -1400,7 +1406,7 @@ export const UserManagementPage: React.FC = () => {
                                                     e.stopPropagation();
                                                     openConfirm({ type: 'resend', title: 'Reenviar invitación', message: '¿Estás seguro de que quieres reenviar la invitación a este usuario?', user });
                                                 }}
-                                                className="flex-1 flex items-center justify-center gap-1.5 p-2 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 rounded-lg hover:from-blue-200 hover:to-blue-300 transition-all text-xs font-medium shadow-sm"
+                                                className="flex-1 flex items-center justify-center gap-1.5 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-xs font-medium shadow-sm"
                                             >
                                                 <Mail className="w-4 h-4" />
                                                 Reenviar
@@ -1408,7 +1414,7 @@ export const UserManagementPage: React.FC = () => {
                                         )}
                                         <button 
                                             onClick={e => { e.stopPropagation(); handleEditUser(user); }} 
-                                            className="flex-1 flex items-center justify-center gap-1.5 p-2 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 rounded-lg hover:from-emerald-200 hover:to-emerald-300 transition-all text-xs font-medium shadow-sm"
+                                            className="flex-1 flex items-center justify-center gap-1.5 p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all text-xs font-medium shadow-sm"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.313 3 21l1.687-4.5 12.175-13.013z" />
@@ -1426,7 +1432,7 @@ export const UserManagementPage: React.FC = () => {
                                                     user 
                                                 }); 
                                             }} 
-                                            className="flex-1 flex items-center justify-center gap-1.5 p-2 bg-gradient-to-r from-red-100 to-red-200 text-red-700 rounded-lg hover:from-red-200 hover:to-red-300 transition-all text-xs font-medium shadow-sm"
+                                            className="flex-1 flex items-center justify-center gap-1.5 p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all text-xs font-medium shadow-sm"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                             Eliminar
@@ -1508,7 +1514,7 @@ export const UserManagementPage: React.FC = () => {
                                                                 e.stopPropagation();
                                                                 openConfirm({ type: 'resend', title: 'Reenviar invitación', message: '¿Estás seguro de que quieres reenviar la invitación a este usuario?', user });
                                                             }}
-                                                            className="inline-flex items-center justify-center p-2.5 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 rounded-lg hover:from-blue-200 hover:to-blue-300 transition-all shadow-sm"
+                                                            className="inline-flex items-center justify-center p-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm"
                                                             title="Reenviar invitación"
                                                         >
                                                             <span className="relative inline-block w-5 h-5">
@@ -1523,7 +1529,7 @@ export const UserManagementPage: React.FC = () => {
                                                     )}
                                                     <button 
                                                         onClick={e => { e.stopPropagation(); handleEditUser(user); }} 
-                                                        className="inline-flex items-center justify-center p-2.5 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 rounded-lg hover:from-emerald-200 hover:to-emerald-300 transition-all shadow-sm" 
+                                                        className="inline-flex items-center justify-center p-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all shadow-sm" 
                                                         title="Editar usuario"
                                                     >
                                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -1540,7 +1546,7 @@ export const UserManagementPage: React.FC = () => {
                                                             user 
                                                         }); 
                                                     }} 
-                                                    className="inline-flex items-center justify-center p-2.5 bg-gradient-to-r from-red-100 to-red-200 text-red-700 rounded-lg hover:from-red-200 hover:to-red-300 transition-all shadow-sm" 
+                                                    className="inline-flex items-center justify-center p-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all shadow-sm" 
                                                     title="Eliminar usuario"
                                                     >
                                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">

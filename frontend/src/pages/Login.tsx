@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
+import { AlertCircle, CheckCircle, Info, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/common/Toast';
@@ -134,12 +131,12 @@ export const LoginPage: React.FC = () => {
                             <Alert
                                 severity="success"
                                 onClose={() => setSuccessMessage(null)}
-                                icon={<CheckCircleOutlineIcon fontSize="inherit" />}
+                                icon={<CheckCircle className="w-5 h-5" />}
                                 iconMapping={{
-                                    error: <ErrorOutlineIcon fontSize="inherit" />, 
-                                    warning: <WarningAmberOutlinedIcon fontSize="inherit" />, 
-                                    info: <InfoOutlinedIcon fontSize="inherit" />, 
-                                    success: <CheckCircleOutlineIcon fontSize="inherit" />
+                                    error: <AlertCircle className="w-5 h-5" />, 
+                                    warning: <AlertTriangle className="w-5 h-5" />, 
+                                    info: <Info className="w-5 h-5" />, 
+                                    success: <CheckCircle className="w-5 h-5" />
                                 }}
                             >
                                 {successMessage}
@@ -150,12 +147,12 @@ export const LoginPage: React.FC = () => {
                             <Alert
                                 severity="error"
                                 onClose={() => setError(null)}
-                                icon={<ErrorOutlineIcon fontSize="inherit" />}
+                                icon={<AlertCircle className="w-5 h-5" />}
                                 iconMapping={{
-                                    error: <ErrorOutlineIcon fontSize="inherit" />, 
-                                    warning: <WarningAmberOutlinedIcon fontSize="inherit" />, 
-                                    info: <InfoOutlinedIcon fontSize="inherit" />, 
-                                    success: <CheckCircleOutlineIcon fontSize="inherit" />
+                                    error: <AlertCircle className="w-5 h-5" />, 
+                                    warning: <AlertTriangle className="w-5 h-5" />, 
+                                    info: <Info className="w-5 h-5" />, 
+                                    success: <CheckCircle className="w-5 h-5" />
                                 }}
                             >
                                 {error}

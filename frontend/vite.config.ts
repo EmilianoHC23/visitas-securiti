@@ -22,12 +22,15 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     assetsDir: 'assets',
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
-          charts: ['recharts']
+          charts: ['recharts'],
+          ui: ['@mui/material', '@mui/icons-material'],
+          icons: ['react-icons', 'lucide-react']
         }
       }
     }

@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import * as api from '../services/api';
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { BarChart3, Building2, Eye } from 'lucide-react';
+import { BarChart3, Building2, Eye, UserPlus, Shield, CheckCircle, Activity, Clock, TrendingUp, TrendingDown, ArrowRight, QrCode, Users, AlertCircle, Calendar } from 'lucide-react';
 import { MdOutlinePendingActions } from 'react-icons/md';
 import { TbClipboardCheck } from 'react-icons/tb';
 import { LuDoorOpen } from 'react-icons/lu';
@@ -14,11 +14,9 @@ import { FaRegUser } from 'react-icons/fa';
 import { FaPersonWalkingArrowRight } from 'react-icons/fa6';
 import { LiaUserTieSolid } from 'react-icons/lia';
 import { RiFileList2Line } from 'react-icons/ri';
-import { UserPlus, Shield, CheckCircle, Activity, Clock, TrendingUp, TrendingDown, ArrowRight, QrCode, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Visit, VisitStatus, Access, DashboardStats } from '../types';
 import { InviteUserModal } from './users/UserManagementPage';
-import { Calendar } from 'lucide-react';
 
 // Toast notification component
 const Toast: React.FC<{ 
@@ -103,7 +101,7 @@ const StatCard: React.FC<{
         </div>
       </div>
       {sparkData.length > 0 && (
-        <div className="h-14 -mx-2 mt-1">
+        <div className="h-16 -mx-2 mt-2">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={sparkData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
               <Line 
@@ -172,11 +170,11 @@ const ActivityItem: React.FC<{ visit: Visit }> = ({ visit }) => {
   return (
     <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-all group">
       <div className="relative">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden ring-2 ring-white shadow-sm">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden ring-2 ring-white shadow-sm">
           {visit.visitorPhoto ? (
             <img src={visit.visitorPhoto} alt={visit.visitorName} className="w-full h-full object-cover" />
           ) : (
-            <FaRegUser className="w-5 h-5 text-gray-400" />
+            <FaRegUser className="w-6 h-6 text-gray-400" />
           )}
         </div>
         <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${statusConfig.dot}`} />
@@ -254,7 +252,7 @@ const UsersSummary: React.FC<{ userInvitations?: any[]; totalUsers?: number }> =
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
   return (
-    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 px-4 py-5 flex flex-col items-center gap-4 mb-4 max-w-full md:max-w-[420px] mx-auto w-full min-w-0">
+    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col gap-4 h-full">
       <div className="w-full flex flex-col gap-2 items-center">
         <div className="flex items-center gap-3 mb-2">
           <LiaUserTieSolid className="w-8 h-8 text-black" />
@@ -314,14 +312,16 @@ export const Dashboard: React.FC = () => {
   // Estado para modal de invitación de usuario
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [inviteLoading, setInviteLoading] = useState(false);
-  // Handler para invitar usuario (puedes ajustar la lógica según tu API)
+  // Handler para invitar usuario
   const handleInviteUser = async (userData: any) => {
     try {
       setInviteLoading(true);
-      // Aquí deberías llamar a tu API real para invitar usuario
-      // await api.sendInvitation(userData);
+      await api.sendInvitation(userData);
       setNotification({ message: '✅ Invitación enviada exitosamente.', type: 'success' });
       setInviteModalOpen(false);
+      // Refrescar la lista de invitaciones
+      const data = await api.getInvitations();
+      setUserInvitations(Array.isArray(data) ? data : (data?.invitations || []));
     } catch (error) {
       setNotification({ message: '❌ Error al enviar invitación.', type: 'error' });
     } finally {
@@ -454,6 +454,7 @@ export const Dashboard: React.FC = () => {
   const COLORS = ['#111827', '#374151', '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b'];
 
   const isLoading = statsQuery.isLoading || recentVisitsQuery.isLoading || analyticsQuery.isLoading;
+  const hasError = statsQuery.isError || recentVisitsQuery.isError || analyticsQuery.isError;
 
   if (isLoading) {
     return (
@@ -461,6 +462,24 @@ export const Dashboard: React.FC = () => {
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-lg text-gray-600 font-medium">Cargando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+        <div className="text-center bg-white rounded-2xl shadow-xl border-2 border-red-200 p-8 max-w-md">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error al cargar datos</h2>
+          <p className="text-gray-600 mb-4">No se pudieron cargar los datos del dashboard. Por favor, intenta de nuevo.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            Recargar página
+          </button>
         </div>
       </div>
     );
@@ -474,22 +493,8 @@ export const Dashboard: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
 
-              <h1
-                className="flex items-center gap-3 text-3xl md:text-4xl font-bold mb-2 text-black drop-shadow-[0_0_8px_rgba(255,255,255,0.9)] bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent animate-pulse"
-                style={{
-                  textShadow: '0 0 8px #fff, 0 0 16px #fff, 0 0 32px #e0e7ff, 0 0 48px #fff',
-                  WebkitTextStroke: '1px #fff',
-                }}
-              >
-                <span
-                  style={{
-                    textShadow: '0 0 8px #fff, 0 0 16px #fff, 0 0 32px #e0e7ff, 0 0 48px #fff',
-                    WebkitTextStroke: '1px #fff',
-                  }}
-                >
-                  Bienvenido, {user?.firstName}
-                </span>
-                {/* Removed PiHandPalmBold icon as requested */}
+              <h1 className="text-3xl md:text-4xl font-bold mb-2 text-gray-900">
+                Bienvenido, {user?.firstName}
               </h1>
          
               <p className="text-gray-600">Aquí tienes un resumen de la actividad de hoy</p>
@@ -560,7 +565,7 @@ export const Dashboard: React.FC = () => {
               icon={<Users className="w-6 h-6 text-white" />}
               title="Invitar usuario"
               subtitle="Acceso rápido a invitación"
-              onClick={() => navigate('/visits?openPanel=true')}
+              onClick={() => setInviteModalOpen(true)}
             />
             <QuickAction
               icon={<QrCode className="w-6 h-6 text-white" />}
@@ -624,10 +629,10 @@ export const Dashboard: React.FC = () => {
                 <span className="text-xs text-gray-500">Rechazadas</span>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={240}>
               <BarChart
                 data={chartData}
-                margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
+                margin={{ top: 10, right: 10, left: -20, bottom: 10 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis 
@@ -670,14 +675,14 @@ export const Dashboard: React.FC = () => {
             </h2>
             {companyData.length > 0 ? (
               <>
-                <ResponsiveContainer width="100%" height={200}>
+                <ResponsiveContainer width="100%" height={220}>
                   <PieChart>
                     <Pie
                       data={companyData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={90}
+                      innerRadius={65}
+                      outerRadius={95}
                       paddingAngle={5}
                       dataKey="value"
                     >
@@ -697,9 +702,9 @@ export const Dashboard: React.FC = () => {
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {companyData.map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></div>
-                        <span className="text-gray-700 truncate max-w-[120px]">{item.name}</span>
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></div>
+                        <span className="text-gray-700 truncate">{item.name}</span>
                       </div>
                       <span className="font-semibold text-gray-900">{item.value}</span>
                     </div>
@@ -721,11 +726,11 @@ export const Dashboard: React.FC = () => {
             </h2>
             {frequentVisitorsData.length > 0 ? (
               <>
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={240}>
                   <BarChart
                     data={frequentVisitorsData}
                     layout="vertical"
-                    margin={{ top: 5, right: 20, left: 5, bottom: 5 }}
+                    margin={{ top: 5, right: 20, left: 5, bottom: 10 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis 

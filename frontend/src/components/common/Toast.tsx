@@ -1,8 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
+import { AlertCircle, CheckCircle, Info, AlertTriangle } from 'lucide-react';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 interface Toast {
@@ -40,10 +37,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             t.type === 'success' ? 'bg-green-600' : t.type === 'error' ? 'bg-red-600' : t.type === 'warning' ? 'bg-yellow-600 text-black' : 'bg-gray-800'
           }`}>
             <span className="flex-shrink-0">
-              {t.type === 'success' && <CheckCircleOutlineIcon fontSize="small" />}
-              {t.type === 'error' && <ErrorOutlineIcon fontSize="small" />}
-              {t.type === 'warning' && <WarningAmberOutlinedIcon fontSize="small" />}
-              {t.type === 'info' && <InfoOutlinedIcon fontSize="small" />}
+              {t.type === 'success' && <CheckCircle className="w-5 h-5" />}
+              {t.type === 'error' && <AlertCircle className="w-5 h-5" />}
+              {t.type === 'warning' && <AlertTriangle className="w-5 h-5" />}
+              {t.type === 'info' && <Info className="w-5 h-5" />}
             </span>
             <span className="leading-snug">{t.message}</span>
           </div>

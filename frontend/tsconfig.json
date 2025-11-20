@@ -10,9 +10,12 @@
       "DOM.Iterable"
     ],
     "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "types": [
       "vite/client",
-      "node"
+      "node",
+      "react"
     ],
     "moduleResolution": "bundler",
     "isolatedModules": true,

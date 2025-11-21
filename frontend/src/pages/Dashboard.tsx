@@ -13,7 +13,7 @@ import { LuClipboardPen, LuClipboardCheck, LuClipboardList, LuClipboardX } from 
 import { FaRegUser } from 'react-icons/fa';
 import { FaPersonWalkingArrowRight } from 'react-icons/fa6';
 import { LiaUserTieSolid } from 'react-icons/lia';
-import { RiFileList2Line } from 'react-icons/ri';
+import { RiFileList2Line, RiFileList3Line } from 'react-icons/ri';
 import { PiHandWaving } from 'react-icons/pi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Visit, VisitStatus, Access, DashboardStats } from '../types';
@@ -105,17 +105,23 @@ const StatCard: React.FC<{
         </div>
       </div>
       {sparkData.length > 0 && (
-        <div className="h-16 -mx-2 mt-2 opacity-50">
+        <div className="h-20 -mx-2 mt-3">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={sparkData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+              <defs>
+                <linearGradient id={`sparkGradient-${title}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#9ca3af" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="#9ca3af" stopOpacity={0.05}/>
+                </linearGradient>
+              </defs>
               <Line 
                 type="monotone" 
                 dataKey="value" 
-                stroke="currentColor" 
-                strokeWidth={2} 
+                stroke="#6b7280" 
+                strokeWidth={2.5} 
                 dot={false}
                 isAnimationActive={false}
-                className="text-gray-400"
+                fill={`url(#sparkGradient-${title})`}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -514,6 +520,20 @@ export const Dashboard: React.FC = () => {
   const sparklineApproved = sparklineData.map(d => d.aprobadas);
   const sparklineCompleted = sparklineData.map(d => d.completadas);
 
+  // Debug: Log sparkline data con detalles
+  console.log('⚡ Sparkline Data Details:', {
+    sparklineDataLength: sparklineData.length,
+    sparklineData,
+    sparklineActive,
+    sparklinePending,
+    sparklineApproved,
+    sparklineCompleted,
+    hasActiveData: sparklineActive.some(v => v > 0),
+    hasPendingData: sparklinePending.some(v => v > 0),
+    hasApprovedData: sparklineApproved.some(v => v > 0),
+    hasCompletedData: sparklineCompleted.some(v => v > 0)
+  });
+
   // Debug: Log chart data
   console.log('📊 Chart Data:', {
     chartDataLength: chartData.length,
@@ -616,7 +636,13 @@ export const Dashboard: React.FC = () => {
                 }}
               >
                 Bienvenido, {user?.firstName}
-                <PiHandWaving className="text-yellow-500" style={{ filter: 'drop-shadow(0 0 8px rgba(234, 179, 8, 0.6))' }} />
+                <PiHandWaving className="text-yellow-500" style={{ background: 'linear-gradient(135deg, #111827 0%, #374151 50%, #4b5563 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  filter: 'brightness(1.2) contrast(1.1)',
+                  textShadow: '0 0 10px rgba(0,0,0,0.3), 0 0 20px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.3)',
+                  WebkitFilter: 'brightness(1.2) contrast(1.1)' }} />
               </h1>
               <p className="text-gray-600">Aquí tienes un resumen de la actividad de hoy</p>
             </div>
@@ -683,7 +709,7 @@ export const Dashboard: React.FC = () => {
               onClick={() => navigate('/visits?openPanel=true')}
             />
             <QuickAction
-              icon={<Users className="w-6 h-6 text-white" />}
+              icon={<LiaUserTieSolid className="w-6 h-6 text-white" />}
               title="Invitar usuario"
               subtitle="Acceso rápido a invitación"
               onClick={() => setInviteModalOpen(true)}
@@ -941,13 +967,13 @@ export const Dashboard: React.FC = () => {
           {/* Actividad Reciente (visitas) */}
           <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6 flex flex-col">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Eye className="w-6 h-6 text-black" />
+              <RiFileList3Line className="w-6 h-6 text-black" />
               Actividad Reciente
             </h2>
             <div className="space-y-2 max-h-80 overflow-y-auto">
               {recentVisits.length === 0 ? (
                 <div className="text-center py-6 text-gray-400">
-                  <Eye className="w-10 h-10 mx-auto mb-2 opacity-50 text-black" />
+                  <RiFileList3Line className="w-10 h-10 mx-auto mb-2 opacity-50 text-black" />
                   <p className="text-sm">No hay actividad reciente</p>
                 </div>
               ) : (

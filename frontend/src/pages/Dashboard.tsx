@@ -615,17 +615,31 @@ export const Dashboard: React.FC = () => {
                 }}
               >
                 Bienvenido, {user?.firstName}
-                <PiHandWaving 
-                  className="inline-block" 
-                  style={{ 
-                    background: 'linear-gradient(135deg, #111827 0%, #374151 50%, #4b5563 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    filter: 'brightness(1.2) contrast(1.1) drop-shadow(0 0 10px rgba(0,0,0,0.3)) drop-shadow(0 0 20px rgba(0,0,0,0.2))',
-                    WebkitFilter: 'brightness(1.2) contrast(1.1)'
-                  }} 
-                />
+                <motion.div
+                  animate={{ 
+                    rotate: [0, 14, -8, 14, -4, 10, 0, 0],
+                  }}
+                  transition={{
+                    duration: 2.5,
+                    repeat: Infinity,
+                    repeatDelay: 3,
+                    ease: "easeInOut"
+                  }}
+                  className="inline-block origin-bottom"
+                >
+                  <PiHandWaving 
+                    className="inline-block" 
+                    style={{ 
+                      background: 'linear-gradient(135deg, #111827 0%, #374151 50%, #4b5563 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                      filter: 'brightness(1.2) contrast(1.1)',
+                      textShadow: '0 0 10px rgba(0,0,0,0.3), 0 0 20px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.3)',
+                      WebkitFilter: 'brightness(1.2) contrast(1.1)'
+                    }} 
+                  />
+                </motion.div>
               </h1>
               <p className="text-gray-600">Aquí tienes un resumen de la actividad de hoy</p>
             </div>

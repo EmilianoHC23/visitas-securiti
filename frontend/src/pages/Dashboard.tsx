@@ -17,7 +17,6 @@ import { RiFileList2Line, RiFileList3Line } from 'react-icons/ri';
 import { PiHandWaving } from 'react-icons/pi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Visit, VisitStatus, Access, DashboardStats } from '../types';
-import { InviteUserModal } from './users/UserManagementPage';
 
 // Toast notification component
 const Toast: React.FC<{ 
@@ -350,26 +349,6 @@ export const Dashboard: React.FC = () => {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
   const [period, setPeriod] = useState<'week' | 'month'>('week');
 
-  // Estado para modal de invitación de usuario
-  const [inviteModalOpen, setInviteModalOpen] = useState(false);
-  const [inviteLoading, setInviteLoading] = useState(false);
-  // Handler para invitar usuario
-  const handleInviteUser = async (userData: any) => {
-    try {
-      setInviteLoading(true);
-      await api.sendInvitation(userData);
-      setNotification({ message: '✅ Invitación enviada exitosamente.', type: 'success' });
-      setInviteModalOpen(false);
-      // Refrescar la lista de invitaciones
-      const data = await api.getInvitations();
-      setUserInvitations(Array.isArray(data) ? data : (data?.invitations || []));
-    } catch (error) {
-      setNotification({ message: '❌ Error al enviar invitación.', type: 'error' });
-    } finally {
-      setInviteLoading(false);
-    }
-  };
-
   // Queries
   const statsQuery = useQuery<DashboardStats, Error>({ 
     queryKey: ['dashboardStats'], 
@@ -636,13 +615,17 @@ export const Dashboard: React.FC = () => {
                 }}
               >
                 Bienvenido, {user?.firstName}
-                <PiHandWaving className="text-yellow-500" style={{ background: 'linear-gradient(135deg, #111827 0%, #374151 50%, #4b5563 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  filter: 'brightness(1.2) contrast(1.1)',
-                  textShadow: '0 0 10px rgba(0,0,0,0.3), 0 0 20px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.3)',
-                  WebkitFilter: 'brightness(1.2) contrast(1.1)' }} />
+                <PiHandWaving 
+                  className="inline-block" 
+                  style={{ 
+                    background: 'linear-gradient(135deg, #111827 0%, #374151 50%, #4b5563 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    filter: 'brightness(1.2) contrast(1.1) drop-shadow(0 0 10px rgba(0,0,0,0.3)) drop-shadow(0 0 20px rgba(0,0,0,0.2))',
+                    WebkitFilter: 'brightness(1.2) contrast(1.1)'
+                  }} 
+                />
               </h1>
               <p className="text-gray-600">Aquí tienes un resumen de la actividad de hoy</p>
             </div>
@@ -712,13 +695,13 @@ export const Dashboard: React.FC = () => {
               icon={<LiaUserTieSolid className="w-6 h-6 text-white" />}
               title="Invitar usuario"
               subtitle="Acceso rápido a invitación"
-              onClick={() => setInviteModalOpen(true)}
+              onClick={() => navigate('/users?openInvite=true')}
             />
             <QuickAction
               icon={<QrCode className="w-6 h-6 text-white" />}
               title="Crear acceso"
               subtitle="Generar código de acceso"
-              onClick={() => navigate('/access-codes?openPanel=true')}
+              onClick={() => navigate('/access-codes?openCreate=true')}
             />
             <QuickAction
               icon={<Calendar className="w-6 h-6 text-white" />}
@@ -990,13 +973,6 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-
-      <InviteUserModal
-        isOpen={inviteModalOpen}
-        onClose={() => setInviteModalOpen(false)}
-        onInvite={handleInviteUser}
-        loading={inviteLoading}
-      />
 
       {notification && (
         <Toast

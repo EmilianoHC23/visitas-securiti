@@ -38,6 +38,7 @@ import { Access, InvitedUser, UserRole } from '../../types';
 import { formatDate, formatDateTime } from '../../utils/dateUtils';
 import { DatePicker, TimePicker } from '../../components/common/DatePicker';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSearchParams } from 'react-router-dom';
 
 const InfoAccesoIcon = ({ className }: { className?: string }) => (
     <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -47,6 +48,7 @@ const InfoAccesoIcon = ({ className }: { className?: string }) => (
 
 export const AccessCodesPage: React.FC = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<'active' | 'finalized'>('active');
   const [accesses, setAccesses] = useState<Access[]>([]);
   const [filteredAccesses, setFilteredAccesses] = useState<Access[]>([]);
@@ -89,6 +91,17 @@ export const AccessCodesPage: React.FC = () => {
   useEffect(() => {
     loadAccesses();
   }, []);
+
+  // Detectar parámetro openCreate en la URL para abrir el modal automáticamente
+  useEffect(() => {
+    const openCreate = searchParams.get('openCreate');
+    if (openCreate === 'true') {
+      setShowCreateModal(true);
+      // Limpiar el parámetro de la URL
+      searchParams.delete('openCreate');
+      setSearchParams(searchParams);
+    }
+  }, [searchParams, setSearchParams]);
 
   // Filtrar por tab y búsqueda
   useEffect(() => {

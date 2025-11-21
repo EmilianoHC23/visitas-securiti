@@ -6,6 +6,7 @@ import { PiUserPlusBold, PiUserCircleLight, PiUserList } from "react-icons/pi";
 import { BiMailSend } from "react-icons/bi";
 import { User, UserRole } from '../../types';
 import * as api from '../../services/api';
+import { useSearchParams } from 'react-router-dom';
 
 // Modal de vista previa de usuario - Modernizado
 const UserPreviewModal: React.FC<{
@@ -1075,6 +1076,7 @@ const EditUserModal: React.FC<{
 };
 
 export const UserManagementPage: React.FC = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1128,6 +1130,17 @@ export const UserManagementPage: React.FC = () => {
     useEffect(() => {
         fetchUsers();
     }, [fetchUsers]);
+
+    // Detectar parámetro openInvite en la URL para abrir el modal automáticamente
+    useEffect(() => {
+        const openInvite = searchParams.get('openInvite');
+        if (openInvite === 'true') {
+            setIsModalOpen(true);
+            // Limpiar el parámetro de la URL
+            searchParams.delete('openInvite');
+            setSearchParams(searchParams);
+        }
+    }, [searchParams, setSearchParams]);
 
     const handleInviteUser = useCallback(async (userData: NewUserData) => {
         try {

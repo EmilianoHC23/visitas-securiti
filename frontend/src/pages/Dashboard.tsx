@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import * as api from '../services/api';
-import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from 'recharts';
 import { BarChart3, Building2, Eye, UserPlus, Shield, CheckCircle, Activity, Clock, TrendingUp, TrendingDown, ArrowRight, QrCode, Users, AlertCircle, Calendar } from 'lucide-react';
 import { MdOutlinePendingActions } from 'react-icons/md';
 import { TbClipboardCheck } from 'react-icons/tb';
@@ -106,23 +106,22 @@ const StatCard: React.FC<{
       {sparkData.length > 0 && (
         <div className="h-20 -mx-2 mt-3">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={sparkData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+            <AreaChart data={sparkData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
               <defs>
-                <linearGradient id={`sparkGradient-${title}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#9ca3af" stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor="#9ca3af" stopOpacity={0.05}/>
+                <linearGradient id={`sparkGradient-${title.replace(/\s+/g, '-')}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6b7280" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="#6b7280" stopOpacity={0.05}/>
                 </linearGradient>
               </defs>
-              <Line 
+              <Area 
                 type="monotone" 
                 dataKey="value" 
                 stroke="#6b7280" 
                 strokeWidth={2.5} 
-                dot={false}
+                fill={`url(#sparkGradient-${title.replace(/\s+/g, '-')})`}
                 isAnimationActive={false}
-                fill={`url(#sparkGradient-${title})`}
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       )}

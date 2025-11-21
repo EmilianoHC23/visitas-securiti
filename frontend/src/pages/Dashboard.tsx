@@ -14,7 +14,7 @@ import { FaRegUser } from 'react-icons/fa';
 import { FaPersonWalkingArrowRight } from 'react-icons/fa6';
 import { LiaUserTieSolid } from 'react-icons/lia';
 import { RiFileList2Line, RiFileList3Line } from 'react-icons/ri';
-import { PiHandWaving } from 'react-icons/pi';
+import { PiHandWavingBold } from 'react-icons/pi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Visit, VisitStatus, Access, DashboardStats } from '../types';
 
@@ -69,16 +69,23 @@ const StatCard: React.FC<{
   color: string;
   onClick?: () => void;
   sparklineData?: number[];
-}> = ({ title, value, icon, trend, color, onClick, sparklineData }) => {
+  sparklineColor?: string;
+  description?: string;
+}> = ({ title, value, icon, trend, color, onClick, sparklineData, sparklineColor = '#6b7280', description }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   // Generar datos de sparkline con valores por defecto si no hay datos
   const sparkData = sparklineData && sparklineData.length > 0
-    ? sparklineData.map((val, idx) => ({ index: idx, value: val }))
+    ? sparklineData.map((val, idx) => ({ index: idx, value: val, day: `Día ${idx + 1}` }))
     : [];
+
+  const hasData = sparkData.length > 0 && sparkData.some(d => d.value > 0);
 
   return (
     <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
       whileHover={{ y: -4 }}
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
@@ -87,42 +94,78 @@ const StatCard: React.FC<{
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
-          <p className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">{title}</p>
-          <p className="text-3xl font-bold text-gray-900 mb-1">
-            {typeof value === 'number' ? value.toLocaleString() : value}
-          </p>
+          <div className="flex items-center gap-2 mb-2">
+            <p className="text-sm font-semibold text-gray-600 uppercase tracking-wider">{title}</p>
+            {onClick && (
+              <ArrowRight className={`w-4 h-4 text-gray-400 transition-all ${isHovered ? 'translate-x-1 text-gray-600' : ''}`} />
+            )}
+          </div>
+          <div className="flex items-baseline gap-2">
+            <p className="text-4xl font-bold text-gray-900">
+              {typeof value === 'number' ? value.toLocaleString() : value}
+            </p>
+            {typeof value === 'number' && value === 0 && (
+              <span className="text-xs text-gray-400 font-medium">sin registros</span>
+            )}
+          </div>
+          {description && (
+            <p className="text-xs text-gray-500 mt-1">{description}</p>
+          )}
           {trend && (
-            <div className={`flex items-center gap-1 text-sm font-medium ${trend.isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
+            <div className={`flex items-center gap-1 text-sm font-medium mt-2 ${trend.isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
               {trend.isPositive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
               <span>{Math.abs(trend.value)}%</span>
-              <span className="text-gray-500 text-xs ml-1">últimos 7 días</span>
+              <span className="text-gray-400 text-xs ml-1">vs. semana anterior</span>
             </div>
           )}
         </div>
-        <div className={`w-14 h-14 rounded-xl ${color} flex items-center justify-center shadow-lg transform transition-transform ${isHovered ? 'scale-110' : 'scale-100'}`}>
+        <div className={`w-14 h-14 rounded-xl ${color} flex items-center justify-center shadow-lg transform transition-transform ${isHovered ? 'scale-110 rotate-3' : 'scale-100'}`}>
           <div className="text-white">{icon}</div>
         </div>
       </div>
-      {sparkData.length > 0 && (
-        <div className="h-20 -mx-2 mt-3">
+      
+      {/* Sparkline */}
+      {hasData ? (
+        <div className="h-20 -mx-2 mt-4 relative">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={sparkData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
               <defs>
                 <linearGradient id={`sparkGradient-${title.replace(/\s+/g, '-')}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6b7280" stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor="#6b7280" stopOpacity={0.05}/>
+                  <stop offset="5%" stopColor={sparklineColor} stopOpacity={0.5}/>
+                  <stop offset="95%" stopColor={sparklineColor} stopOpacity={0.05}/>
                 </linearGradient>
               </defs>
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)', 
+                  border: 'none', 
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}
+                labelStyle={{ color: '#fff', fontSize: '11px', marginBottom: '4px' }}
+                itemStyle={{ color: '#fff', fontSize: '13px', fontWeight: 'bold' }}
+                formatter={(value: any) => [value, title]}
+                labelFormatter={(label: any) => `${label}`}
+              />
               <Area 
                 type="monotone" 
                 dataKey="value" 
-                stroke="#6b7280" 
+                stroke={sparklineColor} 
                 strokeWidth={2.5} 
                 fill={`url(#sparkGradient-${title.replace(/\s+/g, '-')})`}
-                isAnimationActive={false}
+                isAnimationActive={true}
+                animationDuration={1000}
               />
             </AreaChart>
           </ResponsiveContainer>
+          <div className="absolute bottom-0 right-0 text-xs text-gray-400">
+            últimos 7 días
+          </div>
+        </div>
+      ) : (
+        <div className="h-20 -mx-2 mt-4 flex items-center justify-center border-t border-gray-100 pt-3">
+          <p className="text-xs text-gray-400 italic">Sin datos de tendencia disponibles</p>
         </div>
       )}
     </motion.div>
@@ -624,10 +667,10 @@ export const Dashboard: React.FC = () => {
                     repeatDelay: 3,
                     ease: "easeInOut"
                   }}
-                  className="inline-block origin-bottom"
+                  className="inline-flex items-center origin-bottom"
                 >
-                  <PiHandWaving 
-                    className="inline-block" 
+                  <PiHandWavingBold 
+                    className="w-9 h-9 md:w-11 md:h-11" 
                     style={{ 
                       background: 'linear-gradient(135deg, #111827 0%, #374151 50%, #4b5563 100%)',
                       WebkitBackgroundClip: 'text',
@@ -656,7 +699,9 @@ export const Dashboard: React.FC = () => {
             color="bg-gradient-to-br from-yellow-400 to-yellow-600"
             onClick={() => navigate('/visits?status=pending')}
             sparklineData={sparklinePending}
+            sparklineColor="#eab308"
             trend={calculateTrend(sparklinePending)}
+            description="Visitas esperando aprobación"
           />
           <StatCard
             title="Pre-aprobadas"
@@ -665,7 +710,9 @@ export const Dashboard: React.FC = () => {
             color="bg-gradient-to-br from-cyan-500 to-blue-600"
             onClick={() => navigate('/visits?status=approved')}
             sparklineData={sparklineApproved}
+            sparklineColor="#0ea5e9"
             trend={calculateTrend(sparklineApproved)}
+            description="Aprobadas y listas para ingresar"
           />
           <StatCard
             title="Visitas Activas"
@@ -674,16 +721,20 @@ export const Dashboard: React.FC = () => {
             color="bg-gradient-to-br from-emerald-500 to-green-600"
             onClick={() => navigate('/visits?status=checkedIn')}
             sparklineData={sparklineActive}
+            sparklineColor="#10b981"
             trend={calculateTrend(sparklineActive)}
+            description="Visitantes dentro de las instalaciones"
           />
           <StatCard
             title="Completadas Hoy"
             value={stats.completed}
             icon={<BarChart3 className="w-7 h-7 text-white" />}
-            color="bg-gradient-to-br from-gray-400 to-gray-800"
+            color="bg-gradient-to-br from-gray-600 to-gray-800"
             onClick={() => navigate('/reports')}
             sparklineData={sparklineCompleted}
+            sparklineColor="#4b5563"
             trend={calculateTrend(sparklineCompleted)}
+            description="Visitas finalizadas exitosamente"
           />
         </div>
 

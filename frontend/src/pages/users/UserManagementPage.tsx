@@ -1131,6 +1131,39 @@ export const UserManagementPage: React.FC = () => {
         fetchUsers();
     }, [fetchUsers]);
 
+    // 🔄 Actualización automática en tiempo real con polling inteligente
+    useEffect(() => {
+        // Polling cada 15 segundos cuando la página está visible
+        const pollingInterval = setInterval(() => {
+            if (document.visibilityState === 'visible' && !loading) {
+                fetchUsers();
+            }
+        }, 15000); // 15 segundos
+
+        // Recargar cuando el usuario vuelva a la pestaña
+        const handleFocus = () => {
+            if (!loading) {
+                fetchUsers();
+            }
+        };
+
+        // Recargar cuando la página vuelva a ser visible
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && !loading) {
+                fetchUsers();
+            }
+        };
+
+        window.addEventListener('focus', handleFocus);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(pollingInterval);
+            window.removeEventListener('focus', handleFocus);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [fetchUsers, loading]);
+
     // Detectar parámetro openInvite en la URL para abrir el modal automáticamente
     useEffect(() => {
         const openInvite = searchParams.get('openInvite');

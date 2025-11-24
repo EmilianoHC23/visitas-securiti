@@ -5,6 +5,7 @@ import { User, Access } from '../../types';
 import * as api from '../../services/api';
 import CalendarMonth from '../../components/visits/CalendarMonth';
 import { DateRangePicker } from '../../components/common/DatePicker';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface AgendaItem {
   id: string;
@@ -23,6 +24,7 @@ interface AgendaItem {
 }
 
 export const AgendaPage: React.FC = () => {
+  const { user } = useAuth();
   const [from, setFrom] = useState<string>(() => new Date().toISOString().slice(0,10));
   const [to, setTo] = useState<string>(() => {
     const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().slice(0,10);
@@ -53,7 +55,12 @@ export const AgendaPage: React.FC = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  useEffect(() => { api.getHosts().then(setHosts).catch(console.error); }, []);
+  // Solo cargar hosts si el usuario NO es host (admin/reception pueden filtrar por anfitrión)
+  useEffect(() => { 
+    if (user?.role !== 'host') {
+      api.getHosts().then(setHosts).catch(console.error); 
+    }
+  }, [user?.role]);
 
   const fetchAgenda = async () => {
     setLoading(true);
@@ -296,9 +303,9 @@ export const AgendaPage: React.FC = () => {
 
         {/* Filtros modernos */}
         <div className={`bg-white rounded-2xl shadow-xl border border-gray-200 ${isMobile ? 'p-4 mb-4' : 'p-6 mb-6'}`}>
-          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'} gap-${isMobile ? '3' : '6'}`}>
-            {/* DateRangePicker - 6 columnas en lg, 5 en xl */}
-            <div className={isMobile ? '' : 'lg:col-span-6 xl:col-span-5'}>
+          <div className={`grid ${isMobile ? 'grid-cols-1' : `grid-cols-1 ${user?.role === 'host' ? 'lg:grid-cols-2' : 'lg:grid-cols-12'}`} gap-${isMobile ? '3' : '6'}`}>
+            {/* DateRangePicker - Ajuste dinámico según rol */}
+            <div className={isMobile ? '' : user?.role === 'host' ? '' : 'lg:col-span-6 xl:col-span-5'}>
               <DateRangePicker
                 startValue={from}
                 endValue={to}
@@ -307,19 +314,21 @@ export const AgendaPage: React.FC = () => {
               />
             </div>
             
-            {/* Anfitrión - 3 columnas en lg, 3 en xl */}
-            <div className={isMobile ? '' : 'lg:col-span-3 xl:col-span-3'}>
-              <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-700 mb-2 flex items-center`}>
-                <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Anfitrión
-              </label>
-              <HostDropdown hosts={hosts} value={hostId} onChange={setHostId} />
-            </div>
+            {/* Anfitrión - Solo visible para admin y reception */}
+            {user?.role !== 'host' && (
+              <div className={isMobile ? '' : 'lg:col-span-3 xl:col-span-3'}>
+                <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-700 mb-2 flex items-center`}>
+                  <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  Anfitrión
+                </label>
+                <HostDropdown hosts={hosts} value={hostId} onChange={setHostId} />
+              </div>
+            )}
             
-            {/* Buscar - 3 columnas en lg, 4 en xl */}
-            <div className={isMobile ? '' : 'lg:col-span-3 xl:col-span-4'}>
+            {/* Buscar - Ajuste dinámico según rol */}
+            <div className={isMobile ? '' : user?.role === 'host' ? '' : 'lg:col-span-3 xl:col-span-4'}>
               <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-semibold text-gray-700 mb-2 flex items-center`}>
                 <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -345,6 +354,19 @@ export const AgendaPage: React.FC = () => {
               </div>
             </div>
           </div>
+          
+          {/* Mensaje informativo para host */}
+          {user?.role === 'host' && (
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-3">
+              <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <p className="text-sm font-semibold text-blue-900">Vista de Anfitrión</p>
+                <p className="text-xs text-blue-700 mt-0.5">Solo puedes ver los eventos que tú has creado.</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Contenido principal */}

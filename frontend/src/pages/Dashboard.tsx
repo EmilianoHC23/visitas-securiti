@@ -300,7 +300,7 @@ const UpcomingItem: React.FC<{ item: Visit | Access; type: 'visit' | 'access' }>
 const UsersSummary: React.FC<{ userInvitations?: any[]; totalUsers?: number }> = ({ userInvitations, totalUsers }) => {
   const list = Array.isArray(userInvitations) ? userInvitations : [];
   
-  // Obtener actividad reciente de usuarios: invitados, registrados, cambios de rol
+  // Obtener actividad reciente de usuarios: invitados, registrados, eliminados
   const recent = list
     .map(u => {
       // Determinar el tipo de actividad
@@ -308,35 +308,39 @@ const UsersSummary: React.FC<{ userInvitations?: any[]; totalUsers?: number }> =
       let activityText = '';
       let icon = null;
       let iconColor = '';
+      let displayDate = u.updatedAt || u.createdAt;
       
-      if (u.invitationStatus === 'pending') {
-        activityType = 'invited';
-        activityText = 'Invitado';
-        icon = <UserPlus className="w-4 h-4" />;
-        iconColor = 'text-blue-600';
-      } else if (u.invitationStatus === 'registered') {
-        activityType = 'registered';
-        activityText = 'Se registró';
-        icon = <CheckCircle className="w-4 h-4" />;
-        iconColor = 'text-emerald-600';
-      } else if (u.isActive === false) {
+      // Prioridad: eliminado > registrado > pendiente
+      if (u.isActive === false) {
         activityType = 'deleted';
         activityText = 'Eliminado';
         icon = <AlertCircle className="w-4 h-4" />;
         iconColor = 'text-red-600';
-      } else if (u.activityType === 'roleChange') {
-        activityType = 'roleChange';
-        activityText = `Rol: ${u.newRole || u.role}`;
-        icon = <Shield className="w-4 h-4" />;
-        iconColor = 'text-purple-600';
+        displayDate = u.updatedAt; // Fecha de eliminación
+      } else if (u.invitationStatus === 'registered') {
+        activityType = 'registered';
+        activityText = 'Registrado';
+        icon = <CheckCircle className="w-4 h-4" />;
+        iconColor = 'text-emerald-600';
+        displayDate = u.updatedAt; // Fecha de registro
+      } else if (u.invitationStatus === 'pending') {
+        activityType = 'invited';
+        activityText = 'Invitado';
+        icon = <UserPlus className="w-4 h-4" />;
+        iconColor = 'text-blue-600';
+        displayDate = u.createdAt; // Fecha de invitación
       } else {
         return null;
       }
       
-      return { ...u, activityType, activityText, icon, iconColor };
+      return { ...u, activityType, activityText, icon, iconColor, displayDate };
     })
     .filter(u => u !== null)
-    .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
+    .sort((a, b) => {
+      const dateA = new Date(a.displayDate || a.createdAt).getTime();
+      const dateB = new Date(b.displayDate || b.createdAt).getTime();
+      return dateB - dateA;
+    })
     .slice(0, 5);
   
   return (
@@ -356,9 +360,9 @@ const UsersSummary: React.FC<{ userInvitations?: any[]; totalUsers?: number }> =
           ) : recent.map((item, idx) => (
             <div key={item._id || idx} className="flex items-center gap-2 text-xs text-black mb-1">
               <span className={item.iconColor}>{item.icon}</span>
-              <span className="font-medium">{item.firstName} {item.lastName}</span>
-              <span className="text-gray-400">{new Date(item.updatedAt || item.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</span>
-              <span className={`italic ${item.iconColor}`}>{item.activityText}</span>
+              <span className="font-medium truncate">{item.firstName} {item.lastName}</span>
+              <span className="text-gray-400 flex-shrink-0">{new Date(item.displayDate).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</span>
+              <span className={`italic ${item.iconColor} flex-shrink-0`}>{item.activityText}</span>
             </div>
           ))}
         </div>
@@ -373,18 +377,18 @@ export const Dashboard: React.FC = () => {
     const [loadingInvitations, setLoadingInvitations] = useState(true);
 
     useEffect(() => {
-      const fetchInvitations = async () => {
+      const fetchUsers = async () => {
         try {
           setLoadingInvitations(true);
-          const data = await api.getInvitations();
-          setUserInvitations(Array.isArray(data) ? data : (data?.invitations || []));
+          const data = await api.getUsers();
+          setUserInvitations(Array.isArray(data) ? data : []);
         } catch (e) {
           setUserInvitations([]);
         } finally {
           setLoadingInvitations(false);
         }
       };
-      fetchInvitations();
+      fetchUsers();
     }, []);
   const { user } = useAuth();
   const navigate = useNavigate();

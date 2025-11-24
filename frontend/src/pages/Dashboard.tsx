@@ -310,25 +310,27 @@ const UsersSummary: React.FC<{ userInvitations?: any[]; totalUsers?: number }> =
       let iconColor = '';
       let displayDate = u.updatedAt || u.createdAt;
       
-      // Prioridad: eliminado > registrado > pendiente
-      if (u.isActive === false) {
-        activityType = 'deleted';
-        activityText = 'Eliminado';
-        icon = <AlertCircle className="w-4 h-4" />;
-        iconColor = 'text-red-600';
-        displayDate = u.updatedAt; // Fecha de eliminación
-      } else if (u.invitationStatus === 'registered') {
-        activityType = 'registered';
-        activityText = 'Registrado';
-        icon = <CheckCircle className="w-4 h-4" />;
-        iconColor = 'text-emerald-600';
-        displayDate = u.updatedAt; // Fecha de registro
-      } else if (u.invitationStatus === 'pending') {
+      // Prioridad: pendiente > registrado > eliminado
+      // Verificar primero invitationStatus para distinguir invitaciones pendientes de usuarios eliminados
+      if (u.invitationStatus === 'pending') {
         activityType = 'invited';
         activityText = 'Invitado';
         icon = <UserPlus className="w-4 h-4" />;
         iconColor = 'text-blue-600';
         displayDate = u.createdAt; // Fecha de invitación
+      } else if (u.invitationStatus === 'registered' && u.isActive === true) {
+        activityType = 'registered';
+        activityText = 'Registrado';
+        icon = <CheckCircle className="w-4 h-4" />;
+        iconColor = 'text-emerald-600';
+        displayDate = u.updatedAt; // Fecha de registro
+      } else if (u.isActive === false && u.invitationStatus === 'registered') {
+        // Solo mostrar como eliminado si estaba registrado y luego fue desactivado
+        activityType = 'deleted';
+        activityText = 'Eliminado';
+        icon = <AlertCircle className="w-4 h-4" />;
+        iconColor = 'text-red-600';
+        displayDate = u.updatedAt; // Fecha de eliminación
       } else {
         return null;
       }
@@ -453,8 +455,11 @@ export const Dashboard: React.FC = () => {
   const upcomingVisits = upcomingVisitsQuery.data || [];
   const upcomingAccesses = (upcomingAccessesQuery.data || [])
     .filter(a => {
-      // Solo mostrar accesos activos de tipo 'visita'
-      if (a.status !== 'active' || a.type !== 'visita') return false;
+      // Solo mostrar accesos activos
+      if (a.status !== 'active') return false;
+      // Filtrar por "Razón del acceso" que contenga "Visita" (case insensitive)
+      const additionalInfoLower = (a.additionalInfo || '').toLowerCase();
+      if (!additionalInfoLower.includes('visita')) return false;
       // Solo mostrar si hay invitados pendientes (no han asistido)
       const hasPendingGuests = a.invitedUsers?.some(u => u.attendanceStatus === 'pendiente');
       return hasPendingGuests;

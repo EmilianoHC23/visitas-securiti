@@ -1349,6 +1349,39 @@ export const VisitsPage: React.FC = () => {
             .catch(err => { if (isLocalhost) console.error("Failed to fetch hosts:", err) });
     }, [fetchVisits]);
 
+    // 🔄 Actualización automática en tiempo real con polling inteligente
+    useEffect(() => {
+        // Polling cada 15 segundos cuando la página está visible
+        const pollingInterval = setInterval(() => {
+            if (document.visibilityState === 'visible' && !loading) {
+                fetchVisits();
+            }
+        }, 15000); // 15 segundos
+
+        // Recargar cuando el usuario vuelva a la pestaña
+        const handleFocus = () => {
+            if (!loading) {
+                fetchVisits();
+            }
+        };
+
+        // Recargar cuando la página vuelva a ser visible
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && !loading) {
+                fetchVisits();
+            }
+        };
+
+        window.addEventListener('focus', handleFocus);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(pollingInterval);
+            window.removeEventListener('focus', handleFocus);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [fetchVisits, loading]);
+
     const updateVisitStatus = async (id: string, status: VisitStatus) => {
         try {
             const updatedVisit = await api.updateVisitStatus(id, status);

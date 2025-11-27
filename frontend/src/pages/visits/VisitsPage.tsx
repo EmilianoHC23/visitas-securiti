@@ -1532,21 +1532,17 @@ export const VisitsPage: React.FC = () => {
     const [autoApprove, setAutoApprove] = useState(false);
     const [autoCheckIn, setAutoCheckIn] = useState(false);
     const [companyConfig, setCompanyConfig] = useState<any>(null);
-    const [settingsLoading, setSettingsLoading] = useState(false);
 
     // Cargar settings de la empresa
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                setSettingsLoading(true);
                 const config = await api.getCompanyConfig();
                 setCompanyConfig(config);
                 setAutoApprove(config.settings.autoApproval || false);
                 setAutoCheckIn(config.settings.autoCheckIn || false);
             } catch (error) {
                 if (isLocalhost) console.error('Failed to fetch settings:', error);
-            } finally {
-                setSettingsLoading(false);
             }
         };
 
@@ -1555,53 +1551,81 @@ export const VisitsPage: React.FC = () => {
 
     // Actualizar auto-aprobación en el backend
     const handleAutoApproveToggle = async (checked: boolean) => {
-        if (!companyConfig) return; // Evitar cambios antes de cargar config
-        setAutoApprove(checked); // Optimista
-        setSettingsLoading(true);
+        // Validar que companyConfig esté cargado
+        if (!companyConfig) {
+            if (isLocalhost) console.error('Company config not loaded yet');
+            return;
+        }
+
+        // Actualización optimista
+        setAutoApprove(checked);
+        
         try {
-            const updatedConfig = {
+            // Actualizar en backend
+            const updatedConfig = await api.updateCompanyConfig({
                 ...companyConfig,
                 settings: {
                     ...companyConfig.settings,
                     autoApproval: checked
                 }
-            };
-            await api.updateCompanyConfig(updatedConfig);
-            // Refrescar desde el servidor para asegurar consistencia
-            const fresh = await api.getCompanyConfig();
-            setCompanyConfig(fresh);
-            setAutoApprove(fresh.settings.autoApproval || false);
+            });
+            
+            // Actualizar companyConfig con la respuesta del servidor
+            setCompanyConfig(updatedConfig);
+            
+            // Confirmar que el estado local coincide con el servidor
+            setAutoApprove(updatedConfig.settings.autoApproval || false);
+            
+            if (isLocalhost) console.log('✅ Auto-aprobación actualizada:', updatedConfig.settings.autoApproval);
         } catch (error) {
-            if (isLocalhost) console.error('Failed to update auto-approval:', error);
-            // Revertir valor optimista
-            setAutoApprove(prev => !prev);
-        } finally {
-            setSettingsLoading(false);
+            if (isLocalhost) console.error('❌ Failed to update auto-approval:', error);
+            // Revertir al estado anterior si falla
+            setAutoApprove(!checked);
+            
+            // Mostrar toast de error
+            window.dispatchEvent(new CustomEvent('app-toast', {
+                detail: { message: '❌ Error al actualizar configuración', severity: 'error' }
+            }));
         }
     };
 
     // Actualizar auto-check-in en el backend
     const handleAutoCheckInToggle = async (checked: boolean) => {
-        if (!companyConfig) return;
-        setAutoCheckIn(checked); // Optimista
-        setSettingsLoading(true);
+        // Validar que companyConfig esté cargado
+        if (!companyConfig) {
+            if (isLocalhost) console.error('Company config not loaded yet');
+            return;
+        }
+
+        // Actualización optimista
+        setAutoCheckIn(checked);
+        
         try {
-            const updatedConfig = {
+            // Actualizar en backend
+            const updatedConfig = await api.updateCompanyConfig({
                 ...companyConfig,
                 settings: {
                     ...companyConfig.settings,
                     autoCheckIn: checked
                 }
-            };
-            await api.updateCompanyConfig(updatedConfig);
-            const fresh = await api.getCompanyConfig();
-            setCompanyConfig(fresh);
-            setAutoCheckIn(fresh.settings.autoCheckIn || false);
+            });
+            
+            // Actualizar companyConfig con la respuesta del servidor
+            setCompanyConfig(updatedConfig);
+            
+            // Confirmar que el estado local coincide con el servidor
+            setAutoCheckIn(updatedConfig.settings.autoCheckIn || false);
+            
+            if (isLocalhost) console.log('✅ Auto check-in actualizado:', updatedConfig.settings.autoCheckIn);
         } catch (error) {
-            if (isLocalhost) console.error('Failed to update auto-checkin:', error);
-            setAutoCheckIn(prev => !prev);
-        } finally {
-            setSettingsLoading(false);
+            if (isLocalhost) console.error('❌ Failed to update auto-checkin:', error);
+            // Revertir al estado anterior si falla
+            setAutoCheckIn(!checked);
+            
+            // Mostrar toast de error
+            window.dispatchEvent(new CustomEvent('app-toast', {
+                detail: { message: '❌ Error al actualizar configuración', severity: 'error' }
+            }));
         }
     };
 
@@ -1813,7 +1837,6 @@ const checkedInVisits = filteredVisits.filter(v => v.status === VisitStatus.CHEC
                                         type="checkbox" 
                                         checked={autoApprove} 
                                         onChange={e => handleAutoApproveToggle(e.target.checked)}
-                                        disabled={!companyConfig || settingsLoading}
                                         className="sr-only peer"
                                     />
                                     <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-100 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-400 peer-checked:to-orange-500"></div>
@@ -1876,7 +1899,6 @@ const checkedInVisits = filteredVisits.filter(v => v.status === VisitStatus.CHEC
                                         type="checkbox" 
                                         checked={autoCheckIn} 
                                         onChange={e => handleAutoCheckInToggle(e.target.checked)}
-                                        disabled={!companyConfig || settingsLoading}
                                         className="sr-only peer"
                                     />
                                     <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-100 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-green-400 peer-checked:to-green-500"></div>

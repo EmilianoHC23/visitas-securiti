@@ -415,7 +415,9 @@ export const Dashboard: React.FC = () => {
 
   const analyticsQuery = useQuery<any[], Error>({ 
     queryKey: ['analytics', period], 
-    queryFn: () => api.getAnalytics(period) 
+    queryFn: () => api.getAnalytics(period),
+    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
+    refetchOnWindowFocus: false // No refrescar al cambiar de pestaña
   });
 
   // Query separada para sparklines (siempre 7 días)
@@ -433,8 +435,8 @@ export const Dashboard: React.FC = () => {
   const upcomingVisitsQuery = useQuery<Visit[], Error>({
     queryKey: ['upcomingToday'],
     queryFn: async () => {
-      const res = await api.getAgenda({ from: start.toISOString(), to: end.toISOString() });
-      return Array.isArray(res) ? res : (res?.events || []);
+      // No mostrar visitas regulares del momento, solo accesos/eventos
+      return [];
     }
   });
 
@@ -707,9 +709,6 @@ export const Dashboard: React.FC = () => {
             icon={<MdOutlinePendingActions className="w-7 h-7 text-white" />}
             color="bg-gradient-to-br from-yellow-400 to-yellow-600"
             onClick={() => navigate('/visits?status=pending')}
-            sparklineData={sparklinePending}
-            sparklineColor="#eab308"
-            trend={calculateTrend(sparklinePending)}
             description="Visitas esperando aprobación"
           />
           <StatCard
@@ -718,9 +717,6 @@ export const Dashboard: React.FC = () => {
             icon={<TbClipboardCheck className="w-7 h-7 text-white" />}
             color="bg-gradient-to-br from-cyan-500 to-blue-600"
             onClick={() => navigate('/visits?status=approved')}
-            sparklineData={sparklineApproved}
-            sparklineColor="#0ea5e9"
-            trend={calculateTrend(sparklineApproved)}
             description="Aprobadas y listas para ingresar"
           />
           <StatCard
@@ -729,9 +725,6 @@ export const Dashboard: React.FC = () => {
             icon={<LuDoorOpen className="w-7 h-7 text-white" />}
             color="bg-gradient-to-br from-emerald-500 to-green-600"
             onClick={() => navigate('/visits?status=checkedIn')}
-            sparklineData={sparklineActive}
-            sparklineColor="#10b981"
-            trend={calculateTrend(sparklineActive)}
             description="Visitantes dentro de las instalaciones"
           />
           <StatCard
@@ -740,9 +733,6 @@ export const Dashboard: React.FC = () => {
             icon={<BarChart3 className="w-7 h-7 text-white" />}
             color="bg-gradient-to-br from-gray-600 to-gray-800"
             onClick={() => navigate('/reports')}
-            sparklineData={sparklineCompleted}
-            sparklineColor="#4b5563"
-            trend={calculateTrend(sparklineCompleted)}
             description="Visitas finalizadas exitosamente"
           />
         </div>

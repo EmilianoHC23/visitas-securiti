@@ -123,51 +123,6 @@ const StatCard: React.FC<{
           <div className="text-white">{icon}</div>
         </div>
       </div>
-      
-      {/* Sparkline */}
-      {hasData ? (
-        <div className="h-20 -mx-2 mt-4 relative">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={sparkData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-              <defs>
-                <linearGradient id={`sparkGradient-${title.replace(/\s+/g, '-')}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={sparklineColor} stopOpacity={0.5}/>
-                  <stop offset="95%" stopColor={sparklineColor} stopOpacity={0.05}/>
-                </linearGradient>
-              </defs>
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'rgba(0, 0, 0, 0.8)', 
-                  border: 'none', 
-                  borderRadius: '8px',
-                  padding: '8px 12px',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                }}
-                labelStyle={{ color: '#fff', fontSize: '11px', marginBottom: '4px' }}
-                itemStyle={{ color: '#fff', fontSize: '13px', fontWeight: 'bold' }}
-                formatter={(value: any) => [value, title]}
-                labelFormatter={(label: any) => `${label}`}
-              />
-              <Area 
-                type="monotone" 
-                dataKey="value" 
-                stroke={sparklineColor} 
-                strokeWidth={2.5} 
-                fill={`url(#sparkGradient-${title.replace(/\s+/g, '-')})`}
-                isAnimationActive={true}
-                animationDuration={1000}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-          <div className="absolute bottom-0 right-0 text-xs text-gray-400">
-            últimos 7 días
-          </div>
-        </div>
-      ) : (
-        <div className="h-20 -mx-2 mt-4 flex items-center justify-center border-t border-gray-100 pt-3">
-          <p className="text-xs text-gray-400 italic">Sin datos de tendencia disponibles</p>
-        </div>
-      )}
     </motion.div>
   );
 };
@@ -400,30 +355,43 @@ export const Dashboard: React.FC = () => {
   // Queries
   const statsQuery = useQuery<DashboardStats, Error>({ 
     queryKey: ['dashboardStats'], 
-    queryFn: api.getDashboardStats 
+    queryFn: api.getDashboardStats,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
   const recentVisitsQuery = useQuery<Visit[], Error>({ 
     queryKey: ['recentVisits', 10], 
-    queryFn: () => api.getRecentVisits(10) 
+    queryFn: () => api.getRecentVisits(10),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
   const allVisitsQuery = useQuery<Visit[], Error>({ 
     queryKey: ['recentVisits', 200], 
-    queryFn: () => api.getRecentVisits(200) 
+    queryFn: () => api.getRecentVisits(200),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
   const analyticsQuery = useQuery<any[], Error>({ 
     queryKey: ['analytics', period], 
     queryFn: () => api.getAnalytics(period),
     staleTime: 5 * 60 * 1000, // Cache por 5 minutos
-    refetchOnWindowFocus: false // No refrescar al cambiar de pestaña
+    refetchOnWindowFocus: false, // No refrescar al cambiar de pestaña
+    refetchOnMount: false // No refrescar al montar componente
   });
 
   // Query separada para sparklines (siempre 7 días)
   const sparklineQuery = useQuery<any[], Error>({ 
     queryKey: ['analytics', 'week'], 
-    queryFn: () => api.getAnalytics('week') 
+    queryFn: () => api.getAnalytics('week'),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
   // Upcoming today
@@ -437,7 +405,10 @@ export const Dashboard: React.FC = () => {
     queryFn: async () => {
       // No mostrar visitas regulares del momento, solo accesos/eventos
       return [];
-    }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
   const upcomingAccessesQuery = useQuery<Access[], Error>({
@@ -445,7 +416,10 @@ export const Dashboard: React.FC = () => {
     queryFn: async () => {
       const res = await api.getAccessesForAgenda(start.toISOString(), end.toISOString());
       return Array.isArray(res) ? res : [];
-    }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
   const stats = statsQuery.data || { active: 0, pending: 0, approved: 0, checkedIn: 0, completed: 0, totalUsers: 0, totalHosts: 0 };

@@ -1168,6 +1168,7 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
   // Handler para confirmar creación de acceso después de alerta de lista negra
   const handleBlacklistAction = async (action: 'allow' | 'cancel') => {
     if (!blacklistAlert) return;
+    if (loading) return;
     
     if (action === 'cancel') {
       setBlacklistAlert(null);
@@ -1672,7 +1673,8 @@ const CreateAccessModal: React.FC<CreateAccessModalProps> = ({ onClose, onSucces
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   onClick={() => handleBlacklistAction('cancel')}
-                  className="px-4 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all shadow-md font-semibold flex items-center justify-center gap-2"
+                  disabled={loading}
+                  className="px-4 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all shadow-md font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Ban className="w-4 h-4" />
                   Cancelar Creación
@@ -1834,6 +1836,7 @@ const EditAccessModal: React.FC<EditAccessModalProps> = ({ access, onClose, onSu
   // Handler para confirmar actualización después de alerta de lista negra
   const handleBlacklistAction = async (action: 'allow' | 'cancel') => {
     if (!blacklistAlert) return;
+    if (loading) return;
     
     if (action === 'cancel') {
       setBlacklistAlert(null);
@@ -2074,7 +2077,8 @@ const EditAccessModal: React.FC<EditAccessModalProps> = ({ access, onClose, onSu
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   onClick={() => handleBlacklistAction('cancel')}
-                  className="px-4 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all shadow-md font-semibold flex items-center justify-center gap-2"
+                  disabled={loading}
+                  className="px-4 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all shadow-md font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Ban className="w-4 h-4" />
                   Cancelar Actualización

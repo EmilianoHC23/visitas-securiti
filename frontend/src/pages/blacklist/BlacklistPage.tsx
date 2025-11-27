@@ -7,6 +7,7 @@ import { Search, UserX, Mail, AlertCircle, Camera, Upload, Trash2, X, ShieldBan 
 export const BlacklistPage: React.FC = () => {
   const [blacklistEntries, setBlacklistEntries] = useState<BlacklistEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addSubmitting, setAddSubmitting] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -70,6 +71,7 @@ export const BlacklistPage: React.FC = () => {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (addSubmitting) return;
     
     if (!newEntry.visitorName || !newEntry.email || !newEntry.reason) {
       setErrorAlert({ show: true, message: 'El nombre, correo electrónico y motivo son requeridos' });
@@ -84,6 +86,7 @@ export const BlacklistPage: React.FC = () => {
     }
     
     try {
+      setAddSubmitting(true);
       console.log('� Adding to blacklist:', newEntry);
       
       const entry = await api.addToBlacklist({
@@ -106,6 +109,8 @@ export const BlacklistPage: React.FC = () => {
       console.error('❌ Error adding to blacklist:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       setErrorAlert({ show: true, message: errorMessage });
+    } finally {
+      setAddSubmitting(false);
     }
   };
 
@@ -117,6 +122,7 @@ export const BlacklistPage: React.FC = () => {
   // Confirm dialog state
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmEntry, setConfirmEntry] = useState<BlacklistEntry | null>(null);
+  const [confirmDeleting, setConfirmDeleting] = useState(false);
 
   const openConfirm = (entry: BlacklistEntry) => {
     setConfirmEntry(entry);
@@ -137,6 +143,8 @@ export const BlacklistPage: React.FC = () => {
   const confirmDelete = async () => {
     if (!confirmEntry) return closeConfirm();
     try {
+      if (confirmDeleting) return;
+      setConfirmDeleting(true);
       setLoading(true);
       await api.removeFromBlacklist(confirmEntry._id);
       setBlacklistEntries(prev => prev.filter(e => e._id !== confirmEntry._id));
@@ -146,6 +154,7 @@ export const BlacklistPage: React.FC = () => {
       closeConfirm();
       setErrorAlert({ show: true, message: 'Error al eliminar de la lista negra' });
     } finally {
+      setConfirmDeleting(false);
       setLoading(false);
     }
   };
@@ -330,17 +339,26 @@ export const BlacklistPage: React.FC = () => {
 
                 <div className={`flex items-center justify-center ${isMobile ? 'gap-2' : 'gap-3'}`}>
                   <button
-                    onClick={() => { closeConfirm(); }}
-                    className={`${isMobile ? 'px-4 py-2.5 text-sm' : 'px-5 py-2.5'} text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium flex-1`}
+                    onClick={() => { if (!confirmDeleting) closeConfirm(); }}
+                    disabled={confirmDeleting}
+                    className={`${isMobile ? 'px-4 py-2.5 text-sm' : 'px-5 py-2.5'} text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium flex-1 disabled:opacity-60 disabled:cursor-not-allowed`}
                   >
                     Cancelar
                   </button>
 
                   <button
                     onClick={() => { confirmDelete(); }}
-                    className={`${isMobile ? 'px-4 py-2.5 text-sm' : 'px-5 py-2.5'} text-white bg-gradient-to-r from-gray-700 to-gray-800 rounded-lg shadow hover:from-gray-800 hover:to-gray-900 transition-all font-medium flex-1`}
+                    disabled={confirmDeleting}
+                    className={`${isMobile ? 'px-4 py-2.5 text-sm' : 'px-5 py-2.5'} text-white bg-gradient-to-r from-gray-700 to-gray-800 rounded-lg shadow hover:from-gray-800 hover:to-gray-900 transition-all font-medium flex-1 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
                   >
-                    Eliminar
+                    {confirmDeleting ? (
+                      <>
+                        <span className="inline-block h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                        Eliminando...
+                      </>
+                    ) : (
+                      'Eliminar'
+                    )}
                   </button>
                 </div>
               </div>
@@ -570,10 +588,20 @@ export const BlacklistPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className={`flex-1 ${isMobile ? 'px-4 py-3' : 'px-6 py-3.5'} bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-xl hover:from-slate-900 hover:to-slate-950 font-semibold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2.5 transform hover:scale-[1.02] hover:-translate-y-0.5`}
+                  disabled={addSubmitting}
+                  className={`flex-1 ${isMobile ? 'px-4 py-3' : 'px-6 py-3.5'} bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-xl hover:from-slate-900 hover:to-slate-950 font-semibold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2.5 transform hover:scale-[1.02] hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed`}
                 >
-                  <ShieldBan className="w-5 h-5" />
-                  <span>Agregar a Lista</span>
+                  {addSubmitting ? (
+                    <>
+                      <span className="inline-block h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      <span>Agregando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldBan className="w-5 h-5" />
+                      <span>Agregar a Lista</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

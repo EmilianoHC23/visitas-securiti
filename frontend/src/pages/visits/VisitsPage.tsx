@@ -1033,6 +1033,7 @@ export const VisitsPage: React.FC = () => {
             addedAt: string;
         };
     } | null>(null);
+    const [registerBlacklistLoading, setRegisterBlacklistLoading] = useState(false);
 
     // Handler para clicks en las tarjetas
     const handleCardClick = (visit: Visit) => {
@@ -1425,6 +1426,7 @@ export const VisitsPage: React.FC = () => {
     // Handler para confirmar registro después de alerta de lista negra
     const handleRegisterBlacklistAction = async (action: 'allow' | 'cancel') => {
         if (!registerBlacklistAlert) return;
+        if (registerBlacklistLoading) return;
         
         if (action === 'cancel') {
             setRegisterBlacklistAlert(null);
@@ -1432,6 +1434,7 @@ export const VisitsPage: React.FC = () => {
         }
         
         try {
+            setRegisterBlacklistLoading(true);
             const { visitData } = registerBlacklistAlert;
             
             // Feedback optimista inmediato
@@ -1469,6 +1472,9 @@ export const VisitsPage: React.FC = () => {
             window.dispatchEvent(new CustomEvent('app-toast', {
                 detail: { message: '❌ Error al registrar la visita', severity: 'error' }
             }));
+        }
+        finally {
+            setRegisterBlacklistLoading(false);
         }
     };
 
@@ -2122,7 +2128,8 @@ const checkedInVisits = filteredVisits.filter(v => v.status === VisitStatus.CHEC
                             <div className="grid grid-cols-2 gap-3 pt-2">
                                 <button
                                     onClick={() => handleRegisterBlacklistAction('cancel')}
-                                    className="px-4 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all shadow-md font-semibold flex items-center justify-center gap-2"
+                                    disabled={registerBlacklistLoading}
+                                    className="px-4 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all shadow-md font-semibold flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -2131,12 +2138,25 @@ const checkedInVisits = filteredVisits.filter(v => v.status === VisitStatus.CHEC
                                 </button>
                                 <button
                                     onClick={() => handleRegisterBlacklistAction('allow')}
-                                    className="px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all shadow-md font-semibold flex items-center justify-center gap-2"
+                                    disabled={registerBlacklistLoading}
+                                    className="px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all shadow-md font-semibold flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    Continuar de Todos Modos
+                                    {registerBlacklistLoading ? (
+                                        <>
+                                            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Procesando...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Continuar de Todos Modos
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>

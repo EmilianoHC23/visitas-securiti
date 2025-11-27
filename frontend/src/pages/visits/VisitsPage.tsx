@@ -1532,17 +1532,21 @@ export const VisitsPage: React.FC = () => {
     const [autoApprove, setAutoApprove] = useState(false);
     const [autoCheckIn, setAutoCheckIn] = useState(false);
     const [companyConfig, setCompanyConfig] = useState<any>(null);
+    const [settingsLoading, setSettingsLoading] = useState(false);
 
     // Cargar settings de la empresa
     useEffect(() => {
         const fetchSettings = async () => {
             try {
+                setSettingsLoading(true);
                 const config = await api.getCompanyConfig();
                 setCompanyConfig(config);
                 setAutoApprove(config.settings.autoApproval || false);
                 setAutoCheckIn(config.settings.autoCheckIn || false);
             } catch (error) {
                 if (isLocalhost) console.error('Failed to fetch settings:', error);
+            } finally {
+                setSettingsLoading(false);
             }
         };
 
@@ -1551,35 +1555,53 @@ export const VisitsPage: React.FC = () => {
 
     // Actualizar auto-aprobación en el backend
     const handleAutoApproveToggle = async (checked: boolean) => {
-        setAutoApprove(checked);
+        if (!companyConfig) return; // Evitar cambios antes de cargar config
+        setAutoApprove(checked); // Optimista
+        setSettingsLoading(true);
         try {
-            await api.updateCompanyConfig({
+            const updatedConfig = {
                 ...companyConfig,
                 settings: {
                     ...companyConfig.settings,
                     autoApproval: checked
                 }
-            });
+            };
+            await api.updateCompanyConfig(updatedConfig);
+            // Refrescar desde el servidor para asegurar consistencia
+            const fresh = await api.getCompanyConfig();
+            setCompanyConfig(fresh);
+            setAutoApprove(fresh.settings.autoApproval || false);
         } catch (error) {
             if (isLocalhost) console.error('Failed to update auto-approval:', error);
-            setAutoApprove(!checked); // Revertir si falla
+            // Revertir valor optimista
+            setAutoApprove(prev => !prev);
+        } finally {
+            setSettingsLoading(false);
         }
     };
 
     // Actualizar auto-check-in en el backend
     const handleAutoCheckInToggle = async (checked: boolean) => {
-        setAutoCheckIn(checked);
+        if (!companyConfig) return;
+        setAutoCheckIn(checked); // Optimista
+        setSettingsLoading(true);
         try {
-            await api.updateCompanyConfig({
+            const updatedConfig = {
                 ...companyConfig,
                 settings: {
                     ...companyConfig.settings,
                     autoCheckIn: checked
                 }
-            });
+            };
+            await api.updateCompanyConfig(updatedConfig);
+            const fresh = await api.getCompanyConfig();
+            setCompanyConfig(fresh);
+            setAutoCheckIn(fresh.settings.autoCheckIn || false);
         } catch (error) {
             if (isLocalhost) console.error('Failed to update auto-checkin:', error);
-            setAutoCheckIn(!checked); // Revertir si falla
+            setAutoCheckIn(prev => !prev);
+        } finally {
+            setSettingsLoading(false);
         }
     };
 
@@ -1791,6 +1813,7 @@ const checkedInVisits = filteredVisits.filter(v => v.status === VisitStatus.CHEC
                                         type="checkbox" 
                                         checked={autoApprove} 
                                         onChange={e => handleAutoApproveToggle(e.target.checked)}
+                                        disabled={!companyConfig || settingsLoading}
                                         className="sr-only peer"
                                     />
                                     <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-100 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-400 peer-checked:to-orange-500"></div>
@@ -1853,6 +1876,7 @@ const checkedInVisits = filteredVisits.filter(v => v.status === VisitStatus.CHEC
                                         type="checkbox" 
                                         checked={autoCheckIn} 
                                         onChange={e => handleAutoCheckInToggle(e.target.checked)}
+                                        disabled={!companyConfig || settingsLoading}
                                         className="sr-only peer"
                                     />
                                     <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-100 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-green-400 peer-checked:to-green-500"></div>

@@ -78,6 +78,19 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Serve static files from frontend build (for production mode)
+if (process.env.NODE_ENV === 'production') {
+    const frontendDistPath = path.join(__dirname, '..', 'frontend', 'dist');
+    logger.log(`📦 Serving static files from: ${frontendDistPath}`);
+    
+    app.use(express.static(frontendDistPath));
+    
+    // Serve index.html for all non-API routes (SPA support)
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(frontendDistPath, 'index.html'));
+    });
+}
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     logger.error('Unhandled error:', err);
@@ -87,16 +100,25 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Catch all handler for 404s
-app.use('*', (req, res) => {
-    res.status(404).json({ message: 'Route not found' });
-});
+// Catch all handler for 404s (only in development)
+if (process.env.NODE_ENV !== 'production') {
+    app.use('*', (req, res) => {
+        res.status(404).json({ message: 'Route not found' });
+    });
+}
 
 // For local development
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         logger.log(`🚀 Server running on port ${PORT}`);
         logger.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+} else {
+    // Start server in production mode
+    app.listen(PORT, () => {
+        logger.log(`🚀 Production server running on port ${PORT}`);
+        logger.log(`📝 Environment: ${process.env.NODE_ENV}`);
+        logger.log(`🌐 Access your app at: http://localhost:${PORT}`);
     });
 }
 

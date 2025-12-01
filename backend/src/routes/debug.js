@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const EmailService = require('../services/emailService');
 
 // Endpoint temporal de debug para verificar variables de entorno
 router.get('/debug-env', (req, res) => {
@@ -19,3 +20,15 @@ router.get('/debug-env', (req, res) => {
 });
 
 module.exports = router;
+
+// Enviar email de prueba para verificar configuración SMTP
+router.post('/debug/send-test-email', async (req, res) => {
+  try {
+    const to = req.body?.visitorEmail || req.body?.to || 'test@example.com';
+    const svc = new EmailService();
+    const result = await svc.sendTestEmail(to);
+    return res.json({ ok: true, result });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e?.message });
+  }
+});

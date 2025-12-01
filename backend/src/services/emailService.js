@@ -8,6 +8,14 @@ class EmailService {
     this.initializeNodemailer();
   }
 
+  getFromAddress() {
+    const from = process.env.EMAIL_FROM || process.env.SMTP_USER;
+    try {
+      console.log(`📧 [EmailService] Using FROM: ${from}`);
+    } catch (_) {}
+    return from;
+  }
+
   initializeNodemailer() {
     // Inicialización básica - las variables se verificarán en tiempo de ejecución
     this.enabled = null; // null = no verificado aún
@@ -176,7 +184,7 @@ class EmailService {
 
     try {
       const mailOptions = {
-        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        from: this.getFromAddress(),
         to: to,
         subject: 'Test Email - Visitas SecuriTI',
         html: `
@@ -208,7 +216,7 @@ class EmailService {
 
     try {
       const mailOptions = {
-        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        from: this.getFromAddress(),
         to: visitData.visitorEmail,
         subject: `Confirmación de Visita - ${visitData.companyName}`,
         html: `
@@ -322,7 +330,7 @@ class EmailService {
       });
 
       const mailOptions = {
-        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        from: this.getFromAddress(),
         to: data.visitorEmail,
         subject: `Tu visita ha sido ${statusText.toLowerCase()} - ${data.companyName}`,
         html: `
@@ -546,7 +554,7 @@ class EmailService {
 
     try {
       const mailOptions = {
-        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        from: this.getFromAddress(),
         to: data.hostEmail,
         subject: `Nueva solicitud de visita de ${data.visitorName}`,
         html: `
@@ -713,7 +721,7 @@ class EmailService {
       const registrationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register/user?token=${invitationData.token}`;
 
       const mailOptions = {
-        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        from: this.getFromAddress(),
         to: invitationData.email,
         subject: `Invitación para unirte a ${invitationData.companyName} - Visitas SecuriTI`,
         html: `
@@ -849,7 +857,7 @@ class EmailService {
       // Email para los invitados
       if (data.invitedEmails && data.invitedEmails.length > 0) {
         const inviteeMailOptions = {
-          from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+          from: this.getFromAddress(),
           bcc: data.invitedEmails,
           subject: `Acceso cancelado - ${data.title}`,
           html: `
@@ -944,7 +952,7 @@ class EmailService {
       // Email de confirmación para el creador
       if (data.creatorEmail) {
         const creatorMailOptions = {
-          from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+          from: this.getFromAddress(),
           to: data.creatorEmail,
           subject: `Confirmación: Acceso cancelado - ${data.title}`,
           html: `
@@ -1078,7 +1086,7 @@ class EmailService {
       const accentColor = '#f97316';
 
       const mailOptions = {
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        from: this.getFromAddress(),
         to: data.creatorEmail,
         subject: `Nuevo registro para tu evento: ${data.eventTitle}`,
         html: `
@@ -1255,7 +1263,7 @@ class EmailService {
 
     try {
       const mailOptions = {
-        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        from: this.getFromAddress(),
         to: data.visitorEmail,
         subject: `Gracias por tu visita - ${data.companyName}`,
         html: `
@@ -1446,7 +1454,7 @@ class EmailService {
         }
 
       const mailOptions = {
-        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        from: this.getFromAddress(),
         to: data.creatorEmail,
         subject: `Acceso ${data.accessTitle} creado exitosamente`,
         html: `
@@ -1650,7 +1658,7 @@ class EmailService {
         : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
-        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        from: this.getFromAddress(),
         to: data.invitedEmail,
         subject: `Invitación a ${data.companyName}`,
         html: `
@@ -1863,7 +1871,7 @@ class EmailService {
         : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
-        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        from: this.getFromAddress(),
         to: data.creatorEmail,
         subject: `No olvides la cita ${data.accessTitle}`,
         html: `

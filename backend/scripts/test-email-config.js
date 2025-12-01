@@ -18,7 +18,7 @@ async function testEmailConfiguration() {
     console.log('📧 Enviando email de prueba...');
     
     // Cambiar este email por el tuyo para recibir la prueba
-    const testEmail = 'ehernandez@securiti.info';
+    const testEmail = 'visitantes@securiti.info';
     
     const result = await emailService.sendTestEmail(testEmail);
     

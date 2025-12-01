@@ -3,7 +3,7 @@ import { Upload, Camera, Building2, MapPin, Check, AlertCircle, Edit2, Trash2 } 
 import { useAuth } from '../../contexts/AuthContext';
 import * as api from '../../services/api';
 
-type TabType = 'account' | 'additional-info';
+type TabType = 'account' | 'additional-info' | 'manuals';
 
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 
@@ -206,6 +206,14 @@ export const SettingsPage: React.FC = () => {
     const [companyPhoto, setCompanyPhoto] = useState<string>('');
     const [arrivalInstructions, setArrivalInstructions] = useState('');
 
+    // Manuals Tab State
+    // Lista de manuales disponibles en /public/manuals/
+    // Para agregar un nuevo manual, solo coloca el PDF en la carpeta public/manuals y agrégalo aquí
+    const availableManuals = [
+        { name: 'Manual de Usuario', file: 'Visitas SecuriTI - Manual de Usuario (1).pdf', description: 'Guía completa para el uso del sistema de visitas' },
+        { name: 'Manual de Instalación', file: 'Manual de Instalación - Visitas SecuriTI.pdf', description: 'Guía paso a paso para instalar el sistema' },
+    ];
+
     const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -377,6 +385,19 @@ export const SettingsPage: React.FC = () => {
         }
     };
 
+    const handleViewManual = (filename: string) => {
+        window.open(`/manuals/${filename}`, '_blank');
+    };
+
+    const handleDownloadManual = (filename: string, displayName: string) => {
+        const link = document.createElement('a');
+        link.href = `/manuals/${filename}`;
+        link.download = displayName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 lg:p-8">
             <div className="max-w-6xl mx-auto">
@@ -425,6 +446,22 @@ export const SettingsPage: React.FC = () => {
                                     <MapPin className="w-4 h-4" />
                                     <span className="hidden sm:inline">Ubicación</span>
                                     <span className="sm:hidden">Ubicación</span>
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('manuals')}
+                                className={`flex-1 px-4 sm:px-6 py-4 sm:py-5 text-sm sm:text-base font-semibold border-b-3 transition-all ${
+                                    activeTab === 'manuals'
+                                        ? 'border-gray-900 text-gray-900 bg-white'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-white/50'
+                                }`}
+                            >
+                                <div className="flex items-center justify-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                    </svg>
+                                    <span className="hidden sm:inline">Manuales</span>
+                                    <span className="sm:hidden">Manuales</span>
                                 </div>
                             </button>
                         </nav>
@@ -601,6 +638,112 @@ export const SettingsPage: React.FC = () => {
                                             </>
                                         )}
                                     </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'manuals' && (
+                            <div className="space-y-8">
+                                {/* Encabezado */}
+                                <div className={`bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl ${isMobile ? 'p-4' : 'p-6 sm:p-8'}`}>
+                                    <div className={`flex items-center ${isMobile ? 'gap-2 mb-4' : 'gap-3 mb-4'}`}>
+                                        <div className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} bg-gray-900 rounded-xl flex items-center justify-center`}>
+                                            <svg className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h2 className={`${isMobile ? 'text-base' : 'text-xl sm:text-2xl'} font-bold text-gray-900`}>
+                                                Manuales del Sistema
+                                            </h2>
+                                            <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 mt-1`}>
+                                                {isMobile ? 'Documentación y guías' : 'Documentación y guías de uso del sistema'}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Nota informativa */}
+                                    <div className={`bg-blue-50 border border-blue-200 rounded-xl ${isMobile ? 'p-2' : 'p-3'}`}>
+                                        <div className="flex gap-2">
+                                            <AlertCircle className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-blue-600 flex-shrink-0 mt-0.5`} />
+                                            <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-blue-800 leading-relaxed`}>
+                                                {isMobile 
+                                                    ? 'Descarga o visualiza los manuales disponibles.'
+                                                    : 'Los manuales están disponibles para descarga o visualización. Para agregar nuevos manuales, coloca los archivos PDF en la carpeta /public/manuals/ del proyecto.'
+                                                }
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Lista de Manuales */}
+                                <div className={`bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl ${isMobile ? 'p-4' : 'p-6 sm:p-8'}`}>
+                                    <div className={`flex items-center ${isMobile ? 'gap-2 mb-4' : 'gap-3 mb-6'}`}>
+                                        <div className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} bg-gray-900 rounded-xl flex items-center justify-center`}>
+                                            <svg className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h2 className={`${isMobile ? 'text-base' : 'text-xl sm:text-2xl'} font-bold text-gray-900`}>
+                                                Manuales Disponibles
+                                            </h2>
+                                            <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 mt-1`}>
+                                                {availableManuals.length} {availableManuals.length === 1 ? 'manual' : 'manuales'}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        {availableManuals.map((manual, index) => (
+                                            <div
+                                                key={index}
+                                                className={`bg-white border-2 border-gray-200 rounded-xl ${isMobile ? 'p-3' : 'p-4'} hover:border-gray-400 transition-all group`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    {/* Icono PDF */}
+                                                    <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0`}>
+                                                        <svg className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-red-600`} fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </div>
+
+                                                    {/* Info del archivo */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className={`${isMobile ? 'text-sm' : 'text-base'} font-bold text-gray-900`}>
+                                                            {manual.name}
+                                                        </h3>
+                                                        <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-500 mt-1 line-clamp-1`}>
+                                                            {manual.description}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Acciones */}
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => handleViewManual(manual.file)}
+                                                            className={`${isMobile ? 'p-2' : 'p-2.5'} bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-600 hover:text-white transition-all`}
+                                                            title="Ver"
+                                                        >
+                                                            <svg className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                            </svg>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDownloadManual(manual.file, manual.name)}
+                                                            className={`${isMobile ? 'p-2' : 'p-2.5'} bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-900 hover:text-white transition-all`}
+                                                            title="Descargar"
+                                                        >
+                                                            <svg className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         )}

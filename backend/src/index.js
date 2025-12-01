@@ -34,9 +34,7 @@ app.use((req, res, next) => {
 });
 
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-        ? ['https://visitas-securiti.vercel.app', 'https://visitas-securiti-git-main-emilianohc23.vercel.app']
-        : ['http://localhost:5173', 'http://localhost:3000'],
+    origin: ['http://13.0.0.87:3001', 'http://localhost:3001', 'http://localhost:5173', 'http://localhost:3000'],
     credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -45,7 +43,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // MongoDB connection
 const connectDB = async () => {
   try {
-    // En Vercel, evitar reconectar si ya está conectado
+    // Evitar reconectar si ya está conectado
     if (mongoose.connection.readyState === 1) {
       console.log('✅ MongoDB already connected');
       return;
@@ -66,23 +64,12 @@ const connectDB = async () => {
     await initializeDatabase();
   } catch (error) {
     console.error('❌ MongoDB connection error:', error);
-    // En Vercel, no salimos del proceso para que la app siga funcionando
-    if (process.env.NODE_ENV !== 'production') {
-      process.exit(1);
-    }
+    process.exit(1);
   }
 };
 
 // Initialize database connection
 connectDB();
-
-// Para Vercel serverless, asegurar conexión en cada request
-app.use(async (req, res, next) => {
-  if (mongoose.connection.readyState !== 1) {
-    await connectDB();
-  }
-  next();
-});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -132,26 +119,21 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Endpoint no encontrado' });
 });
 
-// Start server only if not in serverless environment
-if (!process.env.VERCEL) {
-  app.listen(PORT, '0.0.0.0', (err) => {
-    if (err) {
-      console.error('❌ Error starting server:', err);
-      process.exit(1);
-    }
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🌐 Server listening on http://localhost:${PORT}`);
-    // Start access scheduler (disabled on Vercel)
-    try {
-      if (!process.env.VERCEL) {
-        startScheduler();
-      }
-    } catch (e) {
-      console.warn('⚠️ Scheduler failed to start:', e?.message);
-    }
-  });
-}
+// Start server
+app.listen(PORT, '0.0.0.0', (err) => {
+  if (err) {
+    console.error('❌ Error starting server:', err);
+    process.exit(1);
+  }
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 Server listening on http://localhost:${PORT}`);
+  // Start access scheduler
+  try {
+    startScheduler();
+  } catch (e) {
+    console.warn('⚠️ Scheduler failed to start:', e?.message);
+  }
+});
 
-// Export for Vercel serverless functions
 module.exports = app;

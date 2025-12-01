@@ -6,7 +6,7 @@ router.get('/debug-env', (req, res) => {
   const debugInfo = {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
-    isVercel: !!process.env.VERCEL,
+    deploymentType: 'local',
     hasJwtSecret: !!process.env.JWT_SECRET,
     hasDatabaseUrl: !!process.env.DATABASE_URL,
     viteEnvironment: process.env.VITE_ENVIRONMENT,

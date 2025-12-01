@@ -21,21 +21,18 @@ const invitationRoutes = require('./src/routes/invitations');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Trust proxy - Required for Vercel and rate limiting to work correctly
-// This allows Express to read X-Forwarded-For headers from Vercel's proxy
+// Trust proxy - Required for rate limiting to work correctly
 app.set('trust proxy', 1);
 
 // Security: Helmet middleware for secure HTTP headers
 app.use(helmet({
-    contentSecurityPolicy: false, // Disable CSP to avoid breaking Vercel/frontend
-    crossOriginEmbedderPolicy: false, // Allow embedding for dev/preview
+    contentSecurityPolicy: false, // Disable CSP to avoid breaking frontend
+    crossOriginEmbedderPolicy: false, // Allow embedding
 }));
 
 // CORS configuration
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-        ? ['https://visitas-securiti.vercel.app', 'https://visitas-securiti-git-main-emilianohc23.vercel.app']
-        : ['http://localhost:5173', 'http://localhost:3000'],
+    origin: ['http://13.0.0.87:3001', 'http://localhost:3001', 'http://localhost:5173', 'http://localhost:3000'],
     credentials: true
 }));
 
@@ -122,5 +119,4 @@ if (process.env.NODE_ENV !== 'production') {
     });
 }
 
-// For Vercel deployment
 module.exports = app;

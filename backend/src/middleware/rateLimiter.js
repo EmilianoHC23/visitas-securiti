@@ -9,7 +9,7 @@ const loginLimiter = rateLimit({
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   // Skip successful requests (only count failed ones)
   skipSuccessfulRequests: false,
-  // Disable validation of proxy headers (for Vercel/production compatibility)
+  // Disable validation of proxy headers for compatibility
   validate: { 
     xForwardedForHeader: false,
     forwardedHeader: false 

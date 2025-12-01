@@ -29,7 +29,7 @@ const resetDatabase = async () => {
 
     // Conectar a MongoDB
     const mongoURI = process.env.DATABASE_URL || 
-      'mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti';
+      'mongodb+srv://visitantes_db_user:terCgnmhxQNFSlGl@visitas-securiti.gjgocbm.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti';
     
     await mongoose.connect(mongoURI);
     console.log('✅ Conectado a MongoDB Atlas\n');

@@ -176,7 +176,7 @@ export const LoginPage: React.FC = () => {
                                     value={email}
                                     onChange={handleEmailChange}
                                     required
-                                    placeholder="example@email.com"
+                                    placeholder="Ingresa tu correo electrónico"
                                     className={`pl-10 pr-4 py-2 w-full border border-gray-200 rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-600 focus:outline-none transition-colors duration-200 hover:border-blue-700 hover:bg-blue-100 hover:shadow-lg ${
                                         emailError 
                                             ? 'border-red-300 focus:border-red-500' 
@@ -206,7 +206,7 @@ export const LoginPage: React.FC = () => {
                                     value={password}
                                     onChange={handlePasswordChange}
                                     required
-                                    placeholder="********"
+                                    placeholder="Ingrese su contraseña"
                                     className={`pl-10 pr-10 py-2 w-full border border-gray-200 rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-600 focus:outline-none transition-colors duration-200 hover:border-blue-700 hover:bg-blue-100 hover:shadow-lg ${
                                         passwordError 
                                             ? 'border-red-300 focus:border-red-500' 

@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const User = require('./models/User');
-const Visit = require('./models/Visit');
 require('dotenv').config();
 
 let alreadyInitialized = false;
@@ -24,131 +23,23 @@ const initializeDatabase = async () => {
     console.log(`👥 Existing users: ${existingUsers}`);
 
     if (existingUsers === 0) {
-      console.log('👤 Creating default users...');
+      console.log('👤 Creating default admin user only...');
 
-      // Create default users with realistic data
-      const defaultUsers = [
-      {
-        email: 'admin@securiti.com',
-        password: 'password',
-        firstName: 'Carlos',
-        lastName: 'Administrador',
+      const adminEmail = process.env.DEFAULT_ADMIN_EMAIL || 'admin@securiti.com';
+      const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'Admin2025!';
+
+      const adminUser = new User({
+        email: adminEmail,
+        password: adminPassword,
+        firstName: 'Admin',
+        lastName: 'Sistema',
         role: 'admin',
         companyId: 'comp-1',
         invitationStatus: 'registered'
-      },
-      {
-        email: 'reception@securiti.com',
-        password: 'password',
-        firstName: 'María',
-        lastName: 'Recepcionista',
-        role: 'reception',
-        companyId: 'comp-1',
-        invitationStatus: 'registered'
-      },
-      {
-        email: 'juan.perez@securiti.com',
-        password: 'password',
-        firstName: 'Juan',
-        lastName: 'Pérez',
-        role: 'host',
-        companyId: 'comp-1',
-        invitationStatus: 'registered'
-      },
-      {
-        email: 'ana.garcia@securiti.com',
-        password: 'password',
-        firstName: 'Ana',
-        lastName: 'García',
-        role: 'host',
-        companyId: 'comp-1',
-        invitationStatus: 'registered'
-      },
-      {
-        email: 'carlos.rodriguez@securiti.com',
-        password: 'password',
-        firstName: 'Carlos',
-        lastName: 'Rodríguez',
-        role: 'host',
-        companyId: 'comp-1',
-        invitationStatus: 'registered'
-      },
-      {
-        email: 'sofia.lopez@securiti.com',
-        password: 'password',
-        firstName: 'Sofía',
-        lastName: 'López',
-        role: 'host',
-        companyId: 'comp-1',
-        invitationStatus: 'registered'
-      }
-    ];
-
-    // Create users one by one to trigger pre('save') middleware
-    const createdUsers = [];
-    for (const userData of defaultUsers) {
-      const user = new User(userData);
-      await user.save(); // This will trigger the password hashing
-      createdUsers.push(user);
-      console.log(`✅ Created user: ${user.email}`);
+      });
+      await adminUser.save();
+      console.log(`✅ Created admin user: ${adminEmail}`);
     }
-    
-    console.log('👥 Created default users with hashed passwords');
-
-    // Create sample visits with realistic data
-    const hosts = createdUsers.filter(user => user.role === 'host');
-    const sampleVisits = [
-      {
-        visitorName: 'Roberto Silva',
-        visitorCompany: 'TechCorp Solutions',
-        reason: 'Reunión estratégica de negocios',
-        host: hosts[0]._id,
-        status: 'approved',
-        scheduledDate: new Date(Date.now() + 2 * 60 * 60 * 1000), // En 2 horas
-        companyId: 'comp-1',
-        visitorEmail: 'roberto.silva@techcorp.com',
-        visitorPhone: '+521234567890'
-      },
-      {
-        visitorName: 'Isabel Méndez',
-        visitorCompany: 'Innovación Digital SA',
-        reason: 'Presentación de proyecto IoT',
-        host: hosts[1]._id,
-        status: 'pending',
-        scheduledDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Mañana
-        companyId: 'comp-1',
-        visitorEmail: 'isabel.mendez@innovacion.com',
-        visitorPhone: '+521234567891'
-      },
-      {
-        visitorName: 'Fernando Gutiérrez',
-        visitorCompany: 'Consultoría TI Avanzada',
-        reason: 'Auditoría de seguridad informática',
-        host: hosts[2]._id,
-        status: 'checked-in',
-        scheduledDate: new Date(Date.now() - 30 * 60 * 1000), // Hace 30 minutos
-        checkInTime: new Date(Date.now() - 15 * 60 * 1000), // Hace 15 minutos
-        companyId: 'comp-1',
-        visitorEmail: 'fernando.gutierrez@consultoria.com',
-        visitorPhone: '+521234567892'
-      },
-      {
-        visitorName: 'Patricia Vega',
-        visitorCompany: 'Sistemas Empresariales México',
-        reason: 'Capacitación en ciberseguridad',
-        host: hosts[3] ? hosts[3]._id : hosts[0]._id,
-        status: 'completed',
-        scheduledDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday
-        checkInTime: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        checkOutTime: new Date(Date.now() - 22 * 60 * 60 * 1000),
-        companyId: 'comp-1',
-        visitorEmail: 'patricia.vega@sistemasem.com',
-        visitorPhone: '+521234567893'
-      }
-    ];
-
-  await Visit.insertMany(sampleVisits);
-  console.log('📋 Created sample visits');
 
     // Migration: Update existing users without invitationStatus
     console.log('🔄 Checking for users that need invitationStatus migration...');
@@ -177,15 +68,8 @@ const initializeDatabase = async () => {
     }
 
   console.log('\n✅ Database initialized successfully!');
-  console.log('\n📊 Credenciales de acceso actualizadas:');
-    console.log('👑 Admin: admin@securiti.com / password');
-    console.log('📥 Recepción: reception@securiti.com / password');
-    console.log('🏢 Hosts:');
-    console.log('   - Juan Pérez: juan.perez@securiti.com / password');
-    console.log('   - Ana García: ana.garcia@securiti.com / password');
-    console.log('   - Carlos Rodríguez: carlos.rodriguez@securiti.com / password');
-    console.log('   - Sofía López: sofia.lopez@securiti.com / password');
-    }
+  console.log('\n📊 Credenciales de acceso:');
+  console.log(`👑 Admin: ${process.env.DEFAULT_ADMIN_EMAIL || 'admin@securiti.com'} / ${process.env.DEFAULT_ADMIN_PASSWORD || 'Admin2025!'}`);
 
     alreadyInitialized = true;
 

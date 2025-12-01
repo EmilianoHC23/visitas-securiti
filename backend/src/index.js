@@ -49,7 +49,7 @@ const connectDB = async () => {
       return;
     }
     
-    const mongoURI = process.env.DATABASE_URL || 'mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti';
+    const mongoURI = process.env.DATABASE_URL || 'mongodb+srv://visitantes_db_user:terCgnmhxQNFSlGl@visitas-securiti.gjgocbm.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti';
     await mongoose.connect(mongoURI);
     console.log('✅ MongoDB Atlas connected successfully');
     // In some environments (e.g., serverless cold starts), connection.db may not be immediately available

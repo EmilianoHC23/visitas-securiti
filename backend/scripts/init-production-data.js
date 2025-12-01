@@ -8,7 +8,7 @@ require('dotenv').config();
 const initializeProductionData = async () => {
   try {
     // Connect to MongoDB
-    const mongoURI = process.env.DATABASE_URL || 'mongodb+srv://admin:admin123@visitas-securiti.cz8yvzk.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti';
+    const mongoURI = process.env.DATABASE_URL || 'mongodb+srv://visitantes_db_user:terCgnmhxQNFSlGl@visitas-securiti.gjgocbm.mongodb.net/visitas-securiti?retryWrites=true&w=majority&appName=visitas-securiti';
     await mongoose.connect(mongoURI);
     console.log('✅ Connected to MongoDB Atlas');
     console.log('📊 Database:', mongoose.connection.db.databaseName);

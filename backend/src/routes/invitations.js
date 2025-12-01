@@ -179,7 +179,9 @@ router.post('/', auth, authorize(['admin']), async (req, res) => {
       role,
       token: invitation.invitationToken,
       companyName,
-      invitedBy: req.user.firstName + ' ' + req.user.lastName
+      invitedBy: req.user.firstName + ' ' + req.user.lastName,
+      companyId: req.user.companyId,
+      companyLogo: company?.logo || null
     });
 
     console.log('📧 Email result:', emailResult);
@@ -478,7 +480,9 @@ router.post('/resend/:userId', auth, authorize(['admin']), async (req, res) => {
       role: user.role,
       token: invitation.invitationToken,
       companyName,
-      invitedBy: req.user.firstName + ' ' + req.user.lastName
+      invitedBy: req.user.firstName + ' ' + req.user.lastName,
+      companyId: req.user.companyId,
+      companyLogo: company?.logo || null
     });
 
     if (!emailResult.success) {

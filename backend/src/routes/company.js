@@ -314,38 +314,50 @@ router.get('/logo/:companyId/:token', async (req, res) => {
       return res.status(404).json({ message: 'Logo no disponible' });
     }
     
-    // Verificar que el logo sea Base64
-    if (!company.logo.startsWith('data:image')) {
-      console.error('❌ [COMPANY LOGO] Logo no es Base64:', companyId);
+    // Si el logo es Base64, servirlo directamente; si es URL, descargar y hacer proxy
+    if (company.logo.startsWith('data:image')) {
+      const matches = company.logo.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/);
+      if (!matches || matches.length !== 3) {
+        console.error('❌ [COMPANY LOGO] Formato Base64 inválido');
+        return res.status(400).json({ message: 'Formato de imagen inválido' });
+      }
+      const mimeType = `image/${matches[1]}`;
+      const base64Data = matches[2];
+      const imageBuffer = Buffer.from(base64Data, 'base64');
+      console.log(`✅ [COMPANY LOGO] Logo Base64 servido. Tamaño: ${imageBuffer.length} bytes, Tipo: ${mimeType}`);
+      res.set({
+        'Content-Type': mimeType,
+        'Content-Length': imageBuffer.length,
+        'Cache-Control': 'public, max-age=604800',
+        'ETag': `"${companyId}-${Date.now()}"`
+      });
+      return res.send(imageBuffer);
+    } else if (company.logo.startsWith('http://') || company.logo.startsWith('https://')) {
+      try {
+        const fetch = (await import('node-fetch')).default;
+        const resp = await fetch(company.logo);
+        if (!resp.ok) {
+          console.error('❌ [COMPANY LOGO] Error descargando logo URL:', resp.status, resp.statusText);
+          return res.status(502).json({ message: 'No se pudo descargar el logo' });
+        }
+        const contentType = resp.headers.get('content-type') || 'image/png';
+        const buffer = Buffer.from(await resp.arrayBuffer());
+        console.log(`✅ [COMPANY LOGO] Logo URL proxied. Tamaño: ${buffer.length} bytes, Tipo: ${contentType}`);
+        res.set({
+          'Content-Type': contentType,
+          'Content-Length': buffer.length,
+          'Cache-Control': 'public, max-age=604800',
+          'ETag': `"${companyId}-${Date.now()}"`
+        });
+        return res.send(buffer);
+      } catch (proxyErr) {
+        console.error('❌ [COMPANY LOGO] Proxy error:', proxyErr.message);
+        return res.status(500).json({ message: 'Error al proxiar el logo', error: proxyErr.message });
+      }
+    } else {
+      console.error('❌ [COMPANY LOGO] Formato de logo no soportado:', typeof company.logo);
       return res.status(400).json({ message: 'Formato de logo inválido' });
     }
-    
-    // Extraer tipo MIME y datos Base64
-    const matches = company.logo.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/);
-    
-    if (!matches || matches.length !== 3) {
-      console.error('❌ [COMPANY LOGO] Formato Base64 inválido');
-      return res.status(400).json({ message: 'Formato de imagen inválido' });
-    }
-    
-    const mimeType = `image/${matches[1]}`;
-    const base64Data = matches[2];
-    
-    // Convertir Base64 a Buffer
-    const imageBuffer = Buffer.from(base64Data, 'base64');
-    
-    console.log(`✅ [COMPANY LOGO] Logo servido exitosamente. Tamaño: ${imageBuffer.length} bytes, Tipo: ${mimeType}`);
-    
-    // Configurar headers para caché y tipo de contenido
-    res.set({
-      'Content-Type': mimeType,
-      'Content-Length': imageBuffer.length,
-      'Cache-Control': 'public, max-age=604800', // 7 días de caché
-      'ETag': `"${companyId}-${Date.now()}"` // ETag para validación de caché
-    });
-    
-    // Enviar la imagen
-    res.send(imageBuffer);
     
   } catch (error) {
     console.error('❌ [COMPANY LOGO] Error al servir logo:', error);

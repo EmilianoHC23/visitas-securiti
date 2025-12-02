@@ -40,6 +40,9 @@ dist-ssr
 *.zip
 *.tar.gz
 
+# Credenciales de desarrollo (no subir)
+frontend/Credenciales.txt
+
 # Excluir carpeta visitas-laravel
 visitas-laravel/
 

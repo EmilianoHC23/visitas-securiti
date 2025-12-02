@@ -12,19 +12,14 @@ require('dotenv').config();
 /**
  * Script para resetear la base de datos a un estado inicial
  * - Elimina TODOS los registros (visitas, accesos, lista negra, invitaciones, eventos, aprobaciones)
- * - Mantiene o crea un único usuario administrador
+ * - MANTIENE TODOS LOS USUARIOS (no se eliminan usuarios)
  * - Preserva la configuración de la empresa (Company)
  * 
- * Uso: node backend/scripts/reset-database.js [email-admin]
- * Ejemplo: node backend/scripts/reset-database.js admin@securiti.com
+ * Uso: node backend/scripts/reset-database.js
  */
 
 const resetDatabase = async () => {
   try {
-    // Obtener email del admin desde argumentos o usar default
-    const adminEmail = process.argv[2] || 'admin@securiti.com';
-    const adminPassword = 'Admin2025!'; // Contraseña por defecto
-
     console.log('\n🔄 INICIANDO RESET DE BASE DE DATOS...\n');
 
     // Conectar a MongoDB
@@ -35,33 +30,13 @@ const resetDatabase = async () => {
     console.log('✅ Conectado a MongoDB Atlas\n');
 
     // ========================================
-    // PASO 1: Verificar/Guardar usuario admin
+    // PASO 1: Verificar usuarios existentes
     // ========================================
-    console.log('📋 PASO 1: Verificar usuario administrador...');
+    console.log('📋 PASO 1: Verificando usuarios existentes...');
     
-    let adminUser = await User.findOne({ email: adminEmail });
-    let adminId = null;
-
-    if (adminUser) {
-      console.log(`✅ Usuario admin encontrado: ${adminEmail}`);
-      adminId = adminUser._id;
-    } else {
-      console.log(`⚠️  Usuario admin no encontrado. Creando nuevo admin: ${adminEmail}`);
-      adminUser = new User({
-        email: adminEmail,
-        password: adminPassword, // Se hasheará automáticamente por el pre-save hook
-        firstName: 'Admin',
-        lastName: 'Sistema',
-        role: 'admin',
-        status: 'registered',
-        companyId: 'comp-1'
-      });
-      await adminUser.save();
-      adminId = adminUser._id;
-      console.log(`✅ Usuario admin creado exitosamente`);
-    }
-
-    console.log(`   → ID del admin: ${adminId}\n`);
+    const userCount = await User.countDocuments();
+    console.log(`✅ Total de usuarios en la base de datos: ${userCount}`);
+    console.log('   → Los usuarios NO serán eliminados\n');
 
     // ========================================
     // PASO 2: Eliminar TODOS los registros operativos
@@ -93,20 +68,9 @@ const resetDatabase = async () => {
     console.log(`   ✓ Invitaciones eliminadas: ${invitationsDeleted.deletedCount}`);
 
     // ========================================
-    // PASO 3: Eliminar todos los usuarios EXCEPTO el admin
+    // PASO 3: Verificar configuración de empresa
     // ========================================
-    console.log('\n👥 PASO 3: Limpiando usuarios...');
-    
-    const usersDeleted = await User.deleteMany({ 
-      _id: { $ne: adminId } // $ne = "not equal" - borra todos excepto el admin
-    });
-    console.log(`   ✓ Usuarios eliminados: ${usersDeleted.deletedCount}`);
-    console.log(`   ✓ Usuario admin preservado: ${adminEmail}\n`);
-
-    // ========================================
-    // PASO 4: Verificar configuración de empresa
-    // ========================================
-    console.log('🏢 PASO 4: Verificando configuración de empresa...');
+    console.log('\n🏢 PASO 3: Verificando configuración de empresa...');
     
     const company = await Company.findOne({});
     if (company) {
@@ -128,15 +92,12 @@ const resetDatabase = async () => {
     console.log(`   • Lista negra: ${blacklistDeleted.deletedCount}`);
     console.log(`   • Aprobaciones: ${approvalsDeleted.deletedCount}`);
     console.log(`   • Invitaciones: ${invitationsDeleted.deletedCount}`);
-    console.log(`   • Usuarios: ${usersDeleted.deletedCount}`);
     
-    console.log('\n👤 Usuario administrador:');
-    console.log(`   • Email: ${adminEmail}`);
-    console.log(`   • Contraseña: ${adminPassword}`);
-    console.log(`   • ID: ${adminId}`);
+    console.log('\n👥 Usuarios preservados:');
+    console.log(`   • Total de usuarios mantenidos: ${userCount}`);
     
-    console.log('\n💡 Ahora puedes iniciar sesión con las credenciales del admin.');
-    console.log('   La base de datos está lista para recibir nuevos registros.\n');
+    console.log('\n💡 La base de datos está lista para recibir nuevos registros.');
+    console.log('   Todos los usuarios se mantuvieron sin cambios.\n');
 
     // Cerrar conexión
     await mongoose.connection.close();

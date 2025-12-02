@@ -1,11 +1,87 @@
 // EmailService usando Nodemailer - Backend Email Service
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
 const { formatFullDate, formatDateTime, formatShortDate, formatTime } = require('../utils/dateUtils');
 
 class EmailService {
   constructor() {
     this.initializeNodemailer();
+    this.loadSecuriTILogo();
+  }
+
+  /**
+   * Cargar el logo de SecuriTI desde el disco para usar en todos los emails
+   */
+  loadSecuriTILogo() {
+    try {
+      const logoPath = path.join(__dirname, '../../..', 'frontend', 'public', 'logo.png');
+      if (fs.existsSync(logoPath)) {
+        const logoBuffer = fs.readFileSync(logoPath);
+        this.securitiLogoBase64 = logoBuffer.toString('base64');
+        console.log('✅ Logo de SecuriTI cargado para emails');
+      } else {
+        console.warn('⚠️ Logo de SecuriTI no encontrado en:', logoPath);
+        this.securitiLogoBase64 = null;
+      }
+    } catch (error) {
+      console.error('❌ Error al cargar logo de SecuriTI:', error.message);
+      this.securitiLogoBase64 = null;
+    }
+  }
+
+  /**
+   * Obtener attachment del logo de SecuriTI para el footer
+   * @returns {Object} { logoUrl, attachment }
+   */
+  getSecuriTILogoAttachment() {
+    if (this.securitiLogoBase64) {
+      return {
+        logoUrl: 'cid:securitiFooterLogo@securiti',
+        attachment: {
+          filename: 'securiti-logo.png',
+          content: this.securitiLogoBase64,
+          encoding: 'base64',
+          cid: 'securitiFooterLogo@securiti'
+        }
+      };
+    }
+    // Fallback a URL si no se pudo cargar el logo
+    return {
+      logoUrl: `${footerLogo.logoUrl}`,
+      attachment: null
+    };
+  }
+
+  /**
+   * Agregar el logo de SecuriTI del footer a un array de attachments
+   * @param {Array} attachments - Array de attachments existentes
+   * @returns {Array} Array de attachments con el logo del footer incluido
+   */
+  addFooterLogoToAttachments(attachments = []) {
+    const footerLogo = this.getSecuriTILogoAttachment();
+    if (footerLogo.attachment) {
+      return [...attachments, footerLogo.attachment];
+    }
+    return attachments;
+  }
+
+  // Resolve a public base URL for assets served by the backend
+  getBaseApiUrl() {
+    const candidates = [
+      process.env.PUBLIC_BACKEND_URL,
+      process.env.API_PUBLIC_URL,
+      process.env.API_URL,
+      process.env.BACKEND_URL,
+      process.env.VERCEL_URL && (process.env.VERCEL_URL.startsWith('http') ? process.env.VERCEL_URL : `https://${process.env.VERCEL_URL}`),
+      process.env.FRONTEND_URL // last resort, only if proxying through frontend
+    ].filter(Boolean);
+
+    const base = candidates.find(url => typeof url === 'string' && url.trim().length > 0) || 'http://localhost:3001';
+    const finalUrl = base.replace(/\/$/, '');
+    console.log(`🔗 [EmailService] Using base API URL: ${finalUrl}`);
+    return finalUrl;
   }
 
   getFromAddress() {
@@ -82,6 +158,47 @@ class EmailService {
   }
 
   /**
+   * Prepara una imagen (logo/foto) para usar en emails
+   * @param {string} imageData - Imagen en Base64 o URL
+   * @param {string} cid - Content-ID único para la imagen
+   * @param {string} fallbackUrl - URL de fallback si no hay imagen
+   * @returns {Object} { imageUrl, attachments }
+   */
+  prepareEmailImage(imageData, cid, fallbackUrl = null) {
+    const attachments = [];
+    let imageUrl = fallbackUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
+    
+    if (imageData && imageData.startsWith('data:image')) {
+      // Extraer el tipo de imagen y los datos Base64
+      const matches = imageData.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        const imageType = matches[1];
+        const base64Data = matches[2];
+        
+        // Adjuntar la imagen con un CID (Content-ID)
+        attachments.push({
+          filename: `image.${imageType}`,
+          content: base64Data,
+          encoding: 'base64',
+          cid: cid
+        });
+        
+        // Usar CID en el src de la imagen
+        imageUrl = `cid:${cid}`;
+        console.log(`📎 Imagen incrustada con CID: ${cid}`);
+      } else {
+        console.warn(`⚠️ Formato Base64 inválido para CID: ${cid}`);
+      }
+    } else if (imageData && (imageData.startsWith('http://') || imageData.startsWith('https://'))) {
+      // Si es una URL pública, usarla directamente
+      imageUrl = imageData;
+      console.log(`🔗 Usando URL pública: ${imageData.substring(0, 50)}...`);
+    }
+    
+    return { imageUrl, attachments };
+  }
+
+  /**
    * Genera URL temporal para foto de visitante
    * @param {string} visitId - ID de la visita
    * @returns {string} URL pública temporal con token JWT
@@ -98,7 +215,7 @@ class EmailService {
     );
     
     // Construir URL pública
-    const baseUrl = process.env.API_URL || 'http://localhost:5000';
+    const baseUrl = this.getBaseApiUrl();
     const photoUrl = `${baseUrl}/api/visits/visitor-photo/${visitId}/${token}`;
     
     console.log(`🔗 URL temporal generada para visita ${visitId}`);
@@ -122,7 +239,7 @@ class EmailService {
     );
     
     // Construir URL pública
-    const baseUrl = process.env.API_URL || 'http://localhost:5000';
+    const baseUrl = this.getBaseApiUrl();
     const logoUrl = `${baseUrl}/api/company/logo/${companyId}/${token}`;
     
     console.log(`🏢 URL temporal generada para logo de empresa ${companyId}`);
@@ -146,7 +263,7 @@ class EmailService {
     );
     
     // Construir URL pública
-    const baseUrl = process.env.API_URL || 'http://localhost:5000';
+    const baseUrl = this.getBaseApiUrl();
     const imageUrl = `${baseUrl}/api/access/event-image/${accessId}/${token}`;
     
     console.log(`🖼️ URL temporal generada para imagen de evento ${accessId}`);
@@ -170,7 +287,7 @@ class EmailService {
     );
     
     // Construir URL pública
-    const baseUrl = process.env.API_URL || 'http://localhost:5000';
+    const baseUrl = this.getBaseApiUrl();
     const photoUrl = `${baseUrl}/api/company/location-photo/${companyId}/${token}`;
     
     console.log(`📍 URL temporal generada para foto de ubicación de empresa ${companyId}`);
@@ -182,17 +299,24 @@ class EmailService {
       return { success: false, error: 'Email service not configured' };
     }
 
+    const footerLogo = this.getSecuriTILogoAttachment();
+
     try {
       const mailOptions = {
         from: this.getFromAddress(),
         to: to,
         subject: 'Test Email - Visitas SecuriTI',
+        attachments: footerLogo.attachment ? [footerLogo.attachment] : [],
         html: `
           <h1>🧪 Test Email</h1>
           <p>Este es un email de prueba del sistema Visitas SecuriTI.</p>
           <p>Si recibes este email, la configuración de Nodemailer está funcionando correctamente.</p>
           <br>
           <p>Fecha: ${formatDateTime(new Date())}</p>
+          <hr>
+          <p style="text-align: center;">
+            <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px;" />
+          </p>
         `
       };
 
@@ -211,14 +335,19 @@ class EmailService {
       return { success: false, error: 'Email service not configured' };
     }
 
-    // Logo de la empresa (puedes usar una variable o URL fija)
-    const COMPANY_LOGO_URL = process.env.COMPANY_LOGO_URL || 'https://securiti.mx/logo.png';
+    // Preparar logo usando la función auxiliar
+    const { imageUrl: COMPANY_LOGO_URL, attachments } = this.prepareEmailImage(
+      visitData.companyLogo,
+      'companyLogo@securiti'
+    );
+    const footerLogo = this.getSecuriTILogoAttachment();
 
     try {
       const mailOptions = {
         from: this.getFromAddress(),
         to: visitData.visitorEmail,
         subject: `Confirmación de Visita - ${visitData.companyName}`,
+        attachments: this.addFooterLogoToAttachments(attachments),
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb;">
             <div style="text-align:center; padding: 24px 0 8px 0;">
@@ -280,27 +409,12 @@ class EmailService {
       return { success: false, error: 'No visitor email' };
     }
 
-    // Generar URL temporal para el logo si existe y es Base64
-    let COMPANY_LOGO_URL;
-    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
-      // Es Base64, generar URL temporal
-      if (data.companyId) {
-        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
-        console.log('🏢 [EMAIL] Logo empresa: Generando URL temporal con JWT');
-      } else {
-        // Fallback si no hay companyId
-        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-        console.warn('⚠️ [EMAIL] No companyId disponible, usando logo fallback');
-      }
-    } else if (data.companyLogo) {
-      // Ya es una URL pública
-      COMPANY_LOGO_URL = data.companyLogo;
-      console.log('🏢 [EMAIL] Logo empresa: URL pública detectada');
-    } else {
-      // No hay logo, usar fallback
-      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-      console.log('🏢 [EMAIL] No logo disponible, usando fallback');
-    }
+    // Preparar logo usando la función auxiliar
+    const { imageUrl: COMPANY_LOGO_URL, attachments } = this.prepareEmailImage(
+      data.companyLogo,
+      'companyLogo@securiti'
+    );
+    const footerLogo = this.getSecuriTILogoAttachment();
 
     try {
       const isApproved = data.status === 'approved';
@@ -333,6 +447,7 @@ class EmailService {
         from: this.getFromAddress(),
         to: data.visitorEmail,
         subject: `Tu visita ha sido ${statusText.toLowerCase()} - ${data.companyName}`,
+        attachments: this.addFooterLogoToAttachments(attachments),
         html: `
           <!DOCTYPE html>
           <html>
@@ -484,7 +599,7 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
-                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
+                        <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
                           Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${data.companyName}</strong>
@@ -518,35 +633,16 @@ class EmailService {
       return { success: false, error: 'Email service not configured' };
     }
 
-    // Generar URL temporal para el logo si existe y es Base64
-    let COMPANY_LOGO_URL;
-    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
-      if (data.companyId) {
-        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
-        console.log('🏢 [APPROVAL] Logo empresa: URL temporal generada');
-      } else {
-        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-        console.warn('⚠️ [APPROVAL] No companyId, usando fallback');
-      }
-    } else if (data.companyLogo) {
-      COMPANY_LOGO_URL = data.companyLogo;
-      console.log('🏢 [APPROVAL] Logo empresa: URL pública');
-    } else {
-      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-      console.log('🏢 [APPROVAL] Sin logo, usando fallback');
-    }
+    // Preparar imágenes usando la función auxiliar
+    const logoResult = this.prepareEmailImage(data.companyLogo, 'companyLogo@securiti');
+    const visitorPhotoResult = data.visitorPhoto ? this.prepareEmailImage(data.visitorPhoto, 'visitorPhoto@securiti', null) : { imageUrl: null, attachments: [] };
     
-    // 🔗 Generar URL temporal para foto del visitante (si existe y es Base64)
-    let visitorPhotoUrl = null;
-    if (data.visitorPhoto && data.visitorPhoto.startsWith('data:image')) {
-      // Es Base64, generar URL temporal
-      visitorPhotoUrl = this.generateVisitorPhotoUrl(data.visitId);
-      console.log('🖼️ [Approval Request] Foto de visitante convertida a URL temporal');
-    } else if (data.visitorPhoto) {
-      // Ya es una URL pública, usarla directamente
-      visitorPhotoUrl = data.visitorPhoto;
-      console.log('🖼️ [Approval Request] Usando URL pública de foto de visitante');
-    }
+    const COMPANY_LOGO_URL = logoResult.imageUrl;
+    const visitorPhotoUrl = visitorPhotoResult.imageUrl;
+    
+    // Combinar todos los attachments
+    const allAttachments = [...logoResult.attachments, ...visitorPhotoResult.attachments];
+    const footerLogo = this.getSecuriTILogoAttachment();
     
     const primaryColor = '#1e3a8a'; // Azul oscuro
     const secondaryColor = '#ffffff'; // Blanco
@@ -557,6 +653,7 @@ class EmailService {
         from: this.getFromAddress(),
         to: data.hostEmail,
         subject: `Nueva solicitud de visita de ${data.visitorName}`,
+        attachments: this.addFooterLogoToAttachments(allAttachments),
         html: `
           <!DOCTYPE html>
           <html>
@@ -664,7 +761,7 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
-                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
+                        <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
                           Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${data.companyName}</strong>
@@ -696,23 +793,12 @@ class EmailService {
       return { success: false, error: 'Email service not configured' };
     }
 
-    // Generar URL temporal para el logo si existe y es Base64
-    let COMPANY_LOGO_URL;
-    if (invitationData.companyLogo && invitationData.companyLogo.startsWith('data:image')) {
-      if (invitationData.companyId) {
-        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(invitationData.companyId);
-        console.log('🏢 [INVITATION] Logo empresa: URL temporal generada');
-      } else {
-        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-        console.warn('⚠️ [INVITATION] No companyId, usando fallback');
-      }
-    } else if (invitationData.companyLogo) {
-      COMPANY_LOGO_URL = invitationData.companyLogo;
-      console.log('🏢 [INVITATION] Logo empresa: URL pública');
-    } else {
-      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-      console.log('🏢 [INVITATION] Sin logo, usando fallback');
-    }
+    // Preparar logo usando la función auxiliar
+    const { imageUrl: COMPANY_LOGO_URL, attachments } = this.prepareEmailImage(
+      invitationData.companyLogo,
+      'companyLogo@securiti'
+    );
+    const footerLogo = this.getSecuriTILogoAttachment();
 
     const primaryColor = '#1e3a8a';
     const accentColor = '#f97316';
@@ -724,6 +810,7 @@ class EmailService {
         from: this.getFromAddress(),
         to: invitationData.email,
         subject: `Invitación para unirte a ${invitationData.companyName} - Visitas SecuriTI`,
+        attachments: this.addFooterLogoToAttachments(attachments), // Incluir imágenes adjuntas
         html: `
           <!DOCTYPE html>
           <html>
@@ -740,7 +827,7 @@ class EmailService {
                     <!-- Header -->
                     <tr>
                       <td style="background: linear-gradient(135deg, ${primaryColor} 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
-                        <img src="${COMPANY_LOGO_URL}" alt="${invitationData.companyName}" style="max-height: 50px; margin-bottom: 20px;">
+                        <img src="${COMPANY_LOGO_URL}" alt="${invitationData.companyName}" style="max-height: 50px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">
                         <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Has sido invitado</h1>
                         <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Únete al sistema de gestión de visitas</p>
                       </td>
@@ -798,7 +885,7 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
-                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
+                        <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
                           Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${invitationData.companyName}</strong>
@@ -832,23 +919,12 @@ class EmailService {
       return { success: false, error: 'Email service not configured' };
     }
 
-    // Generar URL temporal para el logo si existe y es Base64
-    let COMPANY_LOGO_URL;
-    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
-      if (data.companyId) {
-        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
-        console.log('🏢 [CANCELLATION] Logo empresa: URL temporal generada');
-      } else {
-        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-        console.warn('⚠️ [CANCELLATION] No companyId, usando fallback');
-      }
-    } else if (data.companyLogo) {
-      COMPANY_LOGO_URL = data.companyLogo;
-      console.log('🏢 [CANCELLATION] Logo empresa: URL pública');
-    } else {
-      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-      console.log('🏢 [CANCELLATION] Sin logo, usando fallback');
-    }
+    // Preparar logo usando la función auxiliar
+    const { imageUrl: COMPANY_LOGO_URL, attachments } = this.prepareEmailImage(
+      data.companyLogo,
+      'companyLogo@securiti'
+    );
+    const footerLogo = this.getSecuriTILogoAttachment();
 
     const primaryColor = '#1e3a8a';
     const accentColor = '#f97316';
@@ -860,6 +936,7 @@ class EmailService {
           from: this.getFromAddress(),
           bcc: data.invitedEmails,
           subject: `Acceso cancelado - ${data.title}`,
+          attachments: this.addFooterLogoToAttachments(attachments),
           html: `
             <!DOCTYPE html>
             <html>
@@ -928,7 +1005,7 @@ class EmailService {
                       <!-- Footer -->
                       <tr>
                         <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
-                          <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
+                          <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                           <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
                             Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                             <strong>${data.companyName}</strong>
@@ -955,6 +1032,7 @@ class EmailService {
           from: this.getFromAddress(),
           to: data.creatorEmail,
           subject: `Confirmación: Acceso cancelado - ${data.title}`,
+          attachments: this.addFooterLogoToAttachments(attachments),
           html: `
             <!DOCTYPE html>
             <html>
@@ -1016,7 +1094,7 @@ class EmailService {
                       <!-- Footer -->
                       <tr>
                         <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
-                          <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
+                          <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                           <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
                             Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                             <strong>${data.companyName}</strong>
@@ -1063,23 +1141,16 @@ class EmailService {
       return { success: false, message: 'Email service not configured' };
     }
 
-    // Generar URL temporal para el logo si existe y es Base64
-    let COMPANY_LOGO_URL;
-    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
-      if (data.companyId) {
-        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
-        console.log('🏢 [REGISTRATION NOTIFICATION] Logo empresa: URL temporal generada');
-      } else {
-        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-        console.warn('⚠️ [REGISTRATION NOTIFICATION] No companyId, usando fallback');
-      }
-    } else if (data.companyLogo) {
-      COMPANY_LOGO_URL = data.companyLogo;
-      console.log('🏢 [REGISTRATION NOTIFICATION] Logo empresa: URL pública');
-    } else {
-      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-      console.log('🏢 [REGISTRATION NOTIFICATION] Sin logo, usando fallback');
-    }
+    // Preparar imágenes usando la función auxiliar
+    const logoResult = this.prepareEmailImage(data.companyLogo, 'companyLogo@securiti');
+    const visitorPhotoResult = data.visitorPhoto ? this.prepareEmailImage(data.visitorPhoto, 'visitorPhoto@securiti', null) : { imageUrl: null, attachments: [] };
+    
+    const COMPANY_LOGO_URL = logoResult.imageUrl;
+    const VISITOR_PHOTO_URL = visitorPhotoResult.imageUrl;
+    
+    // Combinar todos los attachments
+    const allAttachments = [...logoResult.attachments, ...visitorPhotoResult.attachments];
+    const footerLogo = this.getSecuriTILogoAttachment();
 
     try {
       const primaryColor = '#1e3a8a';
@@ -1089,6 +1160,7 @@ class EmailService {
         from: this.getFromAddress(),
         to: data.creatorEmail,
         subject: `Nuevo registro para tu evento: ${data.eventTitle}`,
+        attachments: this.addFooterLogoToAttachments(allAttachments),
         html: `
           <!DOCTYPE html>
           <html>
@@ -1132,12 +1204,12 @@ class EmailService {
                           </tr>
                         </table>
                         
-                        ${data.visitorPhoto ? `
+                        ${VISITOR_PHOTO_URL ? `
                         <!-- Visitor Photo -->
                         <table width="100%" cellpadding="0" cellspacing="0" style="margin: 25px 0;">
                           <tr>
                             <td align="center">
-                              <img src="${data.visitorPhoto}" alt="Foto del visitante" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid ${accentColor};">
+                              <img src="${VISITOR_PHOTO_URL}" alt="Foto del visitante" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid ${accentColor};">
                             </td>
                           </tr>
                         </table>
@@ -1192,7 +1264,7 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
-                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
+                        <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
                           Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${data.companyName}</strong>
@@ -1230,23 +1302,12 @@ class EmailService {
       return { success: false, error: 'No visitor email' };
     }
 
-    // Generar URL temporal para el logo si existe y es Base64
-    let COMPANY_LOGO_URL;
-    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
-      if (data.companyId) {
-        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
-        console.log('🏢 [CHECKOUT] Logo empresa: URL temporal generada');
-      } else {
-        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-        console.warn('⚠️ [CHECKOUT] No companyId, usando fallback');
-      }
-    } else if (data.companyLogo) {
-      COMPANY_LOGO_URL = data.companyLogo;
-      console.log('🏢 [CHECKOUT] Logo empresa: URL pública');
-    } else {
-      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-      console.log('🏢 [CHECKOUT] Sin logo, usando fallback');
-    }
+    // Preparar logo usando la función auxiliar
+    const { imageUrl: COMPANY_LOGO_URL, attachments } = this.prepareEmailImage(
+      data.companyLogo,
+      'companyLogo@securiti'
+    );
+    const footerLogo = this.getSecuriTILogoAttachment();
     
     const primaryColor = '#1e3a8a'; // Azul oscuro
     const secondaryColor = '#ffffff'; // Blanco
@@ -1266,6 +1327,7 @@ class EmailService {
         from: this.getFromAddress(),
         to: data.visitorEmail,
         subject: `Gracias por tu visita - ${data.companyName}`,
+        attachments: this.addFooterLogoToAttachments(attachments),
         html: `
           <!DOCTYPE html>
           <html>
@@ -1350,7 +1412,7 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb; text-align: center;">
-                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
+                        <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
                           Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${data.companyName}</strong>
@@ -1396,67 +1458,30 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
-    // Generar URL temporal para el logo si existe y es Base64
-    let COMPANY_LOGO_URL;
-    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
-      if (data.companyId) {
-        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
-        console.log('🏢 [ACCESS CREATED] Logo empresa: URL temporal generada');
-      } else {
-        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-        console.warn('⚠️ [ACCESS CREATED] No companyId, usando fallback');
-      }
-    } else if (data.companyLogo) {
-      COMPANY_LOGO_URL = data.companyLogo;
-      console.log('🏢 [ACCESS CREATED] Logo empresa: URL pública');
-    } else {
-      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-      console.log('🏢 [ACCESS CREATED] Sin logo, usando fallback');
-    }
-
-    // Generar URL temporal para la imagen del evento si existe y es Base64
-    let EVENT_IMAGE_URL;
-    if (data.eventImage && data.eventImage.startsWith('data:image')) {
-      if (data.accessId) {
-        EVENT_IMAGE_URL = this.generateEventImageUrl(data.accessId);
-        console.log('🖼️ [ACCESS CREATED] Imagen del evento: URL temporal generada');
-      } else {
-        EVENT_IMAGE_URL = null;
-        console.warn('⚠️ [ACCESS CREATED] No accessId para imagen temporal');
-      }
-    } else if (data.eventImage) {
-      EVENT_IMAGE_URL = data.eventImage;
-      console.log('🖼️ [ACCESS CREATED] Imagen del evento: URL pública');
-    } else {
-      EVENT_IMAGE_URL = null;
-    }
+    // Preparar imágenes usando la función auxiliar
+    const logoResult = this.prepareEmailImage(data.companyLogo, 'companyLogo@securiti');
+    const eventImageResult = data.eventImage ? this.prepareEmailImage(data.eventImage, 'eventImage@securiti', null) : { imageUrl: null, attachments: [] };
+    
+    const COMPANY_LOGO_URL = logoResult.imageUrl;
+    const EVENT_IMAGE_URL = eventImageResult.imageUrl;
+    
+    // Combinar todos los attachments
+    const allAttachments = [...logoResult.attachments, ...eventImageResult.attachments];
+    const footerLogo = this.getSecuriTILogoAttachment();
 
     try {
       const primaryColor = '#1e3a8a';
       const accentColor = '#f97316';
       
       const logoHtml = COMPANY_LOGO_URL 
-        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto; margin-bottom: 15px;" />`
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;" />`
         : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
-
-        // Generar URL temporal para la imagen del evento si existe y es Base64
-        let EVENT_IMAGE_URL;
-        if (data.eventImage && data.eventImage.startsWith('data:image')) {
-          if (data.accessId) {
-            EVENT_IMAGE_URL = this.generateEventImageUrl(data.accessId);
-          } else {
-            EVENT_IMAGE_URL = null;
-          }
-        } else if (data.eventImage) {
-          EVENT_IMAGE_URL = data.eventImage;
-        } else {
-          EVENT_IMAGE_URL = null;
-        }
 
       const mailOptions = {
         from: this.getFromAddress(),
         to: data.creatorEmail,
         subject: `Acceso ${data.accessTitle} creado exitosamente`,
+        attachments: this.addFooterLogoToAttachments(allAttachments),
         html: `
           <!DOCTYPE html>
           <html>
@@ -1555,7 +1580,7 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
-                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
+                        <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
                           Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${data.companyName}</strong>
@@ -1591,57 +1616,18 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
-    // Generar URL temporal para el logo si existe y es Base64
-    let COMPANY_LOGO_URL;
-    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
-      if (data.companyId) {
-        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
-        console.log('🏢 [ACCESS INVITATION] Logo empresa: URL temporal generada');
-      } else {
-        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-        console.warn('⚠️ [ACCESS INVITATION] No companyId, usando fallback');
-      }
-    } else if (data.companyLogo) {
-      COMPANY_LOGO_URL = data.companyLogo;
-      console.log('🏢 [ACCESS INVITATION] Logo empresa: URL pública');
-    } else {
-      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-      console.log('🏢 [ACCESS INVITATION] Sin logo, usando fallback');
-    }
+    // Preparar imágenes usando la función auxiliar
+    const logoResult = this.prepareEmailImage(data.companyLogo, 'companyLogo@securiti');
+    const eventImageResult = data.eventImage ? this.prepareEmailImage(data.eventImage, 'eventImage@securiti', null) : { imageUrl: null, attachments: [] };
+    const locationPhotoResult = data.companyLocation?.photo ? this.prepareEmailImage(data.companyLocation.photo, 'locationPhoto@securiti', null) : { imageUrl: null, attachments: [] };
 
-    // Generar URL temporal para la imagen del evento si existe y es Base64
-    let EVENT_IMAGE_URL;
-    if (data.eventImage && data.eventImage.startsWith('data:image')) {
-      if (data.accessId) {
-        EVENT_IMAGE_URL = this.generateEventImageUrl(data.accessId);
-        console.log('🖼️ [ACCESS INVITATION] Imagen evento: URL temporal generada');
-      } else {
-        EVENT_IMAGE_URL = null;
-        console.warn('⚠️ [ACCESS INVITATION] No accessId para imagen de evento');
-      }
-    } else if (data.eventImage) {
-      EVENT_IMAGE_URL = data.eventImage;
-      console.log('🖼️ [ACCESS INVITATION] Imagen evento: URL pública');
-    } else {
-      EVENT_IMAGE_URL = null;
-    }
-
-    // Generar URL temporal para la foto de ubicación si existe y es Base64
-    let LOCATION_PHOTO_URL;
-    if (data.companyLocation?.photo && data.companyLocation.photo.startsWith('data:image')) {
-      if (data.companyId) {
-        LOCATION_PHOTO_URL = this.generateLocationPhotoUrl(data.companyId);
-        console.log('📍 [ACCESS INVITATION] Foto de ubicación: URL temporal generada');
-      } else {
-        LOCATION_PHOTO_URL = null;
-        console.warn('⚠️ [ACCESS INVITATION] No companyId para foto de ubicación');
-      }
-    } else if (data.companyLocation?.photo) {
-      LOCATION_PHOTO_URL = data.companyLocation.photo;
-      console.log('📍 [ACCESS INVITATION] Foto de ubicación: URL pública');
-    } else {
-      LOCATION_PHOTO_URL = null;
-    }
+    const COMPANY_LOGO_URL = logoResult.imageUrl;
+    const EVENT_IMAGE_URL = eventImageResult.imageUrl;
+    const LOCATION_PHOTO_URL = locationPhotoResult.imageUrl;
+    
+    // Combinar todos los attachments
+    const allAttachments = [...logoResult.attachments, ...eventImageResult.attachments, ...locationPhotoResult.attachments];
+    const footerLogo = this.getSecuriTILogoAttachment();
 
     // Fallback para hostName
     const hostName = data.hostName && typeof data.hostName === 'string' && data.hostName.trim() ? data.hostName : (data.creatorName && typeof data.creatorName === 'string' && data.creatorName.trim() ? data.creatorName : 'Anfitrión');
@@ -1661,6 +1647,7 @@ class EmailService {
         from: this.getFromAddress(),
         to: data.invitedEmail,
         subject: `Invitación a ${data.companyName}`,
+        attachments: this.addFooterLogoToAttachments(allAttachments),
         html: `
           <!DOCTYPE html>
           <html>
@@ -1785,7 +1772,7 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
-                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
+                        <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6;">
                           Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${data.companyName}</strong>
@@ -1819,40 +1806,16 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
-    // Generar URL temporal para el logo si existe y es Base64
-    let COMPANY_LOGO_URL;
-    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
-      if (data.companyId) {
-        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
-        console.log('🏢 [REMINDER CREATOR] Logo empresa: URL temporal generada');
-      } else {
-        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-        console.warn('⚠️ [REMINDER CREATOR] No companyId, usando fallback');
-      }
-    } else if (data.companyLogo) {
-      COMPANY_LOGO_URL = data.companyLogo;
-      console.log('🏢 [REMINDER CREATOR] Logo empresa: URL pública');
-    } else {
-      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-      console.log('🏢 [REMINDER CREATOR] Sin logo, usando fallback');
-    }
-
-    // Generar URL temporal para la imagen del evento si existe y es Base64
-    let EVENT_IMAGE_URL;
-    if (data.eventImage && data.eventImage.startsWith('data:image')) {
-      if (data.accessId) {
-        EVENT_IMAGE_URL = this.generateEventImageUrl(data.accessId);
-        console.log('🖼️ [REMINDER CREATOR] Imagen del evento: URL temporal generada');
-      } else {
-        EVENT_IMAGE_URL = null;
-        console.warn('⚠️ [REMINDER CREATOR] No accessId para imagen temporal');
-      }
-    } else if (data.eventImage) {
-      EVENT_IMAGE_URL = data.eventImage;
-      console.log('🖼️ [REMINDER CREATOR] Imagen del evento: URL pública');
-    } else {
-      EVENT_IMAGE_URL = null;
-    }
+    // Preparar imágenes usando la función auxiliar
+    const logoResult = this.prepareEmailImage(data.companyLogo, 'companyLogo@securiti');
+    const eventImageResult = data.eventImage ? this.prepareEmailImage(data.eventImage, 'eventImage@securiti', null) : { imageUrl: null, attachments: [] };
+    
+    const COMPANY_LOGO_URL = logoResult.imageUrl;
+    const EVENT_IMAGE_URL = eventImageResult.imageUrl;
+    
+    // Combinar todos los attachments
+    const allAttachments = [...logoResult.attachments, ...eventImageResult.attachments];
+    const footerLogo = this.getSecuriTILogoAttachment();
 
     // Fallbacks para variables usadas en la plantilla
     const creatorName = data.creatorName && typeof data.creatorName === 'string' && data.creatorName.trim()
@@ -1867,13 +1830,14 @@ class EmailService {
       const accentColor = '#f97316';
       
       const logoHtml = COMPANY_LOGO_URL 
-        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto;" />`
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto; display: block; margin-left: auto; margin-right: auto;" />`
         : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
         from: this.getFromAddress(),
         to: data.creatorEmail,
         subject: `No olvides la cita ${data.accessTitle}`,
+        attachments: this.addFooterLogoToAttachments(allAttachments),
         html: `
           <!DOCTYPE html>
           <html>
@@ -1933,7 +1897,7 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
-                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
+                        <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0;">
                           Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${data.companyName}</strong>
@@ -1969,40 +1933,16 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
-    // Generar URL temporal para el logo si existe y es Base64
-    let COMPANY_LOGO_URL;
-    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
-      if (data.companyId) {
-        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
-        console.log('🏢 [REMINDER GUEST] Logo empresa: URL temporal generada');
-      } else {
-        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-        console.warn('⚠️ [REMINDER GUEST] No companyId, usando fallback');
-      }
-    } else if (data.companyLogo) {
-      COMPANY_LOGO_URL = data.companyLogo;
-      console.log('🏢 [REMINDER GUEST] Logo empresa: URL pública');
-    } else {
-      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-      console.log('🏢 [REMINDER GUEST] Sin logo, usando fallback');
-    }
-
-    // Generar URL temporal para la imagen del evento si existe y es Base64
-    let EVENT_IMAGE_URL;
-    if (data.eventImage && data.eventImage.startsWith('data:image')) {
-      if (data.accessId) {
-        EVENT_IMAGE_URL = this.generateEventImageUrl(data.accessId);
-        console.log('🖼️ [REMINDER GUEST] Imagen del evento: URL temporal generada');
-      } else {
-        EVENT_IMAGE_URL = null;
-        console.warn('⚠️ [REMINDER GUEST] No accessId para imagen temporal');
-      }
-    } else if (data.eventImage) {
-      EVENT_IMAGE_URL = data.eventImage;
-      console.log('🖼️ [REMINDER GUEST] Imagen del evento: URL pública');
-    } else {
-      EVENT_IMAGE_URL = null;
-    }
+    // Preparar imágenes usando la función auxiliar
+    const logoResult = this.prepareEmailImage(data.companyLogo, 'companyLogo@securiti');
+    const eventImageResult = data.eventImage ? this.prepareEmailImage(data.eventImage, 'eventImage@securiti', null) : { imageUrl: null, attachments: [] };
+    
+    const COMPANY_LOGO_URL = logoResult.imageUrl;
+    const EVENT_IMAGE_URL = eventImageResult.imageUrl;
+    
+    // Combinar todos los attachments
+    const allAttachments = [...logoResult.attachments, ...eventImageResult.attachments];
+    const footerLogo = this.getSecuriTILogoAttachment();
 
     // Fallbacks para variables usadas en la plantilla
     const hostName = data.hostName && typeof data.hostName === 'string' && data.hostName.trim()
@@ -2017,13 +1957,14 @@ class EmailService {
       const accentColor = '#f97316';
       
       const logoHtml = COMPANY_LOGO_URL 
-        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto;" />`
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto; display: block; margin-left: auto; margin-right: auto;" />`
         : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
         to: data.invitedEmail,
         subject: `${hostName} de ${data.companyName} te espera para ${data.accessTitle}`,
+        attachments: this.addFooterLogoToAttachments(allAttachments),
         html: `
           <!DOCTYPE html>
           <html>
@@ -2096,7 +2037,7 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
-                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
+                        <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0;">
                           Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${data.companyName}</strong>
@@ -2132,69 +2073,32 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
-    // Generar URL temporal para el logo si existe y es Base64
-    let COMPANY_LOGO_URL;
-    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
-      if (data.companyId) {
-        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
-        console.log('🏢 [GUEST CHECKED IN] Logo empresa: URL temporal generada');
-      } else {
-        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-        console.warn('⚠️ [GUEST CHECKED IN] No companyId, usando fallback');
-      }
-    } else if (data.companyLogo) {
-      COMPANY_LOGO_URL = data.companyLogo;
-      console.log('🏢 [GUEST CHECKED IN] Logo empresa: URL pública');
-    } else {
-      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-      console.log('🏢 [GUEST CHECKED IN] Sin logo, usando fallback');
-    }
-
-    // Generar URL temporal para la foto del visitante si existe
-    let GUEST_PHOTO_URL;
-    if (data.guestPhoto && data.guestPhoto.startsWith('data:image')) {
-      if (data.visitId) {
-        GUEST_PHOTO_URL = this.generateVisitorPhotoUrl(data.visitId);
-        console.log('📸 [GUEST CHECKED IN] Foto de visitante: URL temporal generada');
-      } else {
-        GUEST_PHOTO_URL = null;
-        console.warn('⚠️ [GUEST CHECKED IN] No visitId para foto temporal');
-      }
-    } else if (data.guestPhoto) {
-      GUEST_PHOTO_URL = data.guestPhoto;
-    } else {
-      GUEST_PHOTO_URL = null;
-    }
-
-    // Generar URL temporal para la imagen del evento si existe
-    let EVENT_IMAGE_URL;
-    if (data.eventImage && data.eventImage.startsWith('data:image')) {
-      if (data.accessId) {
-        EVENT_IMAGE_URL = this.generateEventImageUrl(data.accessId);
-        console.log('🖼️ [GUEST CHECKED IN] Imagen del evento: URL temporal generada');
-      } else {
-        EVENT_IMAGE_URL = null;
-        console.warn('⚠️ [GUEST CHECKED IN] No accessId para imagen temporal');
-      }
-    } else if (data.eventImage) {
-      EVENT_IMAGE_URL = data.eventImage;
-      console.log('🖼️ [GUEST CHECKED IN] Imagen del evento: URL pública');
-    } else {
-      EVENT_IMAGE_URL = null;
-    }
+    // Preparar imágenes usando la función auxiliar
+    const logoResult = this.prepareEmailImage(data.companyLogo, 'companyLogo@securiti');
+    const guestPhotoResult = data.guestPhoto ? this.prepareEmailImage(data.guestPhoto, 'guestPhoto@securiti', null) : { imageUrl: null, attachments: [] };
+    const eventImageResult = data.eventImage ? this.prepareEmailImage(data.eventImage, 'eventImage@securiti', null) : { imageUrl: null, attachments: [] };
+    
+    const COMPANY_LOGO_URL = logoResult.imageUrl;
+    const GUEST_PHOTO_URL = guestPhotoResult.imageUrl;
+    const EVENT_IMAGE_URL = eventImageResult.imageUrl;
+    
+    // Combinar todos los attachments
+    const allAttachments = [...logoResult.attachments, ...guestPhotoResult.attachments, ...eventImageResult.attachments];
+    const footerLogo = this.getSecuriTILogoAttachment();
 
     try {
       const primaryColor = '#1e3a8a';
       const accentColor = '#f97316';
       
       const logoHtml = COMPANY_LOGO_URL 
-        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto;" />`
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto; display: block; margin-left: auto; margin-right: auto;" />`
         : `<h2 style="color: #ffffff; margin: 0;">${data.companyName}</h2>`;
 
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
         to: data.creatorEmail,
         subject: `Entrada aprobada: ${data.guestName}`,
+        attachments: this.addFooterLogoToAttachments(allAttachments),
         html: `
           <!DOCTYPE html>
           <html>
@@ -2269,7 +2173,7 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
-                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
+                        <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0;">
                           Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${data.companyName}</strong>
@@ -2305,23 +2209,12 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
-    // Generar URL temporal para el logo si existe y es Base64
-    let COMPANY_LOGO_URL;
-    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
-      if (data.companyId) {
-        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
-        console.log('🏢 [MODIFIED CREATOR] Logo empresa: URL temporal generada');
-      } else {
-        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-        console.warn('⚠️ [MODIFIED CREATOR] No companyId, usando fallback');
-      }
-    } else if (data.companyLogo) {
-      COMPANY_LOGO_URL = data.companyLogo;
-      console.log('🏢 [MODIFIED CREATOR] Logo empresa: URL pública');
-    } else {
-      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-      console.log('🏢 [MODIFIED CREATOR] Sin logo, usando fallback');
-    }
+    // Preparar logo usando la función auxiliar
+    const { imageUrl: COMPANY_LOGO_URL, attachments } = this.prepareEmailImage(
+      data.companyLogo,
+      'companyLogo@securiti'
+    );
+    const footerLogo = this.getSecuriTILogoAttachment();
 
     try {
       const primaryColor = '#1e3a8a';
@@ -2335,6 +2228,7 @@ class EmailService {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
         to: data.creatorEmail,
         subject: `Fecha de fin extendida: ${data.accessTitle}`,
+        attachments: this.addFooterLogoToAttachments(attachments),
         html: `
           <!DOCTYPE html>
           <html>
@@ -2384,7 +2278,7 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
-                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
+                        <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0;">
                           Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${data.companyName}</strong>
@@ -2420,23 +2314,12 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
-    // Generar URL temporal para el logo si existe y es Base64
-    let COMPANY_LOGO_URL;
-    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
-      if (data.companyId) {
-        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
-        console.log('🏢 [MODIFIED GUEST] Logo empresa: URL temporal generada');
-      } else {
-        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-        console.warn('⚠️ [MODIFIED GUEST] No companyId, usando fallback');
-      }
-    } else if (data.companyLogo) {
-      COMPANY_LOGO_URL = data.companyLogo;
-      console.log('🏢 [MODIFIED GUEST] Logo empresa: URL pública');
-    } else {
-      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-      console.log('🏢 [MODIFIED GUEST] Sin logo, usando fallback');
-    }
+    // Preparar logo usando la función auxiliar
+    const { imageUrl: COMPANY_LOGO_URL, attachments } = this.prepareEmailImage(
+      data.companyLogo,
+      'companyLogo@securiti'
+    );
+    const footerLogo = this.getSecuriTILogoAttachment();
 
     try {
       const primaryColor = '#1e3a8a';
@@ -2450,6 +2333,7 @@ class EmailService {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
         to: data.invitedEmail,
         subject: `Modificación del acceso en ${data.companyName}`,
+        attachments: this.addFooterLogoToAttachments(attachments),
         html: `
           <!DOCTYPE html>
           <html>
@@ -2514,7 +2398,7 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
-                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
+                        <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0;">
                           Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${data.companyName}</strong>
@@ -2550,46 +2434,23 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
-    // Generar URL temporal para el logo si existe y es Base64
-    let COMPANY_LOGO_URL;
-    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
-      if (data.companyId) {
-        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
-        console.log('🏢 [CANCELLED] Logo empresa: URL temporal generada');
-      } else {
-        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-        console.warn('⚠️ [CANCELLED] No companyId, usando fallback');
-      }
-    } else if (data.companyLogo) {
-      COMPANY_LOGO_URL = data.companyLogo;
-      console.log('🏢 [CANCELLED] Logo empresa: URL pública');
-    } else {
-      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-      console.log('🏢 [CANCELLED] Sin logo, usando fallback');
-    }
-
-    // Generar URL temporal para la imagen del evento si existe y es Base64
-    let EVENT_IMAGE_URL;
-    if (data.eventImage && data.eventImage.startsWith('data:image')) {
-      if (data.accessId) {
-        EVENT_IMAGE_URL = this.generateEventImageUrl(data.accessId);
-        console.log('🖼️ [CANCELLED] Imagen del evento: URL temporal generada');
-      } else {
-        EVENT_IMAGE_URL = null;
-        console.warn('⚠️ [CANCELLED] No accessId para imagen temporal');
-      }
-    } else if (data.eventImage) {
-      EVENT_IMAGE_URL = data.eventImage;
-    } else {
-      EVENT_IMAGE_URL = null;
-    }
+    // Preparar imágenes usando la función auxiliar
+    const logoResult = this.prepareEmailImage(data.companyLogo, 'companyLogo@securiti');
+    const eventImageResult = data.eventImage ? this.prepareEmailImage(data.eventImage, 'eventImage@securiti', null) : { imageUrl: null, attachments: [] };
+    
+    const COMPANY_LOGO_URL = logoResult.imageUrl;
+    const EVENT_IMAGE_URL = eventImageResult.imageUrl;
+    
+    // Combinar todos los attachments
+    const allAttachments = [...logoResult.attachments, ...eventImageResult.attachments];
+    const footerLogo = this.getSecuriTILogoAttachment();
 
     try {
       const primaryColor = '#1e3a8a';
       const accentColor = '#f97316';
       
       const logoHtml = COMPANY_LOGO_URL 
-        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto;" />`
+        ? `<img src="${COMPANY_LOGO_URL}" alt="${data.companyName}" style="max-width: 50px; height: auto; display: block; margin-left: auto; margin-right: auto;" />`
         : `<h2 style="color: #1f2937; margin: 0;">${data.companyName}</h2>`;
 
       const message = data.isCreator 
@@ -2600,6 +2461,7 @@ class EmailService {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
         to: data.recipientEmail,
         subject: `Acceso cancelado${data.isCreator ? '' : ' en ' + data.companyName}`,
+        attachments: this.addFooterLogoToAttachments(allAttachments),
         html: `
           <!DOCTYPE html>
           <html>
@@ -2653,7 +2515,7 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
-                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
+                        <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0;">
                           Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${data.companyName}</strong>
@@ -2688,39 +2550,16 @@ class EmailService {
       return { success: false, disabled: true };
     }
 
-    // Generar URL temporal para el logo si existe y es Base64
-    let COMPANY_LOGO_URL;
-    if (data.companyLogo && data.companyLogo.startsWith('data:image')) {
-      if (data.companyId) {
-        COMPANY_LOGO_URL = this.generateCompanyLogoUrl(data.companyId);
-        console.log('🏢 [GUEST ARRIVED] Logo empresa: URL temporal generada');
-      } else {
-        COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-        console.warn('⚠️ [GUEST ARRIVED] No companyId, usando fallback');
-      }
-    } else if (data.companyLogo) {
-      COMPANY_LOGO_URL = data.companyLogo;
-      console.log('🏢 [GUEST ARRIVED] Logo empresa: URL pública');
-    } else {
-      COMPANY_LOGO_URL = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo_blanco.png`;
-      console.log('🏢 [GUEST ARRIVED] Sin logo, usando fallback');
-    }
-
-    // Generar URL temporal para la foto del visitante si existe
-    let GUEST_PHOTO_URL;
-    if (data.guestPhoto && data.guestPhoto.startsWith('data:image')) {
-      if (data.visitId) {
-        GUEST_PHOTO_URL = this.generateVisitorPhotoUrl(data.visitId);
-        console.log('📸 [GUEST ARRIVED] Foto de visitante: URL temporal generada');
-      } else {
-        GUEST_PHOTO_URL = null;
-        console.warn('⚠️ [GUEST ARRIVED] No visitId para foto temporal');
-      }
-    } else if (data.guestPhoto) {
-      GUEST_PHOTO_URL = data.guestPhoto;
-    } else {
-      GUEST_PHOTO_URL = null;
-    }
+    // Preparar imágenes usando la función auxiliar
+    const logoResult = this.prepareEmailImage(data.companyLogo, 'companyLogo@securiti');
+    const guestPhotoResult = data.guestPhoto ? this.prepareEmailImage(data.guestPhoto, 'guestPhoto@securiti', null) : { imageUrl: null, attachments: [] };
+    
+    const COMPANY_LOGO_URL = logoResult.imageUrl;
+    const GUEST_PHOTO_URL = guestPhotoResult.imageUrl;
+    
+    // Combinar todos los attachments
+    const allAttachments = [...logoResult.attachments, ...guestPhotoResult.attachments];
+    const footerLogo = this.getSecuriTILogoAttachment();
 
     try {
       const primaryColor = '#1e3a8a';
@@ -2740,6 +2579,7 @@ class EmailService {
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
         to: data.creatorEmail,
         subject: `🔔 ${data.guestName} ha llegado a tu evento/acceso`,
+        attachments: this.addFooterLogoToAttachments(allAttachments),
         html: `
           <!DOCTYPE html>
           <html>
@@ -2831,7 +2671,7 @@ class EmailService {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9fafb; padding: 20px 40px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 12px 12px;">
-                        <img src="${process.env.FRONTEND_URL || 'http://localhost:5173'}/logo.png" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
+                        <img src="${footerLogo.logoUrl}" alt="SecuriTI" style="max-height: 30px; margin-bottom: 10px;">
                         <p style="color: #6b7280; font-size: 12px; margin: 0;">
                           Este es un mensaje automático del Sistema de Gestión de Visitas SecuriTI<br>
                           <strong>${data.companyName}</strong>

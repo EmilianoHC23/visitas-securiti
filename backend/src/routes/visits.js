@@ -293,7 +293,7 @@ router.post('/', auth, async (req, res) => {
               guestPhoto: req.body.visitorPhoto,
               accessTitle: access.eventName,
               companyName: (company && company.name) || 'SecurITI',
-              companyId: company?.companyId || null,
+              companyId: company?._id.toString() || null,
               companyLogo: company?.logo || null
             });
             console.log('✅ [PRE-REGISTRO] Email de llegada enviado al organizador (pre-registro público):', access.creatorId.email);
@@ -329,7 +329,7 @@ router.post('/', auth, async (req, res) => {
         hostEmail: host.email,
         hostName: `${host.firstName} ${host.lastName}`,
         companyName: (company && company.name) || 'SecurITI',
-        companyId: company?.companyId || null,
+        companyId: company?._id.toString() || null,
         companyLogo: company?.logo || null,
         visitorName,
         visitorCompany,
@@ -445,7 +445,7 @@ router.post('/force-register', auth, async (req, res) => {
               guestPhoto: req.body.visitorPhoto,
               accessTitle: access.eventName,
               companyName: (company && company.name) || 'SecurITI',
-              companyId: company?.companyId || null,
+              companyId: company?._id.toString() || null,
               companyLogo: company?.logo || null
             });
           }
@@ -473,7 +473,7 @@ router.post('/force-register', auth, async (req, res) => {
         hostEmail: host.email,
         hostName: `${host.firstName} ${host.lastName}`,
         companyName: (company && company.name) || 'SecurITI',
-        companyId: company?.companyId || null,
+        companyId: company?._id.toString() || null,
         companyLogo: company?.logo || null,
         visitorName,
         visitorCompany,
@@ -577,7 +577,7 @@ router.post('/register', async (req, res) => {
         hostEmail: host.email,
         hostName: `${host.firstName} ${host.lastName}`,
         companyName: company?.name || 'SecurITI',
-        companyId: company?.companyId || null,
+        companyId: company?._id.toString() || null,
         companyLogo: company?.logo || null,
         visitorName,
         visitorCompany,
@@ -732,7 +732,7 @@ router.put('/:id/status', auth, async (req, res) => {
               eventImage: access.eventImage || null,
               accessId: access._id.toString(),
               companyName: company?.name || 'Empresa',
-              companyId: company?.companyId || null,
+              companyId: company?._id.toString() || null,
               companyLogo: company?.logo || null
             });
             
@@ -768,7 +768,7 @@ router.put('/:id/status', auth, async (req, res) => {
           hostName: `${populated.host.firstName} ${populated.host.lastName}`,
           hostId: populated.host._id.toString(),
           companyName: company?.name || 'SecurITI',
-          companyId: company?.companyId || null,
+          companyId: company?._id.toString() || null,
           companyLogo: company?.logo || null,
           status,
           reason: populated.reason,
@@ -873,7 +873,7 @@ router.put('/:id', auth, async (req, res) => {
           visitorName: updatedVisit.visitorName,
           hostName: `${updatedVisit.host.firstName} ${updatedVisit.host.lastName}`,
           companyName: company?.name || 'SecurITI',
-          companyId: company?.companyId || null,
+          companyId: company?._id.toString() || null,
           companyLogo: company?.logo || null,
           status: 'rejected',
           reason: updatedVisit.reason,
@@ -1212,7 +1212,7 @@ router.post('/checkin/:id', auth, async (req, res) => {
                   eventImage: access.eventImage || null,
                   accessId: access._id.toString(),
                   companyName: company?.name || 'Empresa',
-                  companyId: company?.companyId || null,
+                  companyId: company?._id.toString() || null,
                   companyLogo: company?.logo || null
                 });
                 
@@ -1284,7 +1284,7 @@ router.post('/checkout/:id', auth, async (req, res) => {
           visitorCompany: visit.visitorCompany || 'N/A',
           hostName: `${visit.host.firstName} ${visit.host.lastName}`,
           companyName: company?.name || 'SecurITI',
-          companyId: company?.companyId || null,
+          companyId: company?._id.toString() || null,
           companyLogo: company?.logo || null,
           registrationTime: visit.createdAt, // Hora de registro
           checkInTime: visit.checkInTime, // Hora de entrada física

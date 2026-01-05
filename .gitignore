@@ -36,6 +36,13 @@ dist-ssr
 # Database
 *.lock
 
+# SSL Certificates (development only)
+certs/
+*.pem
+*.key
+*.crt
+mkcert.exe
+
 # Project specific
 *.zip
 *.tar.gz

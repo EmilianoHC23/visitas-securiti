@@ -28,10 +28,12 @@ export const deleteUser = async (userId: string): Promise<void> => {
 
 // Detectar entorno basado en hostname (más confiable que variables de entorno)
 const isLocalhost = typeof window !== 'undefined' && 
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  (window.location.hostname === 'localhost' || 
+   window.location.hostname === '127.0.0.1' || 
+   window.location.hostname === '13.0.0.87');
 
 const BASE_URL = isLocalhost 
-  ? (import.meta.env.VITE_API_URL || 'http://localhost:3001/api')
+  ? (import.meta.env.VITE_API_URL || 'https://13.0.0.87:3002/api')
   : '/api'; // En producción, usar ruta relativa
 
 // Only log in development mode
@@ -332,7 +334,7 @@ export const uploadCompanyLogo = async (file: File): Promise<{ logoUrl: string; 
   formData.append('logo', file);
 
   const token = localStorage.getItem('token');
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'https://13.0.0.87:3002/api';
 
   const response = await fetch(`${API_URL}/company/upload-logo`, {
     method: 'POST',

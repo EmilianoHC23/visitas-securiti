@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const https = require('https');
+const fs = require('fs');
 require('dotenv').config();
 
 // Import database initialization
@@ -34,7 +36,7 @@ app.use((req, res, next) => {
 });
 
 app.use(cors({
-    origin: ['http://13.0.0.87:3001', 'http://localhost:3001', 'http://localhost:5173', 'http://localhost:3000'],
+    origin: ['https://13.0.0.87:3001', 'https://13.0.0.87:3002', 'http://13.0.0.87:3001', 'http://13.0.0.87:3002', 'http://localhost:3001', 'https://localhost:3001', 'http://localhost:3002', 'https://localhost:3002', 'http://localhost:5173', 'http://localhost:3000'],
     credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -120,20 +122,69 @@ app.use('*', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', (err) => {
-  if (err) {
-    console.error('❌ Error starting server:', err);
-    process.exit(1);
+const startServer = () => {
+  // Configurar HTTPS para desarrollo
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  
+  if (isDevelopment) {
+    try {
+      const certPath = path.join(__dirname, '../../certs/13.0.0.87+2.pem');
+      const keyPath = path.join(__dirname, '../../certs/13.0.0.87+2-key.pem');
+      
+      if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+        const httpsOptions = {
+          key: fs.readFileSync(keyPath),
+          cert: fs.readFileSync(certPath)
+        };
+        
+        const server = https.createServer(httpsOptions, app);
+        server.listen(PORT, '0.0.0.0', (err) => {
+          if (err) {
+            console.error('❌ Error starting HTTPS server:', err);
+            process.exit(1);
+          }
+          console.log(`🚀 HTTPS Server running on port ${PORT}`);
+          console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+          console.log(`🔒 Server listening on https://13.0.0.87:${PORT}`);
+          console.log(`🔒 Server listening on https://localhost:${PORT}`);
+          // Start access scheduler
+          try {
+            startScheduler();
+          } catch (e) {
+            console.warn('⚠️ Scheduler failed to start:', e?.message);
+          }
+        });
+      } else {
+        console.warn('⚠️ Certificados SSL no encontrados. Usando HTTP...');
+        startHTTPServer();
+      }
+    } catch (error) {
+      console.error('❌ Error al configurar HTTPS:', error);
+      startHTTPServer();
+    }
+  } else {
+    startHTTPServer();
   }
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 Server listening on http://localhost:${PORT}`);
-  // Start access scheduler
-  try {
-    startScheduler();
-  } catch (e) {
-    console.warn('⚠️ Scheduler failed to start:', e?.message);
-  }
-});
+};
+
+const startHTTPServer = () => {
+  app.listen(PORT, '0.0.0.0', (err) => {
+    if (err) {
+      console.error('❌ Error starting server:', err);
+      process.exit(1);
+    }
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 Server listening on http://localhost:${PORT}`);
+    // Start access scheduler
+    try {
+      startScheduler();
+    } catch (e) {
+      console.warn('⚠️ Scheduler failed to start:', e?.message);
+    }
+  });
+};
+
+startServer();
 
 module.exports = app;

@@ -232,8 +232,11 @@ router.get('/qr-code', auth, async (req, res) => {
     }
 
     // Generate QR URL for self-registration landing page
-    const baseUrl = req.protocol + '://' + req.get('host');
+    // Prefer explicit FRONTEND_URL from env when present (dev setups with separate frontend server)
+    const configuredFrontend = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.replace(/\/$/, '') : null;
+    const baseUrl = configuredFrontend || (req.protocol + '://' + req.get('host'));
     const publicUrl = `${baseUrl}/public/self-register`;
+    console.log('🔗 [QR] publicUrl used for QR generation:', publicUrl);
     
     // Generate QR code image from the URL
     const QRCode = require('qrcode');

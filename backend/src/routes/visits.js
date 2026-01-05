@@ -321,9 +321,10 @@ router.post('/', auth, async (req, res) => {
       const approval = Approval.createWithExpiry(visit._id, host._id, 48);
       await approval.save();
 
-  const FE = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
-    const approveUrl = `${FE}/api/visits/approve/${approval.token}`;
-    const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
+  // Use backend URL for approve/reject links so token endpoints are hit directly
+  const BE = (process.env.BACKEND_URL || process.env.API_URL || 'http://localhost:3001').replace(/\/$/, '');
+    const approveUrl = `${BE}/api/visits/approve/${approval.token}`;
+    const rejectUrl = `${BE}/api/visits/reject/${approval.token}`;
       await require('../services/emailService').sendApprovalRequestEmail({
         visitId: visit._id, // ✅ Agregar visitId para generar URL temporal de foto
         hostEmail: host.email,
@@ -465,9 +466,10 @@ router.post('/force-register', auth, async (req, res) => {
       const approval = Approval.createWithExpiry(visit._id, host._id, 48);
       await approval.save();
 
-      const FE = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
-      const approveUrl = `${FE}/api/visits/approve/${approval.token}`;
-      const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
+      // Use backend URL for approve/reject links so token endpoints are hit directly
+      const BE = (process.env.BACKEND_URL || process.env.API_URL || 'http://localhost:3001').replace(/\/$/, '');
+      const approveUrl = `${BE}/api/visits/approve/${approval.token}`;
+      const rejectUrl = `${BE}/api/visits/reject/${approval.token}`;
       await require('../services/emailService').sendApprovalRequestEmail({
         visitId: visit._id,
         hostEmail: host.email,
@@ -569,9 +571,10 @@ router.post('/register', async (req, res) => {
     if (!autoApproval) {
       const approval = Approval.createWithExpiry(visit._id, host._id, 48);
       await approval.save();
-      const FE = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
-      const approveUrl = `${FE}/api/visits/approve/${approval.token}`;
-      const rejectUrl = `${FE}/api/visits/reject/${approval.token}`;
+      // Use backend URL for approve/reject links so token endpoints are hit directly
+      const BE = (process.env.BACKEND_URL || process.env.API_URL || 'http://localhost:3001').replace(/\/$/, '');
+      const approveUrl = `${BE}/api/visits/approve/${approval.token}`;
+      const rejectUrl = `${BE}/api/visits/reject/${approval.token}`;
       await require('../services/emailService').sendApprovalRequestEmail({
         visitId: visit._id, // ✅ Agregar visitId para generar URL temporal de foto
         hostEmail: host.email,

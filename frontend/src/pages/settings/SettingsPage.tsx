@@ -70,17 +70,22 @@ const CountryDropdown: React.FC<{
                         className="absolute left-0 right-0 mt-2 max-h-72 overflow-y-auto bg-white border-2 border-gray-300 rounded-xl shadow-lg origin-top z-20"
                         style={{ transformOrigin: 'top' }}
                     >
-                        {options.map((opt, idx) => (
-                            <motion.li key={idx} variants={itemVariants}>
-                                <button
-                                    type="button"
-                                    onClick={() => { onChange(opt); setOpen(false); }}
-                                    className="w-full text-left px-4 py-3 text-base hover:bg-gray-50 text-gray-700"
-                                >
-                                    {opt || 'Seleccionar país'}
-                                </button>
-                            </motion.li>
-                        ))}
+                        {options.map((opt, idx) => {
+                            const isPlaceholder = idx === 0 && opt === '';
+                            return (
+                                <motion.li key={idx} variants={itemVariants}>
+                                    <button
+                                        type="button"
+                                        onClick={() => { if (!isPlaceholder) { onChange(opt); setOpen(false); } }}
+                                        disabled={isPlaceholder}
+                                        aria-disabled={isPlaceholder}
+                                        className={`w-full text-left px-4 py-3 text-base ${isPlaceholder ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-gray-50 text-gray-700'}`}
+                                    >
+                                        {opt || 'Seleccionar país'}
+                                    </button>
+                                </motion.li>
+                            );
+                        })}
                     </motion.ul>
                 )}
             </AnimatePresence>
@@ -151,17 +156,22 @@ const CountryDropdown: React.FC<{
                             className="absolute left-0 right-0 mt-2 max-h-72 overflow-y-auto bg-white border-2 border-gray-300 rounded-xl shadow-lg origin-top z-20"
                             style={{ transformOrigin: 'top' }}
                         >
-                            {options.map((opt, idx) => (
-                                <motion.li key={idx} variants={itemVariants}>
-                                    <button
-                                        type="button"
-                                        onClick={() => { onChange(opt); setOpen(false); }}
-                                        className="w-full text-left px-4 py-3 text-base hover:bg-gray-50 text-gray-700"
-                                    >
-                                        {opt || 'Seleccionar estado'}
-                                    </button>
-                                </motion.li>
-                            ))}
+                            {options.map((opt, idx) => {
+                                const isPlaceholder = idx === 0 && opt === '';
+                                return (
+                                    <motion.li key={idx} variants={itemVariants}>
+                                        <button
+                                            type="button"
+                                            onClick={() => { if (!isPlaceholder) { onChange(opt); setOpen(false); } }}
+                                            disabled={isPlaceholder}
+                                            aria-disabled={isPlaceholder}
+                                            className={`w-full text-left px-4 py-3 text-base ${isPlaceholder ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-gray-50 text-gray-700'}`}
+                                        >
+                                            {opt || 'Seleccionar estado'}
+                                        </button>
+                                    </motion.li>
+                                );
+                            })}
                         </motion.ul>
                     )}
                 </AnimatePresence>

@@ -17,6 +17,8 @@ async function generateAccessInvitationQR(access, invitedUser, hostInfo = null) 
       guestEmail: invitedUser.email || '',
       guestPhone: invitedUser.phone || '',
       guestCompany: invitedUser.company || '',
+      // Include a short invitation token when available so the scanner can resolve full data
+      ...(invitedUser.invitationToken ? { invitationToken: invitedUser.invitationToken } : {}),
       eventName: access.eventName,
       eventDate: access.startDate,
       location: access.location || '',

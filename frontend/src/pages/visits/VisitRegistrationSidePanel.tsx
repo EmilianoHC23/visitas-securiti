@@ -144,38 +144,115 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
       // Si es un QR de invitación de acceso - SOLO RELLENAR FORMULARIO
       if (data.type === 'access-invitation') {
         console.log('✅ QR de invitación de acceso detectado:', data);
-        
-        // Buscar el host por email si viene en el QR
-        let hostId = '';
-        if (data.hostEmail && hosts.length > 0) {
-          const matchedHost = hosts.find(h => h.email === data.hostEmail);
-          if (matchedHost) {
-            hostId = matchedHost._id;
-            console.log('✅ Host encontrado automáticamente:', matchedHost.firstName, matchedHost.lastName);
+
+        // If the QR contains an invitationToken, resolve it to obtain full invitedUser data
+        if (data.invitationToken) {
+          try {
+            const resolved = await api.getPublicInvitation(data.invitationToken);
+            const invitedUser = resolved.invitedUser || {};
+            const accessInfo = resolved.access || {};
+            const hostInfo = resolved.host || {};
+
+            // Try to map hostId to local hosts list, fallback to hostId returned
+            let hostId = '';
+            if (hostInfo.hostId) {
+              const matchedHost = hosts.find(h => h._id === hostInfo.hostId);
+              if (matchedHost) {
+                hostId = matchedHost._id;
+              } else {
+                hostId = hostInfo.hostId; // still set it; HostSelect will show placeholder if missing locally
+              }
+            } else if (data.hostEmail && hosts.length > 0) {
+              const matchedHost = hosts.find(h => h.email === data.hostEmail);
+              if (matchedHost) hostId = matchedHost._id;
+            }
+
+            setFormData(prev => ({
+              ...prev,
+              visitorEmail: invitedUser.email || data.guestEmail || '',
+              visitorName: invitedUser.name || data.guestName || '',
+              visitorCompany: invitedUser.company || data.guestCompany || '',
+              destination: accessInfo.location || data.location || '',
+              host: hostId,
+              visitorPhoto: invitedUser.photo || prev.visitorPhoto || '' ,
+              reason: `Evento: ${accessInfo.eventName || data.eventName || ''}`
+            }));
+
+            (window as any).__pendingAccessCheckIn = {
+              accessId: accessInfo.accessId || data.accessId,
+              accessCode: accessInfo.accessCode || data.accessCode,
+              guestEmail: invitedUser.email || data.guestEmail,
+              guestName: invitedUser.name || data.guestName,
+              invitationToken: data.invitationToken
+            };
+
+            setMode('manual');
+            setQrDataAlert({ show: true, eventName: accessInfo.eventName || data.eventName || '' });
+          } catch (err) {
+            console.error('Error resolving invitation token:', err);
+            // fallback to basic qr data if resolution fails
+            let hostId = '';
+            if (data.hostEmail && hosts.length > 0) {
+              const matchedHost = hosts.find(h => h.email === data.hostEmail);
+              if (matchedHost) hostId = matchedHost._id;
+            }
+
+            setFormData(prev => ({
+              ...prev,
+              visitorEmail: data.guestEmail || '',
+              visitorName: data.guestName || '',
+              visitorCompany: data.guestCompany || '',
+              destination: data.location || '',
+              host: hostId,
+              reason: `Evento: ${data.eventName}`
+            }));
+
+            (window as any).__pendingAccessCheckIn = {
+              accessId: data.accessId,
+              accessCode: data.accessCode,
+              guestEmail: data.guestEmail,
+              guestName: data.guestName
+            };
+
+            setMode('manual');
+            setQrDataAlert({ show: true, eventName: data.eventName });
           }
+        } else {
+          // No token present: fallback behavior (existing)
+          console.log('✅ QR de invitación sin token - usando datos embebidos:', data);
+          
+          // Buscar el host por email si viene en el QR
+          let hostId = '';
+          if (data.hostEmail && hosts.length > 0) {
+            const matchedHost = hosts.find(h => h.email === data.hostEmail);
+            if (matchedHost) {
+              hostId = matchedHost._id;
+              console.log('✅ Host encontrado automáticamente:', matchedHost.firstName, matchedHost.lastName);
+            }
+          }
+          
+          // Auto-completar formulario con los datos del QR
+          setFormData(prev => ({
+            ...prev,
+            visitorEmail: data.guestEmail || '',
+            visitorName: data.guestName || '',
+            visitorCompany: data.guestCompany || '',
+            destination: data.location || '',
+            host: hostId,
+            reason: `Evento: ${data.eventName}`
+          }));
+          
+          // Guardar datos del acceso para actualizar asistencia después del registro
+          (window as any).__pendingAccessCheckIn = {
+            accessId: data.accessId,
+            accessCode: data.accessCode,
+            guestEmail: data.guestEmail,
+            guestName: data.guestName
+          };
+          
+          setMode('manual');
+          setQrDataAlert({ show: true, eventName: data.eventName });
         }
-        
-        // Auto-completar formulario con los datos del QR
-        setFormData(prev => ({
-          ...prev,
-          visitorEmail: data.guestEmail || '',
-          visitorName: data.guestName || '',
-          visitorCompany: data.guestCompany || '',
-          destination: data.location || '',
-          host: hostId,
-          reason: `Evento: ${data.eventName}`
-        }));
-        
-        // Guardar datos del acceso para actualizar asistencia después del registro
-        (window as any).__pendingAccessCheckIn = {
-          accessId: data.accessId,
-          accessCode: data.accessCode,
-          guestEmail: data.guestEmail,
-          guestName: data.guestName
-        };
-        
-        setMode('manual');
-        setQrDataAlert({ show: true, eventName: data.eventName });
       }
       // Si es un QR de visitante, autocompletar formulario
       else if (data.type === 'visitor-info') {

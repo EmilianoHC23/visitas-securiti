@@ -418,6 +418,11 @@ export const getAccesses = async (status?: string): Promise<Access[]> => {
   return apiRequest(`/access${query}`);
 };
 
+// Public: resolve invitation token to invitedUser + access + host info
+export const getPublicInvitation = async (token: string) => {
+  return apiRequest(`/access/public/invitation/${encodeURIComponent(token)}`);
+};
+
 export const getAccessById = async (id: string): Promise<Access> => {
   return apiRequest(`/access/${id}`);
 };

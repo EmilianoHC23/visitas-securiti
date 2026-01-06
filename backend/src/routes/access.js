@@ -981,11 +981,11 @@ router.post('/:accessId/pre-register', async (req, res) => {
       email: access.creatorId.email
     } : null;
     
-    const qrCode = await generateAccessInvitationQR(
-      access,
-      { name, email: email || '', phone: '', company: company || '' },
-      hostInfo
-    );
+    // Generate a short invitation token to resolve the full invitedUser data later
+    const crypto = require('crypto');
+    const invitationToken = crypto.randomBytes(8).toString('hex');
+
+    const invitedUserPayload = { name, email: email || '', phone: phone || '', company: company || '', photo: photo || '' };
 
     const newInvitedUser = {
       name,
@@ -993,10 +993,21 @@ router.post('/:accessId/pre-register', async (req, res) => {
       phone: phone || '',
       company: company || '',
       photo: photo || '',
-      qrCode,
+      invitationToken,
+      invitationTokenCreatedAt: new Date(),
       attendanceStatus: 'pendiente',
       addedViaPreRegistration: true
     };
+
+    // Generate QR code for the new invited user (the QR will include the short token)
+    const qrCode = await generateAccessInvitationQR(
+      access,
+      { ...invitedUserPayload, invitationToken },
+      hostInfo
+    );
+
+    // attach the qrCode after generation
+    newInvitedUser.qrCode = qrCode;
 
     access.invitedUsers.push(newInvitedUser);
     await access.save();
@@ -1010,6 +1021,7 @@ router.post('/:accessId/pre-register', async (req, res) => {
           type: 'access-invitation',
           accessId: access._id.toString(),
           accessCode: access.accessCode,
+          invitationToken,
           guestName: name,
           guestEmail: email || '',
           guestCompany: company || '',
@@ -1059,6 +1071,54 @@ router.post('/:accessId/pre-register', async (req, res) => {
     });
   } catch (error) {
     console.error('Pre-registration error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Public: resolve an invitation token to full invitedUser data (no auth)
+router.get('/public/invitation/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    if (!token) return res.status(400).json({ message: 'Token requerido' });
+
+    // Buscar acceso que contenga el token en invitedUsers
+    const access = await Access.findOne({ 'invitedUsers.invitationToken': token })
+      .populate('creatorId', 'firstName lastName email');
+
+    if (!access) {
+      return res.status(404).json({ message: 'Invitación no encontrada' });
+    }
+
+    const invitedUser = access.invitedUsers.find(u => u.invitationToken === token);
+    if (!invitedUser) {
+      return res.status(404).json({ message: 'Invitado no encontrado para este token' });
+    }
+
+    res.json({
+      invitedUser: {
+        name: invitedUser.name,
+        email: invitedUser.email,
+        phone: invitedUser.phone,
+        company: invitedUser.company,
+        photo: invitedUser.photo || null,
+        invitationToken: invitedUser.invitationToken,
+        invitationTokenCreatedAt: invitedUser.invitationTokenCreatedAt || null,
+        attendanceStatus: invitedUser.attendanceStatus || 'pendiente'
+      },
+      access: {
+        accessId: access._id.toString(),
+        accessCode: access.accessCode,
+        eventName: access.eventName,
+        location: access.location || ''
+      },
+      host: {
+        hostId: access.creatorId ? access.creatorId._id.toString() : null,
+        hostEmail: access.creatorId ? access.creatorId.email : null,
+        hostName: access.creatorId ? `${access.creatorId.firstName} ${access.creatorId.lastName}` : ''
+      }
+    });
+  } catch (error) {
+    console.error('Resolve invitation token error:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

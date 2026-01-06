@@ -90,6 +90,17 @@ const accessSchema = new mongoose.Schema({
       type: String,
       default: ''
     },
+    photo: {
+      type: String,
+      default: ''
+    },
+    invitationToken: {
+      type: String,
+      default: ''
+    },
+    invitationTokenCreatedAt: {
+      type: Date
+    },
     qrCode: {
       type: String,
       default: ''

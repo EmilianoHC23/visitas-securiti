@@ -919,13 +919,31 @@ export const SettingsPage: React.FC = () => {
                                                 <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-bold text-gray-700 mb-2`}>
                                                     País
                                                 </label>
-                                                <CountryDropdown value={country} onChange={(v) => setCountry(v)} />
+                                                <CountryDropdown
+                                                    value={country}
+                                                    onChange={(v) => {
+                                                        setCountry(v);
+                                                        // Clear the state field whenever the country changes
+                                                        // so selecting "México" shows the placeholder 'Seleccionar estado'
+                                                        setState('');
+                                                    }}
+                                                />
                                             </div>
                                             <div>
                                                 <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-bold text-gray-700 mb-2`}>
                                                     Estado
                                                 </label>
-                                                <StateDropdown value={state} onChange={(v) => setState(v)} />
+                                                {country === 'México' ? (
+                                                    <StateDropdown value={state} onChange={(v) => setState(v)} />
+                                                ) : (
+                                                    <input
+                                                        type="text"
+                                                        placeholder={isMobile ? 'Estado / Provincia' : 'Ej: Estado / Provincia'}
+                                                        value={state}
+                                                        onChange={(e) => setState(e.target.value)}
+                                                        className={`w-full ${isMobile ? 'px-3 py-2.5 text-sm' : 'px-4 py-3.5 text-base'} bg-white border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all`}
+                                                    />
+                                                )}
                                             </div>
                                             <div>
                                                 <label className={`block ${isMobile ? 'text-xs' : 'text-sm'} font-bold text-gray-700 mb-2`}>

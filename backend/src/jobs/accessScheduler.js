@@ -15,13 +15,19 @@ async function finalizeExpiredAccesses() {
     if (!expired.length) return;
 
     for (const access of expired) {
-      access.status = 'finalized';
-      for (const guest of access.invitedUsers) {
-        if (guest.attendanceStatus === 'pendiente') {
-          guest.attendanceStatus = 'no-asistio';
+        // Skip accesses marked as "Sin Vencimiento"
+        if (access.settings?.noExpiration === true) {
+          console.log(`ℹ️ [Scheduler] Acceso "${access.eventName}" (${access.accessCode}) marcado como "Sin Vencimiento" - se omite finalización automática`);
+          continue;
         }
-      }
-      await access.save();
+
+        access.status = 'finalized';
+        for (const guest of access.invitedUsers) {
+          if (guest.attendanceStatus === 'pendiente') {
+            guest.attendanceStatus = 'no-asistio';
+          }
+        }
+        await access.save();
     }
     if (expired.length) {
       console.log(`🕒 Finalizados ${expired.length} accesos expirados`);

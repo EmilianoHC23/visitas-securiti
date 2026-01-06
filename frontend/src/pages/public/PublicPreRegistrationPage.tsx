@@ -12,6 +12,19 @@ const API_BASE_URL = isLocalEnv
   ? (import.meta.env.VITE_API_URL || 'http://localhost:3001')
   : ''; // En producción, usar rutas relativas
 
+// Helper to build API URLs that avoids duplicate `/api` segments
+const buildApiUrl = (path: string) => {
+  const base = API_BASE_URL || '';
+  if (!base) return path.startsWith('/') ? path : `/${path}`;
+  const trimmedBase = base.replace(/\/$/, '');
+  // If base already contains '/api', avoid adding another '/api'
+  if (trimmedBase.includes('/api')) {
+    // ensure path doesn't start with '/api'
+    return `${trimmedBase}${path.startsWith('/api') ? path.slice(4) : path}`;
+  }
+  return `${trimmedBase}${path.startsWith('/') ? path : `/${path}`}`;
+};
+
 interface AccessInfo {
   _id: string;
   eventName: string;
@@ -53,10 +66,10 @@ const PublicPreRegistrationPage: React.FC = () => {
     try {
       setLoading(true);
       // En producción, usar ruta relativa sin agregar API_BASE_URL
-      const url = isLocalEnv 
-        ? `${API_BASE_URL}/api/access/${accessId}/public-info`
+      const url = isLocalEnv
+        ? buildApiUrl(`/api/access/${accessId}/public-info`)
         : `/api/access/${accessId}/public-info`;
-      
+
       console.log('🔍 Fetching access info from:', url);
       const response = await fetch(url);
       
@@ -108,10 +121,10 @@ const PublicPreRegistrationPage: React.FC = () => {
       }
 
       // En producción, usar ruta relativa sin agregar API_BASE_URL
-      const url = isLocalEnv 
-        ? `${API_BASE_URL}/api/access/${accessId}/pre-register`
+      const url = isLocalEnv
+        ? buildApiUrl(`/api/access/${accessId}/pre-register`)
         : `/api/access/${accessId}/pre-register`;
-      
+
       console.log('🔍 Submitting registration to:', url);
       const response = await fetch(url, {
         method: 'POST',

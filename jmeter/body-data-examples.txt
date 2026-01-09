@@ -1,0 +1,362 @@
+# Body Data Examples - CRUD Operations
+# Ejemplos de datos para crear usuarios, visitas y códigos de acceso
+
+================================================================================
+1. POST /api/auth/login - Login de Administrador
+================================================================================
+{
+  "email": "admin@securiti.com",
+  "password": "Admin123!"
+}
+
+
+================================================================================
+2. POST /api/users - Crear Usuario
+================================================================================
+{
+  "email": "nuevo.usuario@empresa.com",
+  "password": "Password123!",
+  "firstName": "Juan",
+  "lastName": "Pérez",
+  "role": "host"
+}
+
+ROLES VÁLIDOS:
+- "admin"      -> Administrador (acceso completo)
+- "reception"  -> Recepcionista (gestión de visitas)
+- "host"       -> Anfitrión (solo sus visitas)
+
+EJEMPLOS ADICIONALES:
+
+Usuario Recepcionista:
+{
+  "email": "recepcion@empresa.com",
+  "password": "Recep123!",
+  "firstName": "María",
+  "lastName": "González",
+  "role": "reception"
+}
+
+Usuario Admin:
+{
+  "email": "admin2@empresa.com",
+  "password": "Admin456!",
+  "firstName": "Carlos",
+  "lastName": "Rodríguez",
+  "role": "admin"
+}
+
+
+================================================================================
+3. POST /api/visits - Crear Visita (Autenticado)
+================================================================================
+{
+  "visitorName": "Roberto Martínez",
+  "visitorCompany": "Tech Solutions S.A.",
+  "visitorEmail": "roberto.martinez@techsolutions.com",
+  "visitorPhone": "555-1234",
+  "reason": "Reunión con el equipo de desarrollo",
+  "scheduledDate": "2026-01-15T10:00:00.000Z",
+  "hostId": "60d5ec49f1b2c72b8c8e4568"
+}
+
+NOTA: 
+- scheduledDate debe estar en formato ISO 8601
+- hostId debe ser un ObjectId válido de MongoDB de un usuario existente
+- El host debe tener rol "host" o "admin"
+
+EJEMPLOS ADICIONALES:
+
+Visita programada para mañana:
+{
+  "visitorName": "Ana López",
+  "visitorCompany": "Marketing Pro",
+  "visitorEmail": "ana.lopez@marketingpro.com",
+  "visitorPhone": "555-5678",
+  "reason": "Presentación de propuesta comercial",
+  "scheduledDate": "2026-01-08T14:30:00.000Z",
+  "hostId": "60d5ec49f1b2c72b8c8e4568"
+}
+
+Visita sin empresa (visitante individual):
+{
+  "visitorName": "Pedro Sánchez",
+  "visitorCompany": "Particular",
+  "visitorEmail": "pedro.sanchez@gmail.com",
+  "visitorPhone": "555-9012",
+  "reason": "Entrevista de trabajo",
+  "scheduledDate": "2026-01-10T09:00:00.000Z",
+  "hostId": "60d5ec49f1b2c72b8c8e4568"
+}
+
+
+================================================================================
+4. POST /api/visits/register - Registro Público de Visita (Sin autenticación)
+================================================================================
+{
+  "companyId": "60d5ec49f1b2c72b8c8e4567",
+  "visitorName": "Laura Fernández",
+  "visitorCompany": "Diseño Creativo",
+  "visitorEmail": "laura.fernandez@disenocreativo.com",
+  "visitorPhone": "555-3456",
+  "hostId": "60d5ec49f1b2c72b8c8e4568",
+  "reason": "Consultoría de diseño",
+  "visitorPhoto": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
+}
+
+NOTA:
+- Este endpoint NO requiere autenticación (es público)
+- companyId es el ID de la empresa
+- visitorPhoto es opcional (base64 de la imagen)
+- Si requirePhoto está habilitado en la empresa, la foto es obligatoria
+
+
+================================================================================
+5. POST /api/access - Crear Código de Acceso / Evento
+================================================================================
+{
+  "eventName": "Conferencia Anual 2026",
+  "eventDescription": "Conferencia sobre innovación tecnológica y transformación digital",
+  "startDate": "2026-02-15T09:00:00.000Z",
+  "endDate": "2026-02-15T18:00:00.000Z",
+  "maxAttendees": 200,
+  "allowPublicRegistration": true,
+  "requireApproval": false,
+  "settings": {
+    "noExpiration": false,
+    "allowGuests": true,
+    "maxGuestsPerInvitation": 2
+  }
+}
+
+CAMPOS IMPORTANTES:
+- eventName: Nombre del evento (requerido)
+- eventDescription: Descripción detallada
+- startDate/endDate: Fechas en formato ISO 8601
+- maxAttendees: Capacidad máxima de asistentes
+- allowPublicRegistration: Si permite registro público (true/false)
+- requireApproval: Si requiere aprobación del organizador
+- settings.noExpiration: Si el código no expira (true/false)
+- settings.allowGuests: Si permite invitar acompañantes
+- settings.maxGuestsPerInvitation: Máximo de acompañantes por invitación
+
+EJEMPLOS ADICIONALES:
+
+Evento con registro público y sin aprobación:
+{
+  "eventName": "Webinar de Productividad",
+  "eventDescription": "Aprende las mejores prácticas de gestión del tiempo",
+  "startDate": "2026-01-20T15:00:00.000Z",
+  "endDate": "2026-01-20T17:00:00.000Z",
+  "maxAttendees": 100,
+  "allowPublicRegistration": true,
+  "requireApproval": false
+}
+
+Evento privado con aprobación requerida:
+{
+  "eventName": "Reunión Ejecutiva",
+  "eventDescription": "Junta directiva trimestral",
+  "startDate": "2026-01-25T10:00:00.000Z",
+  "endDate": "2026-01-25T12:00:00.000Z",
+  "maxAttendees": 20,
+  "allowPublicRegistration": false,
+  "requireApproval": true,
+  "settings": {
+    "noExpiration": false,
+    "allowGuests": false
+  }
+}
+
+Evento de múltiples días:
+{
+  "eventName": "Capacitación Corporativa",
+  "eventDescription": "Curso intensivo de liderazgo y gestión de equipos",
+  "startDate": "2026-03-01T08:00:00.000Z",
+  "endDate": "2026-03-05T17:00:00.000Z",
+  "maxAttendees": 50,
+  "allowPublicRegistration": true,
+  "requireApproval": true,
+  "settings": {
+    "noExpiration": false,
+    "allowGuests": false
+  }
+}
+
+Evento sin vencimiento (código permanente):
+{
+  "eventName": "Acceso VIP Permanente",
+  "eventDescription": "Acceso permanente para miembros VIP",
+  "startDate": "2026-01-08T00:00:00.000Z",
+  "endDate": "2027-12-31T23:59:59.000Z",
+  "maxAttendees": 10,
+  "allowPublicRegistration": false,
+  "requireApproval": true,
+  "settings": {
+    "noExpiration": true,
+    "allowGuests": true,
+    "maxGuestsPerInvitation": 3
+  }
+}
+
+
+================================================================================
+6. PUT /api/visits/:id - Actualizar Visita
+================================================================================
+{
+  "reason": "Reunión reprogramada - Revisión de proyecto"
+}
+
+NOTA: 
+- Reemplaza :id con el ID de la visita
+- Puedes actualizar cualquier campo permitido
+
+EJEMPLOS DE ACTUALIZACIÓN:
+
+Cambiar fecha programada:
+{
+  "scheduledDate": "2026-01-16T11:00:00.000Z"
+}
+
+Cambiar múltiples campos:
+{
+  "reason": "Entrevista técnica - Segunda ronda",
+  "scheduledDate": "2026-01-12T10:00:00.000Z",
+  "visitorPhone": "555-9999"
+}
+
+
+================================================================================
+7. PUT /api/visits/:id/status - Cambiar Estado de Visita
+================================================================================
+{
+  "status": "approved"
+}
+
+ESTADOS VÁLIDOS:
+- "pending"    -> Pendiente (estado inicial)
+- "approved"   -> Aprobada
+- "rejected"   -> Rechazada
+- "checked-in" -> Visitante en el edificio
+- "checked-out"-> Visitante salió
+- "cancelled"  -> Visita cancelada
+
+EJEMPLOS:
+
+Aprobar visita:
+{
+  "status": "approved"
+}
+
+Rechazar visita:
+{
+  "status": "rejected"
+}
+
+
+================================================================================
+8. POST /api/visits/checkin/:id - Check-in de Visita
+================================================================================
+{
+  "notes": "Visitante llegó puntual. Se le entregó gafete de visitante."
+}
+
+NOTA:
+- Cambia el estado a "checked-in"
+- Registra la hora de entrada
+- notes es opcional
+
+
+================================================================================
+9. POST /api/visits/checkout/:id - Check-out de Visita
+================================================================================
+{
+  "notes": "Visitante devolvió gafete. Salida sin novedades."
+}
+
+NOTA:
+- Cambia el estado a "checked-out"
+- Registra la hora de salida
+- notes es opcional
+
+
+================================================================================
+10. POST /api/access/redeem - Canjear Código de Acceso
+================================================================================
+{
+  "accessCode": "ABC123",
+  "userEmail": "asistente@empresa.com",
+  "userName": "Patricia Morales"
+}
+
+NOTA:
+- Este endpoint NO requiere autenticación
+- accessCode es el código generado al crear el evento
+- Registra al usuario como asistente confirmado
+
+
+================================================================================
+11. PUT /api/access/:id - Actualizar Código de Acceso
+================================================================================
+{
+  "eventName": "Conferencia Anual 2026 - ACTUALIZADA",
+  "eventDescription": "Descripción actualizada del evento",
+  "maxAttendees": 250
+}
+
+NOTA:
+- Puedes actualizar cualquier campo del evento
+- Las invitaciones ya enviadas no se ven afectadas
+
+
+================================================================================
+12. POST /api/blacklist - Agregar a Lista Negra
+================================================================================
+{
+  "email": "persona.bloqueada@ejemplo.com",
+  "firstName": "Persona",
+  "lastName": "Bloqueada",
+  "reason": "Comportamiento inapropiado durante visita anterior",
+  "documentNumber": "12345678"
+}
+
+NOTA:
+- Requiere rol "admin" o "reception"
+- La persona no podrá registrar visitas
+- documentNumber es opcional
+
+
+================================================================================
+NOTAS IMPORTANTES
+================================================================================
+
+1. AUTENTICACIÓN:
+   - La mayoría de endpoints requieren el header: Authorization: Bearer {token}
+   - Obtén el token con POST /api/auth/login
+   - Los endpoints públicos NO requieren token: /api/visits/register, /api/access/redeem
+
+2. FORMATO DE FECHAS:
+   - Usa ISO 8601: "2026-01-15T10:00:00.000Z"
+   - Zona horaria UTC (termina en Z)
+
+3. ObjectId DE MONGODB:
+   - Los IDs tienen formato: "60d5ec49f1b2c72b8c8e4567"
+   - Obtén IDs válidos consultando: GET /api/users, GET /api/visits, etc.
+
+4. VALIDACIONES:
+   - Email debe ser válido
+   - Password mínimo 6 caracteres
+   - Teléfono formato: "555-1234"
+   - Roles: solo "admin", "reception", "host"
+
+5. ERRORES COMUNES:
+   - 400: Datos faltantes o inválidos
+   - 401: No autenticado (falta token)
+   - 403: No autorizado (rol insuficiente)
+   - 404: Recurso no encontrado
+   - 500: Error del servidor
+
+6. PARA PRUEBAS DE CARGA:
+   - Usa variables dinámicas: ${__threadNum}, ${__Random(1,9999)}
+   - Genera emails únicos: user${__threadNum}_${__Random(1,999999)}@test.com
+   - Fechas dinámicas: ${__time(yyyy-MM-dd'T'HH:mm:ss.SSS'Z',)}

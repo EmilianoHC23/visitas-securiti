@@ -900,7 +900,7 @@ router.get('/:accessId/public-info', async (req, res) => {
     // Ensure up-to-date status for public
     await finalizeExpiredAccesses();
     const access = await Access.findById(req.params.accessId)
-      .select('eventName type startDate endDate location eventImage additionalInfo status settings companyId')
+      .select('eventName type startDate endDate location eventImage additionalInfo status settings companyId noExpiration')
       .lean();
 
     if (!access) {

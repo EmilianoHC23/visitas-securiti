@@ -35,9 +35,9 @@ interface AccessInfo {
   eventImage?: string;
   additionalInfo?: string;
   status: string;
-  noExpiration?: boolean;
   settings: {
     enablePreRegistration?: boolean;
+    noExpiration?: boolean;
   };
   company?: {
     name: string;
@@ -78,6 +78,9 @@ const PublicPreRegistrationPage: React.FC = () => {
       }
       
       const data = await response.json();
+      
+      console.log('🔍 Access data received:', data);
+      console.log('🔍 noExpiration field:', data.settings?.noExpiration);
       
       if (!data.settings?.enablePreRegistration) {
         setError('Este acceso no permite pre-registro público');
@@ -253,19 +256,29 @@ const PublicPreRegistrationPage: React.FC = () => {
                 </div>
               </div>
 
-              {access && !access.noExpiration && (
+              {access && access.settings?.noExpiration ? (
                 <div className="flex items-center text-gray-700">
                   <Clock className="w-5 h-5 mr-3 text-gray-400" />
                   <div>
                     <p className="text-sm font-medium">Fecha y hora de fin</p>
-                    <p className="text-sm">
-                      {new Date(access.endDate).toLocaleString('es-MX', {
-                        dateStyle: 'long',
-                        timeStyle: 'short'
-                      })}
-                    </p>
+                    <p className="text-sm font-semibold text-blue-600">Sin vencimiento</p>
                   </div>
                 </div>
+              ) : (
+                access && (
+                  <div className="flex items-center text-gray-700">
+                    <Clock className="w-5 h-5 mr-3 text-gray-400" />
+                    <div>
+                      <p className="text-sm font-medium">Fecha y hora de fin</p>
+                      <p className="text-sm">
+                        {new Date(access.endDate).toLocaleString('es-MX', {
+                          dateStyle: 'long',
+                          timeStyle: 'short'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                )
               )}
 
               {access?.location && (

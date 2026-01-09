@@ -162,6 +162,14 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
               } else {
                 hostId = hostInfo.hostId; // still set it; HostSelect will show placeholder if missing locally
               }
+            } else if (data.hostId) {
+              // También intentar con hostId directo del QR
+              const matchedHost = hosts.find(h => h._id === data.hostId);
+              if (matchedHost) {
+                hostId = matchedHost._id;
+              } else {
+                hostId = data.hostId;
+              }
             } else if (data.hostEmail && hosts.length > 0) {
               const matchedHost = hosts.find(h => h.email === data.hostEmail);
               if (matchedHost) hostId = matchedHost._id;
@@ -192,7 +200,14 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
             console.error('Error resolving invitation token:', err);
             // fallback to basic qr data if resolution fails
             let hostId = '';
-            if (data.hostEmail && hosts.length > 0) {
+            if (data.hostId) {
+              const matchedHost = hosts.find(h => h._id === data.hostId);
+              if (matchedHost) {
+                hostId = matchedHost._id;
+              } else {
+                hostId = data.hostId;
+              }
+            } else if (data.hostEmail && hosts.length > 0) {
               const matchedHost = hosts.find(h => h.email === data.hostEmail);
               if (matchedHost) hostId = matchedHost._id;
             }
@@ -221,13 +236,21 @@ export const VisitRegistrationSidePanel: React.FC<VisitRegistrationSidePanelProp
           // No token present: fallback behavior (existing)
           console.log('✅ QR de invitación sin token - usando datos embebidos:', data);
           
-          // Buscar el host por email si viene en el QR
+          // Buscar el host por hostId primero, luego por email
           let hostId = '';
-          if (data.hostEmail && hosts.length > 0) {
+          if (data.hostId) {
+            const matchedHost = hosts.find(h => h._id === data.hostId);
+            if (matchedHost) {
+              hostId = matchedHost._id;
+              console.log('✅ Host encontrado automáticamente por ID:', matchedHost.firstName, matchedHost.lastName);
+            } else {
+              hostId = data.hostId; // Usar el ID aunque no esté en la lista local
+            }
+          } else if (data.hostEmail && hosts.length > 0) {
             const matchedHost = hosts.find(h => h.email === data.hostEmail);
             if (matchedHost) {
               hostId = matchedHost._id;
-              console.log('✅ Host encontrado automáticamente:', matchedHost.firstName, matchedHost.lastName);
+              console.log('✅ Host encontrado automáticamente por email:', matchedHost.firstName, matchedHost.lastName);
             }
           }
           

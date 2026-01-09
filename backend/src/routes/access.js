@@ -387,7 +387,8 @@ router.post('/', auth, authorize(['admin', 'host']), async (req, res) => {
               eventDate: access.startDate,
               location: access.location || '',
               hostName: `${creator.firstName} ${creator.lastName}`,
-              hostEmail: creator.email
+              hostEmail: creator.email,
+              hostId: creator._id.toString()
             };
 
             await emailService.sendAccessInvitationEmail({
@@ -497,11 +498,18 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
       // Generar y guardar QR para nuevos invitados en paralelo
       if (newGuests.length > 0) {
         try {
+          // Preparar información del host para incluir en el QR
+          const hostInfo = access.creatorId ? {
+            name: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+            email: access.creatorId.email,
+            hostId: access.creatorId._id.toString()
+          } : null;
+
           const qrPromises = access.invitedUsers
             .filter(g => !g.qrCode)
             .map(async (g) => {
               try {
-                const qr = await generateAccessInvitationQR(access, g);
+                const qr = await generateAccessInvitationQR(access, g, hostInfo);
                 if (qr) g.qrCode = qr;
               } catch (qrErr) {
                 console.warn('⚠️ Error generating QR for new guest:', g?.email || g?.name, qrErr?.message);
@@ -521,15 +529,20 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
         for (const guest of newGuests) {
           if (guest.email) {
             try {
-              // Generar datos del QR para usar con API pública
+              // Generar datos del QR con TODA la información necesaria
               const qrData = {
                 type: 'access-invitation',
                 accessId: access._id.toString(),
                 accessCode: access.accessCode,
                 guestName: guest.name,
                 guestEmail: guest.email || '',
+                guestCompany: guest.company || '',
                 eventName: access.eventName,
-                eventDate: access.startDate
+                eventDate: access.startDate,
+                location: access.location || '',
+                hostName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+                hostEmail: access.creatorId.email,
+                hostId: access.creatorId._id.toString()
               };
 
               await emailService.sendAccessInvitationEmail({
@@ -607,8 +620,13 @@ router.put('/:id', auth, authorize(['admin', 'host']), async (req, res) => {
                 accessCode: access.accessCode,
                 guestName: guest.name,
                 guestEmail: guest.email || '',
+                guestCompany: guest.company || '',
                 eventName: access.eventName,
-                eventDate: access.startDate
+                eventDate: access.startDate,
+                location: access.location || '',
+                hostName: `${access.creatorId.firstName} ${access.creatorId.lastName}`,
+                hostEmail: access.creatorId.email,
+                hostId: access.creatorId._id.toString()
               };
               
               await emailService.sendAccessModifiedToGuestEmail({

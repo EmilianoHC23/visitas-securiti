@@ -24,6 +24,7 @@ async function generateAccessInvitationQR(access, invitedUser, hostInfo = null) 
       location: access.location || '',
       hostName: hostInfo?.name || '',
       hostEmail: hostInfo?.email || '',
+      hostId: hostInfo?.hostId || '',
       createdAt: new Date().toISOString()
     };
 
